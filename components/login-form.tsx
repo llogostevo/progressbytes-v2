@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+// import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,7 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ComputerIcon as Microsoft, Github } from "lucide-react"
 
 export function LoginForm() {
-  const [activeTab, setActiveTab] = useState("login")
+
+  // const [activeTab, setActiveTab] = useState("login")
 
   return (
     <div className="space-y-4">
@@ -17,7 +18,7 @@ export function LoginForm() {
         <h2 className="text-2xl font-bold">Welcome to ProgressBytes</h2>
         <p className="text-sm text-muted-foreground">Sign in to your account or create a new one</p>
       </div>
-      <Tabs defaultValue="login" className="w-full" onValueChange={setActiveTab}>
+      <Tabs defaultValue="login" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="login">Login</TabsTrigger>
           <TabsTrigger value="register">Register</TabsTrigger>

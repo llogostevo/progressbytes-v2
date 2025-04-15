@@ -11,7 +11,7 @@ export function Pricing() {
             <div className="inline-block rounded-lg bg-primary px-3 py-1 text-sm text-primary-foreground">Pricing</div>
             <h2 className="text-3xl font-bold tracking-tighter md:text-4xl/tight">Simple, transparent pricing</h2>
             <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-              Choose the plan that's right for you and your students.
+              Choose the plan that&apos;s right for you and your students.
             </p>
           </div>
         </div>
