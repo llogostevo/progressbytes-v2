@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="32" height="32">
+  <style>
+    .text { font-family: monospace; font-weight: bold; }
+    .bracket { fill: #3b82f6; }
+    .slash { fill: #ef4444; }
+  </style>
+  <text x="10" y="70" class="text bracket" font-size="60">&lt;</text>
+  <text x="60" y="70" class="text slash" font-size="60">/&gt;</text>
+</svg> 
