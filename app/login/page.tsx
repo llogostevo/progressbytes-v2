@@ -3,9 +3,9 @@ import { LoginForm } from "./login-form"
 export default function LoginPage({
   searchParams,
 }: {
-  searchParams: { error?: string }
+  searchParams: { [key: string]: string | string[] | undefined }
 }) {
-  const errorMessage = getErrorMessage(searchParams.error)
+  const errorMessage = getErrorMessage(searchParams.error as string | undefined)
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-muted">
