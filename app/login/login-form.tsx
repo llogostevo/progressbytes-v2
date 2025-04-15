@@ -8,20 +8,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Suspense } from 'react'
 
 export function LoginForm() {
-  const searchParams = useSearchParams()
-  const error = searchParams.get('error')
-  
-  const errorMessage = getErrorMessage(error)
-
   return (
     <div className="space-y-4">
-      {errorMessage && (
-        <div className="p-3 text-sm text-red-500 bg-red-50 rounded-md">
-          {errorMessage}
-        </div>
-      )}
+      <Suspense fallback={null}>
+        <ErrorDisplay />
+      </Suspense>
       <Tabs defaultValue="login" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="login">Login</TabsTrigger>
@@ -128,6 +122,21 @@ export function LoginForm() {
         </Link>
         .
       </p>
+    </div>
+  )
+}
+
+function ErrorDisplay() {
+  const searchParams = useSearchParams()
+  const error = searchParams.get('error')
+  
+  const errorMessage = getErrorMessage(error)
+  
+  if (!errorMessage) return null
+  
+  return (
+    <div className="p-3 text-sm text-red-500 bg-red-50 rounded-md">
+      {errorMessage}
     </div>
   )
 }
