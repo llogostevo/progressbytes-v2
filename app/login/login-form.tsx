@@ -2,7 +2,7 @@
 
 // import { useState } from "react"
 import { login, signup } from './actions'
-
+import { useSearchParams } from 'next/navigation'
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,10 +10,18 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export function LoginForm() {
-  // const [activeTab, setActiveTab] = useState("login")
+  const searchParams = useSearchParams()
+  const error = searchParams.get('error')
+  
+  const errorMessage = getErrorMessage(error)
 
   return (
     <div className="space-y-4">
+      {errorMessage && (
+        <div className="p-3 text-sm text-red-500 bg-red-50 rounded-md">
+          {errorMessage}
+        </div>
+      )}
       <Tabs defaultValue="login" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="login">Login</TabsTrigger>
@@ -122,4 +130,19 @@ export function LoginForm() {
       </p>
     </div>
   )
+}
+
+function getErrorMessage(error: string | null) {
+  if (!error) return null
+  
+  switch (error) {
+    case 'missing-fields':
+      return 'Email and password are required'
+    case 'passwords-dont-match':
+      return 'Passwords do not match'
+    case 'Invalid login credentials':
+      return 'Invalid email or password'
+    default:
+      return 'An error occurred. Please try again.'
+  }
 }
