@@ -31,7 +31,7 @@ export default function Home() {
               <div className="flex-1">
                 <h3 className="font-medium text-emerald-800">Free Version</h3>
                 <p className="text-sm text-emerald-700">
-                  You're using the free version with self-assessment. Upgrade to get AI-powered feedback.
+                  You&apos;re using the free version with self-assessment. Upgrade to get AI-powered feedback.
                 </p>
               </div>
               <div className="mt-3 sm:mt-0">

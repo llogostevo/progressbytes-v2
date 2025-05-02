@@ -1,9 +1,8 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import type { Topic } from "@/lib/types"
 import Link from "next/link"
-import { ArrowRight, Clock } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import React from "react"
 
 interface TopicCardProps {

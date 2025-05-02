@@ -128,7 +128,7 @@ export default function QuestionPage() {
       }
     } else {
       return {
-        feedback: "Great answer! You've covered the key points and demonstrated good understanding.",
+        feedback: "Great answer! You&apos;ve covered the key points and demonstrated good understanding.",
         score: "green" as ScoreType,
       }
     }

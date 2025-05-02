@@ -79,7 +79,7 @@ export default function ProgressPage() {
                 <div>
                   <h3 className="font-medium text-emerald-800">Free Version</h3>
                   <p className="text-sm text-emerald-700">
-                    You're using the free version with self-assessment. Upgrade to get AI-powered feedback and detailed
+                    You&apos;re using the free version with self-assessment. Upgrade to get AI-powered feedback and detailed
                     analytics.
                   </p>
                 </div>
@@ -100,7 +100,7 @@ export default function ProgressPage() {
             <CardHeader>
               <CardTitle>No Progress Yet</CardTitle>
               <CardDescription>
-                You haven't answered any questions yet. Start a quiz to see your progress.
+                You haven&apos;t answered any questions yet. Start a quiz to see your progress.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -115,7 +115,7 @@ export default function ProgressPage() {
               <CardHeader>
                 <CardTitle>Overall Performance</CardTitle>
                 <CardDescription>
-                  You've answered {totalAnswers} question{totalAnswers !== 1 ? "s" : ""}
+                  You&apos;ve answered {totalAnswers} question{totalAnswers !== 1 ? "s" : ""}
                 </CardDescription>
               </CardHeader>
               <CardContent>

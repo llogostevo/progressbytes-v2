@@ -80,17 +80,6 @@ export default function RevisitPage() {
     {} as Record<string, Answer[]>,
   )
 
-  const getScoreIcon = (score: ScoreType) => {
-    switch (score) {
-      case "green":
-        return <CheckCircle className="h-4 w-4 text-emerald-500" />
-      case "amber":
-        return <AlertTriangle className="h-4 w-4 text-amber-500" />
-      case "red":
-        return <AlertCircle className="h-4 w-4 text-red-500" />
-    }
-  }
-
   const getScoreLabel = (score: ScoreType) => {
     switch (score) {
       case "green":
