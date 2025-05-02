@@ -105,7 +105,7 @@ export default function ComingSoonPage() {
             </CardFooter>
           </Card>
         ) : (
-          <Card>
+          <Card className="border-0 shadow-sm">
             <CardHeader className="space-y-1">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-6 w-6 text-amber-500" />
@@ -115,8 +115,8 @@ export default function ComingSoonPage() {
                 Our AI-powered feedback system is currently in development and will be available soon.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="bg-amber-50 border border-amber-200 rounded-md p-4 mb-4">
+            <CardContent className="space-y-6">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-5">
                 <h3 className="font-medium text-amber-800 mb-2">Want to know when it's available?</h3>
                 <p className="text-sm text-amber-700">
                   Leave your details below and we'll notify you as soon as our AI feedback feature is ready.
@@ -125,65 +125,72 @@ export default function ComingSoonPage() {
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
+                  <Label htmlFor="email" className="text-sm font-medium">Email Address</Label>
                   <Input
                     id="email"
                     type="email"
                     placeholder="your.email@example.com"
                     onChange={(e) => handleChange("email", e.target.value)}
+                    className="h-10"
                   />
                   {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
                 </div>
 
                 <div className="space-y-2">
-                  <Label>User Type</Label>
-                  <RadioGroup
-                    defaultValue={formData.userType}
-                    onValueChange={(value) => handleChange("userType", value)}
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="teacher" id="teacher" />
-                      <Label htmlFor="teacher">Teacher</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="student" id="student" />
-                      <Label htmlFor="student">Student</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="other" id="other" />
-                      <Label htmlFor="other">Other</Label>
-                    </div>
-                  </RadioGroup>
+                  <Label className="text-sm font-medium">User Type</Label>
+                  <div className="ml-2 mt-2">
+                    <RadioGroup
+                      defaultValue={formData.userType}
+                      onValueChange={(value) => handleChange("userType", value)}
+                      className="space-y-0"
+                    >
+                      <div className="flex items-center space-x-2 group">
+                        <RadioGroupItem value="teacher" id="teacher" className="border-muted-foreground text-muted-foreground group-data-[state=checked]:border-black group-data-[state=checked]:text-black" />
+                        <Label htmlFor="teacher" className="text-sm text-muted-foreground group-data-[state=checked]:text-black">Teacher</Label>
+                      </div>
+                      <div className="flex items-center space-x-2 group">
+                        <RadioGroupItem value="student" id="student" className="border-muted-foreground text-muted-foreground group-data-[state=checked]:border-black group-data-[state=checked]:text-black" />
+                        <Label htmlFor="student" className="text-sm text-muted-foreground group-data-[state=checked]:text-black">Student</Label>
+                      </div>
+                      <div className="flex items-center space-x-2 group">
+                        <RadioGroupItem value="other" id="other" className="border-muted-foreground text-muted-foreground group-data-[state=checked]:border-black group-data-[state=checked]:text-black" />
+                        <Label htmlFor="other" className="text-sm text-muted-foreground group-data-[state=checked]:text-black">Other</Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
                   {errors.userType && <p className="text-sm text-red-500">{errors.userType}</p>}
                 </div>
 
                 <div className="space-y-2">
-                  <Label>When will you be sitting your GCSE?</Label>
-                  <RadioGroup
-                    defaultValue={formData.examYear}
-                    onValueChange={(value) => handleChange("examYear", value)}
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="2025" id="2025" />
-                      <Label htmlFor="2025">2025</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="2026" id="2026" />
-                      <Label htmlFor="2026">2026</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="2027" id="2027" />
-                      <Label htmlFor="2027">2027</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="not-applicable" id="not-applicable" />
-                      <Label htmlFor="not-applicable">Not Applicable</Label>
-                    </div>
-                  </RadioGroup>
+                  <Label className="text-sm font-medium">When will you be sitting your GCSE?</Label>
+                  <div className="ml-2 mt-2">
+                    <RadioGroup
+                      defaultValue={formData.examYear}
+                      onValueChange={(value) => handleChange("examYear", value)}
+                      className="space-y-0"
+                    >
+                      <div className="flex items-center space-x-2 group">
+                        <RadioGroupItem value="2025" id="2025" className="border-muted-foreground text-muted-foreground group-data-[state=checked]:border-black group-data-[state=checked]:text-black" />
+                        <Label htmlFor="2025" className="text-sm text-muted-foreground group-data-[state=checked]:text-black">2025</Label>
+                      </div>
+                      <div className="flex items-center space-x-2 group">
+                        <RadioGroupItem value="2026" id="2026" className="border-muted-foreground text-muted-foreground group-data-[state=checked]:border-black group-data-[state=checked]:text-black" />
+                        <Label htmlFor="2026" className="text-sm text-muted-foreground group-data-[state=checked]:text-black">2026</Label>
+                      </div>
+                      <div className="flex items-center space-x-2 group">
+                        <RadioGroupItem value="2027" id="2027" className="border-muted-foreground text-muted-foreground group-data-[state=checked]:border-black group-data-[state=checked]:text-black" />
+                        <Label htmlFor="2027" className="text-sm text-muted-foreground group-data-[state=checked]:text-black">2027</Label>
+                      </div>
+                      <div className="flex items-center space-x-2 group">
+                        <RadioGroupItem value="not-applicable" id="not-applicable" className="border-muted-foreground text-muted-foreground group-data-[state=checked]:border-black group-data-[state=checked]:text-black" />
+                        <Label htmlFor="not-applicable" className="text-sm text-muted-foreground group-data-[state=checked]:text-black">Not Applicable</Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
                   {errors.examYear && <p className="text-sm text-red-500">{errors.examYear}</p>}
                 </div>
 
-                <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700">
+                <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 h-10">
                   Notify Me When Available
                 </Button>
               </form>
