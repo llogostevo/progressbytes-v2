@@ -1,9 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { CheckCircle, AlertTriangle, AlertCircle } from "lucide-react"
 import type { ScoreType } from "@/lib/types"
+import { AmberButton } from "./self-assessment/amber-button"
+import { GreenButton } from "./self-assessment/green-button"
+import { RedButton } from "./self-assessment/red-button"
 
 interface SelfAssessmentProps {
   onSelectScore: (score: ScoreType) => void
@@ -22,36 +23,22 @@ export function SelfAssessment({ onSelectScore }: SelfAssessmentProps) {
       <div className="p-4 bg-slate-50 border border-slate-200 rounded-md">
         <h3 className="font-medium mb-3">Self-Assessment</h3>
         <p className="text-sm text-muted-foreground mb-4">
-          Compare your answer with the model answer above and rate your understanding:
+          Compare your answer with the model answer above and rate your understanding
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-3">
-          <Button
-            variant={selectedScore === "green" ? "default" : "outline"}
-            className={selectedScore === "green" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <GreenButton
+            isSelected={selectedScore === "green"}
             onClick={() => handleScoreSelect("green")}
-          >
-            <CheckCircle className="mr-2 h-4 w-4" />
-            Green (Fully Understood)
-          </Button>
-
-          <Button
-            variant={selectedScore === "amber" ? "default" : "outline"}
-            className={selectedScore === "amber" ? "bg-amber-500 hover:bg-amber-600" : ""}
+          />
+          <AmberButton
+            isSelected={selectedScore === "amber"}
             onClick={() => handleScoreSelect("amber")}
-          >
-            <AlertTriangle className="mr-2 h-4 w-4" />
-            Amber (Partially Understood)
-          </Button>
-
-          <Button
-            variant={selectedScore === "red" ? "default" : "outline"}
-            className={selectedScore === "red" ? "bg-red-500 hover:bg-red-600" : ""}
+          />
+          <RedButton
+            isSelected={selectedScore === "red"}
             onClick={() => handleScoreSelect("red")}
-          >
-            <AlertCircle className="mr-2 h-4 w-4" />
-            Red (Need More Practice)
-          </Button>
+          />
         </div>
       </div>
     </div>

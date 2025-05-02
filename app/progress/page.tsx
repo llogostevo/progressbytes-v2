@@ -294,8 +294,27 @@ export default function ProgressPage() {
                                 <h3 className="text-sm font-medium mb-2">Self-Assessment:</h3>
                                 <p className="text-sm text-muted-foreground mb-3">
                                   You marked this as{" "}
-                                  <Badge variant="outline" className="ml-1">
-                                    {answer.score}
+                                  <Badge className={`inline-flex items-center gap-1 px-2 py-0.5 ${
+                                    answer.score === "green" 
+                                      ? "bg-emerald-500 hover:bg-emerald-500 text-white" 
+                                      : answer.score === "amber" 
+                                        ? "bg-amber-500 hover:bg-amber-500 text-white" 
+                                        : "bg-red-500 hover:bg-red-500 text-white"
+                                  }`}>
+                                    {answer.score === "green" ? (
+                                      <CheckCircle className="h-3 w-3" />
+                                    ) : answer.score === "amber" ? (
+                                      <AlertTriangle className="h-3 w-3" />
+                                    ) : (
+                                      <AlertCircle className="h-3 w-3" />
+                                    )}
+                                    <span className="text-xs">
+                                      {answer.score === "green" 
+                                        ? "Fully Understood" 
+                                        : answer.score === "amber" 
+                                          ? "Partially Understood" 
+                                          : "Need More Practice"}
+                                    </span>
                                   </Badge>
                                 </p>
                               </>

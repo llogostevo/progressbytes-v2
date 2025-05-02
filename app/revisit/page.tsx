@@ -182,8 +182,20 @@ export default function RevisitPage() {
                             <CardHeader className="pb-2">
                               <div className="flex items-center justify-between">
                                 <CardTitle className="text-base">{question.question_text}</CardTitle>
-                                <Badge className="flex items-center gap-1">
-                                  {getScoreIcon(answer.score)}
+                                <Badge className={`flex items-center gap-1 ${
+                                  answer.score === "green" 
+                                    ? "bg-emerald-500 hover:bg-emerald-500 text-white" 
+                                    : answer.score === "amber" 
+                                      ? "bg-amber-500 hover:bg-amber-500 text-white" 
+                                      : "bg-red-500 hover:bg-red-500 text-white"
+                                }`}>
+                                  {answer.score === "green" ? (
+                                    <CheckCircle className="h-4 w-4" />
+                                  ) : answer.score === "amber" ? (
+                                    <AlertTriangle className="h-4 w-4" />
+                                  ) : (
+                                    <AlertCircle className="h-4 w-4" />
+                                  )}
                                   <span>{getScoreLabel(answer.score)}</span>
                                 </Badge>
                               </div>
