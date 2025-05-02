@@ -292,7 +292,7 @@ export default function ProgressPage() {
                             ) : (
                               <>
                                 <h3 className="text-sm font-medium mb-2">Self-Assessment:</h3>
-                                <p className="text-sm text-muted-foreground mb-3">
+                                <div className="text-sm text-muted-foreground mb-3">
                                   You marked this as{" "}
                                   <Badge className={`inline-flex items-center gap-1 px-2 py-0.5 ${
                                     answer.score === "green" 
@@ -316,7 +316,7 @@ export default function ProgressPage() {
                                           : "Need More Practice"}
                                     </span>
                                   </Badge>
-                                </p>
+                                </div>
                               </>
                             )}
 
