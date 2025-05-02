@@ -109,7 +109,7 @@ export default function PrivacyPolicyMain() {
           <p>• Object to or restrict processing</p>
           <p>• Data portability</p>
           <p>• Withdraw consent at any time</p>
-          <p>To exercise these rights, contact us at [Your Email Address].</p>
+          <p>To exercise these rights, contact us at progressbytes@gmail.com</p>
         </div>
       ),
     },

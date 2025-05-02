@@ -55,7 +55,7 @@ export default function PrivacyPolicyStudent() {
                 icon={<FileCheck />}
                 title="Your Rights"
                 content={
-                  <p>You can ask to see your data, change it, or delete it by emailing us at [Your Email Address].</p>
+                  <p>You can ask to see your data, change it, or delete it by emailing us at progressbytes@gmail.com</p>
                 }
               />
 
