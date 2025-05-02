@@ -11,6 +11,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { ArrowLeft, CheckCircle, Sparkles } from "lucide-react"
 import Link from "next/link"
 import { z } from "zod"
+import { createClient } from "@/utils/supabase/client"
+import { toast } from "sonner"
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -31,20 +33,49 @@ export default function ComingSoonPage() {
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setIsSubmitting(true)
 
     try {
       // Validate form data
       formSchema.parse(formData)
 
-      // In a real app, this would send the data to a server
-      console.log("Form submitted:", formData)
+      // Create Supabase client
+      const supabase = createClient()
+
+      // Log the data we're about to send
+      console.log('Submitting form data:', formData)
+
+      // Insert data into Supabase
+      const { data, error } = await supabase
+        .from('ai_upgrade')
+        .insert([
+          {
+            email: formData.email,
+            user_type: formData.userType,
+            exam_year: formData.examYear,
+            created_at: new Date().toISOString(),
+          },
+        ])
+
+      if (error) {
+        console.error('Supabase error:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+          error: error
+        })
+        throw new Error(`Supabase error: ${error.message}`)
+      }
 
       // Show success message
       setIsSubmitted(true)
       setErrors({})
+      toast.success('Thank you for your interest! We will notify you when AI feedback becomes available.')
     } catch (error) {
       if (error instanceof z.ZodError) {
         // Convert Zod errors to a simple object
@@ -55,7 +86,15 @@ export default function ComingSoonPage() {
           }
         })
         setErrors(formattedErrors)
+      } else {
+        // Handle other errors
+        console.error('Error submitting form:', error)
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred'
+        setErrors({ submit: errorMessage })
+        toast.error(`Failed to submit form: ${errorMessage}`)
       }
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -190,7 +229,7 @@ export default function ComingSoonPage() {
                   {errors.examYear && <p className="text-sm text-red-500">{errors.examYear}</p>}
                 </div>
 
-                <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 h-10">
+                <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 h-10" disabled={isSubmitting}>
                   Notify Me When Available
                 </Button>
               </form>
