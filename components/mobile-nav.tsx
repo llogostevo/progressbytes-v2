@@ -28,11 +28,11 @@ export function MobileNav() {
       href: "/revisit",
       icon: BookOpen,
     },
-    {
-      name: isLoggedIn ? "Logout" : "Login",
-      href: "/login",
-      icon: isLoggedIn ? LogOut : LogIn,
-    },
+    // {
+    //   name: isLoggedIn ? "Logout" : "Login",
+    //   href: "/login",
+    //   icon: isLoggedIn ? LogOut : LogIn,
+    // },
   ]
 
   const toggleMenu = () => {

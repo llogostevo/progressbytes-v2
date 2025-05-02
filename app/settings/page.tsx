@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
@@ -8,14 +8,33 @@ import { Label } from "@/components/ui/label"
 import { currentUser, togglePaidStatus } from "@/lib/data"
 import { ArrowLeft, Sparkles } from "lucide-react"
 import Link from "next/link"
+import { createClient } from "@/utils/supabase/client"
+import { redirect } from "next/navigation"
 
 export default function SettingsPage() {
   const [hasPaid, setHasPaid] = useState(currentUser.has_paid)
+
+  redirect('/')
+  
+  const supabase = createClient()
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: user, error } = await supabase.auth.getUser()
+      if (error) {
+        redirect('/')
+      }
+    }
+
+    fetchUser()
+  }, [])
+  
 
   const handleTogglePaidStatus = () => {
     const newStatus = togglePaidStatus()
     setHasPaid(newStatus)
   }
+
 
   return (
     <div className="container mx-auto px-4 py-8">

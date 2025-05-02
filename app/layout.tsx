@@ -4,6 +4,7 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { MobileNav } from "@/components/mobile-nav"
 import { Toaster } from "@/components/ui/sonner"
+import { Footer } from "@/components/footer"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -28,7 +29,8 @@ export default function RootLayout({
       <body className={inter.className}>
         <MobileNav />
         <main className="min-h-screen bg-gray-50">{children}</main>
-        <Toaster />
+        <Footer />
+        <Toaster position="top-right" richColors />
       </body>
     </html>
   )
