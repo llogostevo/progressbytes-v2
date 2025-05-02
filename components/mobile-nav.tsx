@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, BarChart2, BookOpen, Menu, X, LogIn, LogOut } from "lucide-react"
+import { Home, BarChart2, BookOpen, Menu, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button"
 export function MobileNav() {
   const pathname = usePathname()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const isLoggedIn = false // TODO: Replace with actual auth state
 
   const navItems = [
     {
@@ -28,11 +27,6 @@ export function MobileNav() {
       href: "/revisit",
       icon: BookOpen,
     },
-    // {
-    //   name: isLoggedIn ? "Logout" : "Login",
-    //   href: "/login",
-    //   icon: isLoggedIn ? LogOut : LogIn,
-    // },
   ]
 
   const toggleMenu = () => {

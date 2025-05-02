@@ -47,7 +47,7 @@ export function RedButton({ isSelected, onClick }: RedButtonProps) {
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          <p>You'll prioritize this topic for immediate review</p>
+          <p>You&apos;ll prioritize this topic for immediate review</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

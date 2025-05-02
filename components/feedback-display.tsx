@@ -47,7 +47,7 @@ export function FeedbackDisplay({ answer }: FeedbackDisplayProps) {
           {ai_feedback && <p>{ai_feedback}</p>}
           {!ai_feedback && self_assessed && (
             <p className="text-sm text-muted-foreground">
-              You've marked this answer as <strong>{config.title.toLowerCase()}</strong>. Keep practicing to improve
+              You&apos;ve marked this answer as <strong>{config.title.toLowerCase()}</strong>. Keep practicing to improve
               your understanding.
             </p>
           )}

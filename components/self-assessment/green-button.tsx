@@ -47,7 +47,7 @@ export function GreenButton({ isSelected, onClick }: GreenButtonProps) {
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          <p>You'll revisit this topic occasionally for reinforcement</p>
+          <p>You&apos;ll revisit this topic occasionally for reinforcement</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

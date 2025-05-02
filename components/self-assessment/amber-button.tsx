@@ -47,7 +47,7 @@ export function AmberButton({ isSelected, onClick }: AmberButtonProps) {
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          <p>You'll revisit this topic regularly to improve understanding</p>
+          <p>You&apos;ll revisit this topic regularly to improve understanding</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

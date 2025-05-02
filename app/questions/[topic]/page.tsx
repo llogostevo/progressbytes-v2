@@ -1,26 +1,25 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams } from "next/navigation"
 import { QuestionForm } from "@/components/question-form"
 import { FeedbackDisplay } from "@/components/feedback-display"
 import { SelfAssessment } from "@/components/self-assessment"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { getRandomQuestionForTopic, getTopicBySlug, saveAnswer, currentUser } from "@/lib/data"
-import type { Question, Answer, ScoreType } from "@/lib/types"
+import type { Question, Answer, ScoreType, Topic } from "@/lib/types"
 import { ArrowLeft, RefreshCw, Lock } from "lucide-react"
 import Link from "next/link"
 
 export default function QuestionPage() {
   const params = useParams()
-  const router = useRouter()
   const topicSlug = params.topic as string
 
   const [question, setQuestion] = useState<Question | null>(null)
   const [answer, setAnswer] = useState<Answer | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [topic, setTopic] = useState<any>(null)
+  const [topic, setTopic] = useState<Topic | null>(null)
   const [selfAssessmentScore, setSelfAssessmentScore] = useState<ScoreType | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -29,7 +28,7 @@ export default function QuestionPage() {
   useEffect(() => {
     try {
       const currentTopic = getTopicBySlug(topicSlug)
-      setTopic(currentTopic)
+      setTopic(currentTopic || null)
 
       if (currentTopic) {
         const newQuestion = getRandomQuestionForTopic(topicSlug)
@@ -189,7 +188,7 @@ export default function QuestionPage() {
                 <div>
                   <h3 className="font-medium text-emerald-800">Free Version</h3>
                   <p className="text-sm text-emerald-700">
-                    You're using the free version. Upgrade to get AI-powered feedback and personalized recommendations.
+                    You&apos;re using the free version. Upgrade to get AI-powered feedback and personalized recommendations.
                   </p>
                 </div>
                 <div className="ml-auto">

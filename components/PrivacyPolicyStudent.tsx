@@ -16,7 +16,7 @@ export default function PrivacyPolicyStudent() {
           </CardHeader>
           <CardContent className="p-8">
             <p className="text-slate-600 leading-relaxed mb-8 text-lg">
-              This page explains how we protect your data when you use this app — whether you're at school, home, or
+              This page explains how we protect your data when you use this app — whether you&apos;re at school, home, or
               somewhere else. You can use some parts of the app without logging in, and we collect as little info as
               possible.
             </p>
@@ -27,7 +27,7 @@ export default function PrivacyPolicyStudent() {
                 title="What We Collect"
                 content={
                   <div className="space-y-3">
-                    <p>• If you don't log in: page visits, clicks, device type, and cookies</p>
+                    <p>• If you don&apos;t log in: page visits, clicks, device type, and cookies</p>
                     <p>• If you log in: name or nickname, email, saved answers or progress</p>
                   </div>
                 }
@@ -41,7 +41,7 @@ export default function PrivacyPolicyStudent() {
 
               <PolicySection
                 icon={<Server />}
-                title="Where It's Stored"
+                title="Where It&apos;s Stored"
                 content={<p>We use Supabase to store data safely in Europe (Germany). They follow all GDPR rules.</p>}
               />
 

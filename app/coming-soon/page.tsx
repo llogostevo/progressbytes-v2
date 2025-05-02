@@ -50,7 +50,7 @@ export default function ComingSoonPage() {
       console.log('Submitting form data:', formData)
 
       // Insert data into Supabase
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('ai_upgrade')
         .insert([
           {
@@ -128,7 +128,7 @@ export default function ComingSoonPage() {
                 Thank You!
               </CardTitle>
               <CardDescription className="text-emerald-700">
-                We've received your information and will notify you when AI feedback becomes available.
+                We&apos;ve received your information and will notify you when AI feedback becomes available.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -158,7 +158,7 @@ export default function ComingSoonPage() {
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-5">
                 <h3 className="font-medium text-amber-800 mb-2">Want to know when it's available?</h3>
                 <p className="text-sm text-amber-700">
-                  Leave your details below and we'll notify you as soon as our AI feedback feature is ready.
+                  Leave your details below and we&apos;ll notify you as soon as our AI feedback feature is ready.
                 </p>
               </div>
 

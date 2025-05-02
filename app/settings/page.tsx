@@ -20,14 +20,14 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const { data: user, error } = await supabase.auth.getUser()
+      const { error } = await supabase.auth.getUser()
       if (error) {
         redirect('/')
       }
     }
 
     fetchUser()
-  }, [])
+  }, [supabase.auth])
   
 
   const handleTogglePaidStatus = () => {
