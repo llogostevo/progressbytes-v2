@@ -61,7 +61,7 @@ export const topics: Topic[] = [
     name: "Computer Networks",
     description: "Explore network types, topologies, hardware, protocols, and internet communication",
     icon: Network,
-    questionCount: 43,
+    questionCount: 72,
     unit: 1,
     disabled: false,
     questions: [
