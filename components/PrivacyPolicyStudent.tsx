@@ -1,67 +1,98 @@
+import { Shield, Eye, Server, Users, FileCheck, Lock } from "lucide-react"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
+
 export default function PrivacyPolicyStudent() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-sm p-8">
-          <div className="space-y-8">
-            <div className="space-y-4">
-              <h1 className="text-3xl font-bold text-gray-900">Student-Friendly Privacy Policy</h1>
-              <p className="text-gray-500">Last updated: {new Date().toLocaleDateString()}</p>
-              <p className="text-gray-700 leading-relaxed">
-                This page explains how we protect your data when you use this app — whether you're at
-                school, home, or somewhere else. You can use some parts of the app without logging in,
-                and we collect as little info as possible.
-              </p>
+    <div className="min-h-screen bg-slate-50 py-12">
+      <div className="container mx-auto px-4">
+        <Card className="max-w-3xl mx-auto border-none shadow-sm">
+          <CardHeader className="bg-white p-8 border-b">
+            <div className="flex items-center gap-3 mb-2">
+              <Shield className="h-8 w-8 text-emerald-600" />
+              <h1 className="text-3xl font-bold text-slate-900">Student-Friendly Privacy Policy</h1>
             </div>
+            <p className="text-slate-500">Last updated: 2nd May 2025</p>
+          </CardHeader>
+          <CardContent className="p-8">
+            <p className="text-slate-600 leading-relaxed mb-8 text-lg">
+              This page explains how we protect your data when you use this app — whether you're at school, home, or
+              somewhere else. You can use some parts of the app without logging in, and we collect as little info as
+              possible.
+            </p>
 
-            <div className="space-y-6">
-              <section className="space-y-2">
-                <h2 className="text-2xl font-semibold text-emerald-600">What We Collect</h2>
-                <ul className="list-disc ml-6 space-y-1 text-gray-700">
-                  <li>If you don't log in: page visits, clicks, device type, and cookies</li>
-                  <li>If you log in: name or nickname, email, saved answers or progress</li>
-                </ul>
-              </section>
+            <div className="space-y-8">
+              <PolicySection
+                icon={<Eye />}
+                title="What We Collect"
+                content={
+                  <div className="space-y-3">
+                    <p>If you don't log in: page visits, clicks, device type, and cookies</p>
+                    <p>If you log in: name or nickname, email, saved answers or progress</p>
+                  </div>
+                }
+              />
 
-              <section className="space-y-2">
-                <h2 className="text-2xl font-semibold text-emerald-600">Why We Collect It</h2>
-                <p className="text-gray-700 leading-relaxed">
-                  To help you use the app, save your work, and make the app better for everyone.
-                </p>
-              </section>
+              <PolicySection
+                icon={<FileCheck />}
+                title="Why We Collect It"
+                content={<p>To help you use the app, save your work, and make the app better for everyone.</p>}
+              />
 
-              <section className="space-y-2">
-                <h2 className="text-2xl font-semibold text-emerald-600">Where It's Stored</h2>
-                <p className="text-gray-700 leading-relaxed">
-                  We use Supabase to store data safely in Europe (Germany). They follow all GDPR rules.
-                </p>
-              </section>
+              <PolicySection
+                icon={<Server />}
+                title="Where It's Stored"
+                content={<p>We use Supabase to store data safely in Europe (Germany). They follow all GDPR rules.</p>}
+              />
 
-              <section className="space-y-2">
-                <h2 className="text-2xl font-semibold text-emerald-600">Who Can See It</h2>
-                <p className="text-gray-700 leading-relaxed">
-                  Only you, the app team (us), and trusted services like Supabase can see your data.
-                </p>
-              </section>
+              <PolicySection
+                icon={<Users />}
+                title="Who Can See It"
+                content={<p>Only you, the app team (us), and trusted services like Supabase can see your data.</p>}
+              />
 
-              <section className="space-y-2">
-                <h2 className="text-2xl font-semibold text-emerald-600">Your Rights</h2>
-                <p className="text-gray-700 leading-relaxed">
-                  You can ask to see your data, change it, or delete it by emailing us at [Your Email Address].
-                </p>
-              </section>
+              <PolicySection
+                icon={<FileCheck />}
+                title="Your Rights"
+                content={
+                  <p>You can ask to see your data, change it, or delete it by emailing us at [Your Email Address].</p>
+                }
+              />
 
-              <section className="space-y-2">
-                <h2 className="text-2xl font-semibold text-emerald-600">Staying Safe</h2>
-                <p className="text-gray-700 leading-relaxed">
-                  We do our best to keep your info safe and never sell your data to anyone.
-                </p>
-              </section>
+              <PolicySection
+                icon={<Lock />}
+                title="Staying Safe"
+                content={<p>We do our best to keep your info safe and never sell your data to anyone.</p>}
+              />
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
-  );
+  )
 }
-  
+
+function PolicySection({ 
+  icon, 
+  title, 
+  content 
+}: { 
+  icon: React.ReactNode
+  title: string
+  content: React.ReactNode 
+}) {
+  return (
+    <div className="group">
+      <div className="flex items-center gap-3 mb-3">
+        <div className="p-2 rounded-full bg-emerald-100 text-emerald-700 transition-all duration-300 group-hover:bg-emerald-600 group-hover:text-white">
+          {icon}
+        </div>
+        <h2 className="text-xl font-semibold text-emerald-700 group-hover:text-emerald-600 transition-colors duration-300">
+          {title}
+        </h2>
+      </div>
+      <div className="ml-12 text-slate-600 leading-relaxed">{content}</div>
+      <Separator className="mt-6 opacity-30" />
+    </div>
+  )
+}
