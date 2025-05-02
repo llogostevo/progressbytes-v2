@@ -156,7 +156,7 @@ export default function ComingSoonPage() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-5">
-                <h3 className="font-medium text-amber-800 mb-2">Want to know when it's available?</h3>
+                <h3 className="font-medium text-amber-800 mb-2">Want to know when it&apos;s available?</h3>
                 <p className="text-sm text-amber-700">
                   Leave your details below and we&apos;ll notify you as soon as our AI feedback feature is ready.
                 </p>
