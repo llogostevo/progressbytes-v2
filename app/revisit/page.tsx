@@ -114,7 +114,7 @@ export default function RevisitPage() {
           <p className="text-muted-foreground">
             {topicParam
               ? `Review ${activeTab !== "all" ? activeTab + " " : ""}questions from ${topics.find((t) => t.slug === topicParam)?.name || "this topic"}`
-              : `Review ${activeTab !== "all" ? activeTab + " " : ""}questions you&apos;ve previously answered`}
+              : `Review ${activeTab !== "all" ? activeTab + " " : ""}questions you've previously answered`}
           </p>
         </div>
 
@@ -140,7 +140,7 @@ export default function RevisitPage() {
                     <CardTitle>No Questions Found</CardTitle>
                     <CardDescription>
                       {tab === "all"
-                        ? "You haven&apos;t answered any questions yet."
+                        ? `You haven't answered any questions yet.`
                         : `You don't have any ${tab} rated questions.`}
                     </CardDescription>
                   </CardHeader>
