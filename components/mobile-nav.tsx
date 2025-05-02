@@ -1,50 +1,103 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
-import { Menu, X } from "lucide-react"
+import { usePathname } from "next/navigation"
+import { Home, BarChart2, BookOpen, Menu, X, LogIn, LogOut } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 export function MobileNav() {
-  const [open, setOpen] = useState(false)
+  const pathname = usePathname()
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const isLoggedIn = false // TODO: Replace with actual auth state
+
+  const navItems = [
+    {
+      name: "Home",
+      href: "/",
+      icon: Home,
+    },
+    {
+      name: "Progress",
+      href: "/progress",
+      icon: BarChart2,
+    },
+    {
+      name: "Revisit",
+      href: "/revisit",
+      icon: BookOpen,
+    },
+    {
+      name: isLoggedIn ? "Logout" : "Login",
+      href: "/login",
+      icon: isLoggedIn ? LogOut : LogIn,
+    },
+  ]
+
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen)
+  }
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="md:hidden">
-          <Menu className="h-5 w-5" />
-          <span className="sr-only">Toggle menu</span>
-        </Button>
-      </SheetTrigger>
-      <SheetContent side="right" className="flex flex-col">
-        <div className="flex items-center justify-between">
-          <Link href="/" className="font-bold text-xl" onClick={() => setOpen(false)}>
-            ProgressBytes
+    <div className="sticky top-0 z-10 w-full bg-white border-b border-gray-200 shadow-sm">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
+          <Link href="/" className="flex items-center">
+            <span className="text-xl font-bold text-emerald-600">ProgressBytes Quiz</span>
           </Link>
-          <Button variant="ghost" size="icon" onClick={() => setOpen(false)}>
-            <X className="h-5 w-5" />
-            <span className="sr-only">Close menu</span>
-          </Button>
+
+          {/* Mobile menu button */}
+          <div className="md:hidden">
+            <Button variant="ghost" size="icon" onClick={toggleMenu} aria-label="Toggle menu">
+              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </Button>
+          </div>
+
+          {/* Desktop navigation */}
+          <nav className="hidden md:flex items-center space-x-4">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                  pathname === item.href
+                    ? "bg-emerald-100 text-emerald-700"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+                )}
+              >
+                <item.icon className="h-4 w-4 mr-2" />
+                {item.name}
+              </Link>
+            ))}
+          </nav>
         </div>
-        <nav className="flex flex-col gap-4 mt-8">
-          <Link href="#features" className="text-lg font-medium" onClick={() => setOpen(false)}>
-            Features
-          </Link>
-          <Link href="#pricing" className="text-lg font-medium" onClick={() => setOpen(false)}>
-            Pricing
-          </Link>
-          <Link href="#about" className="text-lg font-medium" onClick={() => setOpen(false)}>
-            About
-          </Link>
-          <Link href="#login" className="text-lg font-medium" onClick={() => setOpen(false)}>
-            Log in
-          </Link>
-          <Link href="#signup" className="text-lg font-medium" onClick={() => setOpen(false)}>
-            Sign up
-          </Link>
-        </nav>
-      </SheetContent>
-    </Sheet>
+      </div>
+
+      {/* Mobile navigation menu */}
+      {isMenuOpen && (
+        <div className="md:hidden">
+          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-b border-gray-200">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center px-3 py-3 text-base font-medium rounded-md transition-colors",
+                  pathname === item.href
+                    ? "bg-emerald-100 text-emerald-700"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+                )}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <item.icon className="h-5 w-5 mr-3" />
+                {item.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   )
 }

@@ -28,8 +28,8 @@ export function LoginForm() {
       {/* Tabbed interface for switching between login and register forms */}
       <Tabs defaultValue="login" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="login">Login</TabsTrigger>
-          <TabsTrigger value="register">Register</TabsTrigger>
+          <TabsTrigger value="login" className="data-[state=active]:text-emerald-800">Login</TabsTrigger>
+          <TabsTrigger value="register" className="data-[state=active]:text-emerald-800">Register</TabsTrigger>
         </TabsList>
         
         {/* Login Tab Content */}
@@ -38,23 +38,38 @@ export function LoginForm() {
           <form className="space-y-4">
             {/* Email Input Field */}
             <div className="space-y-2">
-              <Label htmlFor="login-email">Email</Label>
-              <Input id="login-email" name="login-email" placeholder="m@example.com" type="email" required />
+              <Label htmlFor="login-email" className="text-emerald-800">Email</Label>
+              <Input 
+                id="login-email" 
+                name="login-email" 
+                placeholder="m@example.com" 
+                type="email" 
+                required 
+              />
             </div>
 
             {/* Password Input Field with Forgot Password Link */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="login-password">Password</Label>
-                <Link href="/reset-password" className="text-xs text-muted-foreground hover:underline">
+                <Label htmlFor="login-password" className="text-emerald-800">Password</Label>
+                <Link href="/reset-password" className="text-xs text-emerald-600 hover:text-emerald-800 hover:underline">
                   Forgot password?
                 </Link>
               </div>
-              <Input id="login-password" name="login-password" type="password" required />
+              <Input 
+                id="login-password" 
+                name="login-password" 
+                type="password" 
+                required 
+              />
             </div>
 
             {/* Login Button - Calls the login server action */}
-            <Button formAction={login} className="w-full" type="submit">
+            <Button 
+              formAction={login} 
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white" 
+              type="submit"
+            >
               Sign In
             </Button>
           </form>
@@ -66,30 +81,55 @@ export function LoginForm() {
           <form className="space-y-4">
             {/* Email Input Field */}
             <div className="space-y-2">
-              <Label htmlFor="register-email">Email</Label>
-              <Input id="register-email" name="register-email" placeholder="m@example.com" type="email" required />
+              <Label htmlFor="register-email" className="text-emerald-800">Email</Label>
+              <Input 
+                id="register-email" 
+                name="register-email" 
+                placeholder="m@example.com" 
+                type="email" 
+                required 
+              />
             </div>
             
             {/* School Input Field */}
             <div className="space-y-2">
-              <Label htmlFor="register-school">School</Label>
-              <Input id="register-school" name="register-school" type="text" required />
+              <Label htmlFor="register-school" className="text-emerald-800">School</Label>
+              <Input 
+                id="register-school" 
+                name="register-school" 
+                type="text" 
+                required 
+              />
             </div>
             
             {/* Password Input Field */}
             <div className="space-y-2">
-              <Label htmlFor="register-password">Password</Label>
-              <Input id="register-password" name="register-password" type="password" required />
+              <Label htmlFor="register-password" className="text-emerald-800">Password</Label>
+              <Input 
+                id="register-password" 
+                name="register-password" 
+                type="password" 
+                required 
+              />
             </div>
             
             {/* Confirm Password Input Field */}
             <div className="space-y-2">
-              <Label htmlFor="register-confirm-password">Confirm Password</Label>
-              <Input id="register-confirm-password" name="register-confirm-password" type="password" required />
+              <Label htmlFor="register-confirm-password" className="text-emerald-800">Confirm Password</Label>
+              <Input 
+                id="register-confirm-password" 
+                name="register-confirm-password" 
+                type="password" 
+                required 
+              />
             </div>
             
             {/* Register Button - Calls the signup server action */}
-            <Button formAction={signup} className="w-full" type="submit">
+            <Button 
+              formAction={signup} 
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white" 
+              type="submit"
+            >
               Create Account
             </Button>
           </form>
@@ -106,11 +146,11 @@ export function LoginForm() {
       {/* Terms and Privacy Policy Links */}
       <p className="text-center text-xs text-muted-foreground">
         By signing up, you agree to our{" "}
-        <Link href="#" className="underline underline-offset-4 hover:text-primary">
+        <Link href="#" className="text-emerald-600 hover:text-emerald-800 hover:underline">
           Terms of Service
         </Link>{" "}
         and{" "}
-        <Link href="#" className="underline underline-offset-4 hover:text-primary">
+        <Link href="#" className="text-emerald-600 hover:text-emerald-800 hover:underline">
           Privacy Policy
         </Link>
         .
@@ -138,7 +178,7 @@ function ErrorDisplay() {
   
   // Display the error message in a red box
   return (
-    <div className="p-3 text-sm text-red-500 bg-red-50 rounded-md">
+    <div className="p-3 text-sm text-red-500 bg-red-50 border border-red-200 rounded-md">
       {errorMessage}
     </div>
   )
