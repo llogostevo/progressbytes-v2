@@ -13,18 +13,24 @@ export function Footer() {
               © {new Date().getFullYear()} ProgressBytes. All rights reserved.
             </p>
           </div>
-          <nav className="flex gap-4 sm:gap-6">
+          <nav className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
             <Link
-              href="#"
+              href="/privacy-policy"
               className="text-sm font-medium text-gray-600 hover:text-emerald-600 transition-colors"
             >
-              Terms
+              Privacy Policy
+            </Link>
+            <Link
+              href="/privacy-policy/student"
+              className="text-sm font-medium text-gray-600 hover:text-emerald-600 transition-colors"
+            >
+              Student Privacy
             </Link>
             <Link
               href="#"
               className="text-sm font-medium text-gray-600 hover:text-emerald-600 transition-colors"
             >
-              Privacy
+              Terms
             </Link>
             <Link
               href="#"
