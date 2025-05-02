@@ -11,6 +11,9 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "ProgressBytes Quiz",
   description: "Test your Computer Science knowledge with interactive quizzes",
+  icons: {
+    icon: "/favicon.svg",
+  },
 }
 
 export const viewport: Viewport = {

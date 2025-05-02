@@ -10,7 +10,8 @@ export function Footer() {
           <div className="flex items-center gap-2">
             <Laptop className="h-5 w-5 text-emerald-600" />
             <p className="text-sm text-gray-600">
-              © {new Date().getFullYear()} ProgressBytes. All rights reserved.
+              © {new Date().getFullYear()} ProgressBytes (developed by Lloyd Stevens). All rights reserved.
+
             </p>
           </div>
           <nav className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
@@ -26,7 +27,7 @@ export function Footer() {
             >
               Student Privacy
             </Link>
-            <Link
+            {/* <Link
               href="#"
               className="text-sm font-medium text-gray-600 hover:text-emerald-600 transition-colors"
             >
@@ -37,7 +38,7 @@ export function Footer() {
               className="text-sm font-medium text-gray-600 hover:text-emerald-600 transition-colors"
             >
               Contact
-            </Link>
+            </Link> */}
           </nav>
         </div>
       </div>

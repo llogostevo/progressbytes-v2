@@ -27,8 +27,8 @@ export default function PrivacyPolicyStudent() {
                 title="What We Collect"
                 content={
                   <div className="space-y-3">
-                    <p>If you don't log in: page visits, clicks, device type, and cookies</p>
-                    <p>If you log in: name or nickname, email, saved answers or progress</p>
+                    <p>• If you don't log in: page visits, clicks, device type, and cookies</p>
+                    <p>• If you log in: name or nickname, email, saved answers or progress</p>
                   </div>
                 }
               />

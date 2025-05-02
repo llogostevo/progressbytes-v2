@@ -15,7 +15,7 @@ export default function PrivacyPolicyMain() {
       id: "who-we-are",
       icon: <Shield />,
       title: "1. Who We Are",
-      content: 'This application is operated by [Your Name / Company Name] ("we", "us", or "our"). You can contact us at:\n [Your Email Address]',
+      content: 'This application is operated by ProgressBytes, a project developed and maintained by Lloyd Stevens (“we”, “us”, or “our”)',
     },
     {
       id: "data-collect",
