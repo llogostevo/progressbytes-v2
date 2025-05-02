@@ -126,7 +126,7 @@ export default function RevisitPage() {
             </TabsTrigger>
             <TabsTrigger value="amber" className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" /> Amber
-            </TabsTrigger>
+            </TabsTrigger> 
             <TabsTrigger value="red" className="flex items-center gap-2">
               <AlertCircle className="h-4 w-4" /> Red
             </TabsTrigger>
@@ -141,7 +141,7 @@ export default function RevisitPage() {
                     <CardDescription>
                       {tab === "all"
                         ? "You haven&apos;t answered any questions yet."
-                        : `You don&apos;t have any ${tab} rated questions.`}
+                        : `You don't have any ${tab} rated questions.`}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
