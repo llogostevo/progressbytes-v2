@@ -30,7 +30,7 @@ export function CodeEditor({
           className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
         />
         <label htmlFor="autocomplete" className="text-sm font-medium text-gray-700">
-          Enable code support <em>(remember you won't get this in the exam)</em>
+          Enable code support <em>(remember you won&apos;t get this in the exam)</em>
         </label>
       </div>
       <div className="rounded-md overflow-hidden border border-input">
