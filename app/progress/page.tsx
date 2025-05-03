@@ -269,7 +269,9 @@ export default function ProgressPage() {
                   return (
                     <Card key={answer.id}>
                       <CardHeader className="pb-2">
-                        <CardTitle className="text-base">{question?.question_text || "Unknown question"}</CardTitle>
+                        <CardTitle className="text-base">
+                          <pre className="whitespace-pre-wrap font-sans">{question?.question_text || "Unknown question"}</pre>
+                        </CardTitle>
                         <CardDescription>
                           {new Date(answer.submitted_at).toLocaleString()}
                           <span className="ml-2 inline-flex items-center">{getScoreIcon(answer.score)}</span>
@@ -280,14 +282,14 @@ export default function ProgressPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
                             <h3 className="text-sm font-medium mb-2">Your Answer:</h3>
-                            <p className="text-sm text-muted-foreground">{answer.response_text}</p>
+                            <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">{answer.response_text}</pre>
                           </div>
 
                           <div>
                             {answer.ai_feedback ? (
                               <>
                                 <h3 className="text-sm font-medium mb-2">AI Feedback:</h3>
-                                <p className="text-sm text-muted-foreground mb-3">{answer.ai_feedback}</p>
+                                <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground mb-3">{answer.ai_feedback}</pre>
                               </>
                             ) : (
                               <>
@@ -320,10 +322,24 @@ export default function ProgressPage() {
                               </>
                             )}
 
-                            <h3 className="text-sm font-medium mb-2 text-emerald-700">Model Answer:</h3>
-                            <p className="text-sm text-muted-foreground">
-                              {question?.model_answer || "Model answer not available"}
-                            </p>
+                            <div className="space-y-4">
+                              <div>
+                                {question?.type === "code" && (
+                                  <h4 className="text-sm font-medium mb-1">Pseudocode:</h4>
+                                )}
+                                <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">
+                                  {question?.model_answer || "Model answer not available"}
+                                </pre>
+                              </div>
+                              {question?.model_answer_python && (
+                                <div>
+                                  <h4 className="text-sm font-medium mb-1">Python:</h4>
+                                  <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">
+                                    {question.model_answer_python}
+                                  </pre>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </CardContent>

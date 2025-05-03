@@ -170,7 +170,9 @@ export default function RevisitPage() {
                           <Card key={`${answer.question_id}-${answer.score}`}>
                             <CardHeader className="pb-2">
                               <div className="flex items-center justify-between">
-                                <CardTitle className="text-base">{question.question_text}</CardTitle>
+                                <CardTitle className="text-base">
+                                  <pre className="whitespace-pre-wrap font-sans">{question.question_text}</pre>
+                                </CardTitle>
                                 <Badge className={`flex items-center gap-1 ${
                                   answer.score === "green" 
                                     ? "bg-emerald-500 hover:bg-emerald-500 text-white" 
@@ -193,12 +195,25 @@ export default function RevisitPage() {
                               <div className="space-y-4">
                                 <div>
                                   <h3 className="text-sm font-medium mb-1">Your Answer:</h3>
-                                  <p className="text-sm text-muted-foreground">{answer.response_text}</p>
+                                  <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">{answer.response_text}</pre>
                                 </div>
 
                                 <div>
                                   <h3 className="text-sm font-medium mb-1 text-emerald-700">Model Answer:</h3>
-                                  <p className="text-sm text-muted-foreground">{question.model_answer}</p>
+                                  <div className="space-y-4">
+                                    <div>
+                                      {question.type === "code" && (
+                                        <h4 className="text-sm font-medium mb-1">Pseudocode:</h4>
+                                      )}
+                                      <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">{question.model_answer}</pre>
+                                    </div>
+                                    {question.model_answer_python && (
+                                      <div>
+                                        <h4 className="text-sm font-medium mb-1">Python:</h4>
+                                        <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">{question.model_answer_python}</pre>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
 
                                 <Button
