@@ -228,7 +228,18 @@ export default function QuestionPage() {
                   <>
                     <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-md">
                       <h3 className="font-medium mb-2 text-emerald-700">Model Answer:</h3>
-                      <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer}</pre>
+                      <div className="space-y-4">
+                        <div>
+                          <h4 className="text-sm font-medium mb-1">Pseudocode:</h4>
+                          <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer}</pre>
+                        </div>
+                        {question.model_answer_python && (
+                          <div>
+                            <h4 className="text-sm font-medium mb-1">Python:</h4>
+                            <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer_python}</pre>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     {!selfAssessmentScore ? (
@@ -246,7 +257,18 @@ export default function QuestionPage() {
 
                     <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-md">
                       <h3 className="font-medium mb-2 text-emerald-700">Model Answer:</h3>
-                      <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer}</pre>
+                      <div className="space-y-4">
+                        <div>
+                          <h4 className="text-sm font-medium mb-1">Pseudocode:</h4>
+                          <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer}</pre>
+                        </div>
+                        {question.model_answer_python && (
+                          <div>
+                            <h4 className="text-sm font-medium mb-1">Python:</h4>
+                            <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer_python}</pre>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </>
                 )}

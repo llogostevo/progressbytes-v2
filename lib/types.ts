@@ -8,6 +8,7 @@ export interface Question {
   type: "text" | "multiple-choice" | "fill-in-the-blank" | "matching" | "code" | "short-answer" | "essay" | "true-false"
   question_text: string
   model_answer: string
+  model_answer_python?: string
   created_at: string
 }
 

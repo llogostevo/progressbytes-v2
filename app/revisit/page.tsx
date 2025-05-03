@@ -200,7 +200,18 @@ export default function RevisitPage() {
 
                                 <div>
                                   <h3 className="text-sm font-medium mb-1 text-emerald-700">Model Answer:</h3>
-                                  <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">{question.model_answer}</pre>
+                                  <div className="space-y-4">
+                                    <div>
+                                      <h4 className="text-sm font-medium mb-1">Pseudocode:</h4>
+                                      <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">{question.model_answer}</pre>
+                                    </div>
+                                    {question.model_answer_python && (
+                                      <div>
+                                        <h4 className="text-sm font-medium mb-1">Python:</h4>
+                                        <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">{question.model_answer_python}</pre>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
 
                                 <Button
