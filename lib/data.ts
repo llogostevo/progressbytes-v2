@@ -729,7 +729,7 @@ export const topics: Topic[] = [
     name: "Programming Fundamentals",
     description: "Master variables, data types, operators, and control structures",
     icon: FileCode,
-    questionCount: 0,
+    questionCount: 28,
     questions: [
       {
         id: "q83",
@@ -966,7 +966,7 @@ export const topics: Topic[] = [
       
     ],
     unit: 2,
-    disabled: true,
+    disabled: false,
   },
   {
     id: "9",

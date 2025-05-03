@@ -208,15 +208,19 @@ export default function QuestionPage() {
             <CardTitle>Question</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-lg font-medium mb-6">{question.question_text}</p>
+            <pre className="whitespace-pre-wrap font-sans text-lg font-medium mb-6">{question.question_text}</pre>
 
             {!answer ? (
-              <QuestionForm onSubmit={handleSubmitAnswer} isSubmitting={isSubmitting} />
+              <QuestionForm
+                question={question}
+                onSubmit={handleSubmitAnswer}
+                disabled={isSubmitting}
+              />
             ) : (
               <div className="space-y-6">
                 <div className="p-4 bg-muted rounded-md">
                   <h3 className="font-medium mb-2">Your Answer:</h3>
-                  <p>{answer.response_text}</p>
+                  <pre className="whitespace-pre-wrap font-sans text-sm">{answer.response_text}</pre>
                 </div>
 
                 {/* For free version, show model answer first, then self-assessment */}
@@ -224,7 +228,7 @@ export default function QuestionPage() {
                   <>
                     <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-md">
                       <h3 className="font-medium mb-2 text-emerald-700">Model Answer:</h3>
-                      <p>{question.model_answer}</p>
+                      <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer}</pre>
                     </div>
 
                     {!selfAssessmentScore ? (
@@ -242,7 +246,7 @@ export default function QuestionPage() {
 
                     <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-md">
                       <h3 className="font-medium mb-2 text-emerald-700">Model Answer:</h3>
-                      <p>{question.model_answer}</p>
+                      <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer}</pre>
                     </div>
                   </>
                 )}
