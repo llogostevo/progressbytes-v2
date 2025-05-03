@@ -14,6 +14,7 @@ interface QuestionFormProps {
 
 export function QuestionForm({ question, onSubmit, disabled }: QuestionFormProps) {
   const [answer, setAnswer] = useState("")
+  const [autocomplete, setAutocomplete] = useState(false)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -36,6 +37,8 @@ export function QuestionForm({ question, onSubmit, disabled }: QuestionFormProps
             value={answer}
             onChange={setAnswer}
             disabled={disabled}
+            autocomplete={autocomplete}
+            onAutocompleteChange={setAutocomplete}
           />
         )}
       </div>
