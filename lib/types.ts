@@ -8,6 +8,7 @@ export interface Question {
   question_text: string
   model_answer: string
   created_at: string
+  type: "text" | "multiple-choice" | "fill-in-the-blank" | "matching" | "code" | "short-answer" | "essay" | "true-false"
 }
 
 export interface Answer {
