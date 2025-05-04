@@ -674,6 +674,36 @@ export const topics: Topic[] = [
         question_text: "Give two examples of transmission media used in a network and describe one benefit of each.",
         model_answer: "• Copper cable – cheap and easy to install\n• Fibre optic cable – very high speed and long-distance transmission\n• Wireless – flexible and allows mobile access",
         created_at: "2025-05-02T00:00:00Z"
+      },
+      {
+        id: "q73",
+        topic: "networks",
+        type: "multiple-choice",
+        question_text: "What is the main purpose of a router in a network?",
+        options: [
+          "To connect devices within a LAN",
+          "To connect different networks together",
+          "To provide wireless access",
+          "To store files and data"
+        ],
+        correctAnswerIndex: 1,
+        model_answer: "A router's main purpose is to connect different networks together. It uses IP addresses to determine the best path for data to travel between networks.",
+        created_at: "2025-05-02T00:00:00Z"
+      },
+      {
+        id: "q74",
+        topic: "networks",
+        type: "multiple-choice",
+        question_text: "Which of the following is NOT a characteristic of a LAN?",
+        options: [
+          "Covers a small geographical area",
+          "Uses dedicated hardware",
+          "Requires third-party infrastructure",
+          "Devices use MAC addresses to communicate"
+        ],
+        correctAnswerIndex: 2,
+        model_answer: "A LAN does not require third-party infrastructure. It uses dedicated hardware owned by the organization and operates within a small geographical area.",
+        created_at: "2025-05-02T00:00:00Z"
       }
     ],
   },
@@ -990,6 +1020,78 @@ export const topics: Topic[] = [
         question_text: "Write a pseudocode program that:\n• asks the user to enter a username\n• prints 'Invalid' if the username is not 'admin'",
         model_answer: "username = input(\"Enter username: \"))\nif username != \"admin\" then\n   print(\"Invalid\")\nendif \n alternatively \n username = input(\"Enter username: \"))\nif NOT username == \"admin\" then\n   print(\"Invalid\")\nendif",
         model_answer_python: "username = input(\"Enter username: \")\nif username != \"admin\":\n    print(\"Invalid\")",
+        created_at: "2025-05-02T00:00:00Z"
+      },
+      {
+        id: "q117",
+        type: "fill-in-the-blank",
+        topic: "programming-fundamentals",
+        question_text: "In programming, a ______ is used to store text, a ______ stores decimal values, and a ______ stores whole numbers.",
+        model_answer: ["string", "real", "integer"],
+        options: ["string", "boolean", "real", "character", "integer", "array"],
+        created_at: "2025-05-02T00:00:00Z"
+      },
+      {
+        id: "q118",
+        type: "fill-in-the-blank",
+        topic: "programming-fundamentals",
+        question_text: "The three basic programming constructs are ______, ______, and ______.",
+        model_answer: ["sequence", "selection", "iteration"],
+        options: ["sequence", "selection", "iteration", "function", "procedure", "recursion"],
+        created_at: "2025-05-02T00:00:00Z"
+      },
+      {
+        id: "q119",
+        type: "fill-in-the-blank",
+        topic: "programming-fundamentals",
+        question_text: "The arithmetic operators include ______, ______, ______, and ______.",
+        model_answer: ["+", "-", "*", "/"],
+        options: ["+", "-", "*", "/", "MOD", "DIV"],
+        created_at: "2025-05-02T00:00:00Z"
+      },
+      {
+        id: "q120",
+        type: "fill-in-the-blank",
+        topic: "programming-fundamentals",
+        question_text: "To compare values, we use operators such as ______, ______, and ______.",
+        model_answer: ["==", "!=", ">"],
+        options: ["==", "!=", ">", "<", "*", "+"],
+        created_at: "2025-05-02T00:00:00Z"
+      },
+      {
+        id: "q121",
+        type: "fill-in-the-blank",
+        topic: "programming-fundamentals",
+        question_text: "Boolean operators include ______, ______, and ______.",
+        model_answer: ["AND", "OR", "NOT"],
+        options: ["AND", "OR", "NOT", "MOD", "==", "input"],
+        created_at: "2025-05-02T00:00:00Z"
+      },
+      {
+        id: "q122",
+        type: "fill-in-the-blank",
+        topic: "programming-fundamentals",
+        question_text: "To get input from a user, use the ______ function. To display output, use the ______ command. To store a value, use an ______ statement.",
+        model_answer: ["input", "print", "assignment"],
+        options: ["input", "print", "assignment", "loop", "constant", "output"],
+        created_at: "2025-05-02T00:00:00Z"
+      },
+      {
+        id: "q123",
+        type: "fill-in-the-blank",
+        topic: "programming-fundamentals",
+        question_text: "The ______ loop repeats while a condition is true, the ______ loop repeats a set number of times, and the ______ structure chooses between options.",
+        model_answer: ["while", "for", "if"],
+        options: ["while", "for", "if", "case", "repeat", "break"],
+        created_at: "2025-05-02T00:00:00Z"
+      },
+      {
+        id: "q124",
+        type: "fill-in-the-blank",
+        topic: "programming-fundamentals",
+        question_text: "To change data types, we can use ______ to convert to integer, ______ to convert to string, and ______ to convert to real number.",
+        model_answer: ["int", "str", "float"],
+        options: ["int", "str", "float", "bool", "char", "input"],
         created_at: "2025-05-02T00:00:00Z"
       }
     ],
