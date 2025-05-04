@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
-import { QuestionForm } from "@/components/question-form"
 import { FeedbackDisplay } from "@/components/feedback-display"
 import { SelfAssessment } from "@/components/self-assessment"
 import { Button } from "@/components/ui/button"
@@ -11,6 +10,10 @@ import { getRandomQuestionForTopic, getTopicBySlug, saveAnswer, currentUser } fr
 import type { Question, Answer, ScoreType, Topic } from "@/lib/types"
 import { ArrowLeft, RefreshCw, Lock } from "lucide-react"
 import Link from "next/link"
+import { MultipleChoiceQuestion } from "@/components/multiple-choice-question"
+import { FillInTheBlankQuestion } from "@/components/fill-in-the-blank-question"
+import { TextQuestion } from "@/components/text-question"
+import { CodeQuestion } from "@/components/code-question"
 
 export default function QuestionPage() {
   const params = useParams()
@@ -28,10 +31,18 @@ export default function QuestionPage() {
   useEffect(() => {
     try {
       const currentTopic = getTopicBySlug(topicSlug)
+      console.log("Current topic:", currentTopic)
       setTopic(currentTopic || null)
 
       if (currentTopic) {
         const newQuestion = getRandomQuestionForTopic(topicSlug)
+        console.log("Loaded question:", {
+          id: newQuestion.id,
+          type: newQuestion.type,
+          text: newQuestion.question_text,
+          options: newQuestion.options,
+          correctAnswerIndex: newQuestion.correctAnswerIndex
+        })
         setQuestion(newQuestion)
         setAnswer(null)
         setSelfAssessmentScore(null)
@@ -107,14 +118,55 @@ export default function QuestionPage() {
     setSelfAssessmentScore(null)
   }
 
+  const handleMultipleChoiceAnswer = (isCorrect: boolean) => {
+    if (!question) return
+
+    const newAnswer: Answer = {
+      id: crypto.randomUUID(),
+      question_id: question.id,
+      student_id: currentUser.id,
+      response_text: isCorrect ? "Correct" : "Incorrect",
+      ai_feedback: isCorrect ? "Well done! You selected the correct answer." : "Try to understand why this answer is incorrect.",
+      score: isCorrect ? "green" : "red",
+      submitted_at: new Date().toISOString(),
+      self_assessed: true,
+    }
+
+    saveAnswer(newAnswer)
+    setAnswer(newAnswer)
+    setSelfAssessmentScore(isCorrect ? "green" : "red")
+  }
+
+  const handleFillInTheBlankAnswer = (isCorrect: boolean) => {
+    if (!question) return
+
+    const newAnswer: Answer = {
+      id: crypto.randomUUID(),
+      question_id: question.id,
+      student_id: currentUser.id,
+      response_text: isCorrect ? "Correct" : "Incorrect",
+      ai_feedback: isCorrect ? "Well done! You selected the correct answers." : "Try to understand why these answers are incorrect.",
+      score: isCorrect ? "green" : "red",
+      submitted_at: new Date().toISOString(),
+      self_assessed: true,
+    }
+
+    saveAnswer(newAnswer)
+    setAnswer(newAnswer)
+    setSelfAssessmentScore(isCorrect ? "green" : "red")
+  }
+
   // Mock feedback generator - this would be replaced by actual AI API call
   const generateMockFeedback = (response: string, question: Question) => {
     // Very basic mock logic - in reality this would be an AI model
     const responseLength = response.length
-    const hasKeywords = question.model_answer
+    const modelAnswer = Array.isArray(question.model_answer) 
+      ? question.model_answer.join(" ") 
+      : question.model_answer
+    const hasKeywords = modelAnswer
       .toLowerCase()
       .split(" ")
-      .some((word) => response.toLowerCase().includes(word))
+      .some((word: string) => response.toLowerCase().includes(word))
 
     if (responseLength < 10) {
       return {
@@ -128,7 +180,7 @@ export default function QuestionPage() {
       }
     } else {
       return {
-        feedback: "Great answer! You&apos;ve covered the key points and demonstrated good understanding.",
+        feedback: "Great answer! You've covered the key points and demonstrated good understanding.",
         score: "green" as ScoreType,
       }
     }
@@ -148,6 +200,7 @@ export default function QuestionPage() {
   }
 
   if (!topic || !question) {
+    console.log("No topic or question found:", { topic, question })
     return (
       <div className="container mx-auto px-4 py-12 flex justify-center">
         <Card className="w-full max-w-2xl">
@@ -166,6 +219,13 @@ export default function QuestionPage() {
       </div>
     )
   }
+
+  console.log("Rendering question:", {
+    type: question.type,
+    text: question.question_text,
+    options: question.options,
+    correctAnswerIndex: question.correctAnswerIndex
+  })
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -208,14 +268,32 @@ export default function QuestionPage() {
             <CardTitle>Question</CardTitle>
           </CardHeader>
           <CardContent>
-            <pre className="whitespace-pre-wrap font-sans text-lg font-medium mb-6">{question.question_text}</pre>
-
+            <div className="mb-6">
+              <p className="text-lg whitespace-pre-wrap">{question.question_text}</p>
+            </div>
             {!answer ? (
-              <QuestionForm
-                question={question}
-                onSubmit={handleSubmitAnswer}
-                disabled={isSubmitting}
-              />
+              question.type === "multiple-choice" ? (
+                <MultipleChoiceQuestion
+                  options={question.options || []}
+                  correctAnswerIndex={question.correctAnswerIndex || 0}
+                  onAnswerSelected={handleMultipleChoiceAnswer}
+                />
+              ) : question.type === "fill-in-the-blank" ? (
+                <FillInTheBlankQuestion
+                  question={question}
+                  onAnswerSelected={handleFillInTheBlankAnswer}
+                />
+              ) : question.type === "code" ? (
+                <CodeQuestion
+                  onSubmit={handleSubmitAnswer}
+                  disabled={isSubmitting}
+                />
+              ) : (
+                <TextQuestion
+                  onSubmit={handleSubmitAnswer}
+                  disabled={isSubmitting}
+                />
+              )
             ) : (
               <div className="space-y-6">
                 <div className="p-4 bg-muted rounded-md">
@@ -233,7 +311,23 @@ export default function QuestionPage() {
                           {question.type === "code" && (
                             <h4 className="text-sm font-medium mb-1">Pseudocode:</h4>
                           )}
-                          <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer}</pre>
+                          {question.type === "fill-in-the-blank" && Array.isArray(question.model_answer) ? (
+                            question.order_important ? (
+                              <ol className="font-sans text-sm pl-4 list-decimal">
+                                {question.model_answer.map((ans, idx) => (
+                                  <li key={idx}>{ans}</li>
+                                ))}
+                              </ol>
+                            ) : (
+                              <ul className="font-sans text-sm pl-4 list-disc">
+                                {question.model_answer.map((ans, idx) => (
+                                  <li key={idx}>{ans}</li>
+                                ))}
+                              </ul>
+                            )
+                          ) : (
+                            <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer}</pre>
+                          )}
                         </div>
                         {question.model_answer_python && (
                           <div>
@@ -264,7 +358,23 @@ export default function QuestionPage() {
                           {question.type === "code" && (
                             <h4 className="text-sm font-medium mb-1">Pseudocode:</h4>
                           )}
-                          <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer}</pre>
+                          {question.type === "fill-in-the-blank" && Array.isArray(question.model_answer) ? (
+                            question.order_important ? (
+                              <ol className="font-sans text-sm pl-4 list-decimal">
+                                {question.model_answer.map((ans, idx) => (
+                                  <li key={idx}>{ans}</li>
+                                ))}
+                              </ol>
+                            ) : (
+                              <ul className="font-sans text-sm pl-4 list-disc">
+                                {question.model_answer.map((ans, idx) => (
+                                  <li key={idx}>{ans}</li>
+                                ))}
+                              </ul>
+                            )
+                          ) : (
+                            <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer}</pre>
+                          )}
                         </div>
                         {question.model_answer_python && (
                           <div>
