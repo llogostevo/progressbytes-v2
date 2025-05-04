@@ -266,6 +266,7 @@ export default function QuestionPage() {
         <Card className="mb-8">
           <CardHeader>
             <CardTitle>Question</CardTitle>
+            
           </CardHeader>
           <CardContent>
             <div className="mb-6">
