@@ -383,7 +383,7 @@ export const topics: Topic[] = [
         id: "q36",
         topic: "networks",
         type: "text",
-        question_text: "Devices in a local area network (LAN), such as those in an airport, are assigned IP and MAC addresses.\ni. Provide a valid example of an IPv4 address and one of an IPv6 address.",
+        question_text: "Devices in a local area network (LAN), are assigned IP and MAC addresses.\nProvide a valid example of an IPv4 address and one of an IPv6 address.",
         model_answer: "v4:\n• 4 groups of denary numbers between 0 and 255 separated by full stops (example v4: 123.16.46.72)\nv6:\n• 8 groups of hex numbers between 0 and FFFF separated by colons.\nDouble colon can appear once and replaces any number of groups of consecutive 0000 (example v6: 0252:5985:89ab:cdde:a57f:89ad:efcd:00fe)\n(example v6: F513:8C:2A::999:0000 expanded would be F513:8C:2A:0000:0000:0000:999:0000)",
         created_at: "2025-05-02T00:00:00Z"
       },
@@ -399,7 +399,7 @@ export const topics: Topic[] = [
         id: "q38",
         topic: "networks",
         type: "text",
-        question_text: "A large organisation such as an airport uses wired connections in their LAN.\ni. Give two advantages of using wired connections for this type of environment.",
+        question_text: "A large organisation such as an airport uses wired connections in their LAN.\nGive two advantages of using wired connections for this type of environment.",
         model_answer: "• Fast connection/speed / high bandwidth / consistent bandwidth\n• … e.g. reduce delays at check in / by example for airport\n• Secure / unlikely to have unauthorised access/hacked / data transmissions are likely to be safe\n• … e.g. so that data about passengers/staff/aeroplanes is not intercepted / by example for airport\n• Little interference / little chance of data loss / reliable\n• … e.g. flight status is received without delay / by example for airport\n• Long range transmission\n• … e.g. airport has a large floor area/terminals / by example for airport",
         created_at: "2025-05-02T00:00:00Z"
       },
@@ -407,7 +407,7 @@ export const topics: Topic[] = [
         id: "q39",
         topic: "networks",
         type: "text",
-        question_text: "Explain why a wireless connection could be beneficial in addition to a wired LAN in a busy workplace such as an airport.",
+        question_text: "Explain why a wireless connection could be beneficial in addition to a wired LAN in a busy workplace that covers a large building such as an airport or shopping centre.",
         model_answer: "• Staff do not need to be in one-place / movement of staff / can work whilst moving to another part of the airport / can be accessed from any location (in range)\n• Staff can be more responsive to customers/requests\n• Allows a larger number of connections/devices / more scalable …\n• … without the disruption/cost of installing more cables\n• Some devices do not allow physical/wired connection / allow wider range of type of device (or by example such as vehicles/mobile devices/aeroplanes)\n• Easier to add/connect more devices\n• Do not need to find/use a physical connection/wire / can allow you to connect in a place where there isn't a cable/connection\n• For use as a backup if the wired connection fails",
         created_at: "2025-05-02T00:00:00Z"
       },
@@ -423,7 +423,7 @@ export const topics: Topic[] = [
         id: "q41",
         topic: "networks",
         type: "text",
-        question_text: "iii. What is the function of the switch in a star network topology?",
+        question_text: "What is the function of the switch in a star network topology?",
         model_answer: "• Connects the devices together in the network / allows devices to communicate in the network\n• Receives data from (all) devices in the star topology\n• Record/register/store the address of devices connected to it …\n• … in a table\n• Uses MAC address of devices\n• Direct data to destination\n• … if address not recorded transmit to all devices",
         created_at: "2025-05-02T00:00:00Z"
       },
@@ -431,7 +431,7 @@ export const topics: Topic[] = [
         id: "q42",
         topic: "networks",
         type: "text",
-        question_text: "A student is using a computer to carry out various tasks online.\n\nDifferent protocols are used to transmit data across the internet depending on the task.\ni. Match the most suitable protocol to each of the following activities.\n\na. Accessing a news website\nb. Logging into an online banking account\nc. Downloading a file from a web server\nd. Receiving emails from a mail server",
+        question_text: "A student is using a computer to carry out various tasks online.\n\nDifferent protocols are used to transmit data across the internet depending on the task.\nMatch the most suitable protocol to each of the following activities.\n\na. Accessing a news website\nb. Logging into an online banking account\nc. Downloading a file from a web server\nd. Receiving emails from a mail server",
         model_answer: "a HTTP / HTTPS\nb HTTPS\nc FTP / HTTP / HTTPS\nd IMAP / POP",
         created_at: "2025-05-02T00:00:00Z"
       },
@@ -479,7 +479,7 @@ export const topics: Topic[] = [
         id: "q48",
         topic: "networks",
         type: "text",
-        question_text: "In the same scenario, identify the server device and justify your answer.",
+        question_text: "A user uploads images to a website. Identify the server device and explain why it is considered the server",
         model_answer: "• Server device: Web server\n• Stores the uploaded files\n• Processes or handles upload requests\n• Sends confirmations/errors back to client\n• Provides a hosted service",
         created_at: "2025-05-02T00:00:00Z"
       },
