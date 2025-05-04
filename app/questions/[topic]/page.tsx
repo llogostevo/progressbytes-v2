@@ -311,7 +311,15 @@ export default function QuestionPage() {
                           {question.type === "code" && (
                             <h4 className="text-sm font-medium mb-1">Pseudocode:</h4>
                           )}
-                          <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer}</pre>
+                          {question.type === "fill-in-the-blank" && Array.isArray(question.model_answer) ? (
+                            <ul className="font-sans text-sm pl-4 list-decimal">
+                              {question.model_answer.map((ans, idx) => (
+                                <li key={idx}>{ans}</li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer}</pre>
+                          )}
                         </div>
                         {question.model_answer_python && (
                           <div>
@@ -342,7 +350,15 @@ export default function QuestionPage() {
                           {question.type === "code" && (
                             <h4 className="text-sm font-medium mb-1">Pseudocode:</h4>
                           )}
-                          <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer}</pre>
+                          {question.type === "fill-in-the-blank" && Array.isArray(question.model_answer) ? (
+                            <ul className="font-sans text-sm pl-4 list-decimal">
+                              {question.model_answer.map((ans, idx) => (
+                                <li key={idx}>{ans}</li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer}</pre>
+                          )}
                         </div>
                         {question.model_answer_python && (
                           <div>
