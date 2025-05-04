@@ -503,8 +503,8 @@ export const topics: Topic[] = [
         id: "q51",
         topic: "networks",
         type: "text",
-        question_text: "Fill in the blanks to complete the description of how a website is accessed and how IPv4 addressing works.",
-        model_answer: "• A website is hosted on a web server.\n• The computers that access the websites are called clients.\n• The user enters a Uniform Resource Locator (URL) into a web browser.\n• The web browser sends a request to the Domain Name Server (DNS) for the matching IP address.\n• If found, the IP address is returned.\n• A request is then sent to the IP address.\n• An IPv4 address is made of 4 groups of digits, each from 0 to 255.\n• The groups are separated by a full stop.",
+        question_text: "Describe how a website is accessed refering to DNS and Web Servers.",
+        model_answer: "• A website is hosted on a web server.\n• The computers that access the websites are called clients.\n• The user enters a Uniform Resource Locator (URL) into a web browser.\n• The web browser sends a request to the Domain Name Server (DNS) for the matching IP address.\n• If found, the IP address is returned.\n• A request is then sent to the IP address.",
         created_at: "2025-05-02T00:00:00Z"
       },
       {
