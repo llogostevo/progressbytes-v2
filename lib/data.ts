@@ -61,7 +61,7 @@ export const topics: Topic[] = [
     name: "Computer Networks",
     description: "Explore network types, topologies, hardware, protocols, and internet communication",
     icon: Network,
-    questionCount: 72,
+    questionCount: 92,
     unit: 1,
     disabled: false,
     questions: [
@@ -989,7 +989,7 @@ export const topics: Topic[] = [
     name: "Programming Fundamentals",
     description: "Master variables, data types, operators, and control structures",
     icon: FileCode,
-    questionCount: 28,
+    questionCount: 44,
     questions: [
       {
         id: "q83",
@@ -1330,6 +1330,126 @@ export const topics: Topic[] = [
         model_answer: ["int", "str", "float"],
         options: ["int", "str", "float", "bool", "char", "input"],
         order_important: true,
+        created_at: "2025-05-02T00:00:00Z"
+      },
+      {
+        id: "q125",
+        topic: "programming-fundamentals",
+        type: "multiple-choice",
+        question_text: "Which of the following is NOT a valid data type in programming?",
+        options: [
+          "string",
+          "integer",
+          "boolean",
+          "decimal"
+        ],
+        correctAnswerIndex: 3,
+        model_answer: "The correct term for decimal numbers is 'real' or 'float', not 'decimal'.",
+        created_at: "2025-05-02T00:00:00Z"
+      },
+      {
+        id: "q126",
+        topic: "programming-fundamentals",
+        type: "multiple-choice",
+        question_text: "What is the purpose of a while loop?",
+        options: [
+          "To execute code a specific number of times",
+          "To execute code while a condition is true",
+          "To execute code in parallel",
+          "To execute code only once"
+        ],
+        correctAnswerIndex: 1,
+        model_answer: "A while loop continues to execute its code block as long as the specified condition remains true.",
+        created_at: "2025-05-02T00:00:00Z"
+      },
+      {
+        id: "q127",
+        topic: "programming-fundamentals",
+        type: "multiple-choice",
+        question_text: "Which operator is used for integer division?",
+        options: [
+          "/",
+          "//",
+          "%",
+          "*"
+        ],
+        correctAnswerIndex: 1,
+        model_answer: "The // operator performs integer division, discarding any remainder.",
+        created_at: "2025-05-02T00:00:00Z"
+      },
+      {
+        id: "q128",
+        topic: "programming-fundamentals",
+        type: "multiple-choice",
+        question_text: "What is the purpose of the 'if' statement?",
+        options: [
+          "To repeat code multiple times",
+          "To make decisions in code",
+          "To define functions",
+          "To handle errors"
+        ],
+        correctAnswerIndex: 1,
+        model_answer: "The 'if' statement allows a program to make decisions by executing different code blocks based on conditions.",
+        created_at: "2025-05-02T00:00:00Z"
+      },
+      {
+        id: "q129",
+        topic: "programming-fundamentals",
+        type: "multiple-choice",
+        question_text: "Which of these is NOT a valid variable name?",
+        options: [
+          "myVariable",
+          "2ndVariable",
+          "user_name",
+          "totalCount"
+        ],
+        correctAnswerIndex: 1,
+        model_answer: "Variable names cannot start with a number. They must start with a letter or underscore.",
+        created_at: "2025-05-02T00:00:00Z"
+      },
+      {
+        id: "q130",
+        topic: "programming-fundamentals",
+        type: "multiple-choice",
+        question_text: "What is the purpose of a function?",
+        options: [
+          "To store data",
+          "To repeat code",
+          "To organize and reuse code",
+          "To display output"
+        ],
+        correctAnswerIndex: 2,
+        model_answer: "Functions allow code to be organized into reusable blocks that can be called multiple times.",
+        created_at: "2025-05-02T00:00:00Z"
+      },
+      {
+        id: "q131",
+        topic: "programming-fundamentals",
+        type: "multiple-choice",
+        question_text: "Which of these is a valid way to convert a string to an integer?",
+        options: [
+          "int('123')",
+          "string_to_int('123')",
+          "convert('123')",
+          "to_integer('123')"
+        ],
+        correctAnswerIndex: 0,
+        model_answer: "The int() function is used to convert a string to an integer in most programming languages.",
+        created_at: "2025-05-02T00:00:00Z"
+      },
+      {
+        id: "q132",
+        topic: "programming-fundamentals",
+        type: "multiple-choice",
+        question_text: "What is the purpose of the 'else' statement?",
+        options: [
+          "To handle errors",
+          "To provide an alternative code path when the 'if' condition is false",
+          "To repeat code",
+          "To define variables"
+        ],
+        correctAnswerIndex: 1,
+        model_answer: "The 'else' statement provides an alternative code block that executes when the 'if' condition is false.",
         created_at: "2025-05-02T00:00:00Z"
       }
     ],
