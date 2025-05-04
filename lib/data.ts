@@ -804,7 +804,7 @@ export const topics: Topic[] = [
         id: "q84",
         topic: "networks",
         type: "multiple-choice",
-        question_text: "What is the main advantage of a star topology over a bus topology?",
+        question_text: "What is the main advantage of a star topology over a mesh topology?",
         options: [
           "It requires less cabling",
           "If one connection fails, the rest of the network continues to work",

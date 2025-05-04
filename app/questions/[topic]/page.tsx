@@ -269,7 +269,7 @@ export default function QuestionPage() {
           </CardHeader>
           <CardContent>
             <div className="mb-6">
-              <p className="text-lg">{question.question_text}</p>
+              <p className="text-lg whitespace-pre-wrap">{question.question_text}</p>
             </div>
             {!answer ? (
               question.type === "multiple-choice" ? (
