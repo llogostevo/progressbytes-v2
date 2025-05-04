@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
-import { QuestionForm } from "@/components/question-form"
 import { FeedbackDisplay } from "@/components/feedback-display"
 import { SelfAssessment } from "@/components/self-assessment"
 import { Button } from "@/components/ui/button"
@@ -12,6 +11,9 @@ import type { Question, Answer, ScoreType, Topic } from "@/lib/types"
 import { ArrowLeft, RefreshCw, Lock } from "lucide-react"
 import Link from "next/link"
 import { MultipleChoiceQuestion } from "@/components/multiple-choice-question"
+import { FillInTheBlankQuestion } from "@/components/fill-in-the-blank-question"
+import { TextQuestion } from "@/components/text-question"
+import { CodeQuestion } from "@/components/code-question"
 
 export default function QuestionPage() {
   const params = useParams()
@@ -125,6 +127,25 @@ export default function QuestionPage() {
       student_id: currentUser.id,
       response_text: isCorrect ? "Correct" : "Incorrect",
       ai_feedback: isCorrect ? "Well done! You selected the correct answer." : "Try to understand why this answer is incorrect.",
+      score: isCorrect ? "green" : "red",
+      submitted_at: new Date().toISOString(),
+      self_assessed: true,
+    }
+
+    saveAnswer(newAnswer)
+    setAnswer(newAnswer)
+    setSelfAssessmentScore(isCorrect ? "green" : "red")
+  }
+
+  const handleFillInTheBlankAnswer = (isCorrect: boolean) => {
+    if (!question) return
+
+    const newAnswer: Answer = {
+      id: crypto.randomUUID(),
+      question_id: question.id,
+      student_id: currentUser.id,
+      response_text: isCorrect ? "Correct" : "Incorrect",
+      ai_feedback: isCorrect ? "Well done! You selected the correct answers." : "Try to understand why these answers are incorrect.",
       score: isCorrect ? "green" : "red",
       submitted_at: new Date().toISOString(),
       self_assessed: true,
@@ -257,9 +278,18 @@ export default function QuestionPage() {
                   correctAnswerIndex={question.correctAnswerIndex || 0}
                   onAnswerSelected={handleMultipleChoiceAnswer}
                 />
-              ) : (
-                <QuestionForm
+              ) : question.type === "fill-in-the-blank" ? (
+                <FillInTheBlankQuestion
                   question={question}
+                  onAnswerSelected={handleFillInTheBlankAnswer}
+                />
+              ) : question.type === "code" ? (
+                <CodeQuestion
+                  onSubmit={handleSubmitAnswer}
+                  disabled={isSubmitting}
+                />
+              ) : (
+                <TextQuestion
                   onSubmit={handleSubmitAnswer}
                   disabled={isSubmitting}
                 />

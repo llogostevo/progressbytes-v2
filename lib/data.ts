@@ -1029,6 +1029,7 @@ export const topics: Topic[] = [
         question_text: "In programming, a ______ is used to store text, a ______ stores decimal values, and a ______ stores whole numbers.",
         model_answer: ["string", "real", "integer"],
         options: ["string", "boolean", "real", "character", "integer", "array"],
+        order_important: true,
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -1038,6 +1039,7 @@ export const topics: Topic[] = [
         question_text: "The three basic programming constructs are ______, ______, and ______.",
         model_answer: ["sequence", "selection", "iteration"],
         options: ["sequence", "selection", "iteration", "function", "procedure", "recursion"],
+        order_important: false,
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -1047,15 +1049,17 @@ export const topics: Topic[] = [
         question_text: "The arithmetic operators include ______, ______, ______, and ______.",
         model_answer: ["+", "-", "*", "/"],
         options: ["+", "-", "*", "/", "MOD", "DIV"],
+        order_important: false,
         created_at: "2025-05-02T00:00:00Z"
       },
       {
         id: "q120",
         type: "fill-in-the-blank",
         topic: "programming-fundamentals",
-        question_text: "To compare values, we use operators such as ______, ______, and ______.",
-        model_answer: ["==", "!=", ">"],
+        question_text: "To compare values, we use operators such as ______, ______, ______, and ______.",
+        model_answer: ["==", "!=", ">", "<"],
         options: ["==", "!=", ">", "<", "*", "+"],
+        order_important: false,
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -1065,6 +1069,7 @@ export const topics: Topic[] = [
         question_text: "Boolean operators include ______, ______, and ______.",
         model_answer: ["AND", "OR", "NOT"],
         options: ["AND", "OR", "NOT", "MOD", "==", "input"],
+        order_important: false,
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -1074,6 +1079,7 @@ export const topics: Topic[] = [
         question_text: "To get input from a user, use the ______ function. To display output, use the ______ command. To store a value, use an ______ statement.",
         model_answer: ["input", "print", "assignment"],
         options: ["input", "print", "assignment", "loop", "constant", "output"],
+        order_important: true,
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -1083,6 +1089,7 @@ export const topics: Topic[] = [
         question_text: "The ______ loop repeats while a condition is true, the ______ loop repeats a set number of times, and the ______ structure chooses between options.",
         model_answer: ["while", "for", "if"],
         options: ["while", "for", "if", "case", "repeat", "break"],
+        order_important: true,
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -1092,6 +1099,7 @@ export const topics: Topic[] = [
         question_text: "To change data types, we can use ______ to convert to integer, ______ to convert to string, and ______ to convert to real number.",
         model_answer: ["int", "str", "float"],
         options: ["int", "str", "float", "bool", "char", "input"],
+        order_important: true,
         created_at: "2025-05-02T00:00:00Z"
       }
     ],

@@ -10,6 +10,7 @@ export interface Question {
   model_answer: string | string[]
   options?: string[]
   correctAnswerIndex?: number
+  order_important?: boolean
   model_answer_python?: string
   created_at: string
 }
