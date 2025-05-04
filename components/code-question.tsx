@@ -11,7 +11,7 @@ interface CodeQuestionProps {
 
 export function CodeQuestion({ onSubmit, disabled = false }: CodeQuestionProps) {
   const [answer, setAnswer] = useState("")
-  const [autocomplete, setAutocomplete] = useState(true)
+  const [autocomplete, setAutocomplete] = useState(false)
 
   const handleSubmit = () => {
     onSubmit(answer)
