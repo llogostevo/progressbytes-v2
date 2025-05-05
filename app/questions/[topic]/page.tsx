@@ -15,6 +15,7 @@ import { FillInTheBlankQuestion } from "@/components/fill-in-the-blank-question"
 import { TextQuestion } from "@/components/text-question"
 import { CodeQuestion } from "@/components/code-question"
 import { MatchingQuestion } from "@/components/matching-question"
+import { TrueFalseQuestion } from "@/components/true-false-question"
 
 export default function QuestionPage() {
   const params = useParams()
@@ -180,6 +181,27 @@ export default function QuestionPage() {
     setSelfAssessmentScore(isCorrect ? "green" : "red")
   }
 
+  const handleTrueFalseAnswer = (answer: boolean) => {
+    if (!question) return
+
+    const isCorrect = answer === (question.model_answer === "true")
+
+    const newAnswer: Answer = {
+      id: crypto.randomUUID(),
+      question_id: question.id,
+      student_id: currentUser.id,
+      response_text: answer ? "true" : "false",
+      ai_feedback: isCorrect ? "Correct! Well done!" : "Incorrect. Try to understand why this is wrong.",
+      score: isCorrect ? "green" : "red",
+      submitted_at: new Date().toISOString(),
+      self_assessed: true,
+    }
+
+    saveAnswer(newAnswer)
+    setAnswer(newAnswer)
+    setSelfAssessmentScore(isCorrect ? "green" : "red")
+  }
+
   // Mock feedback generator - this would be replaced by actual AI API call
   const generateMockFeedback = (response: string, question: Question) => {
     // Very basic mock logic - in reality this would be an AI model
@@ -319,6 +341,12 @@ export default function QuestionPage() {
                   onSubmit={handleMatchingAnswer}
                   disabled={isSubmitting}
                 />
+              ) : question.type === "true-false" ? (
+                <TrueFalseQuestion
+                  question={question}
+                  onSubmit={handleTrueFalseAnswer}
+                  disabled={isSubmitting}
+                />
               ) : question.type === "text" || question.type === "short-answer" ? (
                 <TextQuestion
                   onSubmit={handleSubmitAnswer}
@@ -347,6 +375,25 @@ export default function QuestionPage() {
                               </td>
                             </tr>
                           ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : question.type === "true-false" ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse">
+                        <thead>
+                          <tr>
+                            <th className="border p-2 text-left">Question</th>
+                            <th className="border p-2 text-center">Your Answer</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td className="border p-2">{question.question_text}</td>
+                            <td className="border p-2 text-center">
+                              {answer.response_text === "true" ? "True" : "False"}
+                            </td>
+                          </tr>
                         </tbody>
                       </table>
                     </div>
@@ -381,6 +428,25 @@ export default function QuestionPage() {
                                       <td className="border p-2">{pair.match}</td>
                                     </tr>
                                   ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          ) : question.type === "true-false" ? (
+                            <div className="overflow-x-auto">
+                              <table className="w-full border-collapse">
+                                <thead>
+                                  <tr>
+                                    <th className="border p-2 text-left">Question</th>
+                                    <th className="border p-2 text-center">Correct Answer</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr>
+                                    <td className="border p-2">{question.question_text}</td>
+                                    <td className="border p-2 text-center">
+                                      {question.model_answer === "true" ? "True" : "False"}
+                                    </td>
+                                  </tr>
                                 </tbody>
                               </table>
                             </div>
@@ -450,6 +516,25 @@ export default function QuestionPage() {
                                 </tbody>
                               </table>
                             </div>
+                          ) : question.type === "true-false" ? (
+                            <div className="overflow-x-auto">
+                              <table className="w-full border-collapse">
+                                <thead>
+                                  <tr>
+                                    <th className="border p-2 text-left">Question</th>
+                                    <th className="border p-2 text-center">Correct Answer</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr>
+                                    <td className="border p-2">{question.question_text}</td>
+                                    <td className="border p-2 text-center">
+                                      {question.model_answer === "true" ? "True" : "False"}
+                                    </td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
                           ) : question.type === "fill-in-the-blank" && Array.isArray(question.model_answer) ? (
                             question.order_important ? (
                               <ol className="font-sans text-sm pl-4 list-decimal">
@@ -475,6 +560,9 @@ export default function QuestionPage() {
                           </div>
                         )}
                       </div>
+                    </div>
+                    <div>
+                      <p className="whitespace-pre-wrap text-sm text-emerald-700">{question.explanation}</p>  
                     </div>
                   </>
                 )}
