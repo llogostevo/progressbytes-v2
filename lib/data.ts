@@ -1273,7 +1273,7 @@ export const topics: Topic[] = [
     name: "Network Security",
     description: "Learn about security threats, prevention methods, and encryption",
     icon: Shield,
-    questionCount: 0,
+    questionCount: 38,
     questions: [
       {
         id: "q151",
@@ -1424,7 +1424,7 @@ export const topics: Topic[] = [
         type: "short-answer",
         topic: "network-security",
         question_text: "Give one reason why people are often considered the weakest point in security.",
-        model_answer: "People can be manipulated into revealing passwords or clicking on harmful links due to lack of awareness or poor training.",
+        model_answer: "- They may fall for phishing emails or social engineering tactics\n- They might use weak or easily guessable passwords\n- They can accidentally download and install malware\n- They may leave devices unlocked or unattended\n- They might share login details with others\n- They may ignore or bypass security protocols\n- They can be tricked into revealing sensitive information over the phone or in person\n- They might plug in unknown USB devices",
         created_at: "2025-05-05T00:00:00Z"
       },
       {
@@ -1689,7 +1689,7 @@ export const topics: Topic[] = [
       }
     ],
     unit: 1,
-    disabled: true,
+    disabled: false,
   },
   {
     id: "5",
