@@ -1274,7 +1274,94 @@ export const topics: Topic[] = [
     description: "Learn about security threats, prevention methods, and encryption",
     icon: Shield,
     questionCount: 0,
-    questions: [],
+    questions: [
+      {
+        id: "q151",
+        type: "short-answer",
+        topic: "network-security",
+        question_text: "State what is meant by the term 'brute force attack' in the context of cyber security.",
+        model_answer: "A brute force attack is when a hacker repeatedly tries different combinations of usernames and passwords to gain access to a system.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q152",
+        type: "short-answer",
+        topic: "network-security",
+        question_text: "Explain one way that a brute force attack can be prevented.",
+        model_answer: "By locking user accounts after a number of failed login attempts, or by requiring CAPTCHA or multi-factor authentication.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q153",
+        type: "short-answer",
+        topic: "network-security",
+        question_text: "Give one reason why an organisation might perform penetration testing on their network.",
+        model_answer: "To identify vulnerabilities or weaknesses that could be exploited by hackers before an actual attack occurs.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q154",
+        type: "multiple-choice",
+        topic: "network-security",
+        question_text: "Which of the following is an example of social engineering?",
+        options: [
+          "Installing a firewall",
+          "Sending a phishing email",
+          "Using encryption",
+          "Brute force password guessing"
+        ],
+        correctAnswerIndex: 1,
+        model_answer: "Sending a phishing email",
+        explanation: "Phishing is a form of social engineering that tricks users into revealing personal information by pretending to be a trustworthy source.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q155",
+        type: "true-false",
+        topic: "network-security",
+        question_text: "Antivirus software is used to detect and remove malware.",
+        model_answer: "true",
+        explanation: "True – Antivirus software scans the system for known threats and helps remove or quarantine malware.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q156",
+        type: "fill-in-the-blank",
+        topic: "network-security",
+        question_text: "Fill in the blanks:\n\nA ______ is a type of malware that disguises itself as a useful program. A ______ attack attempts to flood a server with requests. A ______ test checks for security flaws.",
+        model_answer: ["Trojan", "Denial of Service", "penetration"],
+        options: ["Trojan", "Worm", "Denial of Service", "phishing", "penetration", "debugging"],
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q157",
+        type: "matching",
+        topic: "network-security",
+        question_text: "Match each security threat to its description:",
+        pairs: [
+          { statement: "Malware", match: "Software designed to damage or gain unauthorised access" },
+          { statement: "Phishing", match: "Tricking users into revealing sensitive information" },
+          { statement: "Denial of Service", match: "Flooding a network or server with traffic" },
+          { statement: "Brute force", match: "Trying many passwords until the correct one is found" }
+        ],
+        model_answer: [
+          "Software designed to damage or gain unauthorised access",
+          "Tricking users into revealing sensitive information",
+          "Flooding a network or server with traffic",
+          "Trying many passwords until the correct one is found"
+        ],
+        explanation: "Each type of threat affects a system in a different way. Knowing these helps in choosing the right protection method.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q158",
+        type: "short-answer",
+        topic: "network-security",
+        question_text: "Describe the purpose of network forensics.",
+        model_answer: "Network forensics involves monitoring and analysing network traffic to detect and investigate security breaches or malicious activity.",
+        created_at: "2025-05-05T00:00:00Z"
+      }
+    ],
     unit: 1,
     disabled: true,
   },
