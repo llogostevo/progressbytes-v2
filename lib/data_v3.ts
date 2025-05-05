@@ -39,262 +39,10 @@ export const topics: Topic[] = [
     name: "Systems Architecture",
     description: "Learn about CPU architecture, fetch-execute cycle, and performance factors",
     icon: Cpu,
-    questionCount: 23,
-    questions: [
-      {
-        id: "q131",
-        type: "short-answer",
-        topic: "systems-architecture",
-        question_text: "Outline the key steps involved in the CPU's fetch-decode-execute cycle.",
-        model_answer: "1) The CPU uses the Program Counter to locate the next instruction.\n2) The instruction is fetched from memory and decoded by the Control Unit.\n3) The decoded instruction is then executed, potentially involving data processing by the ALU.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q132",
-        type: "matching",
-        topic: "systems-architecture",
-        question_text: "Match each CPU register to its primary function:",
-        pairs: [
-          { statement: "Program Counter (PC)", match: "Holds the address of the next instruction to fetch" },
-          { statement: "Memory Address Register (MAR)", match: "Stores the memory location to be accessed" },
-          { statement: "Memory Data Register (MDR)", match: "Temporarily stores data being transferred to or from memory" },
-          { statement: "Accumulator (ACC)", match: "Stores results from the ALU operations" }
-        ],
-        model_answer: [
-          "Holds the address of the next instruction to fetch",
-          "Stores the memory location to be accessed",
-          "Temporarily stores data being transferred to or from memory",
-          "Stores results from the ALU operations"
-        ],
-        explanation: "Registers store temporary data or addresses that are used during instruction processing. Each has a distinct role in keeping the CPU operating efficiently.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q133",
-        type: "short-answer",
-        topic: "systems-architecture",
-        question_text: "Identify three CPU characteristics that influence processing speed.",
-        model_answer: "1) Clock speed\n2) Cache memory size\n3) Number of processing cores",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q134",
-        type: "short-answer",
-        topic: "systems-architecture",
-        question_text: "Why is a car’s cruise control considered an embedded system?",
-        model_answer: "It performs one specific task (maintaining vehicle speed), is built into the vehicle, and operates with its own microcontroller and software that can't be easily changed.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q135",
-        type: "short-answer",
-        topic: "systems-architecture",
-        question_text: "Provide an example of an embedded system found in vehicles and explain its purpose.",
-        model_answer: "Example: Parking sensors.\nExplanation: These detect nearby obstacles and alert the driver. The system is purpose-built and works automatically using embedded software.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q136",
-        type: "matching",
-        topic: "systems-architecture",
-        question_text: "Match the CPU component to what it does:",
-        pairs: [
-          { statement: "Program Counter", match: "Tracks the address of the instruction to be fetched next" },
-          { statement: "Control Unit", match: "Controls the timing and flow of instructions in the CPU" },
-          { statement: "Memory Address Register", match: "Holds the address in memory to read from or write to" },
-          { statement: "Arithmetic Logic Unit", match: "Carries out calculations and logical operations" }
-        ],
-        model_answer: [
-          "Tracks the address of the instruction to be fetched next",
-          "Controls the timing and flow of instructions in the CPU",
-          "Holds the address in memory to read from or write to",
-          "Carries out calculations and logical operations"
-        ],
-        explanation: "These components each contribute to processing data and instructions. The CU manages flow, the ALU handles logic, and registers help manage addresses and results.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q137",
-        type: "true-false",
-        topic: "systems-architecture",
-        question_text: "The CPU's cache stores frequently used instructions and data to reduce access times.",
-        model_answer: "true",
-        explanation: "True – Cache memory holds recently accessed data or instructions so the CPU can reuse them quickly without fetching from slower main memory.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q138",
-        type: "multiple-choice",
-        topic: "systems-architecture",
-        question_text: "Which of the following changes is most likely to speed up a CPU’s performance?",
-        options: [
-          "Reducing the number of cores",
-          "Lowering the cache size",
-          "Using a higher clock speed",
-          "Running fewer background apps"
-        ],
-        correctAnswerIndex: 2,
-        model_answer: "Using a higher clock speed",
-        explanation: "Increasing clock speed means the CPU can execute more instructions per second, improving performance for most tasks.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q139",
-        type: "multiple-choice",
-        topic: "systems-architecture",
-        question_text: "Which component in the CPU is responsible for handling logical operations such as AND, OR, and NOT?",
-        options: [
-          "Control Unit",
-          "Cache",
-          "Accumulator",
-          "Arithmetic Logic Unit"
-        ],
-        correctAnswerIndex: 3,
-        model_answer: "Arithmetic Logic Unit",
-        explanation: "The ALU is responsible for performing arithmetic and logical operations like AND, OR, and NOT.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q140",
-        type: "true-false",
-        topic: "systems-architecture",
-        question_text: "The Program Counter holds data being processed in the CPU.",
-        model_answer: "false",
-        explanation: "False – the Program Counter holds the memory address of the next instruction to fetch, not the data being processed.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q141",
-        type: "multiple-choice",
-        topic: "systems-architecture",
-        question_text: "Which of these is an embedded system in a home environment?",
-        options: ["Smart light switch", "Web browser", "Laptop", "Spreadsheet software"],
-        correctAnswerIndex: 0,
-        model_answer: "Smart light switch",
-        explanation: "A smart light switch is an embedded system designed for a specific task: controlling lighting, usually with minimal hardware and limited software.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q142",
-        type: "true-false",
-        topic: "systems-architecture",
-        question_text: "Embedded systems usually run many complex tasks at once.",
-        model_answer: "false",
-        explanation: "False – embedded systems are built to perform specific tasks efficiently and usually run only one or a few simple tasks.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q143",
-        type: "short-answer",
-        topic: "systems-architecture",
-        question_text: "Explain why a washing machine includes an embedded system.",
-        model_answer: "The embedded system controls the washing cycle, water level, and temperature. It's dedicated to this task and is not a general-purpose computer.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q131",
-        type: "short-answer",
-        topic: "systems-architecture",
-        question_text: "Outline the key steps involved in the CPU's fetch-decode-execute cycle.",
-        model_answer: "1) The CPU uses the Program Counter to locate the next instruction.\n2) The instruction is fetched from memory and decoded by the Control Unit.\n3) The decoded instruction is then executed, potentially involving data processing by the ALU.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q132",
-        type: "matching",
-        topic: "systems-architecture",
-        question_text: "Match each CPU register to its primary function:",
-        pairs: [
-          { statement: "Program Counter (PC)", match: "Holds the address of the next instruction to fetch" },
-          { statement: "Memory Address Register (MAR)", match: "Stores the memory location to be accessed" },
-          { statement: "Memory Data Register (MDR)", match: "Temporarily stores data being transferred to or from memory" },
-          { statement: "Accumulator (ACC)", match: "Stores results from the ALU operations" }
-        ],
-        model_answer: [
-          "Holds the address of the next instruction to fetch",
-          "Stores the memory location to be accessed",
-          "Temporarily stores data being transferred to or from memory",
-          "Stores results from the ALU operations"
-        ],
-        explanation: "Registers store temporary data or addresses that are used during instruction processing. Each has a distinct role in keeping the CPU operating efficiently.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q133",
-        type: "short-answer",
-        topic: "systems-architecture",
-        question_text: "Identify three CPU characteristics that influence processing speed.",
-        model_answer: "1) Clock speed\n2) Cache memory size\n3) Number of processing cores",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q144",
-        type: "short-answer",
-        topic: "systems-architecture",
-        question_text: "Explain how increasing the number of CPU cores can affect performance.",
-        model_answer: "More cores allow the CPU to carry out multiple tasks at the same time (parallel processing), improving performance for programs designed to take advantage of this.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q145",
-        type: "multiple-choice",
-        topic: "systems-architecture",
-        question_text: "Which change would typically improve CPU performance the most when running a single-threaded application?",
-        options: ["Adding more cores", "Increasing cache size", "Increasing clock speed", "Installing more RAM"],
-        correctAnswerIndex: 2,
-        model_answer: "Increasing clock speed",
-        explanation: "Clock speed determines how many instructions the CPU can process per second. For single-threaded applications, more cores won't help, but a higher clock speed will.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q146",
-        type: "true-false",
-        topic: "systems-architecture",
-        question_text: "A higher clock speed always results in faster overall performance.",
-        model_answer: "false",
-        explanation: "False – While a higher clock speed can improve performance, other factors such as cooling, efficiency, and software optimization also play a role.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q147",
-        type: "true-false",
-        topic: "systems-architecture",
-        question_text: "More CPU cache helps performance by reducing the time needed to access frequently used data.",
-        model_answer: "true",
-        explanation: "True – Cache memory is faster than main memory. More cache allows the CPU to store and quickly access more of the data it uses often.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q148",
-        type: "short-answer",
-        topic: "systems-architecture",
-        question_text: "What is the benefit of a larger CPU cache size?",
-        model_answer: "A larger cache can hold more frequently accessed instructions and data, reducing the need to fetch from slower main memory and speeding up overall performance.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q149",
-        type: "multiple-choice",
-        topic: "systems-architecture",
-        question_text: "Which component directly stores data the CPU is likely to reuse?",
-        options: ["RAM", "Register", "Cache", "Hard Drive"],
-        correctAnswerIndex: 2,
-        model_answer: "Cache",
-        explanation: "Cache memory is closer to the CPU than RAM and is used to store frequently accessed data, reducing the time it takes to fetch instructions.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q150",
-        type: "true-false",
-        topic: "systems-architecture",
-        question_text: "Adding more cores always improves program performance.",
-        model_answer: "false",
-        explanation: "False – Adding more cores can improve multitasking or performance for software designed to use them, but some programs can’t take advantage of multiple cores.",
-        created_at: "2025-05-05T00:00:00Z"
-      }
-    ],
+    questionCount: 0,
+    questions: [],
     unit: 1,
-    disabled: false,
+    disabled: true,
   },
   {
     id: "2",
@@ -313,7 +61,7 @@ export const topics: Topic[] = [
     name: "Computer Networks",
     description: "Explore network types, topologies, hardware, protocols, and internet communication",
     icon: Network,
-    questionCount: 98,
+    questionCount: 92,
     unit: 1,
     disabled: false,
     questions: [
@@ -368,7 +116,7 @@ export const topics: Topic[] = [
         type: "text",
         question_text: "State and explain three factors that can affect the performance of a network.",
         model_answer:
-          "1) Bandwidth - limited bandwidth can slow data transfer. 2) Number of users - more users can cause congestion. 3) Interference - physical obstacles like walls can weaken wireless signals and reduce performance.",
+          "1) Bandwidth – limited bandwidth can slow data transfer. 2) Number of users – more users can cause congestion. 3) Interference – physical obstacles like walls can weaken wireless signals and reduce performance.",
         created_at: "2023-01-07T00:00:00Z",
       },
       {
@@ -908,7 +656,7 @@ export const topics: Topic[] = [
         topic: "networks",
         type: "text",
         question_text: "Identify one use of Bluetooth and one use of Wi-Fi. Explain why each is suitable for the task.",
-        model_answer: "• Bluetooth - used for short-range connections like wireless headphones because it uses low power\n• Wi-Fi - used for internet access across a building because it covers a wider area",
+        model_answer: "• Bluetooth – used for short-range connections like wireless headphones because it uses low power\n• Wi-Fi – used for internet access across a building because it covers a wider area",
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -924,7 +672,7 @@ export const topics: Topic[] = [
         topic: "networks",
         type: "text",
         question_text: "Give two examples of transmission media used in a network and describe one benefit of each.",
-        model_answer: "• Copper cable - cheap and easy to install\n• Fibre optic cable - very high speed and long-distance transmission\n• Wireless - flexible and allows mobile access",
+        model_answer: "• Copper cable – cheap and easy to install\n• Fibre optic cable – very high speed and long-distance transmission\n• Wireless – flexible and allows mobile access",
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -1186,85 +934,7 @@ export const topics: Topic[] = [
         correctAnswerIndex: 1,
         model_answer: "A DNS (Domain Name System) server translates human-readable domain names (like www.example.com) into IP addresses that computers can use to locate servers.",
         created_at: "2025-05-02T00:00:00Z"
-      },
-      {
-        id: "q201",
-        type: "true-false",
-        topic: "networks",
-        question_text: "A LAN covers a wide geographical area using infrastructure provided by third parties.",
-        model_answer: "false",
-        explanation: "False - A LAN (Local Area Network) covers a small geographical area and is typically managed by the organisation itself. A WAN covers a wider area and may use external infrastructure.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q202",
-        type: "true-false",
-        topic: "networks",
-        question_text: "Switches help reduce network traffic by sending data only to the intended recipient.",
-        model_answer: "true",
-        explanation: "True - Switches examine the MAC address in each packet and forward it only to the intended device, reducing unnecessary traffic on the network.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q203",
-        type: "true-false",
-        topic: "networks",
-        question_text: "Wi-Fi is a wired technology used in local area networks.",
-        model_answer: "false",
-        explanation: "False - Wi-Fi is a wireless technology that uses radio waves to connect devices in a local area network without physical cables.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q204",
-        type: "true-false",
-        topic: "networks",
-        question_text: "DNS servers are used to translate domain names into IP addresses.",
-        model_answer: "true",
-        explanation: "True - DNS (Domain Name System) servers resolve human-readable domain names (like www.example.com) into numerical IP addresses needed for routing on the internet.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q205",
-        type: "matching",
-        topic: "networks",
-        question_text: "Match the device to its function:",
-        pairs: [
-          { statement: "Switch", match: "Forwards data to specific devices on a LAN" },
-          { statement: "Router", match: "Directs packets between different networks" },
-          { statement: "Wireless Access Point", match: "Connects wireless devices to a network" },
-          { statement: "NIC", match: "Allows a device to connect to a network" }
-        ],
-        model_answer: [
-          "Forwards data to specific devices on a LAN",
-          "Directs packets between different networks",
-          "Connects wireless devices to a network",
-          "Allows a device to connect to a network"
-        ],
-        explanation: "Each device serves a distinct purpose in a network. Switches manage traffic on a LAN; routers link different networks (e.g. LAN to WAN); WAPs connect wireless clients; NICs are essential for any device to communicate over a network.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q206",
-        type: "matching",
-        topic: "networks",
-        question_text: "Match each network type to its description:",
-        pairs: [
-          { statement: "LAN", match: "Covers a small geographical area" },
-          { statement: "WAN", match: "Connects devices over a large area" },
-          { statement: "Client-server", match: "Relies on centralised servers" },
-          { statement: "Peer-to-peer", match: "All devices share resources directly" }
-        ],
-        model_answer: [
-          "Covers a small geographical area",
-          "Connects devices over a large area",
-          "Relies on centralised servers",
-          "All devices share resources directly"
-        ],
-        explanation: "LANs are localised networks like those in schools. WANs span larger areas and use external infrastructure. Client-server networks centralise control, while peer-to-peer networks decentralise it, sharing responsibilities across devices.",
-        created_at: "2025-05-05T00:00:00Z"
       }
-
-
     ],
   },
   {
@@ -1273,423 +943,10 @@ export const topics: Topic[] = [
     name: "Network Security",
     description: "Learn about security threats, prevention methods, and encryption",
     icon: Shield,
-    questionCount: 38,
-    questions: [
-      {
-        id: "q151",
-        type: "short-answer",
-        topic: "network-security",
-        question_text: "State what is meant by the term 'brute force attack' in the context of cyber security.",
-        model_answer: "A brute force attack is when a hacker repeatedly tries different combinations of usernames and passwords to gain access to a system.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q152",
-        type: "short-answer",
-        topic: "network-security",
-        question_text: "Explain one way that a brute force attack can be prevented.",
-        model_answer: "By locking user accounts after a number of failed login attempts, or by requiring CAPTCHA or multi-factor authentication.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q153",
-        type: "short-answer",
-        topic: "network-security",
-        question_text: "Give one reason why an organisation might perform penetration testing on their network.",
-        model_answer: "To identify vulnerabilities or weaknesses that could be exploited by hackers before an actual attack occurs.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q154",
-        type: "multiple-choice",
-        topic: "network-security",
-        question_text: "Which of the following is an example of social engineering?",
-        options: [
-          "Installing a firewall",
-          "Sending a phishing email",
-          "Using encryption",
-          "Brute force password guessing"
-        ],
-        correctAnswerIndex: 1,
-        model_answer: "Sending a phishing email",
-        explanation: "Phishing is a form of social engineering that tricks users into revealing personal information by pretending to be a trustworthy source.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q155",
-        type: "true-false",
-        topic: "network-security",
-        question_text: "Antivirus software is used to detect and remove malware.",
-        model_answer: "true",
-        explanation: "True – Antivirus software scans the system for known threats and helps remove or quarantine malware.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q156",
-        type: "fill-in-the-blank",
-        topic: "network-security",
-        question_text: "Fill in the blanks:\n\nA ______ is a type of malware that disguises itself as a useful program. A ______ attack attempts to flood a server with requests. A ______ test checks for security flaws.",
-        model_answer: ["Trojan", "Denial of Service", "penetration"],
-        options: ["Trojan", "Worm", "Denial of Service", "phishing", "penetration", "debugging"],
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q157",
-        type: "matching",
-        topic: "network-security",
-        question_text: "Match each security threat to its description:",
-        pairs: [
-          { statement: "Malware", match: "Software designed to damage or gain unauthorised access" },
-          { statement: "Phishing", match: "Tricking users into revealing sensitive information" },
-          { statement: "Denial of Service", match: "Flooding a network or server with traffic" },
-          { statement: "Brute force", match: "Trying many passwords until the correct one is found" }
-        ],
-        model_answer: [
-          "Software designed to damage or gain unauthorised access",
-          "Tricking users into revealing sensitive information",
-          "Flooding a network or server with traffic",
-          "Trying many passwords until the correct one is found"
-        ],
-        explanation: "Each type of threat affects a system in a different way. Knowing these helps in choosing the right protection method.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q158",
-        type: "short-answer",
-        topic: "network-security",
-        question_text: "Describe the purpose of network forensics.",
-        model_answer: "Network forensics involves monitoring and analysing network traffic to detect and investigate security breaches or malicious activity.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q301",
-        type: "short-answer",
-        topic: "network-security",
-        question_text: "Describe the purpose of a brute-force attack and how it operates.",
-        model_answer: "A brute-force attack tries many combinations of passwords or pins until the correct one is found to gain access to a system.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q302",
-        type: "short-answer",
-        topic: "network-security",
-        question_text: "Explain the role of social engineering in cyber attacks.",
-        model_answer: "Social engineering manipulates people into giving away confidential information, such as passwords, often through fake phone calls or messages.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q303",
-        type: "multiple-choice",
-        topic: "network-security",
-        question_text: "Which of the following best describes a denial-of-service (DoS) attack?",
-        options: [
-          "Stealing data from a system",
-          "Cracking password hashes",
-          "Flooding a network with traffic to cause disruption",
-          "Injecting SQL code into a form field"
-        ],
-        correctAnswerIndex: 2,
-        model_answer: "Flooding a network with traffic to cause disruption",
-        explanation: "A DoS attack aims to overload services with requests, making them unavailable to users.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q304",
-        type: "true-false",
-        topic: "network-security",
-        question_text: "Phishing is a form of malware that infects a user's device.",
-        model_answer: "false",
-        explanation: "Phishing is a form of social engineering, not malware. It tricks users into revealing personal information.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q305",
-        type: "true-false",
-        topic: "network-security",
-        question_text: "Malware can be designed to encrypt files and demand payment for their release.",
-        model_answer: "true",
-        explanation: "This describes ransomware, a type of malware that locks files and demands payment to unlock them.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q306",
-        type: "short-answer",
-        topic: "network-security",
-        question_text: "What is the goal of an SQL injection attack?",
-        model_answer: "To access or manipulate a database by injecting malicious SQL code into an input field on a website.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q307",
-        type: "short-answer",
-        topic: "network-security",
-        question_text: "Give one reason why people are often considered the weakest point in security.",
-        model_answer: "- They may fall for phishing emails or social engineering tactics\n- They might use weak or easily guessable passwords\n- They can accidentally download and install malware\n- They may leave devices unlocked or unattended\n- They might share login details with others\n- They may ignore or bypass security protocols\n- They can be tricked into revealing sensitive information over the phone or in person\n- They might plug in unknown USB devices",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q308",
-        type: "matching",
-        topic: "network-security",
-        question_text: "Match the attack type to its description:",
-        pairs: [
-          { "statement": "Phishing", "match": "Tricking someone into revealing information via email or message" },
-          { "statement": "Brute-force", "match": "Guessing login details through repeated attempts" },
-          { "statement": "SQL injection", "match": "Entering malicious database queries into a form" },
-          { "statement": "DoS attack", "match": "Overloading a system to make it unavailable" }
-        ],
-        model_answer: [
-          "Tricking someone into revealing information via email or message",
-          "Guessing login details through repeated attempts",
-          "Entering malicious database queries into a form",
-          "Overloading a system to make it unavailable"
-        ],
-        explanation: "Each method targets different system weaknesses: users, login forms, databases, or services.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q309",
-        type: "fill-in-the-blank",
-        topic: "network-security",
-        question_text: "Complete the sentence:\n\nOne way to protect against malware is to install ______ software. To reduce the risk of SQL injection, developers use ______ statements. A ______ is often used to restrict access between a device and the internet.",
-        model_answer: ["anti-malware", "prepared", "firewall"],
-        options: ["firewall", "encryption", "prepared", "raw", "password", "anti-malware"],
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q310",
-        type: "short-answer",
-        topic: "network-security",
-        question_text: "Explain how encryption helps protect data in transmission.",
-        model_answer: "Encryption scrambles data so that even if it's intercepted during transmission, it can't be understood without the correct decryption key.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q161",
-        type: "multiple-choice",
-        topic: "network-security",
-        question_text: "What is the primary purpose of a denial-of-service (DoS) attack?",
-        options: [
-          "To access confidential data",
-          "To overload a network and make it unavailable",
-          "To gain physical access to a computer",
-          "To trick users into giving passwords"
-        ],
-        correctAnswerIndex: 1,
-        model_answer: "To overload a network and make it unavailable",
-        explanation: "DoS attacks flood a network or service with requests, making it slow or entirely inaccessible to users.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q162",
-        type: "true-false",
-        topic: "network-security",
-        question_text: "Firewalls can be used to block unauthorised access to a network.",
-        model_answer: "true",
-        explanation: "Firewalls act as barriers between trusted and untrusted networks, filtering traffic to prevent unauthorised access.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q163",
-        type: "short-answer",
-        topic: "network-security",
-        question_text: "Give one reason why using strong, unique passwords is important for network security.",
-        model_answer: "It makes it more difficult for attackers to gain unauthorised access through guessing or brute-force methods.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q164",
-        type: "short-answer",
-        topic: "network-security",
-        question_text: "Explain how malware can be used to collect personal data from a user’s device.",
-        model_answer: "Malware such as spyware can secretly monitor a user’s activity, capturing personal data like login credentials or financial information.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q165",
-        type: "matching",
-        topic: "network-security",
-        question_text: "Match the attack type with its description:",
-        pairs: [
-          { "statement": "Phishing", "match": "Tricks users into revealing personal data" },
-          { "statement": "Brute-force", "match": "Repeatedly tries passwords to gain access" },
-          { "statement": "Malware", "match": "Software that damages or steals data" },
-          { "statement": "SQL Injection", "match": "Alters database queries to access data" }
-        ],
-        model_answer: [
-          "Tricks users into revealing personal data",
-          "Repeatedly tries passwords to gain access",
-          "Software that damages or steals data",
-          "Alters database queries to access data"
-        ],
-        explanation: "Each form of attack works differently. Phishing uses deception, brute-force guesses logins, malware is malicious software, and SQL injection targets databases.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q166",
-        type: "fill-in-the-blank",
-        topic: "network-security",
-        question_text: "Complete the following:\n\nA ______ is used to prevent unauthorised access to or from a private network. Anti-malware software helps detect and remove ______. Strong ______ help protect user accounts.",
-        model_answer: ["firewall", "malware", "passwords"],
-        options: ["firewall", "gateway", "malware", "spyware", "passwords", "keys"],
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q167",
-        type: "multiple-choice",
-        topic: "network-security",
-        question_text: "Which of these best describes penetration testing?",
-        options: [
-          "Testing a website for speed and performance",
-          "Simulating attacks to find vulnerabilities in a system",
-          "Installing antivirus software on a server",
-          "Changing default user passwords"
-        ],
-        correctAnswerIndex: 1,
-        model_answer: "Simulating attacks to find vulnerabilities in a system",
-        explanation: "Penetration testing involves authorised simulated attacks to identify weaknesses before a real attacker can exploit them.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q168",
-        type: "true-false",
-        topic: "network-security",
-        question_text: "Encryption converts data into a readable format to make it easier to share.",
-        model_answer: "false",
-        explanation: "False – Encryption converts data into unreadable code to protect it from unauthorised access. Only those with the key can decrypt it.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q169",
-        type: "short-answer",
-        topic: "network-security",
-        question_text: "Describe one way physical security can prevent unauthorised access to a network.",
-        model_answer: "Physical security methods like locked server rooms or biometric access control limit who can access networking equipment.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q170",
-        type: "short-answer",
-        topic: "network-security",
-        question_text: "What is a key feature of user access levels in a secure system?",
-        model_answer: "User access levels restrict what data or functions users can access based on their role, reducing the risk of accidental or malicious changes.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q171",
-        type: "multiple-choice",
-        topic: "network-security",
-        question_text: "Which of the following best describes the purpose of a firewall?",
-        options: [
-          "Encrypts sensitive data before storage",
-          "Monitors and blocks unauthorised network access",
-          "Detects and deletes all computer viruses",
-          "Optimises network traffic for faster communication"
-        ],
-        correctAnswerIndex: 1,
-        model_answer: "Monitors and blocks unauthorised network access",
-        explanation: "A firewall helps protect a system or network by monitoring incoming and outgoing traffic and blocking suspicious or unauthorised connections.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q172",
-        type: "true-false",
-        topic: "network-security",
-        question_text: "SQL injection involves inserting malicious code into a website’s database query.",
-        model_answer: "true",
-        explanation: "True – SQL injection is a form of attack where malicious SQL statements are inserted into a query to manipulate or access database information.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q173",
-        type: "short-answer",
-        topic: "network-security",
-        question_text: "What is one way to prevent SQL injection attacks?",
-        model_answer: "Use prepared statements or parameterised queries to ensure user input does not modify the structure of SQL commands.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q174",
-        type: "matching",
-        topic: "network-security",
-        question_text: "Match each security measure to what it prevents or limits:",
-        pairs: [
-          { statement: "Firewall", match: "Unauthorised network access" },
-          { statement: "Anti-malware software", match: "Malicious software infections" },
-          { statement: "Password policy", match: "Unauthorised user logins" },
-          { statement: "Encryption", match: "Access to data if intercepted" }
-        ],
-        model_answer: [
-          "Unauthorised network access",
-          "Malicious software infections",
-          "Unauthorised user logins",
-          "Access to data if intercepted"
-        ],
-        explanation: "Each method plays a key role in securing systems by preventing different types of attacks or minimising damage if they occur.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q175",
-        type: "fill-in-the-blank",
-        topic: "network-security",
-        question_text: "Fill in the blanks about passwords and access control:\n\nTo limit access, users can be given different ______ levels. Strong ______ make it harder for attackers to guess or crack login details.",
-        model_answer: ["access", "passwords"],
-        options: ["access", "encryption", "passwords", "firewalls", "roles", "usernames"],
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q176",
-        type: "short-answer",
-        topic: "network-security",
-        question_text: "Describe the purpose of penetration testing.",
-        model_answer: "Penetration testing simulates an attack on a system to identify and fix vulnerabilities before they can be exploited by real attackers.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q177",
-        type: "true-false",
-        topic: "network-security",
-        question_text: "Encryption can prevent data from being intercepted during transmission.",
-        model_answer: "false",
-        explanation: "False – Encryption doesn't prevent interception, but it makes the data unreadable without the correct key, thus protecting it.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q178",
-        type: "multiple-choice",
-        topic: "network-security",
-        question_text: "Which of the following is an example of physical security?",
-        options: [
-          "Firewall",
-          "Antivirus software",
-          "Door lock on a server room",
-          "Encryption"
-        ],
-        correctAnswerIndex: 2,
-        model_answer: "Door lock on a server room",
-        explanation: "Physical security refers to measures that prevent physical access to hardware and sensitive systems.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q179",
-        type: "short-answer",
-        topic: "network-security",
-        question_text: "What is the role of access levels in improving security?",
-        model_answer: "Access levels limit what actions users can perform and what data they can access, reducing the risk of accidental or malicious changes.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q180",
-        type: "code",
-        topic: "network-security",
-        question_text: "The following SQL query is vulnerable to SQL injection:\n\n`SELECT * FROM users WHERE username = '\" + input + \"'`\n\nExplain how this could be exploited and suggest how to prevent it.",
-        model_answer: "An attacker could input `' OR '1'='1` to return all records from the database. To prevent this, user input should be sanitised, or parameterised queries should be used instead.",
-        model_answer_python: "cursor.execute(\"SELECT * FROM users WHERE username = ?\", (input_value,))",
-        created_at: "2025-05-05T00:00:00Z"
-      }
-    ],
+    questionCount: 0,
+    questions: [],
     unit: 1,
-    disabled: false,
+    disabled: true,
   },
   {
     id: "5",
@@ -1697,557 +954,10 @@ export const topics: Topic[] = [
     name: "Systems Software",
     description: "Understand operating systems, utility software, and system management",
     icon: Settings,
-    questionCount: 56,
-    questions: [
-      {
-        id: "q351",
-        type: "matching",
-        topic: "systems-software",
-        question_text: "Match each operating system function to its correct task:",
-        pairs: [
-          { statement: "Memory Management", match: "Transfers programs from storage to RAM" },
-          { statement: "Peripheral Management", match: "Handles communication with input/output devices" },
-          { statement: "File Management", match: "Lets the user organise files into folders" },
-          { statement: "User Interface", match: "Enables the user to interact with the system" }
-        ],
-        model_answer: [
-          "Transfers programs from storage to RAM",
-          "Handles communication with input/output devices",
-          "Lets the user organise files into folders",
-          "Enables the user to interact with the system"
-        ],
-        explanation: "Each operating system function serves a distinct purpose, from handling memory and peripherals to providing a way for users to interact with the system and organise their files.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q352",
-        type: "fill-in-the-blank",
-        topic: "systems-software",
-        question_text: "Fill in the blanks about utility software:\n\n__________ software uses a __________ to change data. Even if intercepted, the data can't be __________. __________ software arranges scattered parts of files into __________ blocks, improving the __________ at which data can be read.",
-        model_answer: ["Encryption", "key", "understood", "Defragmentation", "consecutive", "speed"],
-        options: ["Encryption", "key", "understood", "Defragmentation", "consecutive", "speed", "lock", "separate", "compression", "deleted"],
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q353",
-        type: "short-answer",
-        topic: "systems-software",
-        question_text: "State why utility software is important in a computer system.",
-        model_answer: "Utility software performs background tasks to keep the computer running efficiently, such as managing files, detecting issues, and improving performance.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q354",
-        type: "short-answer",
-        topic: "systems-software",
-        question_text: "Explain why a computer runs more efficiently after using defragmentation software.",
-        model_answer: "Defragmentation arranges scattered parts of files into continuous blocks, reducing the time the disk needs to read and write data, which improves overall speed.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q355",
-        type: "matching",
-        topic: "systems-software",
-        question_text: "Match each system action to the operating system function that handles it:",
-        pairs: [
-          { statement: "Renaming a saved document", match: "File Management" },
-          { statement: "Reading data from a printer", match: "Peripheral Management" },
-          { statement: "Moving data between RAM and virtual memory", match: "Memory Management" },
-          { statement: "Changing a user password", match: "User Management" },
-          { statement: "Creating a folder to organise files", match: "File Management" }
-        ],
-        model_answer: [
-          "File Management",
-          "Peripheral Management",
-          "Memory Management",
-          "User Management",
-          "File Management"
-        ],
-        explanation: "The OS assigns specific roles to different components to manage tasks like memory access, file organisation, and user authentication.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q356",
-        type: "short-answer",
-        topic: "systems-software",
-        question_text: "Describe how a computer’s hard drive may become fragmented over time.",
-        model_answer: "As files are added and removed, gaps form on the disk. New files may not fit into these gaps completely, so they get split across multiple locations, causing fragmentation.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q357",
-        type: "short-answer",
-        topic: "systems-software",
-        question_text: "Explain how defragmentation software can improve computer performance.",
-        model_answer: "It reorganises files to be stored in continuous blocks and groups free space together, making it quicker for the disk to read or write data.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q401",
-        type: "short-answer",
-        topic: "systems-software",
-        question_text: "What is the main purpose of an operating system?",
-        model_answer: "To manage computer hardware and software resources, and provide common services for programs.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q402",
-        type: "multiple-choice",
-        topic: "systems-software",
-        question_text: "Which of these is NOT a function of an operating system?",
-        options: ["Memory management", "Running antivirus scans", "User management", "File handling"],
-        correctAnswerIndex: 1,
-        model_answer: "Running antivirus scans",
-        explanation: "Antivirus is a type of utility software, not a core function of the operating system.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q403",
-        type: "true-false",
-        topic: "systems-software",
-        question_text: "An operating system allows more than one program to run at the same time.",
-        model_answer: "true",
-        explanation: "This is called multitasking, managed by the OS allocating memory and CPU time to each process.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q404",
-        type: "short-answer",
-        topic: "systems-software",
-        question_text: "Describe how an operating system manages memory.",
-        model_answer: "It allocates memory space to programs, keeps track of what memory is being used, and swaps data between RAM and storage if needed.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q405",
-        type: "matching",
-        topic: "systems-software",
-        question_text: "Match each function to its description:",
-        pairs: [
-          { statement: "User management", match: "Assigns access rights and login credentials" },
-          { statement: "Memory management", match: "Controls how memory is allocated to programs" },
-          { statement: "Peripheral management", match: "Handles input and output devices" },
-          { statement: "File management", match: "Organises and stores data on drives" }
-        ],
-        model_answer: [
-          "Assigns access rights and login credentials",
-          "Controls how memory is allocated to programs",
-          "Handles input and output devices",
-          "Organises and stores data on drives"
-        ],
-        explanation: "Each component of the OS handles a distinct task: managing files, memory, users, and hardware.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q406",
-        type: "short-answer",
-        topic: "systems-software",
-        question_text: "What is peripheral management and why is it important?",
-        model_answer: "It is the process of handling communication between the CPU and devices like printers or keyboards. It ensures that input/output devices work correctly and drivers are used.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q407",
-        type: "fill-in-the-blank",
-        topic: "systems-software",
-        question_text: "The operating system manages both ______ and ______. It allows multiple applications to run through ______.",
-        model_answer: ["memory", "hardware", "multitasking"],
-        options: ["multitasking", "hardware", "files", "memory", "compression", "drivers"],
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q408",
-        type: "short-answer",
-        topic: "systems-software",
-        question_text: "Explain one role of the user interface in an operating system.",
-        model_answer: "It provides a way for the user to interact with the computer, such as through a graphical interface or command line.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q409",
-        type: "multiple-choice",
-        topic: "systems-software",
-        question_text: "Which is a typical feature of a graphical user interface (GUI)?",
-        options: ["Command input", "Drag and drop", "Keyboard-only use", "All text-based"],
-        correctAnswerIndex: 1,
-        model_answer: "Drag and drop",
-        explanation: "GUIs use icons, windows, and mouse input – features like drag-and-drop are common.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q410",
-        type: "true-false",
-        topic: "systems-software",
-        question_text: "Operating systems allow different users to have different access rights.",
-        model_answer: "true",
-        explanation: "This is part of user management – assigning different permissions and accounts.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q343",
-        type: "short-answer",
-        topic: "systems-software",
-        question_text: "Explain how an operating system allows a computer to run multiple programs at once.",
-        model_answer: "The operating system allocates CPU time to each process and switches between them quickly, giving the illusion of multitasking. It manages memory so each program has the space it needs.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q344",
-        type: "short-answer",
-        topic: "systems-software",
-        question_text: "State two tasks carried out by memory management within an operating system.",
-        model_answer: "1) Allocating memory to applications.\n2) Managing data transfer between RAM and storage.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q345",
-        type: "multiple-choice",
-        topic: "systems-software",
-        question_text: "What is the purpose of peripheral management?",
-        options: ["To update software", "To manage the keyboard and mouse", "To provide internet access", "To monitor antivirus activity"],
-        correctAnswerIndex: 1,
-        model_answer: "To manage the keyboard and mouse",
-        explanation: "Peripheral management ensures that devices like the keyboard, mouse, and printer communicate properly with the system using drivers.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q346",
-        type: "short-answer",
-        topic: "systems-software",
-        question_text: "Describe one reason why drivers are needed for peripheral devices.",
-        model_answer: "Drivers translate the commands from the operating system into signals the device can understand.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q347",
-        type: "short-answer",
-        topic: "systems-software",
-        question_text: "What does the file management system of an operating system do?",
-        model_answer: "It handles the saving, moving, naming, and organisation of files in folders so they can be accessed and stored efficiently.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q348",
-        type: "true-false",
-        topic: "systems-software",
-        question_text: "An operating system is responsible for assigning usernames and controlling user access rights.",
-        model_answer: "true",
-        explanation: "True – this is part of the user management system within an operating system.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q349",
-        type: "true-false",
-        topic: "systems-software",
-        question_text: "Without an operating system, a user can still run programs manually.",
-        model_answer: "false",
-        explanation: "False – the operating system is essential for managing hardware and software so programs can run.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q350",
-        type: "fill-in-the-blank",
-        topic: "systems-software",
-        question_text: "An operating system provides a _______ for users to interact with the system. It also manages _______ devices using drivers, and handles memory and _______ for programs.",
-        model_answer: ["user interface", "peripheral", "resources"],
-        options: ["user interface", "text editor", "peripheral", "central", "resources", "functions"],
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q351",
-        type: "short-answer",
-        topic: "systems-software",
-        question_text: "What is meant by file permissions?",
-        model_answer: "File permissions define who can read, write, or execute a file. This helps protect sensitive data.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q352",
-        type: "matching",
-        topic: "systems-software",
-        question_text: "Match each OS feature to its description:",
-        pairs: [
-          { "statement": "Memory management", "match": "Allocates space to applications and manages data transfer" },
-          { "statement": "User interface", "match": "Allows interaction with the system" },
-          { "statement": "Peripheral management", "match": "Manages input and output devices using drivers" },
-          { "statement": "User management", "match": "Controls login credentials and access rights" }
-        ],
-        model_answer: [
-          "Allocates space to applications and manages data transfer",
-          "Allows interaction with the system",
-          "Manages input and output devices using drivers",
-          "Controls login credentials and access rights"
-        ],
-        explanation: "Each of these operating system components plays a distinct role in maintaining system usability and security.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q353",
-        type: "multiple-choice",
-        topic: "systems-software",
-        question_text: "What is the main purpose of data compression software?",
-        options: ["To remove unused programs", "To increase storage capacity", "To save space by reducing file size", "To encrypt files for privacy"],
-        correctAnswerIndex: 2,
-        model_answer: "To save space by reducing file size",
-        explanation: "Data compression software reduces file size for faster transfer and less storage usage.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q354",
-        type: "short-answer",
-        topic: "systems-software",
-        question_text: "Describe the purpose of defragmentation software.",
-        model_answer: "It rearranges files on a hard disk to be stored in continuous blocks, improving read/write speed.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q355",
-        type: "short-answer",
-        topic: "systems-software",
-        question_text: "What is the benefit of using encryption software?",
-        model_answer: "It protects sensitive data by converting it into unreadable code without the correct decryption key.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q356",
-        type: "fill-in-the-blank",
-        topic: "systems-software",
-        question_text: "Utility software performs ______ tasks that help keep the system running smoothly. Examples include ______ files, ______ data, and compression.",
-        model_answer: ["maintenance", "defragmenting", "encrypting"],
-        options: ["maintenance", "temporary", "defragmenting", "editing", "encrypting", "checking"],
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q357",
-        type: "true-false",
-        topic: "systems-software",
-        question_text: "Encryption software scrambles data so it cannot be read without a key.",
-        model_answer: "true",
-        explanation: "True – this makes encrypted data secure from unauthorised access.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q358",
-        type: "true-false",
-        topic: "systems-software",
-        question_text: "Defragmentation software deletes duplicate files to free up space.",
-        model_answer: "false",
-        explanation: "False – defragmentation reorganises file storage on the disk but does not delete files.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q359",
-        type: "multiple-choice",
-        topic: "systems-software",
-        question_text: "Which of the following is a typical use for utility software?",
-        options: ["Running video games", "Creating documents", "Scanning for malware", "Sending emails"],
-        correctAnswerIndex: 2,
-        model_answer: "Scanning for malware",
-        explanation: "Utility software helps maintain the system, and scanning for malware is one such task.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q360",
-        type: "short-answer",
-        topic: "systems-software",
-        question_text: "Give two reasons why data might be compressed before sending over a network.",
-        model_answer: "1) To reduce transfer time.\n2) To use less bandwidth.",
-        "created_at": "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q361",
-        type: "short-answer",
-        topic: "systems-software",
-        question_text: "Explain one reason an operating system might restrict user access levels.",
-        model_answer: "To prevent unauthorised changes to system settings or access to sensitive files.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q339",
-        type: "short-answer",
-        topic: "systems-software",
-        question_text: "What is a driver and why is it necessary?",
-        model_answer: "A driver is a small program that tells the operating system how to communicate with hardware devices. Without drivers, the OS wouldn't be able to send the correct signals to use the device properly.",
-        "created_at": "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q340",
-        type: "short-answer",
-        topic: "systems-software",
-        question_text: "Explain two reasons why file management is an essential function of an operating system.",
-        model_answer: "1) It allows files to be named, stored in folders, and moved easily.\n2) It helps organise data so users and software can locate and access files efficiently.",
-        "created_at": "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q341",
-        type: "true-false",
-        topic: "systems-software",
-        question_text: "The operating system is responsible for handling keyboard and mouse input.",
-        model_answer: "true",
-        explanation: "True – The OS manages input devices through drivers and passes the data to the appropriate applications.",
-        "created_at": "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q342",
-        type: "multiple-choice",
-        topic: "systems-software",
-        question_text: "Which of the following tasks is the operating system NOT responsible for?",
-        options: ["Managing memory", "Running application software", "Translating source code", "Handling file systems"],
-        correctAnswerIndex: 2,
-        model_answer: "Translating source code",
-        explanation: "Translating source code is done by compilers or interpreters, not the operating system.",
-        "created_at": "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q343",
-        type: "short-answer",
-        topic: "systems-software",
-        question_text: "Describe how an operating system manages multitasking.",
-        model_answer: "The OS uses memory and process scheduling to allow multiple programs to run by rapidly switching between them, allocating CPU time and memory to each.",
-        "created_at": "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q344",
-        type: "short-answer",
-        topic: "systems-software",
-        question_text: "What is defragmentation and how does it improve performance?",
-        model_answer: "Defragmentation rearranges the parts of files stored on a hard disk so they are stored together. This reduces the time needed for the disk to read files, improving speed.",
-        "created_at": "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q345",
-        type: "short-answer",
-        topic: "systems-software",
-        question_text: "Give one benefit of using encryption software.",
-        model_answer: "It makes data unreadable without a decryption key, protecting it from unauthorised access.",
-        "created_at": "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q346",
-        type: "short-answer",
-        topic: "systems-software",
-        question_text: "What is the main role of the user interface in an operating system?",
-        model_answer: "It allows users to interact with the computer, either through text-based commands or graphical icons and windows.",
-        "created_at": "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q347",
-        type: "true-false",
-        topic: "systems-software",
-        question_text: "Defragmentation software is not needed if a computer uses a solid state drive (SSD).",
-        model_answer: "true",
-        explanation: "True – SSDs access memory electronically rather than mechanically, so fragmentation doesn't affect performance in the same way it does on hard drives.",
-        "created_at": "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q348",
-        type: "multiple-choice",
-        topic: "systems-software",
-        question_text: "Which of these is a responsibility of memory management?",
-        options: ["Backing up data", "Allowing multitasking", "Running anti-virus checks", "Compressing files"],
-        correctAnswerIndex: 1,
-        model_answer: "Allowing multitasking",
-        explanation: "Memory management handles how programs are loaded and run, making multitasking possible.",
-        "created_at": "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q349",
-        type: "short-answer",
-        topic: "systems-software",
-        question_text: "What is the function of compression software?",
-        model_answer: "It reduces the size of files by encoding data more efficiently, saving storage space and making file transfer faster.",
-        "created_at": "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q350",
-        type: "true-false",
-        topic: "systems-software",
-        question_text: "The OS controls access rights to files and programs for different users.",
-        model_answer: "true",
-        explanation: "True – User management includes controlling permissions, allowing or restricting access to parts of the system.",
-        "created_at": "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q351",
-        type: "short-answer",
-        topic: "systems-software",
-        question_text: "Explain one way an OS helps with security through user management.",
-        model_answer: "It can assign specific permissions or access levels to different users, preventing unauthorised access to sensitive files.",
-        "created_at": "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q352",
-        type: "multiple-choice",
-        topic: "systems-software",
-        question_text: "Which of these is an example of utility software?",
-        options: ["Microsoft Word", "File compression tool", "Web browser", "Spreadsheet program"],
-        correctAnswerIndex: 1,
-        model_answer: "File compression tool",
-        explanation: "Utility software performs maintenance tasks such as compression, defragmentation, and encryption, unlike application software.",
-        "created_at": "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q353",
-        type: "true-false",
-        topic: "systems-software",
-        question_text: "Encryption software ensures data can’t be accessed by unauthorised users.",
-        model_answer: "true",
-        explanation: "True – Encryption changes the data into unreadable form unless a user has the correct key to decrypt it.",
-        "created_at": "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q354",
-        type: "short-answer",
-        topic: "systems-software",
-        question_text: "Why is data compression especially useful when sending files over the internet?",
-        model_answer: "Because it reduces the file size, speeding up transfer and using less bandwidth.",
-        "created_at": "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q355",
-        type: "short-answer",
-        topic: "systems-software",
-        question_text: "Name two features of a graphical user interface (GUI).",
-        model_answer: "1) Uses icons and windows to represent programs and files.\n2) Allows interaction using a mouse or touchscreen.",
-        "created_at": "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q356",
-        type: "true-false",
-        topic: "systems-software",
-        question_text: "A command-line interface is easier to use than a GUI for most users.",
-        model_answer: "false",
-        explanation: "False – CLIs require users to remember and type commands, while GUIs are more intuitive and visual.",
-        "created_at": "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q357",
-        type: "multiple-choice",
-        topic: "systems-software",
-        question_text: "Which of the following best describes what defragmentation does?",
-        options: [
-          "Removes malware from files",
-          "Arranges fragmented files to speed up disk access",
-          "Encrypts data to prevent unauthorised access",
-          "Splits files into smaller chunks"
-        ],
-        correctAnswerIndex: 1,
-        model_answer: "Arranges fragmented files to speed up disk access",
-        explanation: "Defragmentation reorganises files so their parts are stored contiguously, reducing read time.",
-        "created_at": "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q358",
-        type: "short-answer",
-        topic: "systems-software",
-        question_text: "State one benefit of memory management for running applications.",
-        model_answer: "It allocates RAM to different programs so they can run without interfering with each other.",
-        "created_at": "2025-05-05T00:00:00Z"
-      }
-    ]
-    ,
+    questionCount: 0,
+    questions: [],
     unit: 1,
-    disabled: false,
+    disabled: true,
   },
   {
     id: "6",
@@ -2269,8 +979,7 @@ export const topics: Topic[] = [
     description: "Learn about algorithms, computational thinking, and problem-solving",
     icon: Code,
     questionCount: 0,
-    questions: [
-    ],
+    questions: [],
     unit: 2,
     disabled: true,
   },
@@ -2280,7 +989,7 @@ export const topics: Topic[] = [
     name: "Programming Fundamentals",
     description: "Master variables, data types, operators, and control structures",
     icon: FileCode,
-    questionCount: 54,
+    questionCount: 44,
     questions: [
       {
         id: "q83",
@@ -2394,7 +1103,7 @@ export const topics: Topic[] = [
         id: "q95",
         topic: "programming-fundamentals",
         type: "code",
-        question_text: "Write a pseudocode program that:\n• asks the user to input a test score\n• prints 'A' if score is 80 or more\n• prints 'B' if score is 60-79\n• prints 'C' if score is 40-59\n• prints 'F' if score is less than 40",
+        question_text: "Write a pseudocode program that:\n• asks the user to input a test score\n• prints 'A' if score is 80 or more\n• prints 'B' if score is 60–79\n• prints 'C' if score is 40–59\n• prints 'F' if score is less than 40",
         model_answer: "score = input(\"Enter score: \"\nif score >= 80 then\n   print(\"A\")\nelseif score >= 60 then\n   print(\"B\")\nelseif score >= 40 then\n   print(\"C\")\nelse\n   print(\"F\")\nendif",
         model_answer_python: "score = int(input(\"Enter score: \"))\nif score >= 80:\n    print(\"A\")\nelif score >= 60:\n    print(\"B\")\nelif score >= 40:\n    print(\"C\")\nelse:\n    print(\"F\")",
         created_at: "2025-05-02T00:00:00Z"
@@ -2742,89 +1451,7 @@ export const topics: Topic[] = [
         correctAnswerIndex: 1,
         model_answer: "The 'else' statement provides an alternative code block that executes when the 'if' condition is false.",
         created_at: "2025-05-02T00:00:00Z"
-      },
-      {
-        id: "q301",
-        type: "true-false",
-        topic: "programming-fundamentals",
-        question_text: "A variable is used to store data that can change while a program is running.",
-        model_answer: "true",
-        explanation: "True - A variable is a named storage location that holds a value which can be updated or changed during program execution.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q302",
-        type: "true-false",
-        topic: "programming-fundamentals",
-        question_text: "The MOD operator performs division and returns the quotient.",
-        model_answer: "false",
-        explanation: "False - The MOD operator returns the remainder after division, not the quotient. The DIV operator gives the quotient.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q303",
-        type: "true-false",
-        topic: "programming-fundamentals",
-        question_text: "A count-controlled loop uses a condition to decide when to stop.",
-        model_answer: "false",
-        explanation: "False - A count-controlled loop repeats a fixed number of times (e.g. FOR loops), whereas condition-controlled loops (like WHILE) stop when a condition is no longer true.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q304",
-        type: "true-false",
-        topic: "programming-fundamentals",
-        question_text: "Selection allows a program to choose between different paths based on a condition.",
-        model_answer: "true",
-        explanation: "True - Selection, often implemented using IF or CASE statements, lets a program make decisions by evaluating conditions.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q305",
-        type: "true-false",
-        topic: "programming-fundamentals",
-        question_text: "The assignment operator == is used to assign a value to a variable.",
-        model_answer: "false",
-        explanation: "False - The assignment operator is =. The double equals == is used for comparison, to check if two values are equal.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q306",
-        type: "true-false",
-        topic: "programming-fundamentals",
-        question_text: "The Boolean operator AND returns true only if both conditions are true.",
-        model_answer: "true",
-        explanation: "True - AND evaluates to true only when both conditions are true. If either is false, the result is false.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q307",
-        type: "true-false",
-        topic: "programming-fundamentals",
-        question_text: "Casting is the process of converting one data type into another.",
-        model_answer: "true",
-        explanation: "True - Casting changes a value from one type to another, such as converting a string into an integer using int().",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q308",
-        type: "true-false",
-        topic: "programming-fundamentals",
-        question_text: "An IF statement must always include an ELSE clause.",
-        model_answer: "false",
-        explanation: "False - An IF statement can be used on its own. The ELSE clause is optional and only used if you want an alternative path.",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-      {
-        id: "q119",
-        type: "code",
-        topic: "programming-fundamentals",
-        question_text: "Create an algorithm that:\n• Prompts for a staff ID and date of joining\n• Saves the input values to a file called staff.txt",
-        model_answer: "staffID = input(\"Enter staff ID: \")\ndoj = input(\"Enter date of joining: \")\nfile = open(\"staff.txt\", \"a\")\nfile.write(staffID + ',' + doj + '\\n')\nfile.close()",
-        model_answer_python: "staff_id = input(\"Enter staff ID: \")\ndoj = input(\"Enter date of joining: \")\nwith open('staff.txt', 'a') as file:\n    file.write(f\"{staff_id},{doj}\\n\")",
-        created_at: "2025-05-05T00:00:00Z"
-      },
-
+      }
     ],
     unit: 2,
     disabled: false,
@@ -2857,7 +1484,7 @@ export const topics: Topic[] = [
     name: "Languages & IDEs",
     description: "Explore programming languages, translators, and development environments",
     icon: Terminal,
-    questionCount: 13,
+    questionCount: 12,
     questions: [
       {
         id: "q117",
@@ -2873,6 +1500,15 @@ export const topics: Topic[] = [
         topic: "languages-and-idEs",
         question_text: "Explain why using a compiler can be beneficial compared to an interpreter.",
         model_answer: "Compiled programs run independently of the compiler and execute more quickly. They are also harder to reverse-engineer and allow error checking before execution.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q119",
+        type: "code",
+        topic: "languages-and-idEs",
+        question_text: "Create an algorithm that:\n• Prompts for a staff ID and date of joining\n• Saves the input values to a file called staff.txt",
+        model_answer: "staffID = input(\"Enter staff ID: \")\ndoj = input(\"Enter date of joining: \")\nfile = open(\"staff.txt\", \"a\")\nfile.write(staffID + ',' + doj + '\\n')\nfile.close()",
+        model_answer_python: "staff_id = input(\"Enter staff ID: \")\ndoj = input(\"Enter date of joining: \")\nwith open('staff.txt', 'a') as file:\n    file.write(f\"{staff_id},{doj}\\n\")",
         created_at: "2025-05-05T00:00:00Z"
       },
       {
@@ -2893,7 +1529,6 @@ export const topics: Topic[] = [
           { statement: "Creates a file that runs on its own", match: "Compiler" },
           { statement: "Needs to retranslate each time the code runs", match: "Interpreter" }
         ],
-        explanation: "Both compilers and interpreters convert source code into machine-readable instructions. A compiler translates the entire program at once and creates an executable file, whereas an interpreter re-translates code every time it runs, line-by-line.",
         model_answer: ["Both", "Compiler", "Interpreter"],
         created_at: "2025-05-05T00:00:00Z"
       },
@@ -2908,8 +1543,6 @@ export const topics: Topic[] = [
           { statement: "Easier to read using words like if and print", match: "High-level" },
           { statement: "Needs translation before it can run", match: "High-level" }
         ],
-        explanation: "High-level languages are easier to write due to their English-like syntax. They are portable across different systems. Low-level languages, while harder to read, give direct control over memory and are tailored to specific hardware.",
-
         model_answer: ["High-level", "Low-level", "High-level", "High-level"],
         created_at: "2025-05-05T00:00:00Z"
       },
@@ -2950,7 +1583,6 @@ export const topics: Topic[] = [
           { statement: "Needs knowledge of hardware architecture", match: "Low-level" }
         ],
         model_answer: ["High-level", "High-level", "High-level", "Low-level"],
-        explanation: "High-level languages are easier to write due to their English like form. This makes them easier to maintain. They are also hardware-independent, as long as you have the translator they can be used on any machine/processor. Low-level languages require an understanding of processor structure and are more hardware-specific, this does make them more efficient in some cases as you can design specifically for that device, they might be used in embedded systems.",
         created_at: "2025-05-05T00:00:00Z"
       },
       {
@@ -2958,7 +1590,7 @@ export const topics: Topic[] = [
         type: "short-answer",
         topic: "languages-and-idEs",
         question_text: "Name two tools commonly available in a development environment (IDE).",
-        model_answer: "1) Code editor - for writing and managing program code.\n2) Debugging tool - for finding and fixing issues in the code.",
+        model_answer: "1) Code editor – for writing and managing program code.\n2) Debugging tool – for finding and fixing issues in the code.",
         created_at: "2025-05-05T00:00:00Z"
       },
       {
@@ -2975,7 +1607,7 @@ export const topics: Topic[] = [
         topic: "languages-and-idEs",
         question_text: "A compiler translates code line-by-line each time a program is run.",
         model_answer: "false",
-        explanation: "A compiler translates the whole program into machine code before it runs. An interpreter is the tool that translates and executes code line-by-line during program execution.",
+        explanation: "False – an interpreter translates line-by-line; a compiler translates the entire program before execution.",
         created_at: "2025-05-05T00:00:00Z"
       },
       {
@@ -2990,11 +1622,13 @@ export const topics: Topic[] = [
           "Code written by users needs to be checked"
         ],
         correctAnswerIndex: 1,
-        explanation: "High-level languages use words and symbols that humans can understand but processors cannot. They must be translated into binary machine code using a compiler or interpreter so that the processor can execute the instructions.",
+        explanation: "Processors can only execute instructions written in machine code, so high-level code must be translated.",
         model_answer: "Processors only understand binary instructions",
         created_at: "2025-05-05T00:00:00Z"
       }
-    ],
+    ]
+    
+    ,
     unit: 2,
     disabled: false,
   },

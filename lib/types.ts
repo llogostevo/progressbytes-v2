@@ -12,6 +12,7 @@ export interface Question {
   correctAnswerIndex?: number
   order_important?: boolean
   model_answer_python?: string
+  explanation?: string
   created_at: string
   pairs?: {
     statement: string
