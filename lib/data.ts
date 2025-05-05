@@ -1480,7 +1480,7 @@ export const topics: Topic[] = [
   },
   {
     id: "11",
-    slug: "languages-ides",
+    slug: "languages-and-idEs",
     name: "Languages & IDEs",
     description: "Explore programming languages, translators, and development environments",
     icon: Terminal,

@@ -289,12 +289,12 @@ export default function QuestionPage() {
                   onSubmit={handleSubmitAnswer}
                   disabled={isSubmitting}
                 />
-              ) : (
+              ) : question.type === "text" || question.type === "short-answer" ? (
                 <TextQuestion
                   onSubmit={handleSubmitAnswer}
                   disabled={isSubmitting}
                 />
-              )
+              ) : null
             ) : (
               <div className="space-y-6">
                 <div className="p-4 bg-muted rounded-md">
