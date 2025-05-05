@@ -1697,7 +1697,7 @@ export const topics: Topic[] = [
     name: "Systems Software",
     description: "Understand operating systems, utility software, and system management",
     icon: Settings,
-    questionCount: 7,
+    questionCount: 17,
     questions: [
       {
         id: "q351",
@@ -1781,7 +1781,478 @@ export const topics: Topic[] = [
         question_text: "Explain how defragmentation software can improve computer performance.",
         model_answer: "It reorganises files to be stored in continuous blocks and groups free space together, making it quicker for the disk to read or write data.",
         created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q401",
+        type: "short-answer",
+        topic: "systems-software",
+        question_text: "What is the main purpose of an operating system?",
+        model_answer: "To manage computer hardware and software resources, and provide common services for programs.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q402",
+        type: "multiple-choice",
+        topic: "systems-software",
+        question_text: "Which of these is NOT a function of an operating system?",
+        options: ["Memory management", "Running antivirus scans", "User management", "File handling"],
+        correctAnswerIndex: 1,
+        model_answer: "Running antivirus scans",
+        explanation: "Antivirus is a type of utility software, not a core function of the operating system.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q403",
+        type: "true-false",
+        topic: "systems-software",
+        question_text: "An operating system allows more than one program to run at the same time.",
+        model_answer: "true",
+        explanation: "This is called multitasking, managed by the OS allocating memory and CPU time to each process.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q404",
+        type: "short-answer",
+        topic: "systems-software",
+        question_text: "Describe how an operating system manages memory.",
+        model_answer: "It allocates memory space to programs, keeps track of what memory is being used, and swaps data between RAM and storage if needed.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q405",
+        type: "matching",
+        topic: "systems-software",
+        question_text: "Match each function to its description:",
+        pairs: [
+          { statement: "User management", match: "Assigns access rights and login credentials" },
+          { statement: "Memory management", match: "Controls how memory is allocated to programs" },
+          { statement: "Peripheral management", match: "Handles input and output devices" },
+          { statement: "File management", match: "Organises and stores data on drives" }
+        ],
+        model_answer: [
+          "Assigns access rights and login credentials",
+          "Controls how memory is allocated to programs",
+          "Handles input and output devices",
+          "Organises and stores data on drives"
+        ],
+        explanation: "Each component of the OS handles a distinct task: managing files, memory, users, and hardware.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q406",
+        type: "short-answer",
+        topic: "systems-software",
+        question_text: "What is peripheral management and why is it important?",
+        model_answer: "It is the process of handling communication between the CPU and devices like printers or keyboards. It ensures that input/output devices work correctly and drivers are used.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q407",
+        type: "fill-in-the-blank",
+        topic: "systems-software",
+        question_text: "The operating system manages both ______ and ______. It allows multiple applications to run through ______.",
+        model_answer: ["memory", "hardware", "multitasking"],
+        options: ["multitasking", "hardware", "files", "memory", "compression", "drivers"],
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q408",
+        type: "short-answer",
+        topic: "systems-software",
+        question_text: "Explain one role of the user interface in an operating system.",
+        model_answer: "It provides a way for the user to interact with the computer, such as through a graphical interface or command line.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q409",
+        type: "multiple-choice",
+        topic: "systems-software",
+        question_text: "Which is a typical feature of a graphical user interface (GUI)?",
+        options: ["Command input", "Drag and drop", "Keyboard-only use", "All text-based"],
+        correctAnswerIndex: 1,
+        model_answer: "Drag and drop",
+        explanation: "GUIs use icons, windows, and mouse input – features like drag-and-drop are common.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q410",
+        type: "true-false",
+        topic: "systems-software",
+        question_text: "Operating systems allow different users to have different access rights.",
+        model_answer: "true",
+        explanation: "This is part of user management – assigning different permissions and accounts.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q343",
+        type: "short-answer",
+        topic: "systems-software",
+        question_text: "Explain how an operating system allows a computer to run multiple programs at once.",
+        model_answer: "The operating system allocates CPU time to each process and switches between them quickly, giving the illusion of multitasking. It manages memory so each program has the space it needs.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q344",
+        type: "short-answer",
+        topic: "systems-software",
+        question_text: "State two tasks carried out by memory management within an operating system.",
+        model_answer: "1) Allocating memory to applications.\n2) Managing data transfer between RAM and storage.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q345",
+        type: "multiple-choice",
+        topic: "systems-software",
+        question_text: "What is the purpose of peripheral management?",
+        options: ["To update software", "To manage the keyboard and mouse", "To provide internet access", "To monitor antivirus activity"],
+        correctAnswerIndex: 1,
+        model_answer: "To manage the keyboard and mouse",
+        explanation: "Peripheral management ensures that devices like the keyboard, mouse, and printer communicate properly with the system using drivers.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q346",
+        type: "short-answer",
+        topic: "systems-software",
+        question_text: "Describe one reason why drivers are needed for peripheral devices.",
+        model_answer: "Drivers translate the commands from the operating system into signals the device can understand.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q347",
+        type: "short-answer",
+        topic: "systems-software",
+        question_text: "What does the file management system of an operating system do?",
+        model_answer: "It handles the saving, moving, naming, and organisation of files in folders so they can be accessed and stored efficiently.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q348",
+        type: "true-false",
+        topic: "systems-software",
+        question_text: "An operating system is responsible for assigning usernames and controlling user access rights.",
+        model_answer: "true",
+        explanation: "True – this is part of the user management system within an operating system.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q349",
+        type: "true-false",
+        topic: "systems-software",
+        question_text: "Without an operating system, a user can still run programs manually.",
+        model_answer: "false",
+        explanation: "False – the operating system is essential for managing hardware and software so programs can run.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q350",
+        type: "fill-in-the-blank",
+        topic: "systems-software",
+        question_text: "An operating system provides a _______ for users to interact with the system. It also manages _______ devices using drivers, and handles memory and _______ for programs.",
+        model_answer: ["user interface", "peripheral", "resources"],
+        options: ["user interface", "text editor", "peripheral", "central", "resources", "functions"],
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q351",
+        type: "short-answer",
+        topic: "systems-software",
+        question_text: "What is meant by file permissions?",
+        model_answer: "File permissions define who can read, write, or execute a file. This helps protect sensitive data.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q352",
+        type: "matching",
+        topic: "systems-software",
+        question_text: "Match each OS feature to its description:",
+        pairs: [
+          { "statement": "Memory management", "match": "Allocates space to applications and manages data transfer" },
+          { "statement": "User interface", "match": "Allows interaction with the system" },
+          { "statement": "Peripheral management", "match": "Manages input and output devices using drivers" },
+          { "statement": "User management", "match": "Controls login credentials and access rights" }
+        ],
+        model_answer: [
+          "Allocates space to applications and manages data transfer",
+          "Allows interaction with the system",
+          "Manages input and output devices using drivers",
+          "Controls login credentials and access rights"
+        ],
+        explanation: "Each of these operating system components plays a distinct role in maintaining system usability and security.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q353",
+        type: "multiple-choice",
+        topic: "systems-software",
+        question_text: "What is the main purpose of data compression software?",
+        options: ["To remove unused programs", "To increase storage capacity", "To save space by reducing file size", "To encrypt files for privacy"],
+        correctAnswerIndex: 2,
+        model_answer: "To save space by reducing file size",
+        explanation: "Data compression software reduces file size for faster transfer and less storage usage.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q354",
+        type: "short-answer",
+        topic: "systems-software",
+        question_text: "Describe the purpose of defragmentation software.",
+        model_answer: "It rearranges files on a hard disk to be stored in continuous blocks, improving read/write speed.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q355",
+        type: "short-answer",
+        topic: "systems-software",
+        question_text: "What is the benefit of using encryption software?",
+        model_answer: "It protects sensitive data by converting it into unreadable code without the correct decryption key.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q356",
+        type: "fill-in-the-blank",
+        topic: "systems-software",
+        question_text: "Utility software performs ______ tasks that help keep the system running smoothly. Examples include ______ files, ______ data, and compression.",
+        model_answer: ["maintenance", "defragmenting", "encrypting"],
+        options: ["maintenance", "temporary", "defragmenting", "editing", "encrypting", "checking"],
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q357",
+        type: "true-false",
+        topic: "systems-software",
+        question_text: "Encryption software scrambles data so it cannot be read without a key.",
+        model_answer: "true",
+        explanation: "True – this makes encrypted data secure from unauthorised access.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q358",
+        type: "true-false",
+        topic: "systems-software",
+        question_text: "Defragmentation software deletes duplicate files to free up space.",
+        model_answer: "false",
+        explanation: "False – defragmentation reorganises file storage on the disk but does not delete files.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q359",
+        type: "multiple-choice",
+        topic: "systems-software",
+        question_text: "Which of the following is a typical use for utility software?",
+        options: ["Running video games", "Creating documents", "Scanning for malware", "Sending emails"],
+        correctAnswerIndex: 2,
+        model_answer: "Scanning for malware",
+        explanation: "Utility software helps maintain the system, and scanning for malware is one such task.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q360",
+        type: "short-answer",
+        topic: "systems-software",
+        question_text: "Give two reasons why data might be compressed before sending over a network.",
+        model_answer: "1) To reduce transfer time.\n2) To use less bandwidth.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q361",
+        type: "short-answer",
+        topic: "systems-software",
+        question_text: "Explain one reason an operating system might restrict user access levels.",
+        model_answer: "To prevent unauthorised changes to system settings or access to sensitive files.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q339",
+        type: "short-answer",
+        topic: "systems-software",
+        question_text: "What is a driver and why is it necessary?",
+        model_answer: "A driver is a small program that tells the operating system how to communicate with hardware devices. Without drivers, the OS wouldn't be able to send the correct signals to use the device properly.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q340",
+        type: "short-answer",
+        topic: "systems-software",
+        question_text: "Explain two reasons why file management is an essential function of an operating system.",
+        model_answer: "1) It allows files to be named, stored in folders, and moved easily.\n2) It helps organise data so users and software can locate and access files efficiently.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q341",
+        type: "true-false",
+        topic: "systems-software",
+        question_text: "The operating system is responsible for handling keyboard and mouse input.",
+        model_answer: "true",
+        explanation: "True – The OS manages input devices through drivers and passes the data to the appropriate applications.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q342",
+        type: "multiple-choice",
+        topic: "systems-software",
+        question_text: "Which of the following tasks is the operating system NOT responsible for?",
+        options: ["Managing memory", "Running application software", "Translating source code", "Handling file systems"],
+        correctAnswerIndex: 2,
+        model_answer: "Translating source code",
+        explanation: "Translating source code is done by compilers or interpreters, not the operating system.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q343",
+        type: "short-answer",
+        topic: "systems-software",
+        question_text: "Describe how an operating system manages multitasking.",
+        model_answer: "The OS uses memory and process scheduling to allow multiple programs to run by rapidly switching between them, allocating CPU time and memory to each.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q344",
+        type: "short-answer",
+        topic: "systems-software",
+        question_text: "What is defragmentation and how does it improve performance?",
+        model_answer: "Defragmentation rearranges the parts of files stored on a hard disk so they are stored together. This reduces the time needed for the disk to read files, improving speed.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q345",
+        type: "short-answer",
+        topic: "systems-software",
+        question_text: "Give one benefit of using encryption software.",
+        model_answer: "It makes data unreadable without a decryption key, protecting it from unauthorised access.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q346",
+        type: "short-answer",
+        topic: "systems-software",
+        question_text: "What is the main role of the user interface in an operating system?",
+        model_answer: "It allows users to interact with the computer, either through text-based commands or graphical icons and windows.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q347",
+        type: "true-false",
+        topic: "systems-software",
+        question_text: "Defragmentation software is not needed if a computer uses a solid state drive (SSD).",
+        model_answer: "true",
+        explanation: "True – SSDs access memory electronically rather than mechanically, so fragmentation doesn't affect performance in the same way it does on hard drives.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q348",
+        type: "multiple-choice",
+        topic: "systems-software",
+        question_text: "Which of these is a responsibility of memory management?",
+        options: ["Backing up data", "Allowing multitasking", "Running anti-virus checks", "Compressing files"],
+        correctAnswerIndex: 1,
+        model_answer: "Allowing multitasking",
+        explanation: "Memory management handles how programs are loaded and run, making multitasking possible.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q349",
+        type: "short-answer",
+        topic: "systems-software",
+        question_text: "What is the function of compression software?",
+        model_answer: "It reduces the size of files by encoding data more efficiently, saving storage space and making file transfer faster.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q350",
+        type: "true-false",
+        topic: "systems-software",
+        question_text: "The OS controls access rights to files and programs for different users.",
+        model_answer: "true",
+        explanation: "True – User management includes controlling permissions, allowing or restricting access to parts of the system.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q351",
+        type: "short-answer",
+        topic: "systems-software",
+        question_text: "Explain one way an OS helps with security through user management.",
+        model_answer: "It can assign specific permissions or access levels to different users, preventing unauthorised access to sensitive files.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q352",
+        type: "multiple-choice",
+        topic: "systems-software",
+        question_text: "Which of these is an example of utility software?",
+        options: ["Microsoft Word", "File compression tool", "Web browser", "Spreadsheet program"],
+        correctAnswerIndex: 1,
+        model_answer: "File compression tool",
+        explanation: "Utility software performs maintenance tasks such as compression, defragmentation, and encryption, unlike application software.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q353",
+        type: "true-false",
+        topic: "systems-software",
+        question_text: "Encryption software ensures data can’t be accessed by unauthorised users.",
+        model_answer: "true",
+        explanation: "True – Encryption changes the data into unreadable form unless a user has the correct key to decrypt it.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q354",
+        type: "short-answer",
+        topic: "systems-software",
+        question_text: "Why is data compression especially useful when sending files over the internet?",
+        model_answer: "Because it reduces the file size, speeding up transfer and using less bandwidth.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q355",
+        type: "short-answer",
+        topic: "systems-software",
+        question_text: "Name two features of a graphical user interface (GUI).",
+        model_answer: "1) Uses icons and windows to represent programs and files.\n2) Allows interaction using a mouse or touchscreen.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q356",
+        type: "true-false",
+        topic: "systems-software",
+        question_text: "A command-line interface is easier to use than a GUI for most users.",
+        model_answer: "false",
+        explanation: "False – CLIs require users to remember and type commands, while GUIs are more intuitive and visual.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q357",
+        type: "multiple-choice",
+        topic: "systems-software",
+        question_text: "Which of the following best describes what defragmentation does?",
+        options: [
+          "Removes malware from files",
+          "Arranges fragmented files to speed up disk access",
+          "Encrypts data to prevent unauthorised access",
+          "Splits files into smaller chunks"
+        ],
+        correctAnswerIndex: 1,
+        model_answer: "Arranges fragmented files to speed up disk access",
+        explanation: "Defragmentation reorganises files so their parts are stored contiguously, reducing read time.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q358",
+        type: "short-answer",
+        topic: "systems-software",
+        question_text: "State one benefit of memory management for running applications.",
+        model_answer: "It allocates RAM to different programs so they can run without interfering with each other.",
+        "created_at": "2025-05-05T00:00:00Z"
       }
+
+
+
+
+
+
+
+
+
     ]
     ,
     unit: 1,
