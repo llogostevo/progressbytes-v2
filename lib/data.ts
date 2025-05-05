@@ -39,7 +39,7 @@ export const topics: Topic[] = [
     name: "Systems Architecture",
     description: "Learn about CPU architecture, fetch-execute cycle, and performance factors",
     icon: Cpu,
-    questionCount: 0,
+    questionCount: 23,
     questions: [
       {
         id: "q131",
@@ -162,10 +162,139 @@ export const topics: Topic[] = [
         model_answer: "false",
         explanation: "False – the Program Counter holds the memory address of the next instruction to fetch, not the data being processed.",
         created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q141",
+        type: "multiple-choice",
+        topic: "systems-architecture",
+        question_text: "Which of these is an embedded system in a home environment?",
+        options: ["Smart light switch", "Web browser", "Laptop", "Spreadsheet software"],
+        correctAnswerIndex: 0,
+        model_answer: "Smart light switch",
+        explanation: "A smart light switch is an embedded system designed for a specific task: controlling lighting, usually with minimal hardware and limited software.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q142",
+        type: "true-false",
+        topic: "systems-architecture",
+        question_text: "Embedded systems usually run many complex tasks at once.",
+        model_answer: "false",
+        explanation: "False – embedded systems are built to perform specific tasks efficiently and usually run only one or a few simple tasks.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q143",
+        type: "short-answer",
+        topic: "systems-architecture",
+        question_text: "Explain why a washing machine includes an embedded system.",
+        model_answer: "The embedded system controls the washing cycle, water level, and temperature. It's dedicated to this task and is not a general-purpose computer.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q131",
+        type: "short-answer",
+        topic: "systems-architecture",
+        question_text: "Outline the key steps involved in the CPU's fetch-decode-execute cycle.",
+        model_answer: "1) The CPU uses the Program Counter to locate the next instruction.\n2) The instruction is fetched from memory and decoded by the Control Unit.\n3) The decoded instruction is then executed, potentially involving data processing by the ALU.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q132",
+        type: "matching",
+        topic: "systems-architecture",
+        question_text: "Match each CPU register to its primary function:",
+        pairs: [
+          { statement: "Program Counter (PC)", match: "Holds the address of the next instruction to fetch" },
+          { statement: "Memory Address Register (MAR)", match: "Stores the memory location to be accessed" },
+          { statement: "Memory Data Register (MDR)", match: "Temporarily stores data being transferred to or from memory" },
+          { statement: "Accumulator (ACC)", match: "Stores results from the ALU operations" }
+        ],
+        model_answer: [
+          "Holds the address of the next instruction to fetch",
+          "Stores the memory location to be accessed",
+          "Temporarily stores data being transferred to or from memory",
+          "Stores results from the ALU operations"
+        ],
+        explanation: "Registers store temporary data or addresses that are used during instruction processing. Each has a distinct role in keeping the CPU operating efficiently.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q133",
+        type: "short-answer",
+        topic: "systems-architecture",
+        question_text: "Identify three CPU characteristics that influence processing speed.",
+        model_answer: "1) Clock speed\n2) Cache memory size\n3) Number of processing cores",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q144",
+        type: "short-answer",
+        topic: "systems-architecture",
+        question_text: "Explain how increasing the number of CPU cores can affect performance.",
+        model_answer: "More cores allow the CPU to carry out multiple tasks at the same time (parallel processing), improving performance for programs designed to take advantage of this.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q145",
+        type: "multiple-choice",
+        topic: "systems-architecture",
+        question_text: "Which change would typically improve CPU performance the most when running a single-threaded application?",
+        options: ["Adding more cores", "Increasing cache size", "Increasing clock speed", "Installing more RAM"],
+        correctAnswerIndex: 2,
+        model_answer: "Increasing clock speed",
+        explanation: "Clock speed determines how many instructions the CPU can process per second. For single-threaded applications, more cores won't help, but a higher clock speed will.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q146",
+        type: "true-false",
+        topic: "systems-architecture",
+        question_text: "A higher clock speed always results in faster overall performance.",
+        model_answer: "false",
+        explanation: "False – While a higher clock speed can improve performance, other factors such as cooling, efficiency, and software optimization also play a role.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q147",
+        type: "true-false",
+        topic: "systems-architecture",
+        question_text: "More CPU cache helps performance by reducing the time needed to access frequently used data.",
+        model_answer: "true",
+        explanation: "True – Cache memory is faster than main memory. More cache allows the CPU to store and quickly access more of the data it uses often.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q148",
+        type: "short-answer",
+        topic: "systems-architecture",
+        question_text: "What is the benefit of a larger CPU cache size?",
+        model_answer: "A larger cache can hold more frequently accessed instructions and data, reducing the need to fetch from slower main memory and speeding up overall performance.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q149",
+        type: "multiple-choice",
+        topic: "systems-architecture",
+        question_text: "Which component directly stores data the CPU is likely to reuse?",
+        options: ["RAM", "Register", "Cache", "Hard Drive"],
+        correctAnswerIndex: 2,
+        model_answer: "Cache",
+        explanation: "Cache memory is closer to the CPU than RAM and is used to store frequently accessed data, reducing the time it takes to fetch instructions.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q150",
+        type: "true-false",
+        topic: "systems-architecture",
+        question_text: "Adding more cores always improves program performance.",
+        model_answer: "false",
+        explanation: "False – Adding more cores can improve multitasking or performance for software designed to use them, but some programs can’t take advantage of multiple cores.",
+        created_at: "2025-05-05T00:00:00Z"
       }
     ],
     unit: 1,
-    disabled: true,
+    disabled: false,
   },
   {
     id: "2",
