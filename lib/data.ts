@@ -1263,8 +1263,8 @@ export const topics: Topic[] = [
         explanation: "LANs are localised networks like those in schools. WANs span larger areas and use external infrastructure. Client-server networks centralise control, while peer-to-peer networks decentralise it, sharing responsibilities across devices.",
         created_at: "2025-05-05T00:00:00Z"
       }
-      
-      
+
+
     ],
   },
   {
@@ -1360,7 +1360,344 @@ export const topics: Topic[] = [
         question_text: "Describe the purpose of network forensics.",
         model_answer: "Network forensics involves monitoring and analysing network traffic to detect and investigate security breaches or malicious activity.",
         created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        "id": "q301",
+        "type": "short-answer",
+        "topic": "network-security",
+        "question_text": "Describe the purpose of a brute-force attack and how it operates.",
+        "model_answer": "A brute-force attack tries many combinations of passwords or pins until the correct one is found to gain access to a system.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        "id": "q302",
+        "type": "short-answer",
+        "topic": "network-security",
+        "question_text": "Explain the role of social engineering in cyber attacks.",
+        "model_answer": "Social engineering manipulates people into giving away confidential information, such as passwords, often through fake phone calls or messages.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        "id": "q303",
+        "type": "multiple-choice",
+        "topic": "network-security",
+        "question_text": "Which of the following best describes a denial-of-service (DoS) attack?",
+        "options": [
+          "Stealing data from a system",
+          "Cracking password hashes",
+          "Flooding a network with traffic to cause disruption",
+          "Injecting SQL code into a form field"
+        ],
+        "correctAnswerIndex": 2,
+        "model_answer": "Flooding a network with traffic to cause disruption",
+        "explanation": "A DoS attack aims to overload services with requests, making them unavailable to users.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        "id": "q304",
+        "type": "true-false",
+        "topic": "network-security",
+        "question_text": "Phishing is a form of malware that infects a user's device.",
+        "model_answer": "false",
+        "explanation": "Phishing is a form of social engineering, not malware. It tricks users into revealing personal information.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        "id": "q305",
+        "type": "true-false",
+        "topic": "network-security",
+        "question_text": "Malware can be designed to encrypt files and demand payment for their release.",
+        "model_answer": "true",
+        "explanation": "This describes ransomware, a type of malware that locks files and demands payment to unlock them.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        "id": "q306",
+        "type": "short-answer",
+        "topic": "network-security",
+        "question_text": "What is the goal of an SQL injection attack?",
+        "model_answer": "To access or manipulate a database by injecting malicious SQL code into an input field on a website.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        "id": "q307",
+        "type": "short-answer",
+        "topic": "network-security",
+        "question_text": "Give one reason why people are often considered the weakest point in security.",
+        "model_answer": "People can be manipulated into revealing passwords or clicking on harmful links due to lack of awareness or poor training.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        "id": "q308",
+        "type": "matching",
+        "topic": "network-security",
+        "question_text": "Match the attack type to its description:",
+        "pairs": [
+          { "statement": "Phishing", "match": "Tricking someone into revealing information via email or message" },
+          { "statement": "Brute-force", "match": "Guessing login details through repeated attempts" },
+          { "statement": "SQL injection", "match": "Entering malicious database queries into a form" },
+          { "statement": "DoS attack", "match": "Overloading a system to make it unavailable" }
+        ],
+        "model_answer": [
+          "Tricking someone into revealing information via email or message",
+          "Guessing login details through repeated attempts",
+          "Entering malicious database queries into a form",
+          "Overloading a system to make it unavailable"
+        ],
+        "explanation": "Each method targets different system weaknesses: users, login forms, databases, or services.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        "id": "q309",
+        "type": "fill-in-the-blank",
+        "topic": "network-security",
+        "question_text": "Complete the sentence:\n\nOne way to protect against malware is to install ______ software. To reduce the risk of SQL injection, developers use ______ statements. A ______ is often used to restrict access between a device and the internet.",
+        "model_answer": ["anti-malware", "prepared", "firewall"],
+        "options": ["firewall", "encryption", "prepared", "raw", "password", "anti-malware"],
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        "id": "q310",
+        "type": "short-answer",
+        "topic": "network-security",
+        "question_text": "Explain how encryption helps protect data in transmission.",
+        "model_answer": "Encryption scrambles data so that even if it's intercepted during transmission, it can't be understood without the correct decryption key.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        "id": "q161",
+        "type": "multiple-choice",
+        "topic": "network-security",
+        "question_text": "What is the primary purpose of a denial-of-service (DoS) attack?",
+        "options": [
+          "To access confidential data",
+          "To overload a network and make it unavailable",
+          "To gain physical access to a computer",
+          "To trick users into giving passwords"
+        ],
+        "correctAnswerIndex": 1,
+        "model_answer": "To overload a network and make it unavailable",
+        "explanation": "DoS attacks flood a network or service with requests, making it slow or entirely inaccessible to users.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        "id": "q162",
+        "type": "true-false",
+        "topic": "network-security",
+        "question_text": "Firewalls can be used to block unauthorised access to a network.",
+        "model_answer": "true",
+        "explanation": "Firewalls act as barriers between trusted and untrusted networks, filtering traffic to prevent unauthorised access.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        "id": "q163",
+        "type": "short-answer",
+        "topic": "network-security",
+        "question_text": "Give one reason why using strong, unique passwords is important for network security.",
+        "model_answer": "It makes it more difficult for attackers to gain unauthorised access through guessing or brute-force methods.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        "id": "q164",
+        "type": "short-answer",
+        "topic": "network-security",
+        "question_text": "Explain how malware can be used to collect personal data from a user’s device.",
+        "model_answer": "Malware such as spyware can secretly monitor a user’s activity, capturing personal data like login credentials or financial information.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        "id": "q165",
+        "type": "matching",
+        "topic": "network-security",
+        "question_text": "Match the attack type with its description:",
+        "pairs": [
+          { "statement": "Phishing", "match": "Tricks users into revealing personal data" },
+          { "statement": "Brute-force", "match": "Repeatedly tries passwords to gain access" },
+          { "statement": "Malware", "match": "Software that damages or steals data" },
+          { "statement": "SQL Injection", "match": "Alters database queries to access data" }
+        ],
+        "model_answer": [
+          "Tricks users into revealing personal data",
+          "Repeatedly tries passwords to gain access",
+          "Software that damages or steals data",
+          "Alters database queries to access data"
+        ],
+        "explanation": "Each form of attack works differently. Phishing uses deception, brute-force guesses logins, malware is malicious software, and SQL injection targets databases.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        "id": "q166",
+        "type": "fill-in-the-blank",
+        "topic": "network-security",
+        "question_text": "Complete the following:\n\nA ______ is used to prevent unauthorised access to or from a private network. Anti-malware software helps detect and remove ______. Strong ______ help protect user accounts.",
+        "model_answer": ["firewall", "malware", "passwords"],
+        "options": ["firewall", "gateway", "malware", "spyware", "passwords", "keys"],
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        "id": "q167",
+        "type": "multiple-choice",
+        "topic": "network-security",
+        "question_text": "Which of these best describes penetration testing?",
+        "options": [
+          "Testing a website for speed and performance",
+          "Simulating attacks to find vulnerabilities in a system",
+          "Installing antivirus software on a server",
+          "Changing default user passwords"
+        ],
+        "correctAnswerIndex": 1,
+        "model_answer": "Simulating attacks to find vulnerabilities in a system",
+        "explanation": "Penetration testing involves authorised simulated attacks to identify weaknesses before a real attacker can exploit them.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        "id": "q168",
+        "type": "true-false",
+        "topic": "network-security",
+        "question_text": "Encryption converts data into a readable format to make it easier to share.",
+        "model_answer": "false",
+        "explanation": "False – Encryption converts data into unreadable code to protect it from unauthorised access. Only those with the key can decrypt it.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        "id": "q169",
+        "type": "short-answer",
+        "topic": "network-security",
+        "question_text": "Describe one way physical security can prevent unauthorised access to a network.",
+        "model_answer": "Physical security methods like locked server rooms or biometric access control limit who can access networking equipment.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        "id": "q170",
+        "type": "short-answer",
+        "topic": "network-security",
+        "question_text": "What is a key feature of user access levels in a secure system?",
+        "model_answer": "User access levels restrict what data or functions users can access based on their role, reducing the risk of accidental or malicious changes.",
+        "created_at": "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q171",
+        type: "multiple-choice",
+        topic: "network-security",
+        question_text: "Which of the following best describes the purpose of a firewall?",
+        options: [
+          "Encrypts sensitive data before storage",
+          "Monitors and blocks unauthorised network access",
+          "Detects and deletes all computer viruses",
+          "Optimises network traffic for faster communication"
+        ],
+        correctAnswerIndex: 1,
+        model_answer: "Monitors and blocks unauthorised network access",
+        explanation: "A firewall helps protect a system or network by monitoring incoming and outgoing traffic and blocking suspicious or unauthorised connections.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q172",
+        type: "true-false",
+        topic: "network-security",
+        question_text: "SQL injection involves inserting malicious code into a website’s database query.",
+        model_answer: "true",
+        explanation: "True – SQL injection is a form of attack where malicious SQL statements are inserted into a query to manipulate or access database information.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q173",
+        type: "short-answer",
+        topic: "network-security",
+        question_text: "What is one way to prevent SQL injection attacks?",
+        model_answer: "Use prepared statements or parameterised queries to ensure user input does not modify the structure of SQL commands.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q174",
+        type: "matching",
+        topic: "network-security",
+        question_text: "Match each security measure to what it prevents or limits:",
+        pairs: [
+          { statement: "Firewall", match: "Unauthorised network access" },
+          { statement: "Anti-malware software", match: "Malicious software infections" },
+          { statement: "Password policy", match: "Unauthorised user logins" },
+          { statement: "Encryption", match: "Access to data if intercepted" }
+        ],
+        model_answer: [
+          "Unauthorised network access",
+          "Malicious software infections",
+          "Unauthorised user logins",
+          "Access to data if intercepted"
+        ],
+        explanation: "Each method plays a key role in securing systems by preventing different types of attacks or minimising damage if they occur.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q175",
+        type: "fill-in-the-blank",
+        topic: "network-security",
+        question_text: "Fill in the blanks about passwords and access control:\n\nTo limit access, users can be given different ______ levels. Strong ______ make it harder for attackers to guess or crack login details.",
+        model_answer: ["access", "passwords"],
+        options: ["access", "encryption", "passwords", "firewalls", "roles", "usernames"],
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q176",
+        type: "short-answer",
+        topic: "network-security",
+        question_text: "Describe the purpose of penetration testing.",
+        model_answer: "Penetration testing simulates an attack on a system to identify and fix vulnerabilities before they can be exploited by real attackers.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q177",
+        type: "true-false",
+        topic: "network-security",
+        question_text: "Encryption can prevent data from being intercepted during transmission.",
+        model_answer: "false",
+        explanation: "False – Encryption doesn't prevent interception, but it makes the data unreadable without the correct key, thus protecting it.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q178",
+        type: "multiple-choice",
+        topic: "network-security",
+        question_text: "Which of the following is an example of physical security?",
+        options: [
+          "Firewall",
+          "Antivirus software",
+          "Door lock on a server room",
+          "Encryption"
+        ],
+        correctAnswerIndex: 2,
+        model_answer: "Door lock on a server room",
+        explanation: "Physical security refers to measures that prevent physical access to hardware and sensitive systems.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q179",
+        type: "short-answer",
+        topic: "network-security",
+        question_text: "What is the role of access levels in improving security?",
+        model_answer: "Access levels limit what actions users can perform and what data they can access, reducing the risk of accidental or malicious changes.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q180",
+        type: "code",
+        topic: "network-security",
+        question_text: "The following SQL query is vulnerable to SQL injection:\n\n`SELECT * FROM users WHERE username = '\" + input + \"'`\n\nExplain how this could be exploited and suggest how to prevent it.",
+        model_answer: "An attacker could input `' OR '1'='1` to return all records from the database. To prevent this, user input should be sanitised, or parameterised queries should be used instead.",
+        model_answer_python: "cursor.execute(\"SELECT * FROM users WHERE username = ?\", (input_value,))",
+        created_at: "2025-05-05T00:00:00Z"
       }
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
     ],
     unit: 1,
     disabled: true,
@@ -1951,7 +2288,7 @@ export const topics: Topic[] = [
         model_answer_python: "staff_id = input(\"Enter staff ID: \")\ndoj = input(\"Enter date of joining: \")\nwith open('staff.txt', 'a') as file:\n    file.write(f\"{staff_id},{doj}\\n\")",
         created_at: "2025-05-05T00:00:00Z"
       },
-      
+
     ],
     unit: 2,
     disabled: false,
