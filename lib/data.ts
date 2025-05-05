@@ -1697,10 +1697,95 @@ export const topics: Topic[] = [
     name: "Systems Software",
     description: "Understand operating systems, utility software, and system management",
     icon: Settings,
-    questionCount: 0,
-    questions: [],
+    questionCount: 7,
+    questions: [
+      {
+        id: "q351",
+        type: "matching",
+        topic: "systems-software",
+        question_text: "Match each operating system function to its correct task:",
+        pairs: [
+          { statement: "Memory Management", match: "Transfers programs from storage to RAM" },
+          { statement: "Peripheral Management", match: "Handles communication with input/output devices" },
+          { statement: "File Management", match: "Lets the user organise files into folders" },
+          { statement: "User Interface", match: "Enables the user to interact with the system" }
+        ],
+        model_answer: [
+          "Transfers programs from storage to RAM",
+          "Handles communication with input/output devices",
+          "Lets the user organise files into folders",
+          "Enables the user to interact with the system"
+        ],
+        explanation: "Each operating system function serves a distinct purpose, from handling memory and peripherals to providing a way for users to interact with the system and organise their files.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q352",
+        type: "fill-in-the-blank",
+        topic: "systems-software",
+        question_text: "Fill in the blanks about utility software:\n\n__________ software uses a __________ to change data. Even if intercepted, the data can't be __________. __________ software arranges scattered parts of files into __________ blocks, improving the __________ at which data can be read.",
+        model_answer: ["Encryption", "key", "understood", "Defragmentation", "consecutive", "speed"],
+        options: ["Encryption", "key", "understood", "Defragmentation", "consecutive", "speed", "lock", "separate", "compression", "deleted"],
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q353",
+        type: "short-answer",
+        topic: "systems-software",
+        question_text: "State why utility software is important in a computer system.",
+        model_answer: "Utility software performs background tasks to keep the computer running efficiently, such as managing files, detecting issues, and improving performance.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q354",
+        type: "short-answer",
+        topic: "systems-software",
+        question_text: "Explain why a computer runs more efficiently after using defragmentation software.",
+        model_answer: "Defragmentation arranges scattered parts of files into continuous blocks, reducing the time the disk needs to read and write data, which improves overall speed.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q355",
+        type: "matching",
+        topic: "systems-software",
+        question_text: "Match each system action to the operating system function that handles it:",
+        pairs: [
+          { statement: "Renaming a saved document", match: "File Management" },
+          { statement: "Reading data from a printer", match: "Peripheral Management" },
+          { statement: "Moving data between RAM and virtual memory", match: "Memory Management" },
+          { statement: "Changing a user password", match: "User Management" },
+          { statement: "Creating a folder to organise files", match: "File Management" }
+        ],
+        model_answer: [
+          "File Management",
+          "Peripheral Management",
+          "Memory Management",
+          "User Management",
+          "File Management"
+        ],
+        explanation: "The OS assigns specific roles to different components to manage tasks like memory access, file organisation, and user authentication.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q356",
+        type: "short-answer",
+        topic: "systems-software",
+        question_text: "Describe how a computer’s hard drive may become fragmented over time.",
+        model_answer: "As files are added and removed, gaps form on the disk. New files may not fit into these gaps completely, so they get split across multiple locations, causing fragmentation.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q357",
+        type: "short-answer",
+        topic: "systems-software",
+        question_text: "Explain how defragmentation software can improve computer performance.",
+        model_answer: "It reorganises files to be stored in continuous blocks and groups free space together, making it quicker for the disk to read or write data.",
+        created_at: "2025-05-05T00:00:00Z"
+      }
+    ]
+    ,
     unit: 1,
-    disabled: true,
+    disabled: false,
   },
   {
     id: "6",
