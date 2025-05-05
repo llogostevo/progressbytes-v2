@@ -13,6 +13,10 @@ export interface Question {
   order_important?: boolean
   model_answer_python?: string
   created_at: string
+  pairs?: {
+    statement: string
+    match: string
+  }[]
 }
 
 export interface Answer {

@@ -1485,11 +1485,130 @@ export const topics: Topic[] = [
     description: "Explore programming languages, translators, and development environments",
     icon: Terminal,
     questionCount: 0,
-    questions: [],
+    questions: [
+      {
+        id: "q117",
+        type: "text",
+        topic: "languages-and-idEs",
+        question_text: "Give two reasons why some programs are written in a low-level language.",
+        model_answer: "1) Faster execution time.\n2) Allows direct control over hardware and memory.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q118",
+        type: "short-answer",
+        topic: "languages-and-idEs",
+        question_text: "Describe the benefits of using a compiler instead of an interpreter when writing a program.",
+        model_answer: "A compiler produces an executable file that can be run without a translator. It only needs to translate once, which can lead to faster execution. It also makes source code inaccessible to users and can report all errors after compilation.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q119",
+        type: "code",
+        topic: "languages-and-idEs",
+        question_text: "Design an algorithm to:\n• Ask the user to input a pilot code and a date of birth\n• Write these inputs to the pilots.txt text file",
+        model_answer: "pilotCode = input(\"Enter pilot code: \")\ndob = input(\"Enter date of birth: \")\nfile = open(\"pilots.txt\", \"a\")\nfile.write(pilotCode + ',' + dob + '\\n')\nfile.close()",
+        model_answer_python: "pilot_code = input(\"Enter pilot code: \")\ndob = input(\"Enter date of birth: \")\nwith open('pilots.txt', 'a') as file:\n    file.write(f\"{pilot_code},{dob}\\n\")",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q120",
+        type: "short-answer",
+        topic: "languages-and-idEs",
+        question_text: "Describe two advantages to the programmer of using a high-level language instead of a low-level language.",
+        model_answer: "1) Easier to read and write as it uses English-like keywords.\n2) Portable – the same code can run on different types of processors.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q121",
+        type: "matching",
+        topic: "languages-and-idEs",
+        question_text: "Match each statement to either Compiler, Interpreter, or Both:",
+        pairs: [
+          { statement: "Translates high-level code to low-level instructions.", match: "Both" },
+          { statement: "Produces an executable file.", match: "Compiler" },
+          { statement: "Program needs to be translated every time it is run.", match: "Interpreter" }
+        ],
+        model_answer: ["Both", "Compiler", "Interpreter"],
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q122",
+        type: "matching",
+        topic: "languages-and-idEs",
+        question_text: "Match each statement to Low-level or High-level language:",
+        pairs: [
+          { statement: "The same language can be used on computers that use different hardware", match: "High-level" },
+          { statement: "It allows the user to directly manipulate memory", match: "Low-level" },
+          { statement: "It allows the user to write English-like words", match: "High-level" },
+          { statement: "It always needs to be translated into object code or machine code", match: "High-level" }
+        ],
+        model_answer: ["High-level", "Low-level", "High-level", "High-level"],
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q123",
+        type: "fill-in-the-blank",
+        topic: "languages-and-idEs",
+        question_text: "Complete the sentences about programming languages and translators:\n\nJack writes his program in a ______ language. This needs to be translated into machine code. An interpreter executes one line and ______ when it finds an error. A compiler produces an ______ file that can be run ______ the compiler.",
+        model_answer: ["high-level", "stops", "executable", "without"],
+        options: ["high-level", "low-level", "stops", "continues", "executable", "debug", "without", "with"],
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q124",
+        type: "short-answer",
+        topic: "languages-and-idEs",
+        question_text: "State why the computer needs to translate high-level code before it can be executed.",
+        model_answer: "Because the processor only understands machine code (binary).",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q125",
+        type: "short-answer",
+        topic: "languages-and-idEs",
+        question_text: "Describe two differences between how a compiler and an interpreter would translate code.",
+        model_answer: "1) A compiler translates the whole program at once and generates an executable file.\n2) An interpreter translates and runs the code line by line, stopping when it encounters an error.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q126",
+        type: "matching",
+        topic: "languages-and-idEs",
+        question_text: "Match each feature to High-level or Low-level language:",
+        pairs: [
+          { statement: "Uses English-like keywords such as print and while", match: "High-level" },
+          { statement: "Must be translated before the processor can execute code", match: "High-level" },
+          { statement: "Code written is portable between different processors", match: "High-level" },
+          { statement: "Requires the programmer to understand the processor’s registers and structure", match: "Low-level" }
+        ],
+        model_answer: ["High-level", "High-level", "High-level", "Low-level"],
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q127",
+        type: "short-answer",
+        topic: "languages-and-idEs",
+        question_text: "Describe two common tools or features provided by an Integrated Development Environment (IDE).",
+        model_answer: "1) Editor – allows the programmer to write and edit code.\n2) Debugger – helps identify and fix errors in the program.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q128",
+        type: "short-answer",
+        topic: "languages-and-idEs",
+        question_text: "Identify two features of an IDE that might be used when writing a program to calculate the area of a circle.",
+        model_answer: "1) Error diagnostics such as auto-indentation or auto-correction.\n2) Run-time environment to test the program.",
+        created_at: "2025-05-05T00:00:00Z"
+      }
+    ]
+    ,
     unit: 2,
     disabled: true,
   },
 ]
+
+
 
 // Helper functions to interact with the mock data
 export function getTopicBySlug(slug: string): Topic | undefined {
