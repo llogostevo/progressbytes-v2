@@ -1529,7 +1529,6 @@ export const topics: Topic[] = [
           { statement: "Creates a file that runs on its own", match: "Compiler" },
           { statement: "Needs to retranslate each time the code runs", match: "Interpreter" }
         ],
-        explanation: "Both compilers and interpreters convert source code into machine-readable instructions. A compiler translates the entire program at once and creates an executable file, whereas an interpreter re-translates code every time it runs, line-by-line.",
         model_answer: ["Both", "Compiler", "Interpreter"],
         created_at: "2025-05-05T00:00:00Z"
       },
@@ -1544,8 +1543,6 @@ export const topics: Topic[] = [
           { statement: "Easier to read using words like if and print", match: "High-level" },
           { statement: "Needs translation before it can run", match: "High-level" }
         ],
-        explanation: "High-level languages are easier to write due to their English-like syntax. They are portable across different systems. Low-level languages, while harder to read, give direct control over memory and are tailored to specific hardware.",
-
         model_answer: ["High-level", "Low-level", "High-level", "High-level"],
         created_at: "2025-05-05T00:00:00Z"
       },
@@ -1586,7 +1583,6 @@ export const topics: Topic[] = [
           { statement: "Needs knowledge of hardware architecture", match: "Low-level" }
         ],
         model_answer: ["High-level", "High-level", "High-level", "Low-level"],
-        explanation: "High-level languages are easier to write due to their English like form. This makes them easier to maintain. They are also hardware-independent, as long as you have the translator they can be used on any machine/processor. Low-level languages require an understanding of processor structure and are more hardware-specific, this does make them more efficient in some cases as you can design specifically for that device, they might be used in embedded systems.",
         created_at: "2025-05-05T00:00:00Z"
       },
       {
@@ -1611,7 +1607,7 @@ export const topics: Topic[] = [
         topic: "languages-and-idEs",
         question_text: "A compiler translates code line-by-line each time a program is run.",
         model_answer: "false",
-        explanation: "A compiler translates the whole program into machine code before it runs. An interpreter is the tool that translates and executes code line-by-line during program execution.",
+        explanation: "False – an interpreter translates line-by-line; a compiler translates the entire program before execution.",
         created_at: "2025-05-05T00:00:00Z"
       },
       {
@@ -1626,7 +1622,7 @@ export const topics: Topic[] = [
           "Code written by users needs to be checked"
         ],
         correctAnswerIndex: 1,
-        explanation: "High-level languages use words and symbols that humans can understand but processors cannot. They must be translated into binary machine code using a compiler or interpreter so that the processor can execute the instructions.",
+        explanation: "Processors can only execute instructions written in machine code, so high-level code must be translated.",
         model_answer: "Processors only understand binary instructions",
         created_at: "2025-05-05T00:00:00Z"
       }

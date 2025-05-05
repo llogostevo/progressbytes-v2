@@ -476,7 +476,11 @@ export default function QuestionPage() {
                         )}
                       </div>
                     </div>
-
+                    {question.explanation && (
+                    <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-md">
+                      <p className="whitespace-pre-wrap text-sm text-emerald-700">{question.explanation}</p>  
+                    </div>
+                    )}
                     {!selfAssessmentScore ? (
                       <SelfAssessment onSelectScore={handleSelfAssessment} />
                     ) : (
