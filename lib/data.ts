@@ -1484,7 +1484,7 @@ export const topics: Topic[] = [
     name: "Languages & IDEs",
     description: "Explore programming languages, translators, and development environments",
     icon: Terminal,
-    questionCount: 0,
+    questionCount: 12,
     questions: [
       {
         id: "q117",
