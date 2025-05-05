@@ -116,7 +116,7 @@ export const topics: Topic[] = [
         type: "text",
         question_text: "State and explain three factors that can affect the performance of a network.",
         model_answer:
-          "1) Bandwidth &ndash limited bandwidth can slow data transfer. 2) Number of users &ndash more users can cause congestion. 3) Interference &ndash physical obstacles like walls can weaken wireless signals and reduce performance.",
+          "1) Bandwidth - limited bandwidth can slow data transfer. 2) Number of users - more users can cause congestion. 3) Interference - physical obstacles like walls can weaken wireless signals and reduce performance.",
         created_at: "2023-01-07T00:00:00Z",
       },
       {
@@ -656,7 +656,7 @@ export const topics: Topic[] = [
         topic: "networks",
         type: "text",
         question_text: "Identify one use of Bluetooth and one use of Wi-Fi. Explain why each is suitable for the task.",
-        model_answer: "• Bluetooth &ndash used for short-range connections like wireless headphones because it uses low power\n• Wi-Fi &ndash used for internet access across a building because it covers a wider area",
+        model_answer: "• Bluetooth - used for short-range connections like wireless headphones because it uses low power\n• Wi-Fi - used for internet access across a building because it covers a wider area",
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -672,7 +672,7 @@ export const topics: Topic[] = [
         topic: "networks",
         type: "text",
         question_text: "Give two examples of transmission media used in a network and describe one benefit of each.",
-        model_answer: "• Copper cable &ndash cheap and easy to install\n• Fibre optic cable &ndash very high speed and long-distance transmission\n• Wireless &ndash flexible and allows mobile access",
+        model_answer: "• Copper cable - cheap and easy to install\n• Fibre optic cable - very high speed and long-distance transmission\n• Wireless - flexible and allows mobile access",
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -941,7 +941,7 @@ export const topics: Topic[] = [
         topic: "networks",
         question_text: "A LAN covers a wide geographical area using infrastructure provided by third parties.",
         model_answer: "false",
-        explanation: "False &ndash A LAN (Local Area Network) covers a small geographical area and is typically managed by the organisation itself. A WAN covers a wider area and may use external infrastructure.",
+        explanation: "False - A LAN (Local Area Network) covers a small geographical area and is typically managed by the organisation itself. A WAN covers a wider area and may use external infrastructure.",
         created_at: "2025-05-05T00:00:00Z"
       },
       {
@@ -950,7 +950,7 @@ export const topics: Topic[] = [
         topic: "networks",
         question_text: "Switches help reduce network traffic by sending data only to the intended recipient.",
         model_answer: "true",
-        explanation: "True &ndash Switches examine the MAC address in each packet and forward it only to the intended device, reducing unnecessary traffic on the network.",
+        explanation: "True - Switches examine the MAC address in each packet and forward it only to the intended device, reducing unnecessary traffic on the network.",
         created_at: "2025-05-05T00:00:00Z"
       },
       {
@@ -959,7 +959,7 @@ export const topics: Topic[] = [
         topic: "networks",
         question_text: "Wi-Fi is a wired technology used in local area networks.",
         model_answer: "false",
-        explanation: "False &ndash Wi-Fi is a wireless technology that uses radio waves to connect devices in a local area network without physical cables.",
+        explanation: "False - Wi-Fi is a wireless technology that uses radio waves to connect devices in a local area network without physical cables.",
         created_at: "2025-05-05T00:00:00Z"
       },
       {
@@ -968,7 +968,7 @@ export const topics: Topic[] = [
         topic: "networks",
         question_text: "DNS servers are used to translate domain names into IP addresses.",
         model_answer: "true",
-        explanation: "True &ndash DNS (Domain Name System) servers resolve human-readable domain names (like www.example.com) into numerical IP addresses needed for routing on the internet.",
+        explanation: "True - DNS (Domain Name System) servers resolve human-readable domain names (like www.example.com) into numerical IP addresses needed for routing on the internet.",
         created_at: "2025-05-05T00:00:00Z"
       },
       {
@@ -1182,7 +1182,7 @@ export const topics: Topic[] = [
         id: "q95",
         topic: "programming-fundamentals",
         type: "code",
-        question_text: "Write a pseudocode program that:\n• asks the user to input a test score\n• prints 'A' if score is 80 or more\n• prints 'B' if score is 60&ndash79\n• prints 'C' if score is 40&ndash59\n• prints 'F' if score is less than 40",
+        question_text: "Write a pseudocode program that:\n• asks the user to input a test score\n• prints 'A' if score is 80 or more\n• prints 'B' if score is 60-79\n• prints 'C' if score is 40-59\n• prints 'F' if score is less than 40",
         model_answer: "score = input(\"Enter score: \"\nif score >= 80 then\n   print(\"A\")\nelseif score >= 60 then\n   print(\"B\")\nelseif score >= 40 then\n   print(\"C\")\nelse\n   print(\"F\")\nendif",
         model_answer_python: "score = int(input(\"Enter score: \"))\nif score >= 80:\n    print(\"A\")\nelif score >= 60:\n    print(\"B\")\nelif score >= 40:\n    print(\"C\")\nelse:\n    print(\"F\")",
         created_at: "2025-05-02T00:00:00Z"
@@ -1537,7 +1537,7 @@ export const topics: Topic[] = [
         topic: "programming-fundamentals",
         question_text: "A variable is used to store data that can change while a program is running.",
         model_answer: "true",
-        explanation: "True &ndash A variable is a named storage location that holds a value which can be updated or changed during program execution.",
+        explanation: "True - A variable is a named storage location that holds a value which can be updated or changed during program execution.",
         created_at: "2025-05-05T00:00:00Z"
       },
       {
@@ -1546,7 +1546,7 @@ export const topics: Topic[] = [
         topic: "programming-fundamentals",
         question_text: "The MOD operator performs division and returns the quotient.",
         model_answer: "false",
-        explanation: "False &ndash The MOD operator returns the remainder after division, not the quotient. The DIV operator gives the quotient.",
+        explanation: "False - The MOD operator returns the remainder after division, not the quotient. The DIV operator gives the quotient.",
         created_at: "2025-05-05T00:00:00Z"
       },
       {
@@ -1555,7 +1555,7 @@ export const topics: Topic[] = [
         topic: "programming-fundamentals",
         question_text: "A count-controlled loop uses a condition to decide when to stop.",
         model_answer: "false",
-        explanation: "False &ndash A count-controlled loop repeats a fixed number of times (e.g. FOR loops), whereas condition-controlled loops (like WHILE) stop when a condition is no longer true.",
+        explanation: "False - A count-controlled loop repeats a fixed number of times (e.g. FOR loops), whereas condition-controlled loops (like WHILE) stop when a condition is no longer true.",
         created_at: "2025-05-05T00:00:00Z"
       },
       {
@@ -1564,7 +1564,7 @@ export const topics: Topic[] = [
         topic: "programming-fundamentals",
         question_text: "Selection allows a program to choose between different paths based on a condition.",
         model_answer: "true",
-        explanation: "True &ndash Selection, often implemented using IF or CASE statements, lets a program make decisions by evaluating conditions.",
+        explanation: "True - Selection, often implemented using IF or CASE statements, lets a program make decisions by evaluating conditions.",
         created_at: "2025-05-05T00:00:00Z"
       },
       {
@@ -1573,7 +1573,7 @@ export const topics: Topic[] = [
         topic: "programming-fundamentals",
         question_text: "The assignment operator == is used to assign a value to a variable.",
         model_answer: "false",
-        explanation: "False &ndash The assignment operator is =. The double equals == is used for comparison, to check if two values are equal.",
+        explanation: "False - The assignment operator is =. The double equals == is used for comparison, to check if two values are equal.",
         created_at: "2025-05-05T00:00:00Z"
       },
       {
@@ -1582,7 +1582,7 @@ export const topics: Topic[] = [
         topic: "programming-fundamentals",
         question_text: "The Boolean operator AND returns true only if both conditions are true.",
         model_answer: "true",
-        explanation: "True &ndash AND evaluates to true only when both conditions are true. If either is false, the result is false.",
+        explanation: "True - AND evaluates to true only when both conditions are true. If either is false, the result is false.",
         created_at: "2025-05-05T00:00:00Z"
       },
       {
@@ -1591,7 +1591,7 @@ export const topics: Topic[] = [
         topic: "programming-fundamentals",
         question_text: "Casting is the process of converting one data type into another.",
         model_answer: "true",
-        explanation: "True &ndash Casting changes a value from one type to another, such as converting a string into an integer using int().",
+        explanation: "True - Casting changes a value from one type to another, such as converting a string into an integer using int().",
         created_at: "2025-05-05T00:00:00Z"
       },
       {
@@ -1600,7 +1600,7 @@ export const topics: Topic[] = [
         topic: "programming-fundamentals",
         question_text: "An IF statement must always include an ELSE clause.",
         model_answer: "false",
-        explanation: "False &ndash An IF statement can be used on its own. The ELSE clause is optional and only used if you want an alternative path.",
+        explanation: "False - An IF statement can be used on its own. The ELSE clause is optional and only used if you want an alternative path.",
         created_at: "2025-05-05T00:00:00Z"
       },
       {
@@ -1746,7 +1746,7 @@ export const topics: Topic[] = [
         type: "short-answer",
         topic: "languages-and-idEs",
         question_text: "Name two tools commonly available in a development environment (IDE).",
-        model_answer: "1) Code editor &ndash for writing and managing program code.\n2) Debugging tool &ndash for finding and fixing issues in the code.",
+        model_answer: "1) Code editor - for writing and managing program code.\n2) Debugging tool - for finding and fixing issues in the code.",
         created_at: "2025-05-05T00:00:00Z"
       },
       {
