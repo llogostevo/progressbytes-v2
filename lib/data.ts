@@ -1697,7 +1697,7 @@ export const topics: Topic[] = [
     name: "Systems Software",
     description: "Understand operating systems, utility software, and system management",
     icon: Settings,
-    questionCount: 17,
+    questionCount: 56,
     questions: [
       {
         id: "q351",
@@ -2244,15 +2244,6 @@ export const topics: Topic[] = [
         model_answer: "It allocates RAM to different programs so they can run without interfering with each other.",
         "created_at": "2025-05-05T00:00:00Z"
       }
-
-
-
-
-
-
-
-
-
     ]
     ,
     unit: 1,
