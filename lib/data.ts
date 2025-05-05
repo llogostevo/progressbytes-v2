@@ -40,7 +40,130 @@ export const topics: Topic[] = [
     description: "Learn about CPU architecture, fetch-execute cycle, and performance factors",
     icon: Cpu,
     questionCount: 0,
-    questions: [],
+    questions: [
+      {
+        id: "q131",
+        type: "short-answer",
+        topic: "systems-architecture",
+        question_text: "Outline the key steps involved in the CPU's fetch-decode-execute cycle.",
+        model_answer: "1) The CPU uses the Program Counter to locate the next instruction.\n2) The instruction is fetched from memory and decoded by the Control Unit.\n3) The decoded instruction is then executed, potentially involving data processing by the ALU.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q132",
+        type: "matching",
+        topic: "systems-architecture",
+        question_text: "Match each CPU register to its primary function:",
+        pairs: [
+          { statement: "Program Counter (PC)", match: "Holds the address of the next instruction to fetch" },
+          { statement: "Memory Address Register (MAR)", match: "Stores the memory location to be accessed" },
+          { statement: "Memory Data Register (MDR)", match: "Temporarily stores data being transferred to or from memory" },
+          { statement: "Accumulator (ACC)", match: "Stores results from the ALU operations" }
+        ],
+        model_answer: [
+          "Holds the address of the next instruction to fetch",
+          "Stores the memory location to be accessed",
+          "Temporarily stores data being transferred to or from memory",
+          "Stores results from the ALU operations"
+        ],
+        explanation: "Registers store temporary data or addresses that are used during instruction processing. Each has a distinct role in keeping the CPU operating efficiently.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q133",
+        type: "short-answer",
+        topic: "systems-architecture",
+        question_text: "Identify three CPU characteristics that influence processing speed.",
+        model_answer: "1) Clock speed\n2) Cache memory size\n3) Number of processing cores",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q134",
+        type: "short-answer",
+        topic: "systems-architecture",
+        question_text: "Why is a car’s cruise control considered an embedded system?",
+        model_answer: "It performs one specific task (maintaining vehicle speed), is built into the vehicle, and operates with its own microcontroller and software that can't be easily changed.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q135",
+        type: "short-answer",
+        topic: "systems-architecture",
+        question_text: "Provide an example of an embedded system found in vehicles and explain its purpose.",
+        model_answer: "Example: Parking sensors.\nExplanation: These detect nearby obstacles and alert the driver. The system is purpose-built and works automatically using embedded software.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q136",
+        type: "matching",
+        topic: "systems-architecture",
+        question_text: "Match the CPU component to what it does:",
+        pairs: [
+          { statement: "Program Counter", match: "Tracks the address of the instruction to be fetched next" },
+          { statement: "Control Unit", match: "Controls the timing and flow of instructions in the CPU" },
+          { statement: "Memory Address Register", match: "Holds the address in memory to read from or write to" },
+          { statement: "Arithmetic Logic Unit", match: "Carries out calculations and logical operations" }
+        ],
+        model_answer: [
+          "Tracks the address of the instruction to be fetched next",
+          "Controls the timing and flow of instructions in the CPU",
+          "Holds the address in memory to read from or write to",
+          "Carries out calculations and logical operations"
+        ],
+        explanation: "These components each contribute to processing data and instructions. The CU manages flow, the ALU handles logic, and registers help manage addresses and results.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q137",
+        type: "true-false",
+        topic: "systems-architecture",
+        question_text: "The CPU's cache stores frequently used instructions and data to reduce access times.",
+        model_answer: "true",
+        explanation: "True – Cache memory holds recently accessed data or instructions so the CPU can reuse them quickly without fetching from slower main memory.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q138",
+        type: "multiple-choice",
+        topic: "systems-architecture",
+        question_text: "Which of the following changes is most likely to speed up a CPU’s performance?",
+        options: [
+          "Reducing the number of cores",
+          "Lowering the cache size",
+          "Using a higher clock speed",
+          "Running fewer background apps"
+        ],
+        correctAnswerIndex: 2,
+        model_answer: "Using a higher clock speed",
+        explanation: "Increasing clock speed means the CPU can execute more instructions per second, improving performance for most tasks.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q139",
+        type: "multiple-choice",
+        topic: "systems-architecture",
+        question_text: "Which component in the CPU is responsible for handling logical operations such as AND, OR, and NOT?",
+        options: [
+          "Control Unit",
+          "Cache",
+          "Accumulator",
+          "Arithmetic Logic Unit"
+        ],
+        correctAnswerIndex: 3,
+        model_answer: "Arithmetic Logic Unit",
+        explanation: "The ALU is responsible for performing arithmetic and logical operations like AND, OR, and NOT.",
+        created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "q140",
+        type: "true-false",
+        topic: "systems-architecture",
+        question_text: "The Program Counter holds data being processed in the CPU.",
+        model_answer: "false",
+        explanation: "False – the Program Counter holds the memory address of the next instruction to fetch, not the data being processed.",
+        created_at: "2025-05-05T00:00:00Z"
+      }
+    ],
     unit: 1,
     disabled: true,
   },
