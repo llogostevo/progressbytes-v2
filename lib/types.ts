@@ -48,4 +48,5 @@ export interface Student {
   email: string
   created_at: string
   has_paid: boolean
+  has_ai: boolean
 }

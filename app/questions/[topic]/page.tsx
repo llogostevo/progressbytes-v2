@@ -28,6 +28,8 @@ export default function QuestionPage() {
   const [selfAssessmentScore, setSelfAssessmentScore] = useState<ScoreType | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
+  const freeUser = currentUser.email === "student@example.com"
+
   const hasPaid = currentUser.has_paid
 
   useEffect(() => {
@@ -36,19 +38,37 @@ export default function QuestionPage() {
       console.log("Current topic:", currentTopic)
       setTopic(currentTopic || null)
 
-      if (currentTopic) {
-        const newQuestion = getRandomQuestionForTopic(topicSlug)
-        console.log("Loaded question:", {
-          id: newQuestion.id,
-          type: newQuestion.type,
-          text: newQuestion.question_text,
-          options: newQuestion.options,
-          correctAnswerIndex: newQuestion.correctAnswerIndex
-        })
-        setQuestion(newQuestion)
-        setAnswer(null)
-        setSelfAssessmentScore(null)
+      if (freeUser) {
+        if (currentTopic) {
+          const newQuestion = getRandomQuestionForTopic(topicSlug, freeUser, hasPaid)
+          console.log("Loaded question:", {
+            id: newQuestion.id,
+            type: newQuestion.type,
+            text: newQuestion.question_text,
+            options: newQuestion.options,
+            correctAnswerIndex: newQuestion.correctAnswerIndex
+          })
+          setQuestion(newQuestion)
+          setAnswer(null)
+          setSelfAssessmentScore(null)
+        }
+
+      } else if (!freeUser) {
+        if (currentTopic) {
+          const newQuestion = getRandomQuestionForTopic(topicSlug, freeUser, hasPaid)
+          console.log("Loaded question:", {
+            id: newQuestion.id,
+            type: newQuestion.type,
+            text: newQuestion.question_text,
+            options: newQuestion.options,
+            correctAnswerIndex: newQuestion.correctAnswerIndex
+          })
+          setQuestion(newQuestion)
+          setAnswer(null)
+          setSelfAssessmentScore(null)
+        }
       }
+
     } catch (error) {
       console.error("Error loading question:", error)
     } finally {
@@ -114,7 +134,7 @@ export default function QuestionPage() {
   }
 
   const handleTryAnother = () => {
-    const newQuestion = getRandomQuestionForTopic(topicSlug)
+    const newQuestion = getRandomQuestionForTopic(topicSlug, freeUser, hasPaid)
     setQuestion(newQuestion)
     setAnswer(null)
     setSelfAssessmentScore(null)
@@ -161,7 +181,7 @@ export default function QuestionPage() {
   const handleMatchingAnswer = (selections: Record<string, string[]>) => {
     if (!question) return
 
-    const isCorrect = question.pairs?.every(pair => 
+    const isCorrect = question.pairs?.every(pair =>
       selections[pair.statement]?.includes(pair.match)
     ) || false
 
@@ -206,8 +226,8 @@ export default function QuestionPage() {
   const generateMockFeedback = (response: string, question: Question) => {
     // Very basic mock logic - in reality this would be an AI model
     const responseLength = response.length
-    const modelAnswer = Array.isArray(question.model_answer) 
-      ? question.model_answer.join(" ") 
+    const modelAnswer = Array.isArray(question.model_answer)
+      ? question.model_answer.join(" ")
       : question.model_answer
     const hasKeywords = modelAnswer
       .toLowerCase()
@@ -312,7 +332,7 @@ export default function QuestionPage() {
         <Card className="mb-8">
           <CardHeader>
             <CardTitle>Question</CardTitle>
-            
+
           </CardHeader>
           <CardContent>
             <div className="mb-6">
@@ -477,9 +497,9 @@ export default function QuestionPage() {
                       </div>
                     </div>
                     {question.explanation && (
-                    <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-md">
-                      <p className="whitespace-pre-wrap text-sm text-emerald-700">{question.explanation}</p>  
-                    </div>
+                      <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-md">
+                        <p className="whitespace-pre-wrap text-sm text-emerald-700">{question.explanation}</p>
+                      </div>
                     )}
                     {!selfAssessmentScore ? (
                       <SelfAssessment onSelectScore={handleSelfAssessment} />
@@ -566,7 +586,7 @@ export default function QuestionPage() {
                       </div>
                     </div>
                     <div>
-                      <p className="whitespace-pre-wrap text-sm text-emerald-700">{question.explanation}</p>  
+                      <p className="whitespace-pre-wrap text-sm text-emerald-700">{question.explanation}</p>
                     </div>
                   </>
                 )}
