@@ -42,7 +42,7 @@ export const topics: Topic[] = [
     questionCount: 23,
     questions: [
       {
-        id: "sa1",
+        id: "q131",
         type: "short-answer",
         topic: "systems-architecture",
         question_text: "Outline the key steps involved in the CPU's fetch-decode-execute cycle.",
@@ -50,7 +50,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "sa2",
+        id: "q132",
         type: "matching",
         topic: "systems-architecture",
         question_text: "Match each CPU register to its primary function:",
@@ -70,7 +70,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "sa3",
+        id: "q133",
         type: "short-answer",
         topic: "systems-architecture",
         question_text: "Identify three CPU characteristics that influence processing speed.",
@@ -78,7 +78,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "sa4",
+        id: "q134",
         type: "short-answer",
         topic: "systems-architecture",
         question_text: "Why is a car’s cruise control considered an embedded system?",
@@ -86,7 +86,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "sa5",
+        id: "q135",
         type: "short-answer",
         topic: "systems-architecture",
         question_text: "Provide an example of an embedded system found in vehicles and explain its purpose.",
@@ -94,7 +94,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "sa6",
+        id: "q136",
         type: "matching",
         topic: "systems-architecture",
         question_text: "Match the CPU component to what it does:",
@@ -114,7 +114,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "sa7",
+        id: "q137",
         type: "true-false",
         topic: "systems-architecture",
         question_text: "The CPU's cache stores frequently used instructions and data to reduce access times.",
@@ -123,7 +123,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "sa8",
+        id: "q138",
         type: "multiple-choice",
         topic: "systems-architecture",
         question_text: "Which of the following changes is most likely to speed up a CPU’s performance?",
@@ -139,7 +139,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "sa9",
+        id: "q139",
         type: "multiple-choice",
         topic: "systems-architecture",
         question_text: "Which component in the CPU is responsible for handling logical operations such as AND, OR, and NOT?",
@@ -155,7 +155,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "sa10",
+        id: "q140",
         type: "true-false",
         topic: "systems-architecture",
         question_text: "The Program Counter holds data being processed in the CPU.",
@@ -164,7 +164,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "sa11",
+        id: "q141",
         type: "multiple-choice",
         topic: "systems-architecture",
         question_text: "Which of these is an embedded system in a home environment?",
@@ -175,7 +175,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "sa12",
+        id: "q142",
         type: "true-false",
         topic: "systems-architecture",
         question_text: "Embedded systems usually run many complex tasks at once.",
@@ -184,7 +184,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "sa13",
+        id: "q143",
         type: "short-answer",
         topic: "systems-architecture",
         question_text: "Explain why a washing machine includes an embedded system.",
@@ -192,7 +192,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "sa15",
+        id: "q131",
         type: "short-answer",
         topic: "systems-architecture",
         question_text: "Outline the key steps involved in the CPU's fetch-decode-execute cycle.",
@@ -200,7 +200,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "sa16",
+        id: "q132",
         type: "matching",
         topic: "systems-architecture",
         question_text: "Match each CPU register to its primary function:",
@@ -220,7 +220,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "sa17",
+        id: "q133",
         type: "short-answer",
         topic: "systems-architecture",
         question_text: "Identify three CPU characteristics that influence processing speed.",
@@ -228,7 +228,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "sa18",
+        id: "q144",
         type: "short-answer",
         topic: "systems-architecture",
         question_text: "Explain how increasing the number of CPU cores can affect performance.",
@@ -236,7 +236,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "sa19",
+        id: "q145",
         type: "multiple-choice",
         topic: "systems-architecture",
         question_text: "Which change would typically improve CPU performance the most when running a single-threaded application?",
@@ -247,7 +247,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "sa20",
+        id: "q146",
         type: "true-false",
         topic: "systems-architecture",
         question_text: "A higher clock speed always results in faster overall performance.",
@@ -256,7 +256,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "sa21",
+        id: "q147",
         type: "true-false",
         topic: "systems-architecture",
         question_text: "More CPU cache helps performance by reducing the time needed to access frequently used data.",
@@ -265,7 +265,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "sa22",
+        id: "q148",
         type: "short-answer",
         topic: "systems-architecture",
         question_text: "What is the benefit of a larger CPU cache size?",
@@ -273,7 +273,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "sa23",
+        id: "q149",
         type: "multiple-choice",
         topic: "systems-architecture",
         question_text: "Which component directly stores data the CPU is likely to reuse?",
@@ -284,7 +284,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "sa24",
+        id: "q150",
         type: "true-false",
         topic: "systems-architecture",
         question_text: "Adding more cores always improves program performance.",
@@ -318,7 +318,7 @@ export const topics: Topic[] = [
     disabled: false,
     questions: [
       {
-        id: "n1",
+        id: "q1",
         topic: "networks",
         type: "text",
         question_text: "Define a computer network and give two reasons why they are used?",
@@ -327,7 +327,7 @@ export const topics: Topic[] = [
         created_at: "2023-01-01T00:00:00Z",
       },
       {
-        id: "n2",
+        id: "q2",
         topic: "networks",
         type: "text",
         question_text: "Describe the key differences between a LAN and a WAN.",
@@ -336,7 +336,7 @@ export const topics: Topic[] = [
         created_at: "2023-01-02T00:00:00Z",
       },
       {
-        id: "n3",
+        id: "q3",
         topic: "networks",
         type: "text",
         question_text: "Compare a client-server network with a peer-to-peer network.",
@@ -345,7 +345,7 @@ export const topics: Topic[] = [
         created_at: "2023-01-04T00:00:00Z",
       },
       {
-        id: "n4",
+        id: "q4",
         topic: "networks",
         type: "text",
         question_text: "Give two advantages and two disadvantages of a client-server network.",
@@ -354,7 +354,7 @@ export const topics: Topic[] = [
         created_at: "2023-01-05T00:00:00Z",
       },
       {
-        id: "n5",
+        id: "q5",
         topic: "networks",
         type: "text",
         question_text: "Explain one advantage and one disadvantage of using a mesh topology.",
@@ -363,7 +363,7 @@ export const topics: Topic[] = [
         created_at: "2023-01-06T00:00:00Z",
       },
       {
-        id: "n6",
+        id: "q6",
         topic: "networks",
         type: "text",
         question_text: "State and explain three factors that can affect the performance of a network.",
@@ -372,7 +372,7 @@ export const topics: Topic[] = [
         created_at: "2023-01-07T00:00:00Z",
       },
       {
-        id: "n7",
+        id: "q7",
         topic: "networks",
         type: "text",
         question_text: "What are the contents of a data packet?",
@@ -381,7 +381,7 @@ export const topics: Topic[] = [
         created_at: "2023-01-08T00:00:00Z",
       },
       {
-        id: "n8",
+        id: "q8",
         topic: "networks",
         type: "text",
         question_text: "Describe how a star topology functions and one of its main advantages.",
@@ -390,7 +390,7 @@ export const topics: Topic[] = [
         created_at: "2023-01-09T00:00:00Z",
       },
       {
-        id: "n9",
+        id: "q9",
         topic: "networks",
         type: "text",
         question_text: "Why might a business choose a star topology instead of a mesh topology?",
@@ -399,7 +399,7 @@ export const topics: Topic[] = [
         created_at: "2023-01-10T00:00:00Z",
       },
       {
-        id: "n10",
+        id: "q10",
         topic: "networks",
         type: "text",
         question_text: "Explain how a switch works on a network.",
@@ -408,7 +408,7 @@ export const topics: Topic[] = [
         created_at: "2023-01-15T00:00:00Z",
       },
       {
-        id: "n11",
+        id: "q11",
         topic: "networks",
         type: "text",
         question_text: "What is the purpose of a router in a network?",
@@ -417,7 +417,7 @@ export const topics: Topic[] = [
         created_at: "2023-01-16T00:00:00Z",
       },
       {
-        id: "n12",
+        id: "q12",
         topic: "networks",
         type: "text",
         question_text: "State what WAP stands for and explain its role in a network.",
@@ -426,7 +426,7 @@ export const topics: Topic[] = [
         created_at: "2023-01-17T00:00:00Z",
       },
       {
-        id: "n13",
+        id: "q13",
         topic: "networks",
         type: "text",
         question_text: "What is a NIC and why is it needed in a computer?",
@@ -435,7 +435,7 @@ export const topics: Topic[] = [
         created_at: "2023-01-18T00:00:00Z",
       },
       {
-        id: "n14",
+        id: "q14",
         topic: "networks",
         type: "text",
         question_text: "Describe the differences between three types of transmission media.",
@@ -444,7 +444,7 @@ export const topics: Topic[] = [
         created_at: "2023-01-19T00:00:00Z",
       },
       {
-        id: "n15",
+        id: "q15",
         topic: "networks",
         type: "text",
         question_text: "What is the internet and how is it different from the World Wide Web?",
@@ -453,7 +453,7 @@ export const topics: Topic[] = [
         created_at: "2023-01-20T00:00:00Z",
       },
       {
-        id: "n16",
+        id: "q16",
         topic: "networks",
         type: "text",
         question_text: "What is web hosting and why is it necessary?",
@@ -462,7 +462,7 @@ export const topics: Topic[] = [
         created_at: "2023-01-21T00:00:00Z",
       },
       {
-        id: "n17",
+        id: "q17",
         topic: "networks",
         type: "text",
         question_text: "What is a DNS server and what role does it play in accessing websites?",
@@ -471,7 +471,7 @@ export const topics: Topic[] = [
         created_at: "2023-01-22T00:00:00Z",
       },
       {
-        id: "n18",
+        id: "q18",
         topic: "networks",
         type: "text",
         question_text: "Explain two advantages and two disadvantages of cloud storage.",
@@ -480,7 +480,7 @@ export const topics: Topic[] = [
         created_at: "2023-01-24T00:00:00Z",
       },
       {
-        id: "n19",
+        id: "q19",
         topic: "networks",
         type: "text",
         question_text: "Explain the tasks a router performs when sending data across networks.",
@@ -489,7 +489,7 @@ export const topics: Topic[] = [
         created_at: "2023-01-25T00:00:00Z",
       },
       {
-        id: "n20",
+        id: "q20",
         topic: "networks",
         type: "text",
         question_text: "Explain the tasks a switch performs in a network.",
@@ -498,7 +498,7 @@ export const topics: Topic[] = [
         created_at: "2023-01-26T00:00:00Z",
       },
       {
-        id: "n21",
+        id: "q21",
         topic: "networks",
         type: "text",
         question_text: "Explain the tasks a network interface card (NIC) performs in a computer system.",
@@ -507,7 +507,7 @@ export const topics: Topic[] = [
         created_at: "2023-01-27T00:00:00Z",
       },
       {
-        id: "n22",
+        id: "q22",
         topic: "networks",
         type: "text",
         question_text: "What is a MAC address and why is it important on a LAN?",
@@ -516,7 +516,7 @@ export const topics: Topic[] = [
         created_at: "2023-01-29T00:00:00Z",
       },
       {
-        id: "n23",
+        id: "q23",
         topic: "networks",
         type: "text",
         question_text: "Explain how a switch uses MAC addresses to forward data packets.",
@@ -525,7 +525,7 @@ export const topics: Topic[] = [
         created_at: "2023-01-30T00:00:00Z",
       },
       {
-        id: "n24",
+        id: "q24",
         topic: "networks",
         type: "text",
         question_text: "Describe how a router uses a routing table to send data across a WAN.",
@@ -534,7 +534,7 @@ export const topics: Topic[] = [
         created_at: "2023-01-31T00:00:00Z",
       },
       {
-        id: "n25",
+        id: "q25",
         topic: "networks",
         type: "text",
         question_text: "What is latency and what causes it on a network?",
@@ -543,7 +543,7 @@ export const topics: Topic[] = [
         created_at: "2023-02-01T00:00:00Z",
       },
       {
-        id: "n26",
+        id: "q26",
         topic: "networks",
         type: "text",
         question_text: "Explain the difference between bandwidth and actual data transfer speed.",
@@ -552,7 +552,7 @@ export const topics: Topic[] = [
         created_at: "2023-02-02T00:00:00Z",
       },
       {
-        id: "n27",
+        id: "q27",
         topic: "networks",
         type: "text",
         question_text: "What is the effect of increasing the number of active users on a network?",
@@ -561,7 +561,7 @@ export const topics: Topic[] = [
         created_at: "2023-02-03T00:00:00Z",
       },
       {
-        id: "n28",
+        id: "q28",
         topic: "networks",
         type: "text",
         question_text: "Why are routers needed to connect different networks together?",
@@ -570,7 +570,7 @@ export const topics: Topic[] = [
         created_at: "2023-02-05T00:00:00Z",
       },
       {
-        id: "n29",
+        id: "q29",
         topic: "networks",
         type: "text",
         question_text: "Give the format of a MAC address.",
@@ -579,7 +579,7 @@ export const topics: Topic[] = [
         created_at: "2023-02-07T00:00:00Z",
       },
       {
-        id: "n30",
+        id: "q30",
         topic: "networks",
         type: "text",
         question_text: "Give the format of an IPv4 address.",
@@ -588,7 +588,7 @@ export const topics: Topic[] = [
         created_at: "2023-02-08T00:00:00Z",
       },
       {
-        id: "n31",
+        id: "q31",
         topic: "networks",
         type: "text",
         question_text: "Give the format of an IPv6 address.",
@@ -597,7 +597,7 @@ export const topics: Topic[] = [
         created_at: "2023-02-09T00:00:00Z",
       },
       {
-        id: "n32",
+        id: "q32",
         topic: "networks",
         type: "text",
         question_text: "What is the difference between an IP address and a MAC address?",
@@ -606,7 +606,7 @@ export const topics: Topic[] = [
         created_at: "2023-02-10T00:00:00Z",
       },
       {
-        id: "n33",
+        id: "q33",
         topic: "networks",
         type: "text",
         question_text: "Why was IPv6 developed?",
@@ -615,7 +615,7 @@ export const topics: Topic[] = [
         created_at: "2023-02-11T00:00:00Z",
       },
       {
-        id: "n34",
+        id: "q34",
         topic: "networks",
         type: "text",
         question_text: "What does IP stand for and what is its purpose?",
@@ -624,7 +624,7 @@ export const topics: Topic[] = [
         created_at: "2023-02-12T00:00:00Z",
       },
       {
-        id: "n35",
+        id: "q35",
         topic: "networks",
         type: "text",
         question_text: "What is a protocol and why are protocols important in networking?",
@@ -632,7 +632,7 @@ export const topics: Topic[] = [
         created_at: "2024-06-09T00:00:00Z"
       },
       {
-        id: "n36",
+        id: "q36",
         topic: "networks",
         type: "text",
         question_text: "Devices in a local area network (LAN), are assigned IP and MAC addresses.\nProvide a valid example of an IPv4 address and one of an IPv6 address.",
@@ -640,7 +640,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n37",
+        id: "q37",
         topic: "networks",
         type: "text",
         question_text: "Outline the structure of a MAC address.",
@@ -648,7 +648,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n38",
+        id: "q38",
         topic: "networks",
         type: "text",
         question_text: "A large organisation such as an airport uses wired connections in their LAN.\nGive two advantages of using wired connections for this type of environment.",
@@ -656,7 +656,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n39",
+        id: "q39",
         topic: "networks",
         type: "text",
         question_text: "Explain why a wireless connection could be beneficial in addition to a wired LAN in a busy workplace that covers a large building such as an airport or shopping centre.",
@@ -664,7 +664,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n40",
+        id: "q40",
         topic: "networks",
         type: "text",
         question_text: "Compare one benefit and one disadvantage of using a star topology instead of a mesh topology in an office network.",
@@ -672,7 +672,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n41",
+        id: "q41",
         topic: "networks",
         type: "text",
         question_text: "What is the function of the switch in a star network topology?",
@@ -680,7 +680,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n42",
+        id: "q42",
         topic: "networks",
         type: "text",
         question_text: "A student is using a computer to carry out various tasks online.\n\nDifferent protocols are used to transmit data across the internet depending on the task.\nMatch the most suitable protocol to each of the following activities.\n\na. Accessing a news website\nb. Logging into an online banking account\nc. Downloading a file from a web server\nd. Receiving emails from a mail server",
@@ -688,7 +688,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n43",
+        id: "q43",
         topic: "networks",
         type: "text",
         question_text: "Describe two benefits of splitting network communication protocols into layers.",
@@ -696,7 +696,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n44",
+        id: "q44",
         topic: "networks",
         type: "text",
         question_text: "State another feature of a Local Area Network (LAN), apart from operating in a small geographical area.",
@@ -704,7 +704,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n45",
+        id: "q45",
         topic: "networks",
         type: "text",
         question_text: "Describe the benefits of adding wireless connectivity to an existing wired home LAN.",
@@ -712,7 +712,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n46",
+        id: "q46",
         topic: "networks",
         type: "text",
         question_text: "Identify two drawbacks of switching to wireless connections in a home LAN.",
@@ -720,7 +720,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n47",
+        id: "q47",
         topic: "networks",
         type: "text",
         question_text: "A user uploads images to a website. Identify the client device and explain why it is considered the client.",
@@ -728,7 +728,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n48",
+        id: "q48",
         topic: "networks",
         type: "text",
         question_text: "A user uploads images to a website. Identify the server device and explain why it is considered the server",
@@ -736,7 +736,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n49",
+        id: "q49",
         topic: "networks",
         type: "text",
         question_text: "Explain how having many connected devices at once can reduce network performance.",
@@ -744,7 +744,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n50",
+        id: "q50",
         topic: "networks",
         type: "text",
         question_text: "Give one additional factor (not the number of devices) that can affect the overall performance of a network.",
@@ -752,7 +752,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n51",
+        id: "q51",
         topic: "networks",
         type: "text",
         question_text: "Describe how a website is accessed refering to DNS and Web Servers.",
@@ -760,7 +760,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n52",
+        id: "q52",
         topic: "networks",
         type: "text",
         question_text: "Explain why Ethernet is considered a networking standard.",
@@ -768,7 +768,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n53",
+        id: "q53",
         topic: "networks",
         type: "text",
         question_text: "List three functions that a router performs in a network.",
@@ -776,7 +776,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n54",
+        id: "q54",
         topic: "networks",
         type: "text",
         question_text: "Give two reasons why data transmitted through a network should be encrypted.",
@@ -784,7 +784,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n55",
+        id: "q55",
         topic: "networks",
         type: "text",
         question_text: "Identify a protocol used to send emails and one used to access websites securely.",
@@ -792,7 +792,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n56",
+        id: "q56",
         topic: "networks",
         type: "text",
         question_text: "Amir's home includes laptops, phones, and TVs connected in a star network. What type of network is this?",
@@ -800,7 +800,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n57",
+        id: "q57",
         topic: "networks",
         type: "text",
         question_text: "Describe one similarity and one difference between a switch and a router.",
@@ -808,7 +808,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n58",
+        id: "q58",
         topic: "networks",
         type: "text",
         question_text: "Give three advantages of storing files in the cloud.",
@@ -816,7 +816,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n59",
+        id: "q59",
         topic: "networks",
         type: "text",
         question_text: "State three disadvantages of using cloud storage.",
@@ -824,7 +824,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n60",
+        id: "q60",
         topic: "networks",
         type: "text",
         question_text: "Define the term 'network protocol'.",
@@ -832,7 +832,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n61",
+        id: "q61",
         topic: "networks",
         type: "text",
         question_text: "Define the term 'layer' in the context of network protocols.",
@@ -840,7 +840,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n62",
+        id: "q62",
         topic: "networks",
         type: "text",
         question_text: "Explain one benefit of using layers in a protocol model.",
@@ -848,7 +848,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n63",
+        id: "q63",
         topic: "networks",
         type: "text",
         question_text: "Give two reasons a business might choose a star topology for their LAN.",
@@ -856,7 +856,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n64",
+        id: "q64",
         topic: "networks",
         type: "text",
         question_text: "Define what a Wide Area Network (WAN) is.",
@@ -864,7 +864,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n65",
+        id: "q65",
         topic: "networks",
         type: "text",
         question_text: "Describe two benefits to a business of using cloud storage.",
@@ -872,7 +872,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n66",
+        id: "q66",
         topic: "networks",
         type: "text",
         question_text: "Give two disadvantages to a business of using cloud storage.",
@@ -880,7 +880,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n67",
+        id: "q67",
         topic: "networks",
         type: "text",
         question_text: "Give two reasons why network protocols are designed in layers.",
@@ -888,7 +888,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n68",
+        id: "q68",
         topic: "networks",
         type: "text",
         question_text: "Why is a layered model used when developing network communication systems? Give two reasons.",
@@ -896,7 +896,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n69",
+        id: "q69",
         topic: "networks",
         type: "text",
         question_text: "State the purpose of a Network Interface Card (NIC) in a computer.",
@@ -904,7 +904,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n70",
+        id: "q70",
         topic: "networks",
         type: "text",
         question_text: "Identify one use of Bluetooth and one use of Wi-Fi. Explain why each is suitable for the task.",
@@ -912,7 +912,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n71",
+        id: "q71",
         topic: "networks",
         type: "text",
         question_text: "Describe the function of a Wireless Access Point (WAP) in a network.",
@@ -920,7 +920,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n72",
+        id: "q72",
         topic: "networks",
         type: "text",
         question_text: "Give two examples of transmission media used in a network and describe one benefit of each.",
@@ -928,7 +928,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n73",
+        id: "q73",
         topic: "networks",
         type: "multiple-choice",
         question_text: "What is the main purpose of a router in a network?",
@@ -943,7 +943,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n74",
+        id: "q74",
         topic: "networks",
         type: "multiple-choice",
         question_text: "Which of the following is NOT a characteristic of a LAN?",
@@ -958,7 +958,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n75",
+        id: "q75",
         type: "fill-in-the-blank",
         topic: "networks",
         question_text: "A ______ network connects devices over a small geographical area, while a ______ network connects devices over a large geographical area.",
@@ -968,7 +968,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n76",
+        id: "q76",
         type: "fill-in-the-blank",
         topic: "networks",
         question_text: "In a star topology, all devices are connected to a central ______, while in a mesh topology, devices are connected to ______ other devices.",
@@ -978,7 +978,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n77",
+        id: "q77",
         type: "fill-in-the-blank",
         topic: "networks",
         question_text: "A ______ address is a unique 48-bit identifier for a network interface card, while an ______ address is a logical address used for routing data across networks.",
@@ -988,7 +988,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n78",
+        id: "q78",
         type: "fill-in-the-blank",
         topic: "networks",
         question_text: "The ______ protocol is used for secure web browsing, while the ______ protocol is used for sending emails.",
@@ -998,7 +998,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n79",
+        id: "q79",
         type: "fill-in-the-blank",
         topic: "networks",
         question_text: "A ______ converts domain names to IP addresses, while a ______ forwards data packets between networks.",
@@ -1008,7 +1008,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n80",
+        id: "q80",
         type: "fill-in-the-blank",
         topic: "networks",
         question_text: "______ cables use light to transmit data, while ______ cables use electrical signals.",
@@ -1018,7 +1018,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n81",
+        id: "q81",
         type: "fill-in-the-blank",
         topic: "networks",
         question_text: "In a client-server network, the ______ provides services and resources, while the ______ requests and uses these services.",
@@ -1028,7 +1028,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n82",
+        id: "q82",
         type: "fill-in-the-blank",
         topic: "networks",
         question_text: "______ is the delay in data transmission, while ______ is the maximum rate of data transfer.",
@@ -1038,7 +1038,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n83",
+        id: "q83",
         topic: "networks",
         type: "multiple-choice",
         question_text: "Which of the following best describes a Local Area Network (LAN)?",
@@ -1053,7 +1053,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n84",
+        id: "q84",
         topic: "networks",
         type: "multiple-choice",
         question_text: "What is the main advantage of a star topology over a mesh topology?",
@@ -1068,7 +1068,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n85",
+        id: "q85",
         topic: "networks",
         type: "multiple-choice",
         question_text: "Which device is responsible for forwarding data packets between different networks?",
@@ -1083,7 +1083,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n86",
+        id: "q86",
         topic: "networks",
         type: "multiple-choice",
         question_text: "What is the purpose of a MAC address?",
@@ -1098,7 +1098,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n87",
+        id: "q87",
         topic: "networks",
         type: "multiple-choice",
         question_text: "Which protocol is used to securely transmit web pages?",
@@ -1113,7 +1113,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n88",
+        id: "q88",
         topic: "networks",
         type: "multiple-choice",
         question_text: "What is the main advantage of using fibre optic cables over copper cables?",
@@ -1128,7 +1128,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n89",
+        id: "q89",
         topic: "networks",
         type: "multiple-choice",
         question_text: "In a client-server network, what is the role of the server?",
@@ -1143,7 +1143,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n90",
+        id: "q90",
         topic: "networks",
         type: "multiple-choice",
         question_text: "What is the main difference between IPv4 and IPv6?",
@@ -1158,7 +1158,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n91",
+        id: "q91",
         topic: "networks",
         type: "multiple-choice",
         question_text: "Which of the following is NOT a factor that can affect network performance?",
@@ -1173,7 +1173,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n92",
+        id: "q92",
         topic: "networks",
         type: "multiple-choice",
         question_text: "What is the purpose of a DNS server?",
@@ -1188,7 +1188,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "n93",
+        id: "q201",
         type: "true-false",
         topic: "networks",
         question_text: "A LAN covers a wide geographical area using infrastructure provided by third parties.",
@@ -1197,7 +1197,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "n94",
+        id: "q202",
         type: "true-false",
         topic: "networks",
         question_text: "Switches help reduce network traffic by sending data only to the intended recipient.",
@@ -1206,7 +1206,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "n95",
+        id: "q203",
         type: "true-false",
         topic: "networks",
         question_text: "Wi-Fi is a wired technology used in local area networks.",
@@ -1215,7 +1215,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "n96",
+        id: "q204",
         type: "true-false",
         topic: "networks",
         question_text: "DNS servers are used to translate domain names into IP addresses.",
@@ -1224,7 +1224,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "n97",
+        id: "q205",
         type: "matching",
         topic: "networks",
         question_text: "Match the device to its function:",
@@ -1244,7 +1244,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "n98",
+        id: "q206",
         type: "matching",
         topic: "networks",
         question_text: "Match each network type to its description:",
@@ -1276,7 +1276,7 @@ export const topics: Topic[] = [
     questionCount: 38,
     questions: [
       {
-        id: "ns1",
+        id: "q151",
         type: "short-answer",
         topic: "network-security",
         question_text: "State what is meant by the term 'brute force attack' in the context of cyber security.",
@@ -1284,7 +1284,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns2",
+        id: "q152",
         type: "short-answer",
         topic: "network-security",
         question_text: "Explain one way that a brute force attack can be prevented.",
@@ -1292,7 +1292,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns3",
+        id: "q153",
         type: "short-answer",
         topic: "network-security",
         question_text: "Give one reason why an organisation might perform penetration testing on their network.",
@@ -1300,7 +1300,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns4",
+        id: "q154",
         type: "multiple-choice",
         topic: "network-security",
         question_text: "Which of the following is an example of social engineering?",
@@ -1316,7 +1316,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns5",
+        id: "q155",
         type: "true-false",
         topic: "network-security",
         question_text: "Antivirus software is used to detect and remove malware.",
@@ -1325,7 +1325,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns6",
+        id: "q156",
         type: "fill-in-the-blank",
         topic: "network-security",
         question_text: "Fill in the blanks:\n\nA ______ is a type of malware that disguises itself as a useful program. A ______ attack attempts to flood a server with requests. A ______ test checks for security flaws.",
@@ -1334,7 +1334,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns7",
+        id: "q157",
         type: "matching",
         topic: "network-security",
         question_text: "Match each security threat to its description:",
@@ -1354,7 +1354,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns8",
+        id: "q158",
         type: "short-answer",
         topic: "network-security",
         question_text: "Describe the purpose of network forensics.",
@@ -1362,7 +1362,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns9",
+        id: "q301",
         type: "short-answer",
         topic: "network-security",
         question_text: "Describe the purpose of a brute-force attack and how it operates.",
@@ -1370,7 +1370,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns10",
+        id: "q302",
         type: "short-answer",
         topic: "network-security",
         question_text: "Explain the role of social engineering in cyber attacks.",
@@ -1378,7 +1378,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns11",
+        id: "q303",
         type: "multiple-choice",
         topic: "network-security",
         question_text: "Which of the following best describes a denial-of-service (DoS) attack?",
@@ -1394,7 +1394,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns12",
+        id: "q304",
         type: "true-false",
         topic: "network-security",
         question_text: "Phishing is a form of malware that infects a user's device.",
@@ -1403,7 +1403,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns13",
+        id: "q305",
         type: "true-false",
         topic: "network-security",
         question_text: "Malware can be designed to encrypt files and demand payment for their release.",
@@ -1412,7 +1412,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns14",
+        id: "q306",
         type: "short-answer",
         topic: "network-security",
         question_text: "What is the goal of an SQL injection attack?",
@@ -1420,7 +1420,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns16",
+        id: "q307",
         type: "short-answer",
         topic: "network-security",
         question_text: "Give one reason why people are often considered the weakest point in security.",
@@ -1428,7 +1428,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns17",
+        id: "q308",
         type: "matching",
         topic: "network-security",
         question_text: "Match the attack type to its description:",
@@ -1448,7 +1448,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns18",
+        id: "q309",
         type: "fill-in-the-blank",
         topic: "network-security",
         question_text: "Complete the sentence:\n\nOne way to protect against malware is to install ______ software. To reduce the risk of SQL injection, developers use ______ statements. A ______ is often used to restrict access between a device and the internet.",
@@ -1457,7 +1457,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns19",
+        id: "q310",
         type: "short-answer",
         topic: "network-security",
         question_text: "Explain how encryption helps protect data in transmission.",
@@ -1465,7 +1465,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns20",
+        id: "q161",
         type: "multiple-choice",
         topic: "network-security",
         question_text: "What is the primary purpose of a denial-of-service (DoS) attack?",
@@ -1481,7 +1481,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns21",
+        id: "q162",
         type: "true-false",
         topic: "network-security",
         question_text: "Firewalls can be used to block unauthorised access to a network.",
@@ -1490,7 +1490,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns22",
+        id: "q163",
         type: "short-answer",
         topic: "network-security",
         question_text: "Give one reason why using strong, unique passwords is important for network security.",
@@ -1498,7 +1498,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns23",
+        id: "q164",
         type: "short-answer",
         topic: "network-security",
         question_text: "Explain how malware can be used to collect personal data from a user’s device.",
@@ -1506,7 +1506,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns24",
+        id: "q165",
         type: "matching",
         topic: "network-security",
         question_text: "Match the attack type with its description:",
@@ -1526,7 +1526,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns25",
+        id: "q166",
         type: "fill-in-the-blank",
         topic: "network-security",
         question_text: "Complete the following:\n\nA ______ is used to prevent unauthorised access to or from a private network. Anti-malware software helps detect and remove ______. Strong ______ help protect user accounts.",
@@ -1535,7 +1535,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns26",
+        id: "q167",
         type: "multiple-choice",
         topic: "network-security",
         question_text: "Which of these best describes penetration testing?",
@@ -1551,7 +1551,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns27",
+        id: "q168",
         type: "true-false",
         topic: "network-security",
         question_text: "Encryption converts data into a readable format to make it easier to share.",
@@ -1560,7 +1560,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns28",
+        id: "q169",
         type: "short-answer",
         topic: "network-security",
         question_text: "Describe one way physical security can prevent unauthorised access to a network.",
@@ -1568,7 +1568,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns29",
+        id: "q170",
         type: "short-answer",
         topic: "network-security",
         question_text: "What is a key feature of user access levels in a secure system?",
@@ -1576,7 +1576,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns30",
+        id: "q171",
         type: "multiple-choice",
         topic: "network-security",
         question_text: "Which of the following best describes the purpose of a firewall?",
@@ -1592,7 +1592,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns31",
+        id: "q172",
         type: "true-false",
         topic: "network-security",
         question_text: "SQL injection involves inserting malicious code into a website’s database query.",
@@ -1601,7 +1601,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns32",
+        id: "q173",
         type: "short-answer",
         topic: "network-security",
         question_text: "What is one way to prevent SQL injection attacks?",
@@ -1609,7 +1609,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns33",
+        id: "q174",
         type: "matching",
         topic: "network-security",
         question_text: "Match each security measure to what it prevents or limits:",
@@ -1629,7 +1629,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns34",
+        id: "q175",
         type: "fill-in-the-blank",
         topic: "network-security",
         question_text: "Fill in the blanks about passwords and access control:\n\nTo limit access, users can be given different ______ levels. Strong ______ make it harder for attackers to guess or crack login details.",
@@ -1638,7 +1638,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns35",
+        id: "q176",
         type: "short-answer",
         topic: "network-security",
         question_text: "Describe the purpose of penetration testing.",
@@ -1646,7 +1646,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns37",
+        id: "q177",
         type: "true-false",
         topic: "network-security",
         question_text: "Encryption can prevent data from being intercepted during transmission.",
@@ -1655,7 +1655,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns38",
+        id: "q178",
         type: "multiple-choice",
         topic: "network-security",
         question_text: "Which of the following is an example of physical security?",
@@ -1671,7 +1671,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns39",
+        id: "q179",
         type: "short-answer",
         topic: "network-security",
         question_text: "What is the role of access levels in improving security?",
@@ -1679,7 +1679,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "ns40",
+        id: "q180",
         type: "code",
         topic: "network-security",
         question_text: "The following SQL query is vulnerable to SQL injection:\n\n`SELECT * FROM users WHERE username = '\" + input + \"'`\n\nExplain how this could be exploited and suggest how to prevent it.",
@@ -1700,7 +1700,7 @@ export const topics: Topic[] = [
     questionCount: 56,
     questions: [
       {
-        id: "s1",
+        id: "q351",
         type: "matching",
         topic: "systems-software",
         question_text: "Match each operating system function to its correct task:",
@@ -1720,7 +1720,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s2",
+        id: "q352",
         type: "fill-in-the-blank",
         topic: "systems-software",
         question_text: "Fill in the blanks about utility software:\n\n__________ software uses a __________ to change data. Even if intercepted, the data can't be __________. __________ software arranges scattered parts of files into __________ blocks, improving the __________ at which data can be read.",
@@ -1729,7 +1729,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s3",
+        id: "q353",
         type: "short-answer",
         topic: "systems-software",
         question_text: "State why utility software is important in a computer system.",
@@ -1737,7 +1737,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s4",
+        id: "q354",
         type: "short-answer",
         topic: "systems-software",
         question_text: "Explain why a computer runs more efficiently after using defragmentation software.",
@@ -1745,7 +1745,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s5",
+        id: "q355",
         type: "matching",
         topic: "systems-software",
         question_text: "Match each system action to the operating system function that handles it:",
@@ -1767,7 +1767,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s6",
+        id: "q356",
         type: "short-answer",
         topic: "systems-software",
         question_text: "Describe how a computer’s hard drive may become fragmented over time.",
@@ -1775,7 +1775,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s7",
+        id: "q357",
         type: "short-answer",
         topic: "systems-software",
         question_text: "Explain how defragmentation software can improve computer performance.",
@@ -1783,7 +1783,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s8",
+        id: "q401",
         type: "short-answer",
         topic: "systems-software",
         question_text: "What is the main purpose of an operating system?",
@@ -1791,7 +1791,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s9",
+        id: "q402",
         type: "multiple-choice",
         topic: "systems-software",
         question_text: "Which of these is NOT a function of an operating system?",
@@ -1802,7 +1802,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s10",
+        id: "q403",
         type: "true-false",
         topic: "systems-software",
         question_text: "An operating system allows more than one program to run at the same time.",
@@ -1811,7 +1811,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s11",
+        id: "q404",
         type: "short-answer",
         topic: "systems-software",
         question_text: "Describe how an operating system manages memory.",
@@ -1819,7 +1819,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s12",
+        id: "q405",
         type: "matching",
         topic: "systems-software",
         question_text: "Match each function to its description:",
@@ -1839,7 +1839,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s13",
+        id: "q406",
         type: "short-answer",
         topic: "systems-software",
         question_text: "What is peripheral management and why is it important?",
@@ -1847,7 +1847,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s14",
+        id: "q407",
         type: "fill-in-the-blank",
         topic: "systems-software",
         question_text: "The operating system manages both ______ and ______. It allows multiple applications to run through ______.",
@@ -1856,7 +1856,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s15",
+        id: "q408",
         type: "short-answer",
         topic: "systems-software",
         question_text: "Explain one role of the user interface in an operating system.",
@@ -1864,7 +1864,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s16",
+        id: "q409",
         type: "multiple-choice",
         topic: "systems-software",
         question_text: "Which is a typical feature of a graphical user interface (GUI)?",
@@ -1875,7 +1875,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s17",
+        id: "q410",
         type: "true-false",
         topic: "systems-software",
         question_text: "Operating systems allow different users to have different access rights.",
@@ -1884,7 +1884,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s18",
+        id: "q343",
         type: "short-answer",
         topic: "systems-software",
         question_text: "Explain how an operating system allows a computer to run multiple programs at once.",
@@ -1892,7 +1892,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s19",
+        id: "q344",
         type: "short-answer",
         topic: "systems-software",
         question_text: "State two tasks carried out by memory management within an operating system.",
@@ -1900,7 +1900,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s20",
+        id: "q345",
         type: "multiple-choice",
         topic: "systems-software",
         question_text: "What is the purpose of peripheral management?",
@@ -1911,7 +1911,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s21",
+        id: "q346",
         type: "short-answer",
         topic: "systems-software",
         question_text: "Describe one reason why drivers are needed for peripheral devices.",
@@ -1919,7 +1919,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s22",
+        id: "q347",
         type: "short-answer",
         topic: "systems-software",
         question_text: "What does the file management system of an operating system do?",
@@ -1927,7 +1927,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s23",
+        id: "q348",
         type: "true-false",
         topic: "systems-software",
         question_text: "An operating system is responsible for assigning usernames and controlling user access rights.",
@@ -1936,7 +1936,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s24",
+        id: "q349",
         type: "true-false",
         topic: "systems-software",
         question_text: "Without an operating system, a user can still run programs manually.",
@@ -1945,7 +1945,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s25",
+        id: "q350",
         type: "fill-in-the-blank",
         topic: "systems-software",
         question_text: "An operating system provides a _______ for users to interact with the system. It also manages _______ devices using drivers, and handles memory and _______ for programs.",
@@ -1954,7 +1954,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s26",
+        id: "q351",
         type: "short-answer",
         topic: "systems-software",
         question_text: "What is meant by file permissions?",
@@ -1962,7 +1962,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s27",
+        id: "q352",
         type: "matching",
         topic: "systems-software",
         question_text: "Match each OS feature to its description:",
@@ -1982,7 +1982,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s28",
+        id: "q353",
         type: "multiple-choice",
         topic: "systems-software",
         question_text: "What is the main purpose of data compression software?",
@@ -1993,7 +1993,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s29",
+        id: "q354",
         type: "short-answer",
         topic: "systems-software",
         question_text: "Describe the purpose of defragmentation software.",
@@ -2001,7 +2001,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s30",
+        id: "q355",
         type: "short-answer",
         topic: "systems-software",
         question_text: "What is the benefit of using encryption software?",
@@ -2009,7 +2009,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s31",
+        id: "q356",
         type: "fill-in-the-blank",
         topic: "systems-software",
         question_text: "Utility software performs ______ tasks that help keep the system running smoothly. Examples include ______ files, ______ data, and compression.",
@@ -2018,7 +2018,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s32",
+        id: "q357",
         type: "true-false",
         topic: "systems-software",
         question_text: "Encryption software scrambles data so it cannot be read without a key.",
@@ -2027,7 +2027,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s33",
+        id: "q358",
         type: "true-false",
         topic: "systems-software",
         question_text: "Defragmentation software deletes duplicate files to free up space.",
@@ -2036,7 +2036,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s34",
+        id: "q359",
         type: "multiple-choice",
         topic: "systems-software",
         question_text: "Which of the following is a typical use for utility software?",
@@ -2047,7 +2047,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s35",
+        id: "q360",
         type: "short-answer",
         topic: "systems-software",
         question_text: "Give two reasons why data might be compressed before sending over a network.",
@@ -2055,7 +2055,7 @@ export const topics: Topic[] = [
         "created_at": "2025-05-05T00:00:00Z"
       },
       {
-        id: "s36",
+        id: "q361",
         type: "short-answer",
         topic: "systems-software",
         question_text: "Explain one reason an operating system might restrict user access levels.",
@@ -2063,7 +2063,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "s37",
+        id: "q339",
         type: "short-answer",
         topic: "systems-software",
         question_text: "What is a driver and why is it necessary?",
@@ -2071,7 +2071,7 @@ export const topics: Topic[] = [
         "created_at": "2025-05-05T00:00:00Z"
       },
       {
-        id: "s38",
+        id: "q340",
         type: "short-answer",
         topic: "systems-software",
         question_text: "Explain two reasons why file management is an essential function of an operating system.",
@@ -2079,7 +2079,7 @@ export const topics: Topic[] = [
         "created_at": "2025-05-05T00:00:00Z"
       },
       {
-        id: "s39",
+        id: "q341",
         type: "true-false",
         topic: "systems-software",
         question_text: "The operating system is responsible for handling keyboard and mouse input.",
@@ -2088,7 +2088,7 @@ export const topics: Topic[] = [
         "created_at": "2025-05-05T00:00:00Z"
       },
       {
-        id: "s40",
+        id: "q342",
         type: "multiple-choice",
         topic: "systems-software",
         question_text: "Which of the following tasks is the operating system NOT responsible for?",
@@ -2099,7 +2099,7 @@ export const topics: Topic[] = [
         "created_at": "2025-05-05T00:00:00Z"
       },
       {
-        id: "s41",
+        id: "q343",
         type: "short-answer",
         topic: "systems-software",
         question_text: "Describe how an operating system manages multitasking.",
@@ -2107,7 +2107,7 @@ export const topics: Topic[] = [
         "created_at": "2025-05-05T00:00:00Z"
       },
       {
-        id: "s42",
+        id: "q344",
         type: "short-answer",
         topic: "systems-software",
         question_text: "What is defragmentation and how does it improve performance?",
@@ -2115,7 +2115,7 @@ export const topics: Topic[] = [
         "created_at": "2025-05-05T00:00:00Z"
       },
       {
-        id: "s43",
+        id: "q345",
         type: "short-answer",
         topic: "systems-software",
         question_text: "Give one benefit of using encryption software.",
@@ -2123,7 +2123,7 @@ export const topics: Topic[] = [
         "created_at": "2025-05-05T00:00:00Z"
       },
       {
-        id: "s44",
+        id: "q346",
         type: "short-answer",
         topic: "systems-software",
         question_text: "What is the main role of the user interface in an operating system?",
@@ -2131,7 +2131,7 @@ export const topics: Topic[] = [
         "created_at": "2025-05-05T00:00:00Z"
       },
       {
-        id: "s45",
+        id: "q347",
         type: "true-false",
         topic: "systems-software",
         question_text: "Defragmentation software is not needed if a computer uses a solid state drive (SSD).",
@@ -2140,7 +2140,7 @@ export const topics: Topic[] = [
         "created_at": "2025-05-05T00:00:00Z"
       },
       {
-        id: "s46",
+        id: "q348",
         type: "multiple-choice",
         topic: "systems-software",
         question_text: "Which of these is a responsibility of memory management?",
@@ -2151,7 +2151,7 @@ export const topics: Topic[] = [
         "created_at": "2025-05-05T00:00:00Z"
       },
       {
-        id: "s47",
+        id: "q349",
         type: "short-answer",
         topic: "systems-software",
         question_text: "What is the function of compression software?",
@@ -2159,7 +2159,7 @@ export const topics: Topic[] = [
         "created_at": "2025-05-05T00:00:00Z"
       },
       {
-        id: "s48",
+        id: "q350",
         type: "true-false",
         topic: "systems-software",
         question_text: "The OS controls access rights to files and programs for different users.",
@@ -2168,7 +2168,7 @@ export const topics: Topic[] = [
         "created_at": "2025-05-05T00:00:00Z"
       },
       {
-        id: "s49",
+        id: "q351",
         type: "short-answer",
         topic: "systems-software",
         question_text: "Explain one way an OS helps with security through user management.",
@@ -2176,7 +2176,7 @@ export const topics: Topic[] = [
         "created_at": "2025-05-05T00:00:00Z"
       },
       {
-        id: "s50",
+        id: "q352",
         type: "multiple-choice",
         topic: "systems-software",
         question_text: "Which of these is an example of utility software?",
@@ -2187,7 +2187,7 @@ export const topics: Topic[] = [
         "created_at": "2025-05-05T00:00:00Z"
       },
       {
-        id: "s51",
+        id: "q353",
         type: "true-false",
         topic: "systems-software",
         question_text: "Encryption software ensures data can’t be accessed by unauthorised users.",
@@ -2196,7 +2196,7 @@ export const topics: Topic[] = [
         "created_at": "2025-05-05T00:00:00Z"
       },
       {
-        id: "s52",
+        id: "q354",
         type: "short-answer",
         topic: "systems-software",
         question_text: "Why is data compression especially useful when sending files over the internet?",
@@ -2204,7 +2204,7 @@ export const topics: Topic[] = [
         "created_at": "2025-05-05T00:00:00Z"
       },
       {
-        id: "s53",
+        id: "q355",
         type: "short-answer",
         topic: "systems-software",
         question_text: "Name two features of a graphical user interface (GUI).",
@@ -2212,7 +2212,7 @@ export const topics: Topic[] = [
         "created_at": "2025-05-05T00:00:00Z"
       },
       {
-        id: "s54",
+        id: "q356",
         type: "true-false",
         topic: "systems-software",
         question_text: "A command-line interface is easier to use than a GUI for most users.",
@@ -2221,7 +2221,7 @@ export const topics: Topic[] = [
         "created_at": "2025-05-05T00:00:00Z"
       },
       {
-        id: "s55",
+        id: "q357",
         type: "multiple-choice",
         topic: "systems-software",
         question_text: "Which of the following best describes what defragmentation does?",
@@ -2237,7 +2237,7 @@ export const topics: Topic[] = [
         "created_at": "2025-05-05T00:00:00Z"
       },
       {
-        id: "s56",
+        id: "q358",
         type: "short-answer",
         topic: "systems-software",
         question_text: "State one benefit of memory management for running applications.",
@@ -2283,7 +2283,7 @@ export const topics: Topic[] = [
     questionCount: 54,
     questions: [
       {
-        id: "p1",
+        id: "q83",
         topic: "programming-fundamentals",
         type: "code",
         question_text: "A character moves along a straight path, and its current position is stored as an integer.\n\nThe character can move either left or right. Each move changes the position by 5 units:\n- Moving left subtracts 5 from the position\n- Moving right adds 5 to the position\n\nThe position must always stay between 1 and 512 inclusive.\n\nWrite a pseudocode function `moveCharacter()` that:\n• accepts `direction` (a string) and `position` (an integer) as parameters\n• adjusts the position based on the direction\n• ensures the new position stays within the range 1 to 512\n• returns the new position",
@@ -2292,7 +2292,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p2",
+        id: "q84",
         topic: "programming-fundamentals",
         type: "code",
         question_text: "A program stores a user's score as an integer. If the score is divisible by 3, a bonus of 10 is added. If the score is even, it is doubled.\n\nWrite a pseudocode function `updateScore(score)` that:\n• takes `score` as a parameter\n• adds 10 if it is divisible by 3\n• doubles the score if it is even\n• returns the updated score",
@@ -2301,7 +2301,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p3",
+        id: "q85",
         topic: "programming-fundamentals",
         type: "code",
         question_text: "Write a pseudocode program that:\n• asks the user to input a number\n• repeats this until the user inputs a number greater than 100\n• prints 'Valid' once a number greater than 100 is entered",
@@ -2310,7 +2310,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p4",
+        id: "q86",
         topic: "programming-fundamentals",
         type: "code",
         question_text: "Write a pseudocode function `checkAge(age)` that:\n• takes `age` as an integer parameter\n• prints 'Child' if age is less than 13\n• prints 'Teen' if age is between 13 and 19 inclusive\n• prints 'Adult' otherwise",
@@ -2319,7 +2319,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p5",
+        id: "q87",
         topic: "programming-fundamentals",
         type: "code",
         question_text: "Write a pseudocode function `calculatePower(base, exponent)` that:\n• takes two integer parameters\n• uses a loop to calculate and return `base` to the power of `exponent` without using ^",
@@ -2328,7 +2328,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p6",
+        id: "q88",
         topic: "programming-fundamentals",
         type: "code",
         question_text: "Write a pseudocode procedure `greetUser(name)` that:\n• takes a name as a parameter\n• prints 'Hello' followed by the name\n• prints 'Welcome to the system'",
@@ -2337,7 +2337,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p7",
+        id: "q89",
         topic: "programming-fundamentals",
         type: "code",
         question_text: "Write a pseudocode procedure `countdown(n)` that:\n• takes an integer parameter\n• prints each number from n to 1\n• prints 'Go!' at the end",
@@ -2346,7 +2346,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p8",
+        id: "q90",
         topic: "programming-fundamentals",
         type: "code",
         question_text: "Write a pseudocode procedure `printMultiples(n)` that:\n• takes a number n\n• prints the first 5 multiples of n (n, 2n, 3n, 4n, 5n)",
@@ -2355,7 +2355,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p9",
+        id: "q91",
         topic: "programming-fundamentals",
         type: "code",
         question_text: "Write a pseudocode procedure `printRange(startNum, endNum)` that:\n• prints each integer between startNum and endNum inclusive\n• prints 'Done' when finished",
@@ -2364,7 +2364,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p10",
+        id: "q92",
         topic: "programming-fundamentals",
         type: "code",
         question_text: "Write a pseudocode program that:\n• asks the user to enter an integer\n• prints 'Even' if the number is divisible by 2\n• prints 'Odd' otherwise",
@@ -2373,7 +2373,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p11",
+        id: "q93",
         topic: "programming-fundamentals",
         type: "code",
         question_text: "Write a pseudocode program that:\n• asks the user for a test score\n• prints 'Pass' if the score is 50 or more\n• prints 'Fail' if the score is less than 50",
@@ -2382,7 +2382,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p12",
+        id: "q94",
         topic: "programming-fundamentals",
         type: "code",
         question_text: "Write a pseudocode program that:\n• asks the user to input two integers\n• prints the larger number",
@@ -2391,7 +2391,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p13",
+        id: "q95",
         topic: "programming-fundamentals",
         type: "code",
         question_text: "Write a pseudocode program that:\n• asks the user to input a test score\n• prints 'A' if score is 80 or more\n• prints 'B' if score is 60-79\n• prints 'C' if score is 40-59\n• prints 'F' if score is less than 40",
@@ -2400,7 +2400,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p14",
+        id: "q96",
         topic: "programming-fundamentals",
         type: "code",
         question_text: "Write a pseudocode program that:\n• repeatedly asks the user to enter a number\n• stops when the number entered is greater than 100\n• prints 'Done' at the end",
@@ -2409,7 +2409,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p15",
+        id: "q97",
         topic: "programming-fundamentals",
         type: "code",
         question_text: "Write a pseudocode program that:\n• repeatedly asks the user to enter a password\n• stops when the correct password 'letmein' is entered\n• prints 'Access granted'",
@@ -2418,7 +2418,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p16",
+        id: "q98",
         topic: "programming-fundamentals",
         type: "code",
         question_text: "Write a pseudocode program that:\n• starts with a counter at 10\n• prints the counter and decreases it by 1 each time\n• stops when the counter is less than 1",
@@ -2427,7 +2427,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p17",
+        id: "q99",
         topic: "programming-fundamentals",
         type: "code",
         question_text: "Write a pseudocode program that:\n• asks the user to enter numbers\n• keeps a running total\n• stops when the user enters 0\n• prints the total",
@@ -2436,7 +2436,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p18",
+        id: "q100",
         topic: "programming-fundamentals",
         type: "code",
         question_text: "Write a pseudocode program that:\n• prints the numbers from 1 to 10 using a for loop",
@@ -2445,7 +2445,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p19",
+        id: "q101",
         topic: "programming-fundamentals",
         type: "code",
         question_text: "Write a pseudocode program that:\n• asks the user to enter a number\n• prints the 5 times table up to 12 using a for loop",
@@ -2454,7 +2454,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p20",
+        id: "q102",
         topic: "programming-fundamentals",
         type: "code",
         question_text: "Write a pseudocode program that:\n• calculates the sum of numbers from 1 to 100 using a for loop\n• prints the total at the end",
@@ -2463,7 +2463,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p21",
+        id: "q103",
         topic: "programming-fundamentals",
         type: "code",
         question_text: "Write a pseudocode program that:\n• prints all even numbers from 2 to 20 using a for loop",
@@ -2472,7 +2472,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p22",
+        id: "q104",
         topic: "programming-fundamentals",
         type: "code",
         question_text: "Write a pseudocode program that:\n• asks the user to enter their age as text\n• converts it to an integer\n• adds 1 to the age and prints it",
@@ -2481,7 +2481,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p23",
+        id: "q105",
         topic: "programming-fundamentals",
         type: "code",
         question_text: "Write a pseudocode program that:\n• asks the user to input a whole number\n• converts the number to a string\n• prints a message including the number in a sentence",
@@ -2490,7 +2490,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p24",
+        id: "q106",
         topic: "programming-fundamentals",
         type: "code",
         question_text: "Write a pseudocode program that:\n• stores a number with a decimal (e.g., 8.7)\n• casts it to an integer\n• prints both the original and the cast value",
@@ -2499,7 +2499,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p25",
+        id: "q107",
         topic: "programming-fundamentals",
         type: "code",
         question_text: "Write a pseudocode program that:\n• asks the user to enter two whole numbers\n• casts them to integers\n• divides the first by the second and prints the result as a real number",
@@ -2508,7 +2508,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p26",
+        id: "q108",
         topic: "programming-fundamentals",
         type: "code",
         question_text: "Write a pseudocode program that:\n• asks the user for two numbers\n• prints 'True' if both numbers are positive\n• otherwise prints 'False'",
@@ -2517,7 +2517,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p27",
+        id: "q109",
         topic: "programming-fundamentals",
         type: "code",
         question_text: "Write a pseudocode program that:\n• asks the user to enter a number\n• prints 'In range' if the number is greater than 10 and less than 20",
@@ -2526,7 +2526,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p28",
+        id: "q110",
         topic: "programming-fundamentals",
         type: "code",
         question_text: "Write a pseudocode program that:\n• asks the user for a temperature\n• prints 'Warning' if the temperature is less than 0 or greater than 30",
@@ -2535,7 +2535,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p29",
+        id: "q111",
         topic: "programming-fundamentals",
         type: "code",
         question_text: "Write a pseudocode program that:\n• asks the user to enter a username\n• prints 'Invalid' if the username is not 'admin'",
@@ -2544,7 +2544,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p30",
+        id: "q117",
         type: "fill-in-the-blank",
         topic: "programming-fundamentals",
         question_text: "In programming, a ______ is used to store text, a ______ stores decimal values, and a ______ stores whole numbers.",
@@ -2554,7 +2554,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p31",
+        id: "q118",
         type: "fill-in-the-blank",
         topic: "programming-fundamentals",
         question_text: "The three basic programming constructs are ______, ______, and ______.",
@@ -2564,7 +2564,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p32",
+        id: "q119",
         type: "fill-in-the-blank",
         topic: "programming-fundamentals",
         question_text: "The arithmetic operators include ______, ______, ______, and ______.",
@@ -2574,7 +2574,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p33",
+        id: "q120",
         type: "fill-in-the-blank",
         topic: "programming-fundamentals",
         question_text: "To compare values, we use operators such as ______, ______, ______, and ______.",
@@ -2584,7 +2584,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p34",
+        id: "q121",
         type: "fill-in-the-blank",
         topic: "programming-fundamentals",
         question_text: "Boolean operators include ______, ______, and ______.",
@@ -2594,7 +2594,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p35",
+        id: "q122",
         type: "fill-in-the-blank",
         topic: "programming-fundamentals",
         question_text: "To get input from a user, use the ______ function. To display output, use the ______ command. To store a value, use an ______ statement.",
@@ -2604,7 +2604,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p36",
+        id: "q123",
         type: "fill-in-the-blank",
         topic: "programming-fundamentals",
         question_text: "The ______ loop repeats while a condition is true, the ______ loop repeats a set number of times, and the ______ structure chooses between options.",
@@ -2614,7 +2614,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p37",
+        id: "q124",
         type: "fill-in-the-blank",
         topic: "programming-fundamentals",
         question_text: "To change data types, we can use ______ to convert to integer, ______ to convert to string, and ______ to convert to real number.",
@@ -2624,7 +2624,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p38",
+        id: "q125",
         topic: "programming-fundamentals",
         type: "multiple-choice",
         question_text: "Which of the following is NOT a valid data type in programming?",
@@ -2639,7 +2639,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p39",
+        id: "q126",
         topic: "programming-fundamentals",
         type: "multiple-choice",
         question_text: "What is the purpose of a while loop?",
@@ -2654,7 +2654,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p40",
+        id: "q127",
         topic: "programming-fundamentals",
         type: "multiple-choice",
         question_text: "Which operator is used for integer division?",
@@ -2669,7 +2669,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p41",
+        id: "q128",
         topic: "programming-fundamentals",
         type: "multiple-choice",
         question_text: "What is the purpose of the 'if' statement?",
@@ -2684,7 +2684,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p42",
+        id: "q129",
         topic: "programming-fundamentals",
         type: "multiple-choice",
         question_text: "Which of these is NOT a valid variable name?",
@@ -2699,7 +2699,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p43",
+        id: "q130",
         topic: "programming-fundamentals",
         type: "multiple-choice",
         question_text: "What is the purpose of a function?",
@@ -2714,7 +2714,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p44",
+        id: "q131",
         topic: "programming-fundamentals",
         type: "multiple-choice",
         question_text: "Which of these is a valid way to convert a string to an integer?",
@@ -2729,7 +2729,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p45",
+        id: "q132",
         topic: "programming-fundamentals",
         type: "multiple-choice",
         question_text: "What is the purpose of the 'else' statement?",
@@ -2744,7 +2744,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-02T00:00:00Z"
       },
       {
-        id: "p46",
+        id: "q301",
         type: "true-false",
         topic: "programming-fundamentals",
         question_text: "A variable is used to store data that can change while a program is running.",
@@ -2753,7 +2753,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "p47",
+        id: "q302",
         type: "true-false",
         topic: "programming-fundamentals",
         question_text: "The MOD operator performs division and returns the quotient.",
@@ -2762,7 +2762,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "p48",
+        id: "q303",
         type: "true-false",
         topic: "programming-fundamentals",
         question_text: "A count-controlled loop uses a condition to decide when to stop.",
@@ -2771,7 +2771,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "p49",
+        id: "q304",
         type: "true-false",
         topic: "programming-fundamentals",
         question_text: "Selection allows a program to choose between different paths based on a condition.",
@@ -2780,7 +2780,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "p50",
+        id: "q305",
         type: "true-false",
         topic: "programming-fundamentals",
         question_text: "The assignment operator == is used to assign a value to a variable.",
@@ -2789,7 +2789,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "p51",
+        id: "q306",
         type: "true-false",
         topic: "programming-fundamentals",
         question_text: "The Boolean operator AND returns true only if both conditions are true.",
@@ -2798,7 +2798,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "p52",
+        id: "q307",
         type: "true-false",
         topic: "programming-fundamentals",
         question_text: "Casting is the process of converting one data type into another.",
@@ -2807,7 +2807,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "p53",
+        id: "q308",
         type: "true-false",
         topic: "programming-fundamentals",
         question_text: "An IF statement must always include an ELSE clause.",
@@ -2816,7 +2816,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "p54",
+        id: "q119",
         type: "code",
         topic: "programming-fundamentals",
         question_text: "Create an algorithm that:\n• Prompts for a staff ID and date of joining\n• Saves the input values to a file called staff.txt",
@@ -2860,7 +2860,7 @@ export const topics: Topic[] = [
     questionCount: 13,
     questions: [
       {
-        id: "l1",
+        id: "q117",
         type: "text",
         topic: "languages-and-idEs",
         question_text: "State two reasons why developers might choose to use a low-level language.",
@@ -2868,7 +2868,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "l2",
+        id: "q118",
         type: "short-answer",
         topic: "languages-and-idEs",
         question_text: "Explain why using a compiler can be beneficial compared to an interpreter.",
@@ -2876,7 +2876,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "l3",
+        id: "q120",
         type: "short-answer",
         topic: "languages-and-idEs",
         question_text: "Give two reasons why a programmer might prefer to use a high-level language.",
@@ -2884,7 +2884,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "l4",
+        id: "q121",
         type: "matching",
         topic: "languages-and-idEs",
         question_text: "Match each characteristic with Compiler, Interpreter, or Both:",
@@ -2898,7 +2898,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "l5",
+        id: "q122",
         type: "matching",
         topic: "languages-and-idEs",
         question_text: "Match each description to either High-level or Low-level language:",
@@ -2914,7 +2914,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "l6",
+        id: "q123",
         type: "fill-in-the-blank",
         topic: "languages-and-idEs",
         question_text: "Complete the sentences about how code is executed:\n\nLena writes her program in a ______ language. This must be translated into machine code. An interpreter reads one line at a time and ______ when it encounters an error. A compiler creates an ______ file that can run ______ the compiler.",
@@ -2923,7 +2923,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "l7",
+        id: "q124",
         type: "short-answer",
         topic: "languages-and-idEs",
         question_text: "Why does high-level code need to be translated before it can run on a computer?",
@@ -2931,7 +2931,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "l8",
+        id: "q125",
         type: "short-answer",
         topic: "languages-and-idEs",
         question_text: "Outline two key differences between how a compiler and an interpreter work.",
@@ -2939,7 +2939,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "l9",
+        id: "q126",
         type: "matching",
         topic: "languages-and-idEs",
         question_text: "Match each feature to High-level or Low-level language:",
@@ -2954,7 +2954,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "l10",
+        id: "q127",
         type: "short-answer",
         topic: "languages-and-idEs",
         question_text: "Name two tools commonly available in a development environment (IDE).",
@@ -2962,7 +2962,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "l11",
+        id: "q128",
         type: "short-answer",
         topic: "languages-and-idEs",
         question_text: "List two features of an IDE that help when building a program to calculate a value.",
@@ -2970,7 +2970,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "l12",
+        id: "q129",
         type: "true-false",
         topic: "languages-and-idEs",
         question_text: "A compiler translates code line-by-line each time a program is run.",
@@ -2979,7 +2979,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-05T00:00:00Z"
       },
       {
-        id: "l13",
+        id: "q130",
         type: "multiple-choice",
         topic: "languages-and-idEs",
         question_text: "Why do computers need translators to run programs written in high-level languages?",
