@@ -1,21 +1,32 @@
 import { TopicGrid } from "@/components/topic-grid"
-import { topics, currentUser } from "@/lib/data"
+import { topics } from "@/lib/data"
 import { Button } from "@/components/ui/button"
 import { Settings, Sparkles, User, Star } from "lucide-react"
 import Link from "next/link"
+import { createClient } from "@/utils/supabase/server"
 
-export default function Home() {
-  const hasPaid = currentUser.has_paid
-  const hasAI = currentUser.has_ai
-  const freeUser = currentUser.email === "student@example.com"
-  const signedUpUser = !freeUser
+export default async function Home() {
+  const supabase = await createClient()
+
+  // Get the current user
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Get the user's profile data including user_type
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('user_type, has_paid, has_ai')
+    .eq('email', user?.email)
+    .single()
+
+  const profileType = profile?.user_type
+  const freeUser = !user || user.email === "student@example.com"
 
   return (
     <div className="container mx-auto px-4 py-6 md:py-8">
       <div className="max-w-4xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
           <h1 className="text-2xl md:text-4xl font-bold tracking-tight">GCSE Computer Science Quiz</h1>
-          {hasPaid && (
+          {profileType === 'basic' || profileType === 'revision' || profileType === 'revision-plus' && (
             <Link href="/settings">
               <Button variant="outline" size="sm">
                 <Settings className="h-4 w-4 mr-2" />
@@ -35,7 +46,7 @@ export default function Home() {
               <div className="flex-1">
                 <h3 className="font-medium text-red-800">Free Version</h3>
                 <p className="text-sm text-red-700">
-                  You&apos;re using the free version with limited questions. Sign up to get more questions. 
+                  You&apos;re using the free version with limited questions. Sign up to get more questions.
                 </p>
               </div>
               <div className="mt-3 sm:mt-0">
@@ -50,7 +61,7 @@ export default function Home() {
         )}
 
         {/* Signed Up Free Version Call to Action */}
-        {signedUpUser && !hasPaid && (
+        {profileType === 'basic' && (
           <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-lg p-4 mb-6 md:mb-8">
             <div className="flex flex-col md:flex-row items-start sm:items-center gap-3">
               <div className="shrink-0 bg-amber-100 p-2 rounded-full">
@@ -74,7 +85,7 @@ export default function Home() {
         )}
 
         {/* Premium Version Call to Action */}
-        {signedUpUser && hasPaid && !hasAI && (
+        {profileType === 'revision' && (
           <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-lg p-4 mb-6 md:mb-8">
             <div className="flex flex-col md:flex-row items-start sm:items-center gap-3">
               <div className="shrink-0 bg-emerald-100 p-2 rounded-full">
@@ -99,7 +110,7 @@ export default function Home() {
 
         <div className="text-center mb-8">
           <p className="text-base md:text-lg text-muted-foreground">
-            Select a topic below to test your knowledge with {hasPaid ? "AI-marked" : "self-assessed"} questions
+            Select a topic below to test your knowledge with {profileType == "revision plus" ? "AI-marked" : "self-assessed"} questions
           </p>
         </div>
 

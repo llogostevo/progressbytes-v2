@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Home, BarChart2, BookOpen, Menu, X, User, LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { currentUser } from "@/lib/data"
 import { createClient } from "@/utils/supabase/client"
@@ -12,7 +12,34 @@ import { createClient } from "@/utils/supabase/client"
 export function MobileNav() {
   const pathname = usePathname()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const freeUser = currentUser.email === "student@example.com"
+  const [freeUser, setFreeUser] = useState(false)
+  const [userType, setUserType] = useState<string | null>(null)
+  const supabase = createClient()
+
+  useEffect(() => {
+    const getUserData = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        setFreeUser(true)
+        return
+      }
+
+      setFreeUser(false)
+      
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("user_type")
+        .eq("email", user.email)
+        .single()
+
+      if (profileData) {
+        setUserType(profileData.user_type)
+      }
+    }
+
+    getUserData()
+  }, [])
 
   const handleLogout = async () => {
     const supabase = createClient()
@@ -36,7 +63,7 @@ export function MobileNav() {
       href: "/revisit",
       icon: BookOpen,
     },
-    freeUser ? {
+    userType === null ? {
       name: "Login",
       href: "/login",
       icon: User,
