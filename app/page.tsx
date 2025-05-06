@@ -39,7 +39,7 @@ export default function Home() {
                 </p>
               </div>
               <div className="mt-3 sm:mt-0">
-                <Link href="/signup">
+                <Link href="/login?tab=register">
                   <Button size="sm" className="bg-red-600 hover:bg-red-700">
                     Sign Up
                   </Button>

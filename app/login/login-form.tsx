@@ -18,20 +18,25 @@ import { Suspense } from 'react'
  * The forms submit to server actions defined in actions.ts.
  */
 export function LoginForm() {
+  const searchParams = useSearchParams()
+  const tab = searchParams.get('tab') || 'login'
+
   return (
     <div className="space-y-4">
       {/* Error display component wrapped in Suspense for better loading experience */}
       <Suspense fallback={null}>
         <ErrorDisplay />
       </Suspense>
-      
+
       {/* Tabbed interface for switching between login and register forms */}
-      <Tabs defaultValue="login" className="w-full">
+      {/* <Tabs defaultValue="login" className="w-full"> */}
+      <Tabs defaultValue={tab} className="w-full">
+
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="login" className="data-[state=active]:text-emerald-800">Login</TabsTrigger>
           <TabsTrigger value="register" className="data-[state=active]:text-emerald-800">Register</TabsTrigger>
         </TabsList>
-        
+
         {/* Login Tab Content */}
         <TabsContent value="login" className="space-y-4">
           {/* Login Form */}
@@ -39,12 +44,12 @@ export function LoginForm() {
             {/* Email Input Field */}
             <div className="space-y-2">
               <Label htmlFor="login-email" className="text-emerald-800">Email</Label>
-              <Input 
-                id="login-email" 
-                name="login-email" 
-                placeholder="m@example.com" 
-                type="email" 
-                required 
+              <Input
+                id="login-email"
+                name="login-email"
+                placeholder="m@example.com"
+                type="email"
+                required
               />
             </div>
 
@@ -56,25 +61,25 @@ export function LoginForm() {
                   Forgot password?
                 </Link>
               </div>
-              <Input 
-                id="login-password" 
-                name="login-password" 
-                type="password" 
-                required 
+              <Input
+                id="login-password"
+                name="login-password"
+                type="password"
+                required
               />
             </div>
 
             {/* Login Button - Calls the login server action */}
-            <Button 
-              formAction={login} 
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white" 
+            <Button
+              formAction={login}
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
               type="submit"
             >
               Sign In
             </Button>
           </form>
         </TabsContent>
-        
+
         {/* Register Tab Content */}
         <TabsContent value="register" className="space-y-4">
           {/* Registration Form */}
@@ -82,52 +87,52 @@ export function LoginForm() {
             {/* Email Input Field */}
             <div className="space-y-2">
               <Label htmlFor="register-email" className="text-emerald-800">Email</Label>
-              <Input 
-                id="register-email" 
-                name="register-email" 
-                placeholder="m@example.com" 
-                type="email" 
-                required 
+              <Input
+                id="register-email"
+                name="register-email"
+                placeholder="m@example.com"
+                type="email"
+                required
               />
             </div>
-            
+
             {/* School Input Field */}
             <div className="space-y-2">
               <Label htmlFor="register-school" className="text-emerald-800">School</Label>
-              <Input 
-                id="register-school" 
-                name="register-school" 
-                type="text" 
-                required 
+              <Input
+                id="register-school"
+                name="register-school"
+                type="text"
+                required
               />
             </div>
-            
+
             {/* Password Input Field */}
             <div className="space-y-2">
               <Label htmlFor="register-password" className="text-emerald-800">Password</Label>
-              <Input 
-                id="register-password" 
-                name="register-password" 
-                type="password" 
-                required 
+              <Input
+                id="register-password"
+                name="register-password"
+                type="password"
+                required
               />
             </div>
-            
+
             {/* Confirm Password Input Field */}
             <div className="space-y-2">
               <Label htmlFor="register-confirm-password" className="text-emerald-800">Confirm Password</Label>
-              <Input 
-                id="register-confirm-password" 
-                name="register-confirm-password" 
-                type="password" 
-                required 
+              <Input
+                id="register-confirm-password"
+                name="register-confirm-password"
+                type="password"
+                required
               />
             </div>
-            
+
             {/* Register Button - Calls the signup server action */}
-            <Button 
-              formAction={signup} 
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white" 
+            <Button
+              formAction={signup}
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
               type="submit"
             >
               Create Account
@@ -135,14 +140,14 @@ export function LoginForm() {
           </form>
         </TabsContent>
       </Tabs>
-      
+
       {/* Divider Line */}
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
           <span className="w-full border-t" />
         </div>
       </div>
-      
+
       {/* Terms and Privacy Policy Links */}
       <p className="text-center text-xs text-muted-foreground">
         By signing up, you agree to our{" "}
@@ -150,7 +155,7 @@ export function LoginForm() {
           Terms of Service
         </Link>{" "}
         and{" "}
-        <Link href="#" className="text-emerald-600 hover:text-emerald-800 hover:underline">
+        <Link href="/privacy-policy" className="text-emerald-600 hover:text-emerald-800 hover:underline">
           Privacy Policy
         </Link>
         .
@@ -169,13 +174,13 @@ function ErrorDisplay() {
   // Get error from URL search parameters
   const searchParams = useSearchParams()
   const error = searchParams.get('error')
-  
+
   // Get the appropriate error message based on the error code
   const errorMessage = getErrorMessage(error)
-  
+
   // Don't render anything if there's no error
   if (!errorMessage) return null
-  
+
   // Display the error message in a red box
   return (
     <div className="p-3 text-sm text-red-500 bg-red-50 border border-red-200 rounded-md">
@@ -194,7 +199,7 @@ function ErrorDisplay() {
  */
 function getErrorMessage(error: string | null) {
   if (!error) return null
-  
+
   switch (error) {
     case 'missing-fields':
       return 'Email and password are required'
