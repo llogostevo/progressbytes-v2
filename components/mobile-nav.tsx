@@ -37,6 +37,8 @@ export function MobileNav() {
         setFreeUser(false)
         if (user.email) {
           setUserEmail(user.email)
+          setFreeUser(false)
+
         }
         
         const { data: profileData, error: profileError } = await supabase

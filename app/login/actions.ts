@@ -16,6 +16,7 @@ import { createClient } from '@/utils/supabase/server'
 export async function login(formData: FormData) {
   // Create a Supabase client for server-side operations
   const supabase = await createClient()
+  console.log("login")
 
   // Extract email and password from form data
   // type-casting here for convenience
@@ -24,7 +25,7 @@ export async function login(formData: FormData) {
     email: (formData.get('login-email') as string).toLowerCase(),
     password: formData.get('login-password') as string,
   }
-
+  console.log(data.email)
   // Attempt to sign in with email and password
   const { error } = await supabase.auth.signInWithPassword(data)
 
