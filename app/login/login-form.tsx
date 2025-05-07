@@ -47,7 +47,7 @@ export function LoginForm() {
               <Input
                 id="login-email"
                 name="login-email"
-                placeholder="m@example.com"
+                placeholder="myemail@example.com"
                 type="email"
                 required
               />

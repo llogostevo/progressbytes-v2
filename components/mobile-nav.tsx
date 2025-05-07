@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Home, BarChart2, BookOpen, Menu, X, User, LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
@@ -11,30 +11,53 @@ import { createClient } from "@/utils/supabase/client"
 
 export function MobileNav() {
   const pathname = usePathname()
+  const router = useRouter()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [freeUser, setFreeUser] = useState(false)
   const [userType, setUserType] = useState<string | null>(null)
+  const [userEmail, setUserEmail] = useState<string | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
     const getUserData = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
+      try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
+        
+        if (userError) {
+          console.error("Error getting user:", userError)
+          setFreeUser(true)
+          return
+        }
+        
+        if (!user) {
+          setFreeUser(true)
+          return
+        }
+
+        setFreeUser(false)
+        if (user.email) {
+          setUserEmail(user.email)
+        }
+        
+        const { data: profileData, error: profileError } = await supabase
+          .from("profiles")
+          .select("user_type")
+          .eq("email", user.email)
+          .single()
+
+        if (profileError) {
+          console.error("Error fetching profile:", profileError)
+          return
+        }
+
+        console.log("Profile data:", profileData)
+
+        if (profileData) {
+          setUserType(profileData.user_type)
+        }
+      } catch (error) {
+        console.error("Unexpected error in getUserData:", error)
         setFreeUser(true)
-        return
-      }
-
-      setFreeUser(false)
-      
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("user_type")
-        .eq("email", user.email)
-        .single()
-
-      if (profileData) {
-        setUserType(profileData.user_type)
       }
     }
 
@@ -46,7 +69,7 @@ export function MobileNav() {
     await supabase.auth.signOut()
     setUserType(null)
     setFreeUser(true)
-    window.location.href = "/"
+    router.push("/")
   }
 
   const navItems = [
@@ -111,19 +134,23 @@ export function MobileNav() {
                   {item.name}
                 </button>
               ) : (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                    pathname === item.href
-                      ? "bg-emerald-100 text-emerald-700"
-                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+                <div key={item.name} className="flex items-center gap-2">
+                  <Link
+                    href={item.href}
+                    className={cn(
+                      "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                      pathname === item.href
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+                    )}
+                  >
+                    <item.icon className="h-4 w-4 mr-2" />
+                    {item.name}
+                  </Link>
+                  {item.name === "Logout" && userEmail && (
+                    <p className="text-sm text-gray-500">{userEmail}</p>
                   )}
-                >
-                  <item.icon className="h-4 w-4 mr-2" />
-                  {item.name}
-                </Link>
+                </div>
               )
             ))}
           </nav>
@@ -151,6 +178,7 @@ export function MobileNav() {
                   {item.name}
                 </button>
               ) : (
+                <>
                 <Link
                   key={item.href}
                   href={item.href}
@@ -165,6 +193,10 @@ export function MobileNav() {
                   <item.icon className="h-5 w-5 mr-3" />
                   {item.name}
                 </Link>
+                {item.name === "Logout" && userEmail && (
+                    <p className="text-sm text-gray-500">{userEmail}</p>
+                  )}
+                </>
               )
             ))}
           </div>

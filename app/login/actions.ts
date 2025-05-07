@@ -21,7 +21,7 @@ export async function login(formData: FormData) {
   // type-casting here for convenience
   // in practice, you should validate your inputs
   const data = {
-    email: formData.get('login-email') as string,
+    email: (formData.get('login-email') as string).toLowerCase(),
     password: formData.get('login-password') as string,
   }
 
@@ -53,7 +53,7 @@ export async function signup(formData: FormData) {
   const supabase = await createClient()
 
   // Extract form data
-  const email = formData.get('register-email') as string
+  const email = (formData.get('register-email') as string).toLowerCase()
   const password = formData.get('register-password') as string
   const confirmPassword = formData.get('register-confirm-password') as string
   const school = formData.get('register-school') as string
@@ -97,7 +97,9 @@ export async function signup(formData: FormData) {
   // If there's an error, redirect to the login page with the error message
   if (error) {
     console.error('Signup error:', error)
-    redirect('/login?error=' + error.message)
+    // redirect('/login?error=' + error.message)
+    redirect('/error')
+
   }
 
   // Log successful signup for debugging (remove in production)
