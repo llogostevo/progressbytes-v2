@@ -44,6 +44,8 @@ export function MobileNav() {
   const handleLogout = async () => {
     const supabase = createClient()
     await supabase.auth.signOut()
+    setUserType(null)
+    setFreeUser(true)
     window.location.href = "/"
   }
 
