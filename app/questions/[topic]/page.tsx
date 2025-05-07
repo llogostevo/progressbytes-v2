@@ -43,17 +43,23 @@ export default function QuestionPage() {
     const checkHasPaid = async () => {
       const { data: { user } } = await supabase.auth.getUser()
 
-      const { data: { profiles } } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user?.id)
-        .single()
-
-      if (profiles) {
-        setUserType(profiles?.user_type)
-      } else {
+      if (!user) {
+        setUserType(null)
         return
       }
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("userid", user.id)
+        .single()
+
+      if (error || !data) {
+        setUserType(null)
+        return
+      }
+
+      setUserType(data.user_type)
     }
     checkHasPaid()
   }, [])
