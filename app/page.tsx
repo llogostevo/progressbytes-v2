@@ -114,7 +114,7 @@ export default async function Home() {
           </p>
         </div>
 
-        <TopicGrid topics={topics} />
+        <TopicGrid topics={topics} userType={userType} />
       </div>
     </div>
   )
