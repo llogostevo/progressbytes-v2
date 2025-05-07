@@ -14,11 +14,11 @@ export default async function Home() {
   // Get the user's profile data including user_type
   const { data: profile } = await supabase
     .from('profiles')
-    .select('user_type, has_paid, has_ai')
+    .select('user_type')
     .eq('email', user?.email)
     .single()
 
-  const profileType = profile?.user_type
+  const userType = profile?.user_type
   const freeUser = !user || user.email === "student@example.com"
 
   return (
@@ -26,7 +26,7 @@ export default async function Home() {
       <div className="max-w-4xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
           <h1 className="text-2xl md:text-4xl font-bold tracking-tight">GCSE Computer Science Quiz</h1>
-          {profileType === 'basic' || profileType === 'revision' || profileType === 'revision-plus' && (
+          {userType === 'basic' || userType === 'revision' || userType === 'revision-plus' && (
             <Link href="/settings">
               <Button variant="outline" size="sm">
                 <Settings className="h-4 w-4 mr-2" />
@@ -61,7 +61,7 @@ export default async function Home() {
         )}
 
         {/* Signed Up Free Version Call to Action */}
-        {profileType === 'basic' && (
+        {userType === 'basic' && (
           <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-lg p-4 mb-6 md:mb-8">
             <div className="flex flex-col md:flex-row items-start sm:items-center gap-3">
               <div className="shrink-0 bg-amber-100 p-2 rounded-full">
@@ -85,7 +85,7 @@ export default async function Home() {
         )}
 
         {/* Premium Version Call to Action */}
-        {profileType === 'revision' && (
+        {userType === 'revision' && (
           <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-lg p-4 mb-6 md:mb-8">
             <div className="flex flex-col md:flex-row items-start sm:items-center gap-3">
               <div className="shrink-0 bg-emerald-100 p-2 rounded-full">
@@ -94,7 +94,7 @@ export default async function Home() {
               <div className="flex-1">
                 <h3 className="font-medium text-emerald-800">Premium Version</h3>
                 <p className="text-sm text-emerald-700">
-                  You&apos;re using the free version with self-assessment. Coming soon get AI-powered feedback.
+                  You&apos;re using the premium version with self-assessment. Coming soon get AI-powered feedback.
                 </p>
               </div>
               <div className="mt-3 sm:mt-0">
@@ -110,7 +110,7 @@ export default async function Home() {
 
         <div className="text-center mb-8">
           <p className="text-base md:text-lg text-muted-foreground">
-            Select a topic below to test your knowledge with {profileType == "revision plus" ? "AI-marked" : "self-assessed"} questions
+            Select a topic below to test your knowledge with {userType == "revision plus" ? "AI-marked" : "self-assessed"} questions
           </p>
         </div>
 

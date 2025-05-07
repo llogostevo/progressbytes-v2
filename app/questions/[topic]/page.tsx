@@ -28,12 +28,12 @@ export default function QuestionPage() {
   const [topic, setTopic] = useState<Topic | null>(null)
   const [selfAssessmentScore, setSelfAssessmentScore] = useState<ScoreType | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [userType, setUserType] = useState<"revision" | "revisionAI" | null>(null)
+  const [userType, setUserType] = useState<"revision" | "revisionAI" | "basic" | null>(null)
   // free user will be null and the freeUser will be True
   // revision paid user will be "revision" and the freeUser will be False
   // AI paid user will be "revisionAI" and the freeUser will be False
 
-  const [hasPaid, setHasPaid] = useState(false)
+  // const [hasPaid, setHasPaid] = useState(false)
 
   const freeUser = currentUser.email === "student@example.com"
 
@@ -332,7 +332,7 @@ export default function QuestionPage() {
           <p className="text-muted-foreground">{topic.description}</p>
         </div>
 
-        {!hasPaid && (
+        {userType == "basic" && (
           <Card className="mb-6 bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
@@ -451,7 +451,7 @@ export default function QuestionPage() {
                 </div>
 
                 {/* For free version, show model answer first, then self-assessment */}
-                {!hasPaid && (
+                {userType == "revision" && (
                   <>
                     <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-md">
                       <h3 className="font-medium mb-2 text-emerald-700">Model Answer:</h3>
@@ -538,7 +538,7 @@ export default function QuestionPage() {
                 )}
 
                 {/* For paid version, show AI feedback, then model answer */}
-                {hasPaid && (
+                {userType === "revisionAI" && (
                   <>
                     <FeedbackDisplay answer={answer} />
 
@@ -623,7 +623,7 @@ export default function QuestionPage() {
                   <Button
                     onClick={handleTryAnother}
                     className="bg-emerald-600 hover:bg-emerald-700"
-                    disabled={!hasPaid && !selfAssessmentScore}
+                    disabled={!selfAssessmentScore}
                   >
                     <RefreshCw className="mr-2 h-4 w-4" /> Try Another Question
                   </Button>

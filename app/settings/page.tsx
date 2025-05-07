@@ -12,28 +12,32 @@ import { createClient } from "@/utils/supabase/client"
 import { redirect } from "next/navigation"
 
 export default function SettingsPage() {
-  const [hasPaid, setHasPaid] = useState(currentUser.has_paid)
+  const [userType, setUserType] = useState<"revision" | "revisionAI" | null>(null)
 
-  redirect('/')
+  // redirect('/')
   
   const supabase = createClient()
 
   useEffect(() => {
     const fetchUser = async () => {
-      const { error } = await supabase.auth.getUser()
+      const { data: {user}, error } = await supabase.auth.getUser()
       if (error) {
         redirect('/')
       }
+
+      const { data: { profiles } } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("userid", user?.id)
+        .single()
+
+      setUserType(profiles?.user_type)
     }
 
     fetchUser()
   }, [supabase.auth])
   
 
-  const handleTogglePaidStatus = () => {
-    const newStatus = togglePaidStatus()
-    setHasPaid(newStatus)
-  }
 
 
   return (
@@ -66,10 +70,10 @@ export default function SettingsPage() {
                     AI Feedback Mode
                   </h3>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {hasPaid ? "You have access to AI-powered feedback" : "Upgrade to get AI-powered feedback"}
+                    {userType === "revisionAI" ? "You have access to AI-powered feedback" : "Upgrade to get AI-powered feedback"}
                   </p>
                 </div>
-                <Switch checked={hasPaid} onCheckedChange={handleTogglePaidStatus} id="paid-mode" />
+                <Switch checked={userType === "revisionAI"} id="paid-mode" />
               </div>
             </div>
           </CardContent>
@@ -88,19 +92,19 @@ export default function SettingsPage() {
             <div className="rounded-md border p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-medium">{hasPaid ? "Premium Plan" : "Free Plan"}</h3>
+                  <h3 className="font-medium">{userType === "revisionAI" ? "Premium Plan" : "Free Plan"}</h3>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {hasPaid
+                    {userType === "revisionAI"
                       ? "Full access to all features including AI feedback"
                       : "Limited access with self-assessment only"}
                   </p>
                 </div>
                 <Link href="/coming-soon">
                   <Button
-                    variant={hasPaid ? "outline" : "default"}
-                    className={!hasPaid ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+                    variant={userType === "revisionAI" ? "outline" : "default"}
+                    className={userType === "revisionAI" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
                   >
-                    {hasPaid ? "Downgrade" : "Upgrade"}
+                    {userType === "revisionAI" ? "Downgrade" : "Upgrade"}
                   </Button>
                 </Link>
               </div>
