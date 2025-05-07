@@ -16,6 +16,7 @@ import { TextQuestion } from "@/components/text-question"
 import { CodeQuestion } from "@/components/code-question"
 import { MatchingQuestion } from "@/components/matching-question"
 import { TrueFalseQuestion } from "@/components/true-false-question"
+import { createClient } from "@/utils/supabase/client"
 
 export default function QuestionPage() {
   const params = useParams()
@@ -27,10 +28,37 @@ export default function QuestionPage() {
   const [topic, setTopic] = useState<Topic | null>(null)
   const [selfAssessmentScore, setSelfAssessmentScore] = useState<ScoreType | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [userType, setUserType] = useState<"revision" | "revisionAI" | null>(null)
+  // free user will be null and the freeUser will be True
+  // revision paid user will be "revision" and the freeUser will be False
+  // AI paid user will be "revisionAI" and the freeUser will be False
+
+  const [hasPaid, setHasPaid] = useState(false)
 
   const freeUser = currentUser.email === "student@example.com"
 
-  const hasPaid = currentUser.has_paid
+  const supabase = createClient()
+
+  useEffect(() => {
+    const checkHasPaid = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+
+      const { data: { profiles } } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user?.id)
+        .single()
+
+      if (profiles) {
+        setUserType(profiles?.user_type)
+      } else {
+        return
+      }
+    }
+    checkHasPaid()
+  }, [])
+
+
 
   useEffect(() => {
     try {
@@ -40,7 +68,7 @@ export default function QuestionPage() {
 
       if (freeUser) {
         if (currentTopic) {
-          const newQuestion = getRandomQuestionForTopic(topicSlug, freeUser, hasPaid)
+          const newQuestion = getRandomQuestionForTopic(topicSlug, freeUser, userType)
           console.log("Loaded question:", {
             id: newQuestion.id,
             type: newQuestion.type,
@@ -55,7 +83,7 @@ export default function QuestionPage() {
 
       } else if (!freeUser) {
         if (currentTopic) {
-          const newQuestion = getRandomQuestionForTopic(topicSlug, freeUser, hasPaid)
+          const newQuestion = getRandomQuestionForTopic(topicSlug, freeUser, userType)
           console.log("Loaded question:", {
             id: newQuestion.id,
             type: newQuestion.type,
@@ -81,7 +109,7 @@ export default function QuestionPage() {
 
     setIsSubmitting(true)
 
-    if (hasPaid) {
+    if ( userType === "revisionAI") {
       // Paid version - use AI feedback
       // Simulate API call delay
       await new Promise((resolve) => setTimeout(resolve, 1500))
@@ -134,7 +162,7 @@ export default function QuestionPage() {
   }
 
   const handleTryAnother = () => {
-    const newQuestion = getRandomQuestionForTopic(topicSlug, freeUser, hasPaid)
+    const newQuestion = getRandomQuestionForTopic(topicSlug, freeUser, userType)
     setQuestion(newQuestion)
     setAnswer(null)
     setSelfAssessmentScore(null)

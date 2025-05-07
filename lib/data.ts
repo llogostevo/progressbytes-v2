@@ -21,14 +21,13 @@ export const currentUser: Student = {
   id: "user-1",
   email: "student@example.com",
   created_at: "2023-01-01T00:00:00Z",
-  has_paid: false, // Set to false by default for the free version
-  has_ai: false,
+  user_type: null, // Set to null by default for the free version
 }
 
 // Toggle this function to simulate switching between free and paid versions
 export function togglePaidStatus() {
-  currentUser.has_paid = !currentUser.has_paid
-  return currentUser.has_paid
+  currentUser.user_type = currentUser.user_type === "revision" ? "revisionAI" : "revision"
+  return currentUser.user_type
 }
 
 // Mock topics data
@@ -3008,7 +3007,7 @@ export function getTopicBySlug(slug: string): Topic | undefined {
   return topics.find((topic) => topic.slug === slug)
 }
 
-export function getRandomQuestionForTopic(topicSlug: string, freeUser: boolean, hasPaid: boolean): Question {
+export function getRandomQuestionForTopic(topicSlug: string, freeUser: boolean, userType: "revision" | "revisionAI"| "basic" | null): Question {
   const topic = getTopicBySlug(topicSlug)
   if (!topic || topic.questions.length === 0) {
     throw new Error(`No questions found for topic: ${topicSlug}`)
@@ -3016,9 +3015,9 @@ export function getRandomQuestionForTopic(topicSlug: string, freeUser: boolean, 
 
   // Determine the number of questions based on access level
   let length: number
-  if (hasPaid) {
+  if (userType === "revision" || userType === "revisionAI") {
     length = topic.questions.length
-  } else if (!freeUser) {
+  } else if (userType === "basic") {
     length = 10
   } else {
     length = 5

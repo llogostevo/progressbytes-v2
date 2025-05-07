@@ -14,62 +14,35 @@ export function MobileNav() {
   const router = useRouter()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [freeUser, setFreeUser] = useState(false)
-  const [userType, setUserType] = useState<string | null>(null)
-  const [userEmail, setUserEmail] = useState<string | null>(null)
   const supabase = createClient()
 
+  const checkSession = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    setFreeUser(!session);
+  }
+
   useEffect(() => {
-    const getUserData = async () => {
-      try {
-        const { data: { user }, error: userError } = await supabase.auth.getUser()
-        
-        if (userError) {
-          console.error("Error getting user:", userError)
-          setFreeUser(true)
-          return
-        }
-        
-        if (!user) {
-          setFreeUser(true)
-          return
-        }
+    checkSession();
 
-        setFreeUser(false)
-        if (user.email) {
-          setUserEmail(user.email)
-          setFreeUser(false)
+    // Subscribe to auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setFreeUser(!session);
+    });
 
-        }
-        
-        const { data: profileData, error: profileError } = await supabase
-          .from("profiles")
-          .select("user_type")
-          .eq("email", user.email)
-          .single()
+    // Cleanup subscription on unmount
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
 
-        if (profileError) {
-          console.error("Error fetching profile:", profileError)
-          return
-        }
-
-        console.log("Profile data:", profileData)
-
-        if (profileData) {
-          setUserType(profileData.user_type)
-        }
-      } catch (error) {
-        console.error("Unexpected error in getUserData:", error)
-        setFreeUser(true)
-      }
-    }
-
-    getUserData()
-  }, [])
+  // Add effect to check session on route changes
+  useEffect(() => {
+    checkSession();
+  }, [pathname]);
 
   const handleLogout = async () => {
     const supabase = createClient()
     await supabase.auth.signOut()
-    setUserType(null)
     setFreeUser(true)
     router.push("/")
   }
@@ -90,7 +63,7 @@ export function MobileNav() {
       href: "/revisit",
       icon: BookOpen,
     },
-    userType === null ? {
+    freeUser === true ? {
       name: "Login",
       href: "/login",
       icon: User,
@@ -128,7 +101,7 @@ export function MobileNav() {
                   key={item.name}
                   onClick={item.onClick}
                   className={cn(
-                    "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                    "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer",
                     "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   )}
                 >
@@ -140,7 +113,7 @@ export function MobileNav() {
                   <Link
                     href={item.href}
                     className={cn(
-                      "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                      "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer",
                       pathname === item.href
                         ? "bg-emerald-100 text-emerald-700"
                         : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
@@ -149,9 +122,7 @@ export function MobileNav() {
                     <item.icon className="h-4 w-4 mr-2" />
                     {item.name}
                   </Link>
-                  {item.name === "Logout" && userEmail && (
-                    <p className="text-sm text-gray-500">{userEmail}</p>
-                  )}
+                  
                 </div>
               )
             ))}
@@ -172,7 +143,7 @@ export function MobileNav() {
                     setIsMenuOpen(false)
                   }}
                   className={cn(
-                    "flex items-center w-full px-3 py-3 text-base font-medium rounded-md transition-colors",
+                    "flex items-center w-full px-3 py-3 text-base font-medium rounded-md transition-colors cursor-pointer",
                     "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   )}
                 >
@@ -181,23 +152,21 @@ export function MobileNav() {
                 </button>
               ) : (
                 <>
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "flex items-center px-3 py-3 text-base font-medium rounded-md transition-colors",
-                    pathname === item.href
-                      ? "bg-emerald-100 text-emerald-700"
-                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
-                  )}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <item.icon className="h-5 w-5 mr-3" />
-                  {item.name}
-                </Link>
-                {item.name === "Logout" && userEmail && (
-                    <p className="text-sm text-gray-500">{userEmail}</p>
-                  )}
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "flex items-center px-3 py-3 text-base font-medium rounded-md transition-colors cursor-pointer",
+                      pathname === item.href
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+                    )}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <item.icon className="h-5 w-5 mr-3" />
+                    {item.name}
+                  </Link>
+                  
                 </>
               )
             ))}
