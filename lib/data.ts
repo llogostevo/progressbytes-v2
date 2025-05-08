@@ -297,7 +297,7 @@ export const topics: Topic[] = [
         model_answer: "false",
         explanation: "False – Adding more cores can improve multitasking or performance for software designed to use them, but some programs can’t take advantage of multiple cores.",
         created_at: "2025-05-05T00:00:00Z"
-      }, 
+      },
       {
         id: "sa25",
         topic: "systems-architecture",
@@ -458,10 +458,10 @@ export const topics: Topic[] = [
         created_at: "2025-05-08T00:00:00Z",
         type: "short-answer"
       }
-      
-      
-      
-      
+
+
+
+
     ],
     unit: 1,
     disabled: false,
@@ -472,7 +472,7 @@ export const topics: Topic[] = [
     name: "Memory & Storage",
     description: "Explore primary and secondary storage, memory hierarchy, and data representation",
     icon: HardDrive,
-    questionCount: 72,
+    questionCount: 79,
     questions: [
       {
         id: "ms1",
@@ -745,7 +745,7 @@ export const topics: Topic[] = [
         model_answer: "Executable files, because removing any data could stop the program from working correctly.",
         created_at: "2025-05-08T00:00:00Z",
         type: "short-answer"
-      }, 
+      },
       {
         id: "ms35",
         topic: "storage",
@@ -753,7 +753,7 @@ export const topics: Topic[] = [
         model_answer: "Each character is stored as a binary number using a character set such as ASCII or Unicode.",
         created_at: "2025-05-08T00:00:00Z",
         type: "short-answer"
-      }, 
+      },
       {
         id: "ms36",
         topic: "storage",
@@ -761,7 +761,7 @@ export const topics: Topic[] = [
         model_answer: "Lossless compression keeps all the original data, which is important for text files because removing any data could change the meaning of the conten or corrupt the file.",
         created_at: "2025-05-08T00:00:00Z",
         type: "short-answer"
-      }, 
+      },
       {
         id: "ms37",
         topic: "storage",
@@ -801,7 +801,7 @@ export const topics: Topic[] = [
         model_answer: "Image width, height, colour depth, file format, or author (any one).",
         created_at: "2025-05-08T00:00:00Z",
         type: "short-answer"
-      }, 
+      },
       {
         id: "ms42",
         topic: "storage",
@@ -833,7 +833,7 @@ export const topics: Topic[] = [
         model_answer: "100 × 100 × 24 = 240,000 bits → ÷8 = 30,000 bytes → ÷1,000 = 30 KB",
         created_at: "2025-05-08T00:00:00Z",
         type: "short-answer"
-      }, 
+      },
       {
         id: "ms46",
         topic: "storage",
@@ -873,7 +873,7 @@ export const topics: Topic[] = [
         model_answer: "10,000 × 2 × 8 = 160,000 bits → ÷8 = 20,000 bytes",
         created_at: "2025-05-08T00:00:00Z",
         type: "short-answer"
-      }, 
+      },
       {
         id: "ms51",
         topic: "storage",
@@ -913,7 +913,7 @@ export const topics: Topic[] = [
         model_answer: "It offers high capacity at a low cost per GB.",
         created_at: "2025-05-08T00:00:00Z",
         type: "short-answer"
-      }, 
+      },
       {
         id: "ms56",
         topic: "storage",
@@ -953,7 +953,7 @@ export const topics: Topic[] = [
         model_answer: "Solid state storage (SSD), as it has fast access times for loading games and is more reliable than magnetic storage plus it has no moving parts and is quieter.",
         created_at: "2025-05-08T00:00:00Z",
         type: "short-answer"
-      }, 
+      },
       {
         id: "ms61",
         topic: "storage",
@@ -993,7 +993,7 @@ export const topics: Topic[] = [
         model_answer: "Because computers use electrical circuits that have two states — on and off — which match the 1s and 0s in binary.",
         created_at: "2025-05-08T00:00:00Z",
         type: "short-answer"
-      }, 
+      },
       {
         id: "ms66",
         topic: "storage",
@@ -1003,7 +1003,7 @@ export const topics: Topic[] = [
         type: "short-answer"
       },
       {
-        id: "s67",
+        id: "ms67",
         topic: "storage",
         question_text: "A file contains the string 'Hello'. How many bytes are needed to store this text using ASCII?",
         model_answer: "5 bytes, because each ASCII character uses 1 byte and there are 5 characters.",
@@ -1011,7 +1011,7 @@ export const topics: Topic[] = [
         type: "short-answer"
       },
       {
-        id: "s68",
+        id: "ms68",
         topic: "storage",
         question_text: "How many bits are needed to store a 10-character password using ASCII?",
         model_answer: "10 × 8 = 80 bits",
@@ -1019,7 +1019,7 @@ export const topics: Topic[] = [
         type: "short-answer"
       },
       {
-        id: "s69",
+        id: "ms69",
         topic: "storage",
         question_text: "A string contains 4 characters and is stored using Unicode (16-bit). How many bytes are needed?",
         model_answer: "4 × 16 = 64 bits → 64 ÷ 8 = 8 bytes",
@@ -1027,7 +1027,7 @@ export const topics: Topic[] = [
         type: "short-answer"
       },
       {
-        id: "s70",
+        id: "ms70",
         topic: "storage",
         question_text: "A student says that 1 character always equals 1 bit. Explain why this is incorrect.",
         model_answer: "A character usually takes 8 bits (1 byte) in ASCII. 1 bit can only store 2 values — not enough for characters.",
@@ -1035,7 +1035,7 @@ export const topics: Topic[] = [
         type: "short-answer"
       },
       {
-        id: "s71",
+        id: "ms71",
         topic: "storage",
         question_text: "A word processor document contains 1,000 characters. Estimate the file size in bytes using ASCII.",
         model_answer: "1,000 characters × 1 byte = 1,000 bytes",
@@ -1043,13 +1043,70 @@ export const topics: Topic[] = [
         type: "short-answer"
       },
       {
-        id: "s72",
+        id: "ms72",
         topic: "storage",
         question_text: "A string contains 4 characters and is stored using Unicode (16-bit). How many bytes are needed?",
         model_answer: "4 × 16 = 64 bits → 64 ÷ 8 = 8 bytes",
         created_at: "2025-05-08T00:00:00Z",
         type: "short-answer"
+      },
+      {
+        id: "ms73",
+        topic: "storage",
+        question_text: "State what is typically stored in RAM.",
+        model_answer: "Data and programs that are currently in use by the computer.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms74",
+        topic: "storage",
+        question_text: "What is usually stored in ROM?",
+        model_answer: "Startup instructions like the BIOS needed to boot the system.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms75",
+        topic: "storage",
+        question_text: "Give one example of what might be stored in ROM in a smart TV.",
+        model_answer: "The firmware or startup software that controls how the TV operates.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms76",
+        topic: "storage",
+        question_text: "Give one example of data that might be stored in RAM in a smartphone.",
+        model_answer: "An app that is currently open or being used.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms77",
+        topic: "storage",
+        question_text: "Give one example of what ROM is used for in an embedded system like a washing machine.",
+        model_answer: "To store the fixed program that controls the wash cycle options.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms78",
+        topic: "storage",
+        question_text: "A games console has both RAM and ROM. Explain the use of each.",
+        model_answer: "ROM stores the startup software. RAM stores the game and data currently being used during play.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms79",
+        topic: "storage",
+        question_text: "Give one reason why RAM is important in a computer.",
+        model_answer: "It allows the CPU to quickly access data from currently running programs.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
       }
+
     ],
     unit: 1,
     disabled: false,
@@ -3011,7 +3068,7 @@ export const topics: Topic[] = [
         question_text: "State one benefit of memory management for running applications.",
         model_answer: "It allocates RAM to different programs so they can run without interfering with each other.",
         "created_at": "2025-05-05T00:00:00Z"
-      }, 
+      },
       {
         id: "s57",
         topic: "systems-software",
@@ -3060,7 +3117,7 @@ export const topics: Topic[] = [
         created_at: "2025-05-08T00:00:00Z",
         type: "short-answer"
       }
-      
+
     ]
     ,
     unit: 1,
