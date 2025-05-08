@@ -6,14 +6,13 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { getAllAnswers, topics, currentUser } from "@/lib/data"
+import { getAllAnswers, topics } from "@/lib/data"
 import type { Answer, ScoreType } from "@/lib/types"
 import { CheckCircle, AlertTriangle, AlertCircle, Sparkles, ArrowRight } from "lucide-react"
 import Link from "next/link"
 
 export default function ProgressPage() {
   const [answers, setAnswers] = useState<Answer[]>([])
-  const hasPaid = currentUser.has_paid
 
   useEffect(() => {
     // Get all saved answers
@@ -69,7 +68,9 @@ export default function ProgressPage() {
           <p className="text-muted-foreground">Track your performance across all topics</p>
         </div>
 
-        {!hasPaid && (
+        {/* TODO: need to create a component to display upgrade cards */}
+
+        {/* {!hasPaid && (
           <Card className="mb-6 bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
@@ -93,7 +94,7 @@ export default function ProgressPage() {
               </div>
             </CardContent>
           </Card>
-        )}
+        )} */}
 
         {totalAnswers === 0 ? (
           <Card>
