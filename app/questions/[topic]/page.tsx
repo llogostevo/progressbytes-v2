@@ -117,6 +117,7 @@ export default function QuestionPage() {
 
     if ( userType === "revisionAI") {
       // Paid version - use AI feedback
+      /* TODO: setup supabase AI connection */
       // Simulate API call delay
       await new Promise((resolve) => setTimeout(resolve, 1500))
 
@@ -139,6 +140,7 @@ export default function QuestionPage() {
     } else {
       // Free version - just save the response, self-assessment comes later
       setAnswer({
+        /* TODO: add following data to supabase table structure */
         id: crypto.randomUUID(),
         question_id: question.id,
         student_id: currentUser.id,
@@ -178,6 +180,7 @@ export default function QuestionPage() {
     if (!question) return
 
     const newAnswer: Answer = {
+      /* TODO: add following data to supabase table structure */
       id: crypto.randomUUID(),
       question_id: question.id,
       student_id: currentUser.id,
@@ -194,6 +197,7 @@ export default function QuestionPage() {
   }
 
   const handleFillInTheBlankAnswer = (isCorrect: boolean) => {
+    /* TODO: add following data to supabase table structure */
     if (!question) return
 
     const newAnswer: Answer = {
@@ -213,6 +217,7 @@ export default function QuestionPage() {
   }
 
   const handleMatchingAnswer = (selections: Record<string, string[]>) => {
+    /* TODO: add following data to supabase table structure */
     if (!question) return
 
     const isCorrect = question.pairs?.every(pair =>
@@ -236,6 +241,7 @@ export default function QuestionPage() {
   }
 
   const handleTrueFalseAnswer = (answer: boolean) => {
+    /* TODO: add following data to supabase table structure */
     if (!question) return
 
     const isCorrect = answer === (question.model_answer === "true")
@@ -258,6 +264,7 @@ export default function QuestionPage() {
 
   // Mock feedback generator - this would be replaced by actual AI API call
   const generateMockFeedback = (response: string, question: Question) => {
+    /* TODO: create AI feedback connnection */
     // Very basic mock logic - in reality this would be an AI model
     const responseLength = response.length
     const modelAnswer = Array.isArray(question.model_answer)
