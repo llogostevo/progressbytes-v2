@@ -7,7 +7,7 @@ const EssayGuide = () => {
         <h1 className="text-2xl font-bold text-emerald-700">📝 How to Answer OCR Essay Questions (8 Mark Questions)</h1>
         <p className="text-muted-foreground">
           OCR essay questions usually ask you to discuss a topic using 2–3 bullet points (e.g. ethical, legal, privacy).
-          Here's how to write a great answer and get top marks!
+          Here&apos;s how to write a great answer and get top marks!
         </p>
       </div>
 
@@ -38,7 +38,7 @@ const EssayGuide = () => {
           <div className="space-y-2">
             <h3 className="font-medium text-emerald-600">3. Structure your answer clearly</h3>
             <p className="text-muted-foreground">
-              You can use headings or write in paragraphs. Just make sure it's <span className="font-medium text-foreground">easy to follow</span> and well organised.
+              You can use headings or write in paragraphs. Just make sure it&apos;s <span className="font-medium text-foreground">easy to follow</span> and well organised.
             </p>
           </div>
 
