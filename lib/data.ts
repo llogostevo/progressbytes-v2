@@ -343,7 +343,7 @@ export const topics: Topic[] = [
     name: "Memory & Storage",
     description: "Explore primary and secondary storage, memory hierarchy, and data representation",
     icon: HardDrive,
-    questionCount: 60,
+    questionCount: 72,
     questions: [
       {
         id: "ms1",
@@ -873,7 +873,54 @@ export const topics: Topic[] = [
         created_at: "2025-05-08T00:00:00Z",
         type: "short-answer"
       },
-      
+      {
+        id: "s67",
+        topic: "storage",
+        question_text: "A file contains the string 'Hello'. How many bytes are needed to store this text using ASCII?",
+        model_answer: "5 bytes, because each ASCII character uses 1 byte and there are 5 characters.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "s68",
+        topic: "storage",
+        question_text: "How many bits are needed to store a 10-character password using ASCII?",
+        model_answer: "10 × 8 = 80 bits",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "s69",
+        topic: "storage",
+        question_text: "A string contains 4 characters and is stored using Unicode (16-bit). How many bytes are needed?",
+        model_answer: "4 × 16 = 64 bits → 64 ÷ 8 = 8 bytes",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "s70",
+        topic: "storage",
+        question_text: "A student says that 1 character always equals 1 bit. Explain why this is incorrect.",
+        model_answer: "A character usually takes 8 bits (1 byte) in ASCII. 1 bit can only store 2 values — not enough for characters.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "s71",
+        topic: "storage",
+        question_text: "A word processor document contains 1,000 characters. Estimate the file size in bytes using ASCII.",
+        model_answer: "1,000 characters × 1 byte = 1,000 bytes",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "s72",
+        topic: "storage",
+        question_text: "A string contains 4 characters and is stored using Unicode (16-bit). How many bytes are needed?",
+        model_answer: "4 × 16 = 64 bits → 64 ÷ 8 = 8 bytes",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      }
     ],
     unit: 1,
     disabled: false,
