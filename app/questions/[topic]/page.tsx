@@ -38,6 +38,7 @@ export default function QuestionPage() {
 
   const supabase = createClient()
 
+  //TODO: put this into a hook?? or into data.ts??
   useEffect(() => {
     const checkHasPaid = async () => {
       setIsLoadingUserType(true)
