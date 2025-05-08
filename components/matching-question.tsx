@@ -83,6 +83,11 @@ export function MatchingQuestion({ question, onSubmit, disabled = false }: Match
                           : 'hover:bg-gray-100'
                       }`}
                     >
+                      {selections[pair.statement]?.includes(match) && !isSubmitted && (
+                        <div className="flex justify-center">
+                          <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                        </div>
+                      )}
                       {isSubmitted && (
                         <div className="flex justify-center">
                           {isCorrect(pair.statement, match) ? (
