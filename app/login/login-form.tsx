@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 // import { useState } from "react"
 import { login, signup } from './actions'
@@ -19,6 +19,8 @@ import { Suspense } from 'react'
  */
 
 /* TODO: https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout */
+
+
 
 
 export function LoginForm() {
