@@ -17,6 +17,7 @@ import { CodeQuestion } from "@/components/code-question"
 import { MatchingQuestion } from "@/components/matching-question"
 import { TrueFalseQuestion } from "@/components/true-false-question"
 import { createClient } from "@/utils/supabase/client"
+import { CTABanner } from "@/components/cta-banner"
 
 export default function QuestionPage() {
   const params = useParams()
@@ -29,22 +30,22 @@ export default function QuestionPage() {
   const [selfAssessmentScore, setSelfAssessmentScore] = useState<ScoreType | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [userType, setUserType] = useState<"revision" | "revisionAI" | "basic" | null>(null)
-  // free user will be null and the freeUser will be True
-  // revision paid user will be "revision" and the freeUser will be False
-  // AI paid user will be "revisionAI" and the freeUser will be False
-
+  const [isLoadingUserType, setIsLoadingUserType] = useState(true)
+  const [freeUser, setFreeUser] = useState(true)
   // const [hasPaid, setHasPaid] = useState(false)
 
-  const freeUser = currentUser.email === "student@example.com"
+  // const freeUser = currentUser.email === "student@example.com"
 
   const supabase = createClient()
 
   useEffect(() => {
     const checkHasPaid = async () => {
+      setIsLoadingUserType(true)
       const { data: { user } } = await supabase.auth.getUser()
 
       if (!user) {
         setUserType(null)
+        setIsLoadingUserType(false)
         return
       }
 
@@ -56,66 +57,51 @@ export default function QuestionPage() {
 
       if (error || !data) {
         setUserType(null)
+        setIsLoadingUserType(false)
         return
       }
 
       setUserType(data.user_type)
+      setFreeUser(false)
+      setIsLoadingUserType(false)
     }
     checkHasPaid()
   }, [])
 
-
-
   useEffect(() => {
+    if (isLoadingUserType) return
+
     try {
       const currentTopic = getTopicBySlug(topicSlug)
       console.log("Current topic:", currentTopic)
       setTopic(currentTopic || null)
 
-      if (freeUser) {
-        if (currentTopic) {
-          const newQuestion = getRandomQuestionForTopic(topicSlug, freeUser, userType)
-          console.log("Loaded question:", {
-            id: newQuestion.id,
-            type: newQuestion.type,
-            text: newQuestion.question_text,
-            options: newQuestion.options,
-            correctAnswerIndex: newQuestion.correctAnswerIndex
-          })
-          setQuestion(newQuestion)
-          setAnswer(null)
-          setSelfAssessmentScore(null)
-        }
-
-      } else if (!freeUser) {
-        if (currentTopic) {
-          const newQuestion = getRandomQuestionForTopic(topicSlug, freeUser, userType)
-          console.log("Loaded question:", {
-            id: newQuestion.id,
-            type: newQuestion.type,
-            text: newQuestion.question_text,
-            options: newQuestion.options,
-            correctAnswerIndex: newQuestion.correctAnswerIndex
-          })
-          setQuestion(newQuestion)
-          setAnswer(null)
-          setSelfAssessmentScore(null)
-        }
+      if (currentTopic) {
+        const newQuestion = getRandomQuestionForTopic(topicSlug, freeUser, userType)
+        console.log("Loaded question:", {
+          id: newQuestion.id,
+          type: newQuestion.type,
+          text: newQuestion.question_text,
+          options: newQuestion.options,
+          correctAnswerIndex: newQuestion.correctAnswerIndex
+        })
+        setQuestion(newQuestion)
+        setAnswer(null)
+        setSelfAssessmentScore(null)
       }
-
     } catch (error) {
       console.error("Error loading question:", error)
     } finally {
       setIsLoading(false)
     }
-  }, [topicSlug])
+  }, [topicSlug, isLoadingUserType, userType, freeUser])
 
   const handleSubmitAnswer = async (responseText: string) => {
     if (!question) return
 
     setIsSubmitting(true)
 
-    if ( userType === "revisionAI") {
+    if (userType === "revisionAI") {
       // Paid version - use AI feedback
       /* TODO: setup supabase AI connection */
       // Simulate API call delay
@@ -345,30 +331,12 @@ export default function QuestionPage() {
           <p className="text-muted-foreground">{topic.description}</p>
         </div>
 
-        {userType == "basic" && (
-          <Card className="mb-6 bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="shrink-0 bg-emerald-100 p-2 rounded-full">
-                  <Lock className="h-5 w-5 text-emerald-600" />
-                </div>
-                <div>
-                  <h3 className="font-medium text-emerald-800">Free Version</h3>
-                  <p className="text-sm text-emerald-700">
-                    You&apos;re using the free version. Upgrade to get AI-powered feedback and personalized recommendations.
-                  </p>
-                </div>
-                <div className="ml-auto">
-                  <Link href="/coming-soon">
-                    <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700">
-                      Upgrade
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        <div className="mb-6 md:mb-8">
+          {freeUser && <CTABanner variant="free" />}
+          {!freeUser && userType === "basic" && <CTABanner variant="basic" />}
+          {!freeUser && userType === "revisionAI" && <CTABanner variant="premium" />}
+        </div>
+
 
         <Card className="mb-8">
           <CardHeader>
