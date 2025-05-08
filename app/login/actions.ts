@@ -36,7 +36,7 @@ export async function login(formData: FormData) {
 
   // Revalidate the root path to update any cached data
   revalidatePath('/', 'layout')
-  
+
   // Redirect to the home page after successful login
   redirect('/')
 }
@@ -58,6 +58,7 @@ export async function signup(formData: FormData) {
   const password = formData.get('register-password') as string
   const confirmPassword = formData.get('register-confirm-password') as string
   const school = formData.get('register-school') as string
+  let user_type = 'basic' as string
 
   // Log form data for debugging (remove in production)
   console.log('Email:', email)
@@ -91,12 +92,22 @@ export async function signup(formData: FormData) {
       }
     }
   }
-  
-  // Log the formatted data for debugging (remove in production)
-  console.log('Signup data:', JSON.stringify(data, null, 2))
+
+ // check if the email  is central foundation boys school
+ if (email.includes('centralfoundationboys.co.uk')) {
+  // set user_type to revision
+  user_type = 'revision'
+ }
 
   // Attempt to sign up the user with Supabase Auth
   const { data: authData, error } = await supabase.auth.signUp(data)
+
+  if (authData.user) {
+    await supabase
+      .from('profiles')
+      .update({ school, user_type })
+      .eq('userid', authData.user.id)
+  }
 
   // If there's an error, redirect to the login page with the error message
   if (error) {
@@ -111,7 +122,7 @@ export async function signup(formData: FormData) {
 
   // Revalidate the root path to update any cached data
   revalidatePath('/', 'layout')
-  
+
   // Redirect to the home page after successful signup
   redirect('/')
 }
