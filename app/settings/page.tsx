@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { currentUser, togglePaidStatus } from "@/lib/data"
+import { currentUser } from "@/lib/data"
 import { ArrowLeft, Sparkles } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/utils/supabase/client"

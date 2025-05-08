@@ -6,7 +6,6 @@ import { Home, BarChart2, BookOpen, Menu, X, User, LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { currentUser } from "@/lib/data"
 import { createClient } from "@/utils/supabase/client"
 
 export function MobileNav() {
@@ -20,6 +19,8 @@ export function MobileNav() {
     const { data: { session } } = await supabase.auth.getSession();
     setFreeUser(!session);
   }
+
+  /* TODO: check whether this is a secure approach */
 
   useEffect(() => {
     checkSession();

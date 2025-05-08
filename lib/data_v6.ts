@@ -17,18 +17,18 @@ import {
 const savedAnswers: Answer[] = []
 
 // Current user - this would be replaced by authentication
-export const currentUser: Student = {
-  id: "user-1",
-  email: "student@example.com",
-  created_at: "2023-01-01T00:00:00Z",
-  has_paid: false, // Set to false by default for the free version
-}
+// export const currentUser: Student = {
+//   id: "user-1",
+//   email: "student@example.com",
+//   created_at: "2023-01-01T00:00:00Z",
+//   user_type: "basic",
+// }
 
 // Toggle this function to simulate switching between free and paid versions
-export function togglePaidStatus() {
-  currentUser.has_paid = !currentUser.has_paid
-  return currentUser.has_paid
-}
+// export function togglePaidStatus() {
+//   currentUser.has_paid = !currentUser.has_paid
+//   return currentUser.has_paid
+// }
 
 // Mock topics data
 export const topics: Topic[] = [
