@@ -77,6 +77,9 @@ export async function signup(formData: FormData) {
     redirect('/login?error=passwords-dont-match')
   }
 
+  /*TODO: need to setup database function to create user profile in profiles table, including setting user_type to revision for
+  central foundation boys school email addressses */
+
   // Format the data for Supabase Auth
   // The school field is stored in the user's metadata
   const data = {
