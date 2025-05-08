@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { CheckCircle2, XCircle } from "lucide-react"
+import { CheckCircle2, XCircle, Check } from "lucide-react"
 import type { Question } from "@/lib/types"
 
 interface TrueFalseQuestionProps {
@@ -57,6 +57,11 @@ export function TrueFalseQuestion({ question, onSubmit, disabled = false }: True
                       : 'hover:bg-gray-100'
                   }`}
                 >
+                  {selectedAnswer === true && !isSubmitted && (
+                    <div className="flex justify-center">
+                      <Check className="h-5 w-5 text-emerald-600" />
+                    </div>
+                  )}
                   {isSubmitted && (
                     <div className="flex justify-center">
                       {isCorrect() && selectedAnswer === true ? (
@@ -78,6 +83,11 @@ export function TrueFalseQuestion({ question, onSubmit, disabled = false }: True
                       : 'hover:bg-gray-100'
                   }`}
                 >
+                  {selectedAnswer === false && !isSubmitted && (
+                    <div className="flex justify-center">
+                      <Check className="h-5 w-5 text-emerald-600" />
+                    </div>
+                  )}
                   {isSubmitted && (
                     <div className="flex justify-center">
                       {isCorrect() && selectedAnswer === false ? (

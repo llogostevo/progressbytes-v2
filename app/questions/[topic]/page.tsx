@@ -16,6 +16,7 @@ import { TextQuestion } from "@/components/text-question"
 import { CodeQuestion } from "@/components/code-question"
 import { MatchingQuestion } from "@/components/matching-question"
 import { TrueFalseQuestion } from "@/components/true-false-question"
+import { EssayQuestion } from "@/components/essay-question"
 import { createClient } from "@/utils/supabase/client"
 import { CTABanner } from "@/components/cta-banner"
 
@@ -381,6 +382,13 @@ export default function QuestionPage() {
                 <TextQuestion
                   onSubmit={handleSubmitAnswer}
                   disabled={isSubmitting}
+                />
+              ) : question.type === "essay" ? (
+                <EssayQuestion
+                  onSubmit={handleSubmitAnswer}
+                  disabled={isSubmitting}
+                  minWords={50}
+                  maxWords={800}
                 />
               ) : null
             ) : (
