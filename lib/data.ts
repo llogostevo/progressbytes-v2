@@ -2249,17 +2249,132 @@ export const topics: Topic[] = [
     unit: 1,
     disabled: false,
   },
+  // i1 to i8 are OCR versions and need adjusting
   {
     id: "6",
     slug: "impacts",
     name: "Impacts",
     description: "Explore ethical, legal, cultural, and environmental impacts of technology",
     icon: Globe,
-    questionCount: 0,
-    questions: [],
+    questionCount: 13,
+    questions: [
+      {
+        id: "i1",
+        topic: "impacts",
+        question_text: "A computer programmer wants to release a game online. Discuss the features, benefits, and drawbacks of open source and proprietary software licences, and recommend one.",
+        model_answer: "Open source software is usually free and allows users to view, modify, and distribute the source code.\n\nThis means anyone can improve the software or adapt it for their own needs, potentially fixing bugs quickly or adding new features.\n\nHowever, this openness also makes it easier for someone to steal or misuse the code, and support or documentation may be limited.\n\nProprietary software keeps the source code hidden and often comes with a cost.\n\nThis provides more control to the programmer, ensures a more consistent user experience, and often includes better support and testing.\n\nHowever, it restricts how users can use or modify the software and may reduce the number of people who can afford to use it.\n\nLegally, both types of licences protect the intellectual property, but open source makes it harder to enforce restrictions.\n\nEthically, open source encourages collaboration and innovation, while proprietary software supports income generation and consistency.\n\nIn this case, if the programmer wants widespread use and community involvement, open source is ideal.\n\nIf they aim to profit and maintain control, proprietary is the better choice.\n\nA clear recommendation should be based on their goals.",
+        created_at: "2023-05-08T00:00:00Z",
+        type: "essay"
+      },
+      {
+        id: "i2",
+        topic: "impacts",
+        question_text: "A shopping centre upgrades its CCTV to include facial recognition. Discuss the legal, ethical, and privacy issues related to this upgrade.",
+        model_answer: "Legally, the use of facial recognition must comply with the Data Protection Act (DPA).\n\nThis includes informing customers that they are being recorded and how the data will be used.\n\nA positive aspect is that the footage can help identify criminals and be used as evidence.\n\nA negative aspect is that if data is not securely stored or used without consent, the company may face legal action.\n\nEthically, facial recognition can make people feel safer, knowing that help is available quickly and that wrongdoers can be identified.\n\nHowever, others may feel it is wrong to monitor individuals who have done nothing wrong, especially if they are unaware they are being recorded.\n\nFrom a privacy perspective, facial recognition can be seen as invasive, especially if customers do not know where their data is stored or for how long.\n\nWhile some argue that people in public spaces should expect to be recorded, others believe this level of surveillance goes too far.\n\nThe system must be transparent and secure to avoid backlash.",
+        created_at: "2023-05-08T00:00:00Z",
+        type: "essay"
+      },
+      {
+        id: "i3",
+        topic: "impacts",
+        question_text: "Social networking websites use AI to monitor user posts. Discuss the legal, ethical, and privacy implications of this use of AI.",
+        model_answer: "Legally, AI systems must follow data protection laws such as the Data Protection Act (DPA).\n\nA benefit is that AI can automatically detect and remove illegal content like hate speech or copyrighted material, ensuring compliance.\n\nHowever, there's a risk that AI may mistakenly remove content that is not illegal content, leading to disputes and claims of censorship and legal action.\n\nEthically, using AI to moderate content can help protect users from harmful posts and prevent abuse as more posts can be checked efficiently.\n\nOn the other hand, some users may feel unfairly targeted or silenced if the AI misinterprets their posts, raising concerns about freedom of expression.\n\nIn terms of privacy, AI systems may constantly scan user content, which some users see as intrusive.\n\nWhile users usually agree to terms when signing up, they may not fully understand what data is being analyzed or stored.\n\nOthers may prefer AI moderation over human review because it feels less personal and more consistent.\n\nOverall, the system must be transparent, fair, and reviewed regularly to maintain trust.",
+        created_at: "2023-05-08T00:00:00Z",
+        type: "essay"
+      },
+      {
+        id: "i4",
+        topic: "impacts",
+        question_text: "A school asks students to bring their own devices for lessons. Discuss the ethical, legal, and privacy issues of this approach.",
+        model_answer: "Ethically, allowing students to bring their own devices can be more cost-effective for the school and allow students to use technology they are familiar with.\n\nHowever, it may create inequality, as not all students can afford high-quality devices, leading to a divide in learning opportunities.\n\nLegally, the school must ensure that students are safe while using their own devices, including protection against harmful online content, this can help students understand the law as they will be more engaged with their devices in school. \n\nThere are concerns about liability—who is responsible if a student’s device is lost, damaged, or misused on school premises?\n\nFrom a privacy perspective, schools might need to monitor device usage to ensure appropriate content is accessed this could help protect students, but this could be also seen as intrusive.\n\nInstalling monitoring software on personal devices may raise concerns among students and parents.\n\nAdditionally, students could use cameras or microphones inappropriately e.g. cyber bullying.\n\n However, it also gives students the opportunity of personalised learning in every subject that might see their grades improve.\n\nBalancing educational benefits with fairness, safety, and privacy is essential for this policy to work effectively.",
+        created_at: "2023-05-08T00:00:00Z",
+        type: "essay"
+      },
+      {
+        id: "i5",
+        topic: "impacts",
+        question_text: "A medical researcher uses AI to replace some human roles. Discuss the ethical, legal, and cultural implications of this decision.",
+        model_answer: "Ethically, using AI in research can speed up the discovery of treatments and improve accuracy, potentially saving lives.\n\nHowever, it may also lead to job losses, as AI systems replace human researchers, and reduce opportunities for career development.\n\nLegally, the use of AI must ensure patient data remains secure and complies with healthcare data protection regulations.\n\nIf AI systems make errors, it's unclear who is legally responsible—the developer, the user, or the hospital.\n\nCulturally, increased use of AI may shift the skills required in the medical field, with more emphasis on technology management rather than traditional medical expertise.\n\nThis could cause friction or resistance from staff.\n\nHowever, it may also lead to new types of jobs and a modernized healthcare system.\n\nThe challenge is to ensure that humans and AI can work together ethically, legally, and inclusively.",
+        created_at: "2023-05-08T00:00:00Z",
+        type: "essay"
+      },
+      {
+        id: "i6",
+        topic: "impacts",
+        question_text: "Discuss the impact of digital technology in medicine, focusing on diagnosis, treatment, and record storage.",
+        model_answer: "For diagnosis, technology can help identify patterns in symptoms faster than humans, leading to quicker and more accurate results.\n\nHowever, there is a risk that AI might miss unusual symptoms or provide incorrect diagnoses if the data it has been trained on is limited.\n\nIn terms of treatment, advanced tools like robotic surgery and remote-controlled procedures allow doctors to treat patients with precision, even across long distances.\n\nBut reliance on technology could reduce human interaction and increase the risk of harm if systems fail or are hacked.\n\nRegarding record storage, central databases make it easier for different healthcare providers to access patient records, which can improve continuity of care.\n\nThe downside is that centralized systems can be targeted by cyberattacks, putting sensitive personal data at risk.\n\nOverall, the use of digital technology in medicine offers many benefits but must be managed carefully to avoid unintended harm.",
+        created_at: "2023-05-08T00:00:00Z",
+        type: "essay"
+      },
+      {
+        id: "i7",
+        topic: "impacts",
+        question_text: "Discuss the impact of consumers upgrading to the latest smartphones. Ethically, Legally, Environmentally and Culturally",
+        model_answer: "For smartphone users, new devices offer better performance, features, and compatibility with apps and networks.\n\nHowever, frequently upgrading can be expensive and may lead to pressure on individuals who can’t afford it.\n\nCulturally, owning the latest technology is often associated with status, which can lead to social pressure and inequality.\n\nIt can also lead to wasteful consumer behavior, where working devices are discarded unnecessarily.\n\nEthically, this habit contributes to the digital divide, where some groups have access to better technology and others do not.\n\nEnvironmentally, discarded smartphones add to electronic waste.\n\nMany phones are not designed to be easily repaired or recycled, leading to landfill buildup and pollution.\n\nRare metals and toxic materials used in phones also damage ecosystems.\n\nWhile innovation is important, these upgrades should be balanced with sustainability and fairness.",
+        created_at: "2023-05-08T00:00:00Z",
+        type: "essay"
+      },
+      {
+        id: "i8",
+        topic: "impacts",
+        question_text: "Even if their devices still work, people often want to upgrade to the latest smartphones. Discuss the impact of this trend.",
+        model_answer: "This trend affects multiple stakeholders.\n\nConsumers may benefit from improved technology and features, but may also face financial strain, especially if they feel pressured to upgrade frequently.\n\nFor manufacturers and retailers, upgrades increase profits, but they may be accused of encouraging waste through planned obsolescence.\n\nTechnologically, constant innovation drives progress but also makes older devices obsolete faster, even when still functional.\n\nEnvironmentally, this trend contributes heavily to e-waste.\n\nMany old devices end up in landfill, sometimes in developing countries, causing pollution and health hazards.\n\nEthical concerns include social pressure to upgrade, which can lead to bullying or exclusion of those who cannot afford new phones.\n\nConfidential data may also be left on discarded devices if not wiped properly.\n\nManufacturers may design fragile products to increase sales, which is unethical.\n\nSociety must find a balance between enjoying innovation and promoting sustainable and fair practices.",
+        created_at: "2023-05-08T00:00:00Z",
+        type: "essay"
+      },
+      {
+        id: "i9",
+        topic: "impacts",
+        question_text: "A healthcare company wants to use wearable fitness trackers to monitor patient health remotely. Discuss the ethical, legal, and privacy issues of this decision.",
+        model_answer: "Ethically, this technology could help patients manage their health better and allow earlier detection of problems.\n\nHowever, it may lead to concerns about constant monitoring and the pressure to always be healthy.\n\nLegally, data collected from wearables must comply with health data protection laws, and patients must give clear, informed consent.\n\nIf a device shares data without permission or is hacked, it could result in serious legal issues.\n\nFrom a privacy perspective, users may not know exactly how their health data is used or stored.\n\nThis could lead to discomfort or mistrust.\n\nCompanies must ensure that data is anonymized, encrypted, and used responsibly to avoid backlash and build trust.",
+        created_at: "2023-05-08T00:00:00Z",
+        type: "essay"
+      },
+      {
+        id: "i10",
+        topic: "impacts",
+        question_text: "A transport company is trialling self-driving delivery vehicles. Discuss the legal, ethical, and cultural issues involved in using autonomous vehicles.",
+        model_answer: "Legally, autonomous vehicles must follow traffic laws and be safe to operate in public spaces.\n\nIf an accident occurs, it's unclear who is at fault — the company, the software developers, or the vehicle manufacturer.\n\nEthically, these vehicles could reduce human error and prevent injuries, but they may also replace jobs and reduce income for delivery drivers.\n\nCulturally, there may be resistance from communities that don’t trust driverless technology or worry about their safety.\n\nHowever, others may see it as a sign of progress and innovation.\n\nPublic education and transparent testing are key to gaining acceptance.",
+        created_at: "2023-05-08T00:00:00Z",
+        type: "essay"
+      },
+      {
+        id: "i11",
+        topic: "impacts",
+        question_text: "An online retailer is introducing AI-powered chatbots to replace human customer service staff. Discuss the ethical, legal, and employment-related impacts of this change.",
+        model_answer: "Ethically, chatbots provide 24/7 support and quick responses, which is beneficial for customers as they get faster responses.\n\nHowever, it may reduce human interaction and frustrate users with complex problems.\n\nLegally, the company must ensure chatbots do not give incorrect or misleading information that could result in complaints or claims. However, chatbots can be programmed to give legally accurate and consistent responses every time which might be safer than a human.\n\nEmployment-wise, replacing staff with AI may reduce costs but also lead to job losses and lower morale.\n\ However, there could opportunities for better paying technology jobs and the company could offer retraining to support affected employees, they might also use chatbots as a support tool rather than a full replacement making the jobs less stressful.",
+        created_at: "2023-05-08T00:00:00Z",
+        type: "essay"
+      },
+      {
+        id: "i12",
+        topic: "impacts",
+        question_text: "A government agency is planning to use drones for public surveillance in city centres. Discuss the legal, privacy, and ethical implications of this plan.",
+        model_answer: "Legally, drone surveillance must follow regulations such as airspace rules and the Data Protection Act.\n\nFailure to notify the public or protect data could lead to legal action.\n\nFrom a privacy point of view, people may feel uncomfortable being recorded without knowing when or why.\n\nThis could lead to feelings of being watched and a loss of trust in public authorities.\n\nEthically, drones may help reduce crime and improve safety, but must be used transparently and only for necessary purposes.\n\nClear policies and oversight are essential to prevent misuse.",
+        created_at: "2023-05-08T00:00:00Z",
+        type: "essay"
+      },
+      {
+        id: "i13",
+        topic: "impacts",
+        question_text: "A school is planning to use facial recognition to register student attendance. Discuss the ethical, privacy, and cultural concerns raised by this plan.",
+        model_answer: "Ethically, using facial recognition saves time and ensures accurate attendance.\n\nHowever, it raises concerns about fairness and surveillance, especially if students are not given a choice.\n\nFrom a privacy perspective, storing facial data could be risky if systems are not secure or data is used for other purposes.\n\nCulturally, some families or communities may have strong objections to biometric tracking, especially where trust in technology is low.\n\nThe school must consider opt-out options, explain the purpose clearly, and ensure robust data protection.",
+        created_at: "2023-05-08T00:00:00Z",
+        type: "essay"
+      }
+      
+      
+      
+      
+      
+
+
+
+    ],
     unit: 1,
-    disabled: true,
+    disabled: false,
   },
+
 
   // Unit 2
   {

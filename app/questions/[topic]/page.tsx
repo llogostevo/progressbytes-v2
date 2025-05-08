@@ -16,6 +16,7 @@ import { TextQuestion } from "@/components/text-question"
 import { CodeQuestion } from "@/components/code-question"
 import { MatchingQuestion } from "@/components/matching-question"
 import { TrueFalseQuestion } from "@/components/true-false-question"
+import { EssayQuestion } from "@/components/essay-question"
 
 export default function QuestionPage() {
   const params = useParams()
@@ -351,6 +352,13 @@ export default function QuestionPage() {
                 <TextQuestion
                   onSubmit={handleSubmitAnswer}
                   disabled={isSubmitting}
+                />
+              ) : question.type === "essay" ? (
+                <EssayQuestion
+                  onSubmit={handleSubmitAnswer}
+                  disabled={isSubmitting}
+                  minWords={50}
+                  maxWords={800}
                 />
               ) : null
             ) : (
