@@ -2249,7 +2249,7 @@ export const topics: Topic[] = [
     unit: 1,
     disabled: false,
   },
-  // i1 to i8 are OCR versions and need adjusting
+  // i1 to i8 and i14 are OCR versions and need adjusting
   {
     id: "6",
     slug: "impacts",
@@ -2382,6 +2382,52 @@ export const topics: Topic[] = [
           "Computer Misuse Act (1990)"
         ],
         explanation: "The Data Protection Act protects individuals’ personal data, which is breached when data is shared or published without consent.\n\n The Copyright, Designs and Patents Act protects original work like software interfaces from being copied.\n\n  The Computer Misuse Act makes it illegal to access or alter someone’s computer or data without permission, including guessing passwords or interfering with logged-in accounts.",
+        created_at: "2025-05-08T00:00:00Z"
+      },
+      {
+        id: "i15",
+        topic: "impacts",
+        question_text: "Sam designs an app to help students revise for their exams. When Sam finishes the app, he plans to release it as open source. Give one benefit and one drawback of Sam releasing his app as open source.",
+        model_answer: "benefit - other people can make improvements to the program. drawback - he cannot charge a fee for the software, other people can use his code in their own programs.",
+        created_at: "2023-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "i16",
+        type: "short-answer",
+        topic: "impacts",
+        question_text: "A mobile phone company releases new models twice a year.\n\nGive two environmental effects of releasing new devices this often.",
+        model_answer: [
+          "Older phones may be thrown away, increasing electronic waste",
+          "Manufacturing new phones uses up natural resources",
+          "Extra deliveries increase pollution",
+          "Devices may go to landfill and not break down",
+          "New phones may be more energy-efficient",
+          "Older phones can be reused instead of creating more waste"
+        ],
+        explanation: "Frequent release cycles lead to more waste and resource use, but can also have positive effects if devices are reused or more efficient.",
+        created_at: "2025-05-08T00:00:00Z"
+      },
+      {
+        id: "i17",
+        type: "matching",
+        topic: "legal",
+        question_text: "Match each scenario to the correct law it relates to:",
+        pairs: [
+          { statement: "A programmer wants to protect their work from being copied or distributed.", match: "Copyright, Designs and Patents Act (1988)" },
+          { statement: "A person logs into a computer without permission by guessing the password.", match: "Computer Misuse Act (1990)" },
+          { statement: "A person makes a request to view financial information held by a public authority.", match: "Freedom of Information Act (2000)" },
+          { statement: "A hacker gains access to a company’s files over a network without permission.", match: "Computer Misuse Act (1990)" },
+          { statement: "A company collects data that it does not need about its customers.", match: "Data Protection Act (2018)" }
+        ],
+        model_answer: [
+          "Copyright, Designs and Patents Act (1988)",
+          "Computer Misuse Act (1990)",
+          "Freedom of Information Act (2000)",
+          "Computer Misuse Act (1990)",
+          "Data Protection Act (2018)"
+        ],
+        explanation: "The Copyright Act protects original work such as programs and designs from being copied. The Computer Misuse Act makes unauthorised access to digital systems illegal, including password guessing and hacking. The Freedom of Information Act allows public access to data held by authorities. The Data Protection Act ensures companies only collect and store relevant, necessary personal data.",
         created_at: "2025-05-08T00:00:00Z"
       }
     ],
@@ -3122,7 +3168,9 @@ export const topics: Topic[] = [
         explanation: "High-level languages use words and symbols that humans can understand but processors cannot. They must be translated into binary machine code using a compiler or interpreter so that the processor can execute the instructions.",
         model_answer: "Processors only understand binary instructions",
         created_at: "2025-05-05T00:00:00Z"
-      }
+      },
+
+
     ],
     unit: 2,
     disabled: false,
