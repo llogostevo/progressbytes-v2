@@ -1,4 +1,4 @@
-'use client'
+"use client"
 
 // import { useState } from "react"
 import { login, signup } from './actions'
@@ -20,15 +20,17 @@ import { Suspense } from 'react'
 
 /* TODO: https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout */
 
-function tabsParams() {
-  const searchParams = useSearchParams()
-  const tab = searchParams.get('tab') || 'login'
-  return tab
+export function LoginForm() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginFormContent />
+    </Suspense>
+  )
 }
 
-
-export function LoginForm() {
-
+function LoginFormContent() {
+  const searchParams = useSearchParams()
+  const tab = searchParams.get('tab') || 'login'
 
   return (
     <div className="space-y-4">
@@ -38,120 +40,117 @@ export function LoginForm() {
       </Suspense>
 
       {/* Tabbed interface for switching between login and register forms */}
-      {/* <Tabs defaultValue="login" className="w-full"> */}
-      <Suspense >
+      <Tabs defaultValue={tab} className="w-full">
 
-        <Tabs defaultValue={tabsParams()} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="login" className="data-[state=active]:text-emerald-800">Login</TabsTrigger>
+          <TabsTrigger value="register" className="data-[state=active]:text-emerald-800">Register</TabsTrigger>
+        </TabsList>
 
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="login" className="data-[state=active]:text-emerald-800">Login</TabsTrigger>
-            <TabsTrigger value="register" className="data-[state=active]:text-emerald-800">Register</TabsTrigger>
-          </TabsList>
+        {/* Login Tab Content */}
+        <TabsContent value="login" className="space-y-4">
+          {/* Login Form */}
+          <form className="space-y-4">
+            {/* Email Input Field */}
+            <div className="space-y-2">
+              <Label htmlFor="login-email" className="text-emerald-800">Email</Label>
+              <Input
+                id="login-email"
+                name="login-email"
+                placeholder="myemail@example.com"
+                type="email"
+                required
+              />
+            </div>
 
-          {/* Login Tab Content */}
-          <TabsContent value="login" className="space-y-4">
-            {/* Login Form */}
-            <form className="space-y-4">
-              {/* Email Input Field */}
-              <div className="space-y-2">
-                <Label htmlFor="login-email" className="text-emerald-800">Email</Label>
-                <Input
-                  id="login-email"
-                  name="login-email"
-                  placeholder="myemail@example.com"
-                  type="email"
-                  required
-                />
+            {/* Password Input Field with Forgot Password Link */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="login-password" className="text-emerald-800">Password</Label>
+                <Link href="/reset-password" className="text-xs text-emerald-600 hover:text-emerald-800 hover:underline">
+                  Forgot password?
+                </Link>
               </div>
+              <Input
+                id="login-password"
+                name="login-password"
+                type="password"
+                required
+              />
+            </div>
 
-              {/* Password Input Field with Forgot Password Link */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="login-password" className="text-emerald-800">Password</Label>
-                  <Link href="/reset-password" className="text-xs text-emerald-600 hover:text-emerald-800 hover:underline">
-                    Forgot password?
-                  </Link>
-                </div>
-                <Input
-                  id="login-password"
-                  name="login-password"
-                  type="password"
-                  required
-                />
-              </div>
+            {/* Login Button - Calls the login server action */}
+            <Button
+              formAction={login}
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+              type="submit"
+            >
+              Sign In
+            </Button>
+          </form>
+        </TabsContent>
 
-              {/* Login Button - Calls the login server action */}
-              <Button
-                formAction={login}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
-                type="submit"
-              >
-                Sign In
-              </Button>
-            </form>
-          </TabsContent>
+        {/* Register Tab Content */}
+        <TabsContent value="register" className="space-y-4">
+          {/* Registration Form */}
+          <form className="space-y-4">
+            {/* Email Input Field */}
+            <div className="space-y-2">
+              <Label htmlFor="register-email" className="text-emerald-800">Email</Label>
+              <Input
+                id="register-email"
+                name="register-email"
+                placeholder="m@example.com"
+                type="email"
+                required
+              />
+            </div>
 
-          {/* Register Tab Content */}
-          <TabsContent value="register" className="space-y-4">
-            {/* Registration Form */}
-            <form className="space-y-4">
-              {/* Email Input Field */}
-              <div className="space-y-2">
-                <Label htmlFor="register-email" className="text-emerald-800">Email</Label>
-                <Input
-                  id="register-email"
-                  name="register-email"
-                  placeholder="m@example.com"
-                  type="email"
-                  required
-                />
-              </div>
+            {/* School Input Field */}
+            <div className="space-y-2">
+              <Label htmlFor="register-school" className="text-emerald-800">School</Label>
+              <Input
+                id="register-school"
+                name="register-school"
+                type="text"
+                required
+              />
+            </div>
 
-              {/* School Input Field */}
-              <div className="space-y-2">
-                <Label htmlFor="register-school" className="text-emerald-800">School</Label>
-                <Input
-                  id="register-school"
-                  name="register-school"
-                  type="text"
-                  required
-                />
-              </div>
+            {/* Password Input Field */}
+            <div className="space-y-2">
+              <Label htmlFor="register-password" className="text-emerald-800">Password</Label>
+              <Input
+                id="register-password"
+                name="register-password"
+                type="password"
+                required
+              />
+            </div>
 
-              {/* Password Input Field */}
-              <div className="space-y-2">
-                <Label htmlFor="register-password" className="text-emerald-800">Password</Label>
-                <Input
-                  id="register-password"
-                  name="register-password"
-                  type="password"
-                  required
-                />
-              </div>
+            {/* Confirm Password Input Field */}
+            <div className="space-y-2">
+              <Label htmlFor="register-confirm-password" className="text-emerald-800">Confirm Password</Label>
+              <Input
+                id="register-confirm-password"
+                name="register-confirm-password"
+                type="password"
+                required
+              />
+            </div>
 
-              {/* Confirm Password Input Field */}
-              <div className="space-y-2">
-                <Label htmlFor="register-confirm-password" className="text-emerald-800">Confirm Password</Label>
-                <Input
-                  id="register-confirm-password"
-                  name="register-confirm-password"
-                  type="password"
-                  required
-                />
-              </div>
+            {/* Register Button - Calls the signup server action */}
+            <Button
+              formAction={signup}
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+              type="submit"
+            >
+              Create Account
+            </Button>
+          </form>
+        </TabsContent>
+      </Tabs>
 
-              {/* Register Button - Calls the signup server action */}
-              <Button
-                formAction={signup}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
-                type="submit"
-              >
-                Create Account
-              </Button>
-            </form>
-          </TabsContent>
-        </Tabs>
-      </Suspense>
       {/* Divider Line */}
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
