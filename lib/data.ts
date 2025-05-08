@@ -13,6 +13,12 @@ import {
   Terminal,
 } from "lucide-react"
 
+  /* TODO: setup supabase call to get data */
+
+    /* TODO: add following data to supabase table structure */
+
+    /* TODO: add following answers to supabase table structure */
+
 // Mock data store - this would be replaced by Supabase
 const savedAnswers: Answer[] = []
 

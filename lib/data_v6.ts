@@ -1,4 +1,4 @@
-import type { Topic, Question, Answer, Student } from "@/lib/types"
+import type { Topic, Question, Answer } from "@/lib/types"
 import {
   Network,
   Cpu,

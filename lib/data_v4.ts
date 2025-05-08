@@ -24,11 +24,8 @@ export const currentUser: Student = {
   user_type: null, // Set to null by default for the free version
 }
 
-// // Toggle this function to simulate switching between free and paid versions
-// export function togglePaidStatus() {
-//   currentUser.has_paid = !currentUser.has_paid
-//   return currentUser.has_paid
-// }
+
+
 
 // Mock topics data
 export const topics: Topic[] = [

@@ -14,11 +14,11 @@ import { redirect } from "next/navigation"
 export default function SettingsPage() {
   const [userType, setUserType] = useState<"revision" | "revisionAI" | null>(null)
 
-  // redirect('/')
   
   const supabase = createClient()
 
   useEffect(() => {
+    /* TODO: setup centralised called for userauth check */
     const fetchUser = async () => {
       const { data: {user}, error } = await supabase.auth.getUser()
       if (error) {
