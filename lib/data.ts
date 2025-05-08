@@ -39,7 +39,7 @@ export const topics: Topic[] = [
     name: "Systems Architecture",
     description: "Learn about CPU architecture, fetch-execute cycle, and performance factors",
     icon: Cpu,
-    questionCount: 29,
+    questionCount: 45,
     questions: [
       {
         id: "sa1",
@@ -331,7 +331,130 @@ export const topics: Topic[] = [
         model_answer: "The processor controls camera functions like focus and capture. The memory stores photos and camera settings.",
         created_at: "2025-05-08T00:00:00Z",
         type: "short-answer"
+      },
+      {
+        id: "s30",
+        topic: "systems-architecture",
+        question_text: "State the purpose of the CPU.",
+        model_answer: "To fetch, decode, and execute instructions.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "s31",
+        topic: "systems-architecture",
+        question_text: "What is the purpose of the Arithmetic Logic Unit (ALU)?",
+        model_answer: "It performs arithmetic operations and logical comparisons.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "s32",
+        topic: "systems-architecture",
+        question_text: "State the function of the Control Unit (CU).",
+        model_answer: "It coordinates the activities of the CPU and controls the flow of data and instructions.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "s33",
+        topic: "systems-architecture",
+        question_text: "What is the purpose of the program counter?",
+        model_answer: "It holds the memory address of the next instruction to be fetched.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "s34",
+        topic: "systems-architecture",
+        question_text: "Explain the purpose of the accumulator in the CPU.",
+        model_answer: "It stores the result of calculations carried out by the ALU.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "s35",
+        topic: "systems-architecture",
+        question_text: "What is stored in the Memory Address Register (MAR)?",
+        model_answer: "The address in memory where data or instructions will be read or written.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "s36",
+        topic: "systems-architecture",
+        question_text: "What is the role of the Memory Data Register (MDR)?",
+        model_answer: "It stores the data that has been fetched from or is about to be written to memory.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "s37",
+        topic: "systems-architecture",
+        question_text: "What is the purpose of cache memory in the CPU?",
+        model_answer: "It stores frequently used data and instructions so the CPU can access them faster than from main memory.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "s38",
+        topic: "systems-architecture",
+        question_text: "What does FDE stand for in relation to the CPU?",
+        model_answer: "Fetch, Decode, Execute",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "s39",
+        topic: "systems-architecture",
+        question_text: "During the fetch stage, what does the CPU do?",
+        model_answer: "It retrieves the next instruction from memory using the address in the program counter.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "s40",
+        topic: "systems-architecture",
+        question_text: "What happens in the decode stage of the FDE cycle?",
+        model_answer: "The control unit interprets the fetched instruction to determine what action is needed.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "s41",
+        topic: "systems-architecture",
+        question_text: "What does the CPU do in the execute stage?",
+        model_answer: "It carries out the instruction, such as a calculation, data transfer, or program control.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "s42",
+        topic: "systems-architecture",
+        question_text: "Which registers are used during the fetch stage?",
+        model_answer: "The program counter (PC), memory address register (MAR), and memory data register (MDR).",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "s43",
+        topic: "systems-architecture",
+        question_text: "Why is the program counter important in the fetch-decode-execute cycle?",
+        model_answer: "It keeps track of the memory address of the next instruction to be fetched.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "s45",
+        topic: "systems-architecture",
+        question_text: "List the four main steps in the fetch-execute cycle.",
+        model_answer: "1. Fetch the instruction from memory\n2. Decode the fetched instruction\n3. Execute the decoded instruction so the process runs continuously\n4. Repeat for the next instruction",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
       }
+      
+      
+      
       
     ],
     unit: 1,
