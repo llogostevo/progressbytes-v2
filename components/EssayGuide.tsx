@@ -25,7 +25,7 @@ const EssayGuide = () => {
           <div className="space-y-2">
             <h3 className="font-medium text-emerald-600">2. Use the P.E.E.L. method for each point</h3>
             <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
-              <li><span className="font-medium text-foreground">P</span>oint – What's the issue? (e.g. "A legal issue is data protection.")</li>
+              <li><span className="font-medium text-foreground">P</span>oint – What&apos;s the issue? (e.g. &quot;A legal issue is data protection.&quot;)</li>
               <li><span className="font-medium text-foreground">E</span>xplain – Why does it matter?</li>
               <li><span className="font-medium text-foreground">E</span>xample – Give a real or relevant example</li>
               <li><span className="font-medium text-foreground">L</span>ink – Say how it helps or causes a problem in the situation</li>
