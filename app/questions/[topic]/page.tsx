@@ -357,8 +357,8 @@ export default function QuestionPage() {
                 <EssayQuestion
                   onSubmit={handleSubmitAnswer}
                   disabled={isSubmitting}
-                  minWords={50}
-                  maxWords={800}
+                  minWords={20}
+                  maxWords={500}
                 />
               ) : null
             ) : (
