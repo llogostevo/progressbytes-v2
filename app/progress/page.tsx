@@ -8,7 +8,9 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { getAllAnswers, topics } from "@/lib/data"
 import type { Answer, ScoreType } from "@/lib/types"
-import { CheckCircle, AlertTriangle, AlertCircle, Sparkles, ArrowRight } from "lucide-react"
+import { CheckCircle, AlertTriangle, AlertCircle, ArrowRight } from "lucide-react"
+// import { CheckCircle, AlertTriangle, AlertCircle, Sparkles, ArrowRight } from "lucide-react"
+
 import Link from "next/link"
 
 export default function ProgressPage() {
