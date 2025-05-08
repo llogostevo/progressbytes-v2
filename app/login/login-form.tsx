@@ -17,6 +17,10 @@ import { Suspense } from 'react'
  * It uses the Tabs component from the UI library to switch between login and register views.
  * The forms submit to server actions defined in actions.ts.
  */
+
+/* TODO: https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout */
+
+
 export function LoginForm() {
   const searchParams = useSearchParams()
   const tab = searchParams.get('tab') || 'login'
