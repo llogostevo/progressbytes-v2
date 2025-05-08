@@ -61,9 +61,9 @@ export function EssayQuestion({
         </Dialog>
       </div>
       <Card className="p-4 bg-slate-50">
-        <div className="text-sm text-muted-foreground mb-2">
+        {/* <div className="text-sm text-muted-foreground mb-2">
           Word count: {wordCount} / {maxWords} (minimum: {minWords})
-        </div>
+        </div> */}
         <Textarea
           value={answer}
           onChange={handleChange}

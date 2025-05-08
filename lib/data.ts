@@ -45,7 +45,7 @@ export const topics: Topic[] = [
     name: "Systems Architecture",
     description: "Learn about CPU architecture, fetch-execute cycle, and performance factors",
     icon: Cpu,
-    questionCount: 23,
+    questionCount: 29,
     questions: [
       {
         id: "sa1",
@@ -297,7 +297,48 @@ export const topics: Topic[] = [
         model_answer: "false",
         explanation: "False – Adding more cores can improve multitasking or performance for software designed to use them, but some programs can’t take advantage of multiple cores.",
         created_at: "2025-05-05T00:00:00Z"
+      }, 
+      {
+        id: "sa25",
+        topic: "systems-architecture",
+        question_text: "What is an embedded system?",
+        model_answer: "A computer system built into a larger device to control or monitor it.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "sa26",
+        topic: "systems-architecture",
+        question_text: "Give two examples of devices that contain embedded systems.",
+        model_answer: "Examples: washing machine, microwave, smart TV, digital watch, car engine control unit (any two).",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "sa27",
+        topic: "systems-architecture",
+        question_text: "Explain one reason why embedded systems are used in everyday devices.",
+        model_answer: "They are cheaper, use less power, and are designed to perform a single dedicated task efficiently.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "sa28",
+        topic: "systems-architecture",
+        question_text: "State one difference between an embedded system and a general-purpose computer.",
+        model_answer: "An embedded system is designed for one specific task, while a general-purpose computer can run many programs.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "sa29",
+        topic: "systems-architecture",
+        question_text: "A digital camera is an embedded system. Explain why it needs a processor and memory.",
+        model_answer: "The processor controls camera functions like focus and capture. The memory stores photos and camera settings.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
       }
+      
     ],
     unit: 1,
     disabled: false,
@@ -308,10 +349,540 @@ export const topics: Topic[] = [
     name: "Memory & Storage",
     description: "Explore primary and secondary storage, memory hierarchy, and data representation",
     icon: HardDrive,
-    questionCount: 0,
-    questions: [],
+    questionCount: 60,
+    questions: [
+      {
+        id: "ms1",
+        topic: "storage",
+        question_text: "Convert the denary number 13 to binary.",
+        model_answer: "1101 or 00001101",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms2",
+        topic: "storage",
+        question_text: "Convert the binary number 00101101 to denary.",
+        model_answer: "45",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms3",
+        topic: "storage",
+        question_text: "Convert the denary number 255 to hexadecimal.",
+        model_answer: "FF",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms4",
+        topic: "storage",
+        question_text: "Convert the hexadecimal number A2 to denary.",
+        model_answer: "162",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms5",
+        topic: "storage",
+        question_text: "Convert the binary number 11110000 to hexadecimal.",
+        model_answer: "F0",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms6",
+        topic: "storage",
+        question_text: "Convert the hexadecimal number 3C to binary.",
+        model_answer: "111100 or 00111100",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms7",
+        topic: "storage",
+        question_text: "Give the binary equivalent of the hexadecimal value 7E.",
+        model_answer: "01111110",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms8",
+        topic: "storage",
+        question_text: "Write the hexadecimal equivalent of the binary number 11010101.",
+        model_answer: "D5",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms9",
+        topic: "storage",
+        question_text: "Perform a binary left shift by 2 places on the binary number 00101100.",
+        model_answer: "10110000",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms10",
+        topic: "storage",
+        question_text: "What is the result of performing a binary right shift by 3 on 11010000?",
+        model_answer: "00011010",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms11",
+        topic: "storage",
+        question_text: "Add the binary numbers 01010101 and 00001111.",
+        model_answer: "Carry:  00011110\n         01010101\n       + 00001111\n       = 01100100",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms12",
+        topic: "storage",
+        question_text: "What is 11110000 + 00001111 in binary?",
+        model_answer: "11111111",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms13",
+        topic: "storage",
+        question_text: "A binary number is shifted left by one place. Describe the effect on the value of the number.",
+        model_answer: "The value is doubled.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms14",
+        topic: "storage",
+        question_text: "A binary number is shifted right by two places. Describe the effect on the value of the number.",
+        model_answer: "The value is divided by 4.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms15",
+        topic: "storage",
+        question_text: "State the purpose of secondary storage in a computer system.",
+        model_answer: "To store data and files long-term, even when the computer is turned off.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms16",
+        topic: "storage",
+        question_text: "Give two examples of secondary storage devices.",
+        model_answer: "Hard disk drive (HDD), Solid-state drive (SSD), USB flash drive, SD card, Optical disc (any two)",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms17",
+        topic: "storage",
+        question_text: "State one advantage of using a solid-state drive instead of a hard disk drive.",
+        model_answer: "Faster data access speeds / No moving parts so less likely to break / Uses less power",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms18",
+        topic: "storage",
+        question_text: "Give one reason why an optical disc might be chosen for storing data.",
+        model_answer: "It is cheap to produce / Portable / Good for distributing media like films or games",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms19",
+        topic: "storage",
+        question_text: "State one drawback of using magnetic storage.",
+        model_answer: "It has moving parts that can wear out / Slower access speed / More likely to be damaged if dropped",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms20",
+        topic: "storage",
+        question_text: "Explain why cloud storage is sometimes considered a form of secondary storage.",
+        model_answer: "It stores data permanently but on remote servers, not directly inside the computer.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms21",
+        topic: "storage",
+        question_text: "Give two types of secondary storage.",
+        model_answer: "Magnetic, Solid state, Optical (any two)",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms22",
+        topic: "storage",
+        question_text: "Explain why a computer needs both RAM and ROM.",
+        model_answer: "ROM contains the instructions needed to start the computer. RAM is used to store programs and data while they are in use.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms23",
+        topic: "storage",
+        question_text: "Give one reason why RAM is important in a computer system.",
+        model_answer: "It temporarily stores data and instructions for programs currently being used.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms24",
+        topic: "storage",
+        question_text: "What type of data is stored in ROM?",
+        model_answer: "Permanent data such as the BIOS or startup instructions.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms25",
+        topic: "storage",
+        question_text: "State the main difference between RAM and ROM.",
+        model_answer: "RAM is volatile and loses its contents when the power is off. ROM is non-volatile and keeps its data permanently.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms26",
+        topic: "storage",
+        question_text: "Name two types of primary storage.",
+        model_answer: "RAM and ROM",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms27",
+        topic: "storage",
+        question_text: "What is the purpose of file compression?",
+        model_answer: "To reduce the size of a file so it takes up less storage space and can be transferred more quickly.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms28",
+        topic: "storage",
+        question_text: "State two benefits of compressing a file.",
+        model_answer: "Takes up less storage space, transfers faster, reads/writes quicker (any two).",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms29",
+        topic: "storage",
+        question_text: "What happens to data that is removed during lossy compression?",
+        model_answer: "It is permanently deleted and cannot be recovered.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms30",
+        topic: "storage",
+        question_text: "Give one advantage of using lossy compression.",
+        model_answer: "It reduces file size more than lossless storage.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms31",
+        topic: "storage",
+        question_text: "Give one disadvantage of lossy compression.",
+        model_answer: "Data is permanently lost and the file cannot be restored to its original form.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms32",
+        topic: "storage",
+        question_text: "Explain one reason why a programmer would use lossless compression instead of lossy compression.",
+        model_answer: "Lossless keeps all data, which is important for files that must remain unchanged, like programs or text documents.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms33",
+        topic: "storage",
+        question_text: "What type of files is lossy compression best suited for?",
+        model_answer: "Images, audio, and video files where some loss of quality is acceptable.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms34",
+        topic: "storage",
+        question_text: "State one file type where lossless compression should be used and explain why.",
+        model_answer: "Executable files, because removing any data could stop the program from working correctly.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      }, 
+      {
+        id: "ms35",
+        topic: "storage",
+        question_text: "Explain how characters are stored in a computer system.",
+        model_answer: "Each character is stored as a binary number using a character set such as ASCII or Unicode.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      }, 
+      {
+        id: "ms36",
+        topic: "storage",
+        question_text: "Explain why lossless compression is used instead of lossy compression for text files.",
+        model_answer: "Lossless compression keeps all the original data, which is important for text files because removing any data could change the meaning of the conten or corrupt the file.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      }, 
+      {
+        id: "ms37",
+        topic: "storage",
+        question_text: "State what an image is made up of when stored in a computer.",
+        model_answer: "A grid of pixels, each with its own binary value representing colour.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms38",
+        topic: "storage",
+        question_text: "What is meant by the term ‘resolution’ in relation to digital images?",
+        model_answer: "The number of pixels in an image, usually given as width × height.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms39",
+        topic: "storage",
+        question_text: "What is meant by ‘colour depth’ in a digital image?",
+        model_answer: "The number of bits used to represent the colour of each pixel.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms40",
+        topic: "storage",
+        question_text: "Explain how increasing the colour depth of an image affects the file size.",
+        model_answer: "More bits are needed for each pixel, so the file size increases.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms41",
+        topic: "storage",
+        question_text: "Give one example of metadata stored with an image file.",
+        model_answer: "Image width, height, colour depth, file format, or author (any one).",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      }, 
+      {
+        id: "ms42",
+        topic: "storage",
+        question_text: "An image is 100 pixels wide and 50 pixels tall. Each pixel uses 8 bits. Calculate the file size in bytes (ignore metadata).",
+        model_answer: "100 × 50 × 8 = 40,000 bits → 40,000 ÷ 8 = 5,000 bytes",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms43",
+        topic: "storage",
+        question_text: "An image has a resolution of 200 × 100 pixels and a colour depth of 16 bits. Calculate the file size in kilobytes (ignore metadata).",
+        model_answer: "200 × 100 × 16 = 320,000 bits → ÷8 = 40,000 bytes → ÷1,000 = 40 KB",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms44",
+        topic: "storage",
+        question_text: "Describe how to calculate the file size of a bitmap image.",
+        model_answer: "Multiply width × height × colour depth (in bits), then divide by 8 to get bytes.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms45",
+        topic: "storage",
+        question_text: "An image is 100 × 100 pixels with a colour depth of 24 bits. Estimate the file size in kilobytes (ignore metadata).",
+        model_answer: "100 × 100 × 24 = 240,000 bits → ÷8 = 30,000 bytes → ÷1,000 = 30 KB",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      }, 
+      {
+        id: "ms46",
+        topic: "storage",
+        question_text: "Explain how sound is stored in a computer.",
+        model_answer: "Sound is sampled at regular intervals and each sample is stored as a binary value.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms47",
+        topic: "storage",
+        question_text: "What is meant by the term ‘sample rate’?",
+        model_answer: "The number of samples taken per second, measured in Hertz (Hz).",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms48",
+        topic: "storage",
+        question_text: "What is meant by ‘bit depth’ in sound recording?",
+        model_answer: "The number of bits used to store each sound sample.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms49",
+        topic: "storage",
+        question_text: "How does increasing the sample rate affect the quality and file size of a sound file?",
+        model_answer: "It improves sound quality but increases the file size.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms50",
+        topic: "storage",
+        question_text: "A sound file is sampled at 10,000 samples per second, using 8 bits per sample. It lasts for 2 seconds. Calculate the file size in bytes (ignore metadata).",
+        model_answer: "10,000 × 2 × 8 = 160,000 bits → ÷8 = 20,000 bytes",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      }, 
+      {
+        id: "ms51",
+        topic: "storage",
+        question_text: "A school wants to back up all of its computers at the end of each week. Which type of storage would be most suitable and why?",
+        model_answer: "Magnetic storage, such as a hard disk or tape, because it has a high capacity and low cost per GB.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms52",
+        topic: "storage",
+        question_text: "A photographer wants to store photos on a small, portable device while travelling. Which storage type is most suitable and why?",
+        model_answer: "Solid state storage, such as a USB drive or SD card, because it is lightweight, durable, and portable.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms53",
+        topic: "storage",
+        question_text: "A company needs to distribute video tutorials to customers. The data must be cheap to produce and readable by most computers. Which storage type is best?",
+        model_answer: "Optical storage, like DVDs, because it is cheap to produce and widely compatible.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms54",
+        topic: "storage",
+        question_text: "A video editor is working with large files and needs fast access speeds and high reliability. Which storage type should they choose?",
+        model_answer: "Solid state storage, like an SSD, because it is fast and reliable with no moving parts.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms55",
+        topic: "storage",
+        question_text: "State one reason why magnetic storage is often used in desktop computers.",
+        model_answer: "It offers high capacity at a low cost per GB.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      }, 
+      {
+        id: "ms56",
+        topic: "storage",
+        question_text: "A smartphone is an embedded system that needs fast access to apps and files. What type of storage does it use and why?",
+        model_answer: "Solid state storage, because it is fast, reliable, and compact — ideal for portable devices like smartphones.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms57",
+        topic: "storage",
+        question_text: "A smart TV streams and stores shows temporarily. Which type of storage is most suitable and why?",
+        model_answer: "Solid state storage, as it is quiet, reliable, and offers fast access speeds suitable for streaming and buffering.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms58",
+        topic: "storage",
+        question_text: "A digital camera is used to store high-quality images on a removable storage device. Which type of storage is used and why?",
+        model_answer: "Solid state storage, such as an SD card, because it is portable, durable, and has no moving parts.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms59",
+        topic: "storage",
+        question_text: "A car sat nav system stores maps and regularly reads location data. Which storage type is most suitable?",
+        model_answer: "Solid state storage, because it is reliable, has fast read speeds, and can cope with movement and vibrations in a vehicle.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms60",
+        topic: "storage",
+        question_text: "A games console needs storage to load games quickly and save user progress. Which type of storage is best and why?",
+        model_answer: "Solid state storage (SSD), as it has fast access times for loading games and is more reliable than magnetic storage plus it has no moving parts and is quieter.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      }, 
+      {
+        id: "ms61",
+        topic: "storage",
+        question_text: "Put the following units in order from smallest to largest: megabyte, bit, kilobyte, byte.",
+        model_answer: "Bit, byte, kilobyte, megabyte",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms62",
+        topic: "storage",
+        question_text: "How many bytes are there in a kilobyte?",
+        model_answer: "1,000 bytes (as per base 10 unit used in OCR GCSE)",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms63",
+        topic: "storage",
+        question_text: "A file is 3 megabytes in size. How many kilobytes is this?",
+        model_answer: "3,000 kilobytes",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms64",
+        topic: "storage",
+        question_text: "State the most appropriate unit for measuring the size of a high-definition video file.",
+        model_answer: "Gigabyte",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "ms65",
+        topic: "storage",
+        question_text: "Explain why computers store data in binary.",
+        model_answer: "Because computers use electrical circuits that have two states — on and off — which match the 1s and 0s in binary.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      }, 
+      {
+        id: "ms66",
+        topic: "storage",
+        question_text: "State the number of bits in a byte.",
+        model_answer: "8",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      
+    ],
     unit: 1,
-    disabled: true,
+    disabled: false,
   },
   {
     id: "3",
@@ -319,7 +890,7 @@ export const topics: Topic[] = [
     name: "Computer Networks",
     description: "Explore network types, topologies, hardware, protocols, and internet communication",
     icon: Network,
-    questionCount: 98,
+    questionCount: 99,
     unit: 1,
     disabled: false,
     questions: [
@@ -1268,7 +1839,28 @@ export const topics: Topic[] = [
         ],
         explanation: "LANs are localised networks like those in schools. WANs span larger areas and use external infrastructure. Client-server networks centralise control, while peer-to-peer networks decentralise it, sharing responsibilities across devices.",
         created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "n99",
+        type: "matching",
+        topic: "networks",
+        question_text: "Match each protocol to its correct purpose:",
+        pairs: [
+          { statement: "Used to transfer files between devices on a network.", match: "FTP" },
+          { statement: "Used to send emails to a mail server or between servers.", match: "SMTP" },
+          { statement: "Used to download emails and remove them from the server.", match: "POP" },
+          { statement: "Used to access and manage emails while keeping them on the server.", match: "IMAP" }
+        ],
+        model_answer: [
+          "FTP",
+          "SMTP",
+          "POP",
+          "IMAP"
+        ],
+        explanation: "FTP is used to upload and download files across a network, commonly between a user and a web server. SMTP handles the sending of emails. POP downloads messages and deletes them from the server, while IMAP allows users to read and organise emails directly from the server.",
+        created_at: "2025-05-08T00:00:00Z"
       }
+
 
 
     ],
@@ -1703,7 +2295,7 @@ export const topics: Topic[] = [
     name: "Systems Software",
     description: "Understand operating systems, utility software, and system management",
     icon: Settings,
-    questionCount: 56,
+    questionCount: 62,
     questions: [
       {
         id: "s1",
@@ -2249,20 +2841,69 @@ export const topics: Topic[] = [
         question_text: "State one benefit of memory management for running applications.",
         model_answer: "It allocates RAM to different programs so they can run without interfering with each other.",
         "created_at": "2025-05-05T00:00:00Z"
+      }, 
+      {
+        id: "s57",
+        topic: "systems-software",
+        question_text: "State what utility software is used for.",
+        model_answer: "To help manage, maintain, or protect the computer system.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "s58",
+        topic: "systems-software",
+        question_text: "Give two examples of utility software.",
+        model_answer: "Antivirus software, disk defragmentation, backup, compression, or encryption (any two).",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "s59",
+        topic: "systems-software",
+        question_text: "What is the purpose of disk defragmentation?",
+        model_answer: "To reorganise files so parts are stored together, which can speed up access time.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "s60",
+        topic: "systems-software",
+        question_text: "Explain how compression software can benefit a user.",
+        model_answer: "It reduces file size, making files easier to store or transfer.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "s61",
+        topic: "systems-software",
+        question_text: "Why is encryption software important for file security?",
+        model_answer: "It scrambles data so that only authorised users with the key can read it.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "s62",
+        topic: "systems-software",
+        question_text: "Give one reason why backup utilities are important.",
+        model_answer: "They allow data to be restored if it is lost or corrupted.",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
       }
+      
     ]
     ,
     unit: 1,
     disabled: false,
   },
-  // i1 to i8 are OCR versions and need adjusting
+  // i1 to i8 and i14 are OCR versions and need adjusting
   {
     id: "6",
     slug: "impacts",
     name: "Impacts",
     description: "Explore ethical, legal, cultural, and environmental impacts of technology",
     icon: Globe,
-    questionCount: 13,
+    questionCount: 14,
     questions: [
       {
         id: "i1",
@@ -2367,15 +3008,75 @@ export const topics: Topic[] = [
         model_answer: "Ethically, using facial recognition saves time and ensures accurate attendance.\n\nHowever, it raises concerns about fairness and surveillance, especially if students are not given a choice.\n\nFrom a privacy perspective, storing facial data could be risky if systems are not secure or data is used for other purposes.\n\nCulturally, some families or communities may have strong objections to biometric tracking, especially where trust in technology is low.\n\nThe school must consider opt-out options, explain the purpose clearly, and ensure robust data protection.",
         created_at: "2023-05-08T00:00:00Z",
         type: "essay"
+      },
+      {
+        id: "i14",
+        type: "matching",
+        topic: "legal",
+        question_text: "Match each scenario to the correct law it relates to:",
+        pairs: [
+          { statement: "A company transmits personal data to another company without the individual’s permission.", match: "Data Protection Act (2018)" },
+          { statement: "A school accidentally publishes their students’ addresses on the school website.", match: "Data Protection Act (2018)" },
+          { statement: "The interface for a piece of software is replicated by a rival company.", match: "Copyright, Designs and Patents Act (1988)" },
+          { statement: "A user leaves a computer logged on and another person leaves them a message on their desktop.", match: "Computer Misuse Act (1990)" },
+          { statement: "A student guesses their teacher’s password and accesses their computer account.", match: "Computer Misuse Act (1990)" }
+        ],
+        model_answer: [
+          "Data Protection Act (2018)",
+          "Data Protection Act (2018)",
+          "Copyright, Designs and Patents Act (1988)",
+          "Computer Misuse Act (1990)",
+          "Computer Misuse Act (1990)"
+        ],
+        explanation: "The Data Protection Act protects individuals’ personal data, which is breached when data is shared or published without consent.\n\n The Copyright, Designs and Patents Act protects original work like software interfaces from being copied.\n\n  The Computer Misuse Act makes it illegal to access or alter someone’s computer or data without permission, including guessing passwords or interfering with logged-in accounts.",
+        created_at: "2025-05-08T00:00:00Z"
+      },
+      {
+        id: "i15",
+        topic: "impacts",
+        question_text: "Sam designs an app to help students revise for their exams. When Sam finishes the app, he plans to release it as open source. Give one benefit and one drawback of Sam releasing his app as open source.",
+        model_answer: "benefit - other people can make improvements to the program. drawback - he cannot charge a fee for the software, other people can use his code in their own programs.",
+        created_at: "2023-05-08T00:00:00Z",
+        type: "short-answer"
+      },
+      {
+        id: "i16",
+        type: "short-answer",
+        topic: "impacts",
+        question_text: "A mobile phone company releases new models twice a year.\n\nGive two environmental effects of releasing new devices this often.",
+        model_answer: [
+          "Older phones may be thrown away, increasing electronic waste",
+          "Manufacturing new phones uses up natural resources",
+          "Extra deliveries increase pollution",
+          "Devices may go to landfill and not break down",
+          "New phones may be more energy-efficient",
+          "Older phones can be reused instead of creating more waste"
+        ],
+        explanation: "Frequent release cycles lead to more waste and resource use, but can also have positive effects if devices are reused or more efficient.",
+        created_at: "2025-05-08T00:00:00Z"
+      },
+      {
+        id: "i17",
+        type: "matching",
+        topic: "legal",
+        question_text: "Match each scenario to the correct law it relates to:",
+        pairs: [
+          { statement: "A programmer wants to protect their work from being copied or distributed.", match: "Copyright, Designs and Patents Act (1988)" },
+          { statement: "A person logs into a computer without permission by guessing the password.", match: "Computer Misuse Act (1990)" },
+          { statement: "A person makes a request to view financial information held by a public authority.", match: "Freedom of Information Act (2000)" },
+          { statement: "A hacker gains access to a company’s files over a network without permission.", match: "Computer Misuse Act (1990)" },
+          { statement: "A company collects data that it does not need about its customers.", match: "Data Protection Act (2018)" }
+        ],
+        model_answer: [
+          "Copyright, Designs and Patents Act (1988)",
+          "Computer Misuse Act (1990)",
+          "Freedom of Information Act (2000)",
+          "Computer Misuse Act (1990)",
+          "Data Protection Act (2018)"
+        ],
+        explanation: "The Copyright Act protects original work such as programs and designs from being copied. The Computer Misuse Act makes unauthorised access to digital systems illegal, including password guessing and hacking. The Freedom of Information Act allows public access to data held by authorities. The Data Protection Act ensures companies only collect and store relevant, necessary personal data.",
+        created_at: "2025-05-08T00:00:00Z"
       }
-      
-      
-      
-      
-      
-
-
-
     ],
     unit: 1,
     disabled: false,
@@ -3114,7 +3815,9 @@ export const topics: Topic[] = [
         explanation: "High-level languages use words and symbols that humans can understand but processors cannot. They must be translated into binary machine code using a compiler or interpreter so that the processor can execute the instructions.",
         model_answer: "Processors only understand binary instructions",
         created_at: "2025-05-05T00:00:00Z"
-      }
+      },
+
+
     ],
     unit: 2,
     disabled: false,
