@@ -24,55 +24,55 @@ export function FillInTheBlankQuestion({ question, onAnswerSelected }: FillInThe
         if (!result.destination) return
 
         const { source, destination } = result
+        const sourceId = source.droppableId
+        const destId = destination.droppableId
 
-        // If dragging from available options to a blank
-        if (source.droppableId === "options" && destination.droppableId.startsWith("blank-")) {
-            const blankIndex = parseInt(destination.droppableId.split("-")[1])
-            const newSelectedOptions = [...selectedOptions]
-            newSelectedOptions[blankIndex] = availableOptions[source.index]
+        // Create new arrays for both states
+        const newSelectedOptions = [...selectedOptions]
+        const newAvailableOptions = [...availableOptions]
 
-            const newAvailableOptions = [...availableOptions]
+        // Handle dragging from available options to a blank
+        if (sourceId === "options" && destId.startsWith("blank-")) {
+            const blankIndex = parseInt(destId.split("-")[1])
+            const option = newAvailableOptions[source.index]
+            
+            // If there's already a word in the blank, move it back to available options
+            if (newSelectedOptions[blankIndex]) {
+                newAvailableOptions.push(newSelectedOptions[blankIndex])
+            }
+            
+            // Move the selected option to the blank
+            newSelectedOptions[blankIndex] = option
             newAvailableOptions.splice(source.index, 1)
-
-            setSelectedOptions(newSelectedOptions)
-            setAvailableOptions(newAvailableOptions)
         }
-        // If dragging from one blank to another
-        else if (source.droppableId.startsWith("blank-") && destination.droppableId.startsWith("blank-")) {
-            const sourceIndex = parseInt(source.droppableId.split("-")[1])
-            const destIndex = parseInt(destination.droppableId.split("-")[1])
-
-            const newSelectedOptions = [...selectedOptions]
-            const temp = newSelectedOptions[sourceIndex]
-            newSelectedOptions[sourceIndex] = newSelectedOptions[destIndex]
-            newSelectedOptions[destIndex] = temp
-
-            setSelectedOptions(newSelectedOptions)
-        }
-        // If dragging from a blank back to options
-        else if (source.droppableId.startsWith("blank-") && destination.droppableId === "options") {
-            const blankIndex = parseInt(source.droppableId.split("-")[1])
-            const newAvailableOptions = [...availableOptions]
-            newAvailableOptions.splice(destination.index, 0, selectedOptions[blankIndex])
-
-            const newSelectedOptions = [...selectedOptions]
+        // Handle dragging from a blank to available options
+        else if (sourceId.startsWith("blank-") && destId === "options") {
+            const blankIndex = parseInt(sourceId.split("-")[1])
+            const option = newSelectedOptions[blankIndex]
+            
+            // Move the option back to available options
+            newAvailableOptions.splice(destination.index, 0, option)
             newSelectedOptions[blankIndex] = ""
-
-            setSelectedOptions(newSelectedOptions)
-            setAvailableOptions(newAvailableOptions)
         }
-    }
+        // Handle dragging between blanks
+        else if (sourceId.startsWith("blank-") && destId.startsWith("blank-")) {
+            const sourceIndex = parseInt(sourceId.split("-")[1])
+            const destIndex = parseInt(destId.split("-")[1])
+            
+            // If there's already a word in the destination blank, move it to available options
+            if (newSelectedOptions[destIndex]) {
+                newAvailableOptions.push(newSelectedOptions[destIndex])
+            }
+            
+            // Move the word from source to destination
+            newSelectedOptions[destIndex] = newSelectedOptions[sourceIndex]
+            newSelectedOptions[sourceIndex] = ""
+        }
 
-    //   const handleSubmit = () => {
-    //     const isCorrect = selectedOptions.every((option, index) => {
-    //       const modelAnswer = Array.isArray(question.model_answer) 
-    //         ? question.model_answer[index]
-    //         : question.model_answer
-    //       return option === modelAnswer
-    //     })
-    //     setIsAnswered(true)
-    //     onAnswerSelected(isCorrect)
-    //   }
+        // Update both states
+        setSelectedOptions(newSelectedOptions)
+        setAvailableOptions(newAvailableOptions)
+    }
 
     const handleSubmit = () => {
         const modelAnswer = Array.isArray(question.model_answer)
@@ -110,19 +110,23 @@ export function FillInTheBlankQuestion({ question, onAnswerSelected }: FillInThe
                                             <span
                                                 ref={provided.innerRef}
                                                 {...provided.droppableProps}
-                                                className={`inline-block min-w-[100px] h-8 mx-1 px-2 py-1 rounded border ${selectedOptions[index]
+                                                className={`inline-block min-w-[100px] h-8 mx-1 px-2 py-1 rounded border ${
+                                                    selectedOptions[index]
                                                         ? "bg-emerald-50 border-emerald-200"
                                                         : "bg-gray-50 border-gray-200"
-                                                    }`}
+                                                }`}
                                             >
                                                 {selectedOptions[index] && (
-                                                    <Draggable draggableId={`selected-${index}`} index={0}>
+                                                    <Draggable 
+                                                        draggableId={`selected-${index}-${selectedOptions[index]}`} 
+                                                        index={0}
+                                                    >
                                                         {(provided) => (
                                                             <span
                                                                 ref={provided.innerRef}
                                                                 {...provided.draggableProps}
                                                                 {...provided.dragHandleProps}
-                                                                className="inline-block"
+                                                                className="inline-block cursor-move"
                                                             >
                                                                 {selectedOptions[index]}
                                                             </span>
@@ -153,7 +157,7 @@ export function FillInTheBlankQuestion({ question, onAnswerSelected }: FillInThe
                                                 ref={provided.innerRef}
                                                 {...provided.draggableProps}
                                                 {...provided.dragHandleProps}
-                                                className="px-3 py-1 bg-white rounded border border-gray-200 shadow-sm"
+                                                className="px-3 py-1 bg-white rounded border border-gray-200 shadow-sm cursor-move"
                                             >
                                                 {option}
                                             </div>
