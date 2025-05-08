@@ -2256,7 +2256,7 @@ export const topics: Topic[] = [
     name: "Impacts",
     description: "Explore ethical, legal, cultural, and environmental impacts of technology",
     icon: Globe,
-    questionCount: 13,
+    questionCount: 14,
     questions: [
       {
         id: "i1",
@@ -2361,15 +2361,29 @@ export const topics: Topic[] = [
         model_answer: "Ethically, using facial recognition saves time and ensures accurate attendance.\n\nHowever, it raises concerns about fairness and surveillance, especially if students are not given a choice.\n\nFrom a privacy perspective, storing facial data could be risky if systems are not secure or data is used for other purposes.\n\nCulturally, some families or communities may have strong objections to biometric tracking, especially where trust in technology is low.\n\nThe school must consider opt-out options, explain the purpose clearly, and ensure robust data protection.",
         created_at: "2023-05-08T00:00:00Z",
         type: "essay"
+      },
+      {
+        id: "i14",
+        type: "matching",
+        topic: "legal",
+        question_text: "Match each scenario to the correct law it relates to:",
+        pairs: [
+          { statement: "A company transmits personal data to another company without the individual’s permission.", match: "Data Protection Act (2018)" },
+          { statement: "A school accidentally publishes their students’ addresses on the school website.", match: "Data Protection Act (2018)" },
+          { statement: "The interface for a piece of software is replicated by a rival company.", match: "Copyright, Designs and Patents Act (1988)" },
+          { statement: "A user leaves a computer logged on and another person leaves them a message on their desktop.", match: "Computer Misuse Act (1990)" },
+          { statement: "A student guesses their teacher’s password and accesses their computer account.", match: "Computer Misuse Act (1990)" }
+        ],
+        model_answer: [
+          "Data Protection Act (2018)",
+          "Data Protection Act (2018)",
+          "Copyright, Designs and Patents Act (1988)",
+          "Computer Misuse Act (1990)",
+          "Computer Misuse Act (1990)"
+        ],
+        explanation: "The Data Protection Act protects individuals’ personal data, which is breached when data is shared or published without consent.\n\n The Copyright, Designs and Patents Act protects original work like software interfaces from being copied.\n\n  The Computer Misuse Act makes it illegal to access or alter someone’s computer or data without permission, including guessing passwords or interfering with logged-in accounts.",
+        created_at: "2025-05-08T00:00:00Z"
       }
-      
-      
-      
-      
-      
-
-
-
     ],
     unit: 1,
     disabled: false,
