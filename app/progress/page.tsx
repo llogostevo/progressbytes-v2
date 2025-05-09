@@ -34,6 +34,13 @@ export default function ProgressPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setUser(user)
+
+        await supabase.from('user_activity').insert({
+          user_id: user.id,
+          event: 'visited_progress',
+          path: '/progress'
+        })
+
       } else {
         setUser(null)
       }

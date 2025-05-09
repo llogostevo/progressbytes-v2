@@ -54,6 +54,17 @@ export default function QuestionPage() {
         return
       }
 
+      if (user) {
+        setUser(user)
+        await supabase.from('user_activity').insert({
+          user_id: user.id,
+          event: 'visited_question',
+          path: '/questions/' + topicSlug
+        })
+      } else {
+        setUser(null)
+      }
+
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
@@ -85,7 +96,7 @@ export default function QuestionPage() {
       if (currentTopic) {
         const searchParams = new URLSearchParams(window.location.search)
         const questionId = searchParams.get("questionId")
-        
+
         let newQuestion: Question
         if (questionId) {
           newQuestion = getQuestionById(questionId) || getRandomQuestionForTopic(topicSlug, freeUser, userType)

@@ -26,7 +26,7 @@ export default function RevisitPage() {
   const [questions, setQuestions] = useState<Record<string, Question>>({})
   const [activeTab, setActiveTab] = useState<ScoreType | "all">(tabParam || "all")
   const [user, setUser] = useState<User | null>(null)
-  
+
 
   useEffect(() => {
 
@@ -36,6 +36,11 @@ export default function RevisitPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setUser(user)
+        await supabase.from('user_activity').insert({
+          user_id: user.id,
+          event: 'visited_revisit',
+          path: '/revisit'
+        })
       } else {
         setUser(null)
       }
@@ -200,10 +205,10 @@ export default function RevisitPage() {
                                   <pre className="whitespace-pre-wrap font-sans">{question.question_text}</pre>
                                 </CardTitle>
                                 <Badge className={`flex items-center gap-1 ${answer.score === "green"
-                                    ? "bg-emerald-500 hover:bg-emerald-500 text-white"
-                                    : answer.score === "amber"
-                                      ? "bg-amber-500 hover:bg-amber-500 text-white"
-                                      : "bg-red-500 hover:bg-red-500 text-white"
+                                  ? "bg-emerald-500 hover:bg-emerald-500 text-white"
+                                  : answer.score === "amber"
+                                    ? "bg-amber-500 hover:bg-amber-500 text-white"
+                                    : "bg-red-500 hover:bg-red-500 text-white"
                                   }`}>
                                   {answer.score === "green" ? (
                                     <CheckCircle className="h-4 w-4" />
