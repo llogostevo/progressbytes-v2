@@ -152,9 +152,8 @@ export function MobileNav() {
                   {item.name}
                 </button>
               ) : (
-                <>
+                <div key={item.name}>
                   <Link
-                    key={item.href}
                     href={item.href}
                     className={cn(
                       "flex items-center px-3 py-3 text-base font-medium rounded-md transition-colors cursor-pointer",
@@ -167,8 +166,7 @@ export function MobileNav() {
                     <item.icon className="h-5 w-5 mr-3" />
                     {item.name}
                   </Link>
-                  
-                </>
+                </div>
               )
             ))}
           </div>
