@@ -82,7 +82,7 @@ export default function SettingsPage() {
     }
 
     fetchUser()
-  }, [supabase.auth])
+  }, [supabase])
 
   // Group activity by event type
   const activityStats = userActivity.reduce((acc, activity) => {
