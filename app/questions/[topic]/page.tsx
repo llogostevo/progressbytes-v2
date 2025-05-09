@@ -59,7 +59,8 @@ export default function QuestionPage() {
         await supabase.from('user_activity').insert({
           user_id: user.id,
           event: 'visited_question',
-          path: '/questions/' + topicSlug
+          path: '/questions/' + topicSlug,
+          user_email: user.email
         })
       } else {
         setUser(null)

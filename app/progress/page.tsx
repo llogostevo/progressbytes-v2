@@ -38,7 +38,8 @@ export default function ProgressPage() {
         await supabase.from('user_activity').insert({
           user_id: user.id,
           event: 'visited_progress',
-          path: '/progress'
+          path: '/progress',
+          user_email: user.email
         })
 
       } else {

@@ -39,7 +39,8 @@ export default function RevisitPage() {
         await supabase.from('user_activity').insert({
           user_id: user.id,
           event: 'visited_revisit',
-          path: '/revisit'
+          path: '/revisit',
+          user_email: user.email
         })
       } else {
         setUser(null)

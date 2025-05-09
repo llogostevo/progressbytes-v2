@@ -6,22 +6,38 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { currentUser } from "@/lib/data"
-import { ArrowLeft, Sparkles } from "lucide-react"
+import { ArrowLeft, Sparkles, Activity, Users, Eye, Navigation } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/utils/supabase/client"
 import { redirect } from "next/navigation"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { UserSessions } from "@/components/user-sessions"
+
+interface UserActivity {
+  id: string
+  user_id: string
+  event: string
+  path: string
+  created_at: string
+  user_email?: string
+}
 
 export default function SettingsPage() {
   const [userType, setUserType] = useState<"revision" | "revisionAI" | null>(null)
-
+  const [userActivity, setUserActivity] = useState<UserActivity[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [uniqueUsers, setUniqueUsers] = useState<number>(0)
+  const [pageViews, setPageViews] = useState<Record<string, number>>({})
+  const [navigationPaths, setNavigationPaths] = useState<string[]>([])
   
   const supabase = createClient()
 
   useEffect(() => {
-    /* TODO: setup centralised called for userauth check */
     const fetchUser = async () => {
       const { data: {user}, error } = await supabase.auth.getUser()
       if (error) {
+        redirect('/')
+      } else if (user && user.email != "stevensl@centralfoundationboys.co.uk") {
         redirect('/')
       }
 
@@ -32,17 +48,54 @@ export default function SettingsPage() {
         .single()
 
       setUserType(profiles?.user_type)
+
+      // Fetch all user activity
+      const { data: activity } = await supabase
+        .from("user_activity")
+        .select("*")
+        .order('created_at', { ascending: false })
+
+      if (activity) {
+        setUserActivity(activity)
+      } else {
+        setUserActivity([])
+      }
+
+      // Calculate unique users
+      const uniqueUserIds = new Set(activity?.map(a => a.user_id) || [])
+      setUniqueUsers(uniqueUserIds.size)
+
+      // Calculate page views
+      const views = activity?.reduce((acc, curr) => {
+        acc[curr.path] = (acc[curr.path] || 0) + 1
+        return acc
+      }, {} as Record<string, number>) || {}
+      setPageViews(views)
+
+      // Calculate navigation paths
+      const paths = activity?.map(a => a.path) || []
+      setNavigationPaths(paths)
+
+      setIsLoading(false)
     }
 
     fetchUser()
   }, [supabase.auth])
-  
 
+  // Group activity by event type
+  const activityStats = userActivity.reduce((acc, activity) => {
+    acc[activity.event] = (acc[activity.event] || 0) + 1
+    return acc
+  }, {} as Record<string, number>)
 
+  // Get top 5 most visited pages
+  const topPages = Object.entries(pageViews)
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 5)
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         <div className="mb-8">
           <Link href="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Home
@@ -51,66 +104,193 @@ export default function SettingsPage() {
           <p className="text-muted-foreground">Manage your account and preferences</p>
         </div>
 
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Account Settings</CardTitle>
-            <CardDescription>Manage your account details and subscription</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="text-sm text-muted-foreground">{currentUser.email}</div>
-            </div>
+        <Tabs defaultValue="account" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="account">Account</TabsTrigger>
+            <TabsTrigger value="activity">Activity</TabsTrigger>
+            <TabsTrigger value="sessions">Sessions</TabsTrigger>
+          </TabsList>
 
-            <div className="border-t pt-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium flex items-center">
-                    <Sparkles className="h-4 w-4 mr-2 text-amber-500" />
-                    AI Feedback Mode
-                  </h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {userType === "revisionAI" ? "You have access to AI-powered feedback" : "Upgrade to get AI-powered feedback"}
-                  </p>
+          <TabsContent value="account">
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle>Account Settings</CardTitle>
+                <CardDescription>Manage your account details and subscription</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid gap-2">
+                  <Label htmlFor="email">Email</Label>
+                  <div className="text-sm text-muted-foreground">{currentUser.email}</div>
                 </div>
-                <Switch checked={userType === "revisionAI"} id="paid-mode" />
-              </div>
-            </div>
-          </CardContent>
-          <CardFooter className="flex justify-between border-t pt-6">
-            <Button variant="outline">Cancel</Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700">Save Changes</Button>
-          </CardFooter>
-        </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Subscription</CardTitle>
-            <CardDescription>Manage your subscription plan</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-md border p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium">{userType === "revisionAI" ? "Premium Plan" : "Free Plan"}</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {userType === "revisionAI"
-                      ? "Full access to all features including AI feedback"
-                      : "Limited access with self-assessment only"}
-                  </p>
+                <div className="border-t pt-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-medium flex items-center">
+                        <Sparkles className="h-4 w-4 mr-2 text-amber-500" />
+                        AI Feedback Mode
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {userType === "revisionAI" ? "You have access to AI-powered feedback" : "Upgrade to get AI-powered feedback"}
+                      </p>
+                    </div>
+                    <Switch checked={userType === "revisionAI"} id="paid-mode" />
+                  </div>
                 </div>
-                <Link href="/coming-soon">
-                  <Button
-                    variant={userType === "revisionAI" ? "outline" : "default"}
-                    className={userType === "revisionAI" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
-                  >
-                    {userType === "revisionAI" ? "Downgrade" : "Upgrade"}
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+              <CardFooter className="flex justify-between border-t pt-6">
+                <Button variant="outline">Cancel</Button>
+                <Button className="bg-emerald-600 hover:bg-emerald-700">Save Changes</Button>
+              </CardFooter>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Subscription</CardTitle>
+                <CardDescription>Manage your subscription plan</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-medium">{userType === "revisionAI" ? "Premium Plan" : "Free Plan"}</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {userType === "revisionAI"
+                          ? "Full access to all features including AI feedback"
+                          : "Limited access with self-assessment only"}
+                      </p>
+                    </div>
+                    <Link href="/coming-soon">
+                      <Button
+                        variant={userType === "revisionAI" ? "outline" : "default"}
+                        className={userType === "revisionAI" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+                      >
+                        {userType === "revisionAI" ? "Downgrade" : "Upgrade"}
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="activity">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Activity className="h-5 w-5 mr-2" />
+                  Site Analytics
+                </CardTitle>
+                <CardDescription>Overview of site usage and user activity</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="text-center py-4">Loading analytics data...</div>
+                ) : (
+                  <div className="space-y-8">
+                    {/* Overview Stats */}
+                    <div className="grid grid-cols-3 gap-4">
+                      <Card>
+                        <CardContent className="pt-6">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="text-2xl font-bold">{uniqueUsers}</div>
+                              <p className="text-sm text-muted-foreground">Unique Users</p>
+                            </div>
+                            <Users className="h-8 w-8 text-muted-foreground" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="pt-6">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="text-2xl font-bold">{activityStats['visited_question'] || 0}</div>
+                              <p className="text-sm text-muted-foreground">Questions Viewed</p>
+                            </div>
+                            <Eye className="h-8 w-8 text-muted-foreground" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="pt-6">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="text-2xl font-bold">{userActivity.length}</div>
+                              <p className="text-sm text-muted-foreground">Total Page Views</p>
+                            </div>
+                            <Navigation className="h-8 w-8 text-muted-foreground" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Top Pages */}
+                    <div className="border-t pt-6">
+                      <h3 className="font-medium mb-4">Most Visited Pages</h3>
+                      <div className="space-y-2">
+                        {topPages.map(([path, count], index) => (
+                          <div key={index} className="flex items-center justify-between text-sm">
+                            <div className="flex items-center">
+                              <span className="font-medium">{index + 1}.</span>
+                              <span className="ml-2">{path}</span>
+                            </div>
+                            <span className="text-muted-foreground">{count} views</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Activity Breakdown */}
+                    <div className="border-t pt-6">
+                      <h3 className="font-medium mb-4">Activity Breakdown</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <Card>
+                          <CardContent className="pt-6">
+                            <div className="text-2xl font-bold">{activityStats['visited_revisit'] || 0}</div>
+                            <p className="text-sm text-muted-foreground">Revisit Sessions</p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardContent className="pt-6">
+                            <div className="text-2xl font-bold">{activityStats['visited_progress'] || 0}</div>
+                            <p className="text-sm text-muted-foreground">Progress Checks</p>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    </div>
+
+                    {/* Recent Activity */}
+                    <div className="border-t pt-6">
+                      <h3 className="font-medium mb-4">Recent Activity</h3>
+                      <div className="space-y-2">
+                        {userActivity.slice(0, 10).map((activity, index) => (
+                          <div key={index} className="flex items-center justify-between text-sm">
+                            <div className="flex items-center gap-8">
+                              <div className="flex items-center gap-2 w-24">
+                                <Activity className="h-4 w-4 text-muted-foreground" />
+                                <span className="capitalize">{activity.event.replace('visited_', '')}</span>
+                              </div>
+                              <span className="text-muted-foreground w-32">{activity.path}</span>
+                              <span className="text-muted-foreground w-48">{activity.user_email}</span>
+                            </div>
+                            <span className="text-muted-foreground w-32 text-right">
+                              {new Date(activity.created_at).toLocaleString()}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="sessions">
+            <UserSessions />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   )

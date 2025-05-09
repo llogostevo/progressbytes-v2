@@ -23,6 +23,16 @@ export default async function Home() {
   const userType = profile?.user_type
   const freeUser = !user || user.email === "student@example.com"
 
+  // Track page visit
+  if (user) {
+    await supabase.from('user_activity').insert({
+      user_id: user.id,
+      event: 'visited_home',
+      path: '/',
+      user_email: user.email
+    })
+  }
+
   return (
     <div className="container mx-auto px-4 py-6 md:py-8">
       <div className="max-w-4xl mx-auto">
