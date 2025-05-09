@@ -6,9 +6,9 @@ import { FeedbackDisplay } from "@/components/feedback-display"
 import { SelfAssessment } from "@/components/self-assessment"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { getRandomQuestionForTopic, getTopicBySlug, saveAnswer, currentUser } from "@/lib/data"
+import { getRandomQuestionForTopic, getTopicBySlug, saveAnswer, currentUser, getQuestionById } from "@/lib/data"
 import type { Question, Answer, ScoreType, Topic } from "@/lib/types"
-import { ArrowLeft, RefreshCw, Lock } from "lucide-react"
+import { ArrowLeft, RefreshCw, CheckCircle2, XCircle } from "lucide-react"
 import Link from "next/link"
 import { MultipleChoiceQuestion } from "@/components/multiple-choice-question"
 import { FillInTheBlankQuestion } from "@/components/fill-in-the-blank-question"
@@ -17,6 +17,10 @@ import { CodeQuestion } from "@/components/code-question"
 import { MatchingQuestion } from "@/components/matching-question"
 import { TrueFalseQuestion } from "@/components/true-false-question"
 import { EssayQuestion } from "@/components/essay-question"
+import { createClient } from "@/utils/supabase/client"
+import { CTABanner } from "@/components/cta-banner"
+import { UserLogin } from "@/components/user-login"
+import { User } from "@supabase/supabase-js"
 
 export default function QuestionPage() {
   const params = useParams()
@@ -28,17 +32,67 @@ export default function QuestionPage() {
   const [topic, setTopic] = useState<Topic | null>(null)
   const [selfAssessmentScore, setSelfAssessmentScore] = useState<ScoreType | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [userType, setUserType] = useState<"revision" | "revisionAI" | "basic" | null>(null)
+  const [isLoadingUserType, setIsLoadingUserType] = useState(true)
+  const [freeUser, setFreeUser] = useState(true)
+  const [user, setUser] = useState<User | null>(null)
+  // const [hasPaid, setHasPaid] = useState(false)
 
-  const hasPaid = currentUser.has_paid
+  // const freeUser = currentUser.email === "student@example.com"
+
+  const supabase = createClient()
+
+  //TODO: put this into a hook?? or into data.ts??
+  useEffect(() => {
+    const checkHasPaid = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setFreeUser(true)
+        setIsLoadingUserType(false)
+        return
+      }
+
+      const { data } = await supabase
+        .from('user_types')
+        .select('user_type')
+        .eq('user_id', user.id)
+        .single()
+
+      if (!data) {
+        setUserType(null)
+        setUser(user)
+        setFreeUser(true)
+        setIsLoadingUserType(false)
+        return
+      }
+
+      setUserType(data.user_type)
+      setUser(user)
+      setFreeUser(false)
+      setIsLoadingUserType(false)
+    }
+    checkHasPaid()
+  }, [supabase, topicSlug])
 
   useEffect(() => {
+    if (isLoadingUserType) return
+
     try {
       const currentTopic = getTopicBySlug(topicSlug)
       console.log("Current topic:", currentTopic)
       setTopic(currentTopic || null)
 
       if (currentTopic) {
-        const newQuestion = getRandomQuestionForTopic(topicSlug)
+        const searchParams = new URLSearchParams(window.location.search)
+        const questionId = searchParams.get("questionId")
+
+        let newQuestion: Question
+        if (questionId) {
+          newQuestion = getQuestionById(questionId) || getRandomQuestionForTopic(topicSlug, freeUser, userType)
+        } else {
+          newQuestion = getRandomQuestionForTopic(topicSlug, freeUser, userType)
+        }
+
         console.log("Loaded question:", {
           id: newQuestion.id,
           type: newQuestion.type,
@@ -55,15 +109,16 @@ export default function QuestionPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [topicSlug])
+  }, [topicSlug, isLoadingUserType, userType, freeUser])
 
   const handleSubmitAnswer = async (responseText: string) => {
     if (!question) return
 
     setIsSubmitting(true)
 
-    if (hasPaid) {
+    if (userType === "revisionAI") {
       // Paid version - use AI feedback
+      /* TODO: setup supabase AI connection */
       // Simulate API call delay
       await new Promise((resolve) => setTimeout(resolve, 1500))
 
@@ -83,9 +138,20 @@ export default function QuestionPage() {
 
       saveAnswer(newAnswer)
       setAnswer(newAnswer)
+
+      // Track question submission
+      if (user) {
+        await supabase.from('user_activity').insert({
+          user_id: user.id,
+          event: 'submitted_question',
+          path: `/questions/${topicSlug}`,
+          user_email: user.email
+        })
+      }
     } else {
       // Free version - just save the response, self-assessment comes later
       setAnswer({
+        /* TODO: add following data to supabase table structure */
         id: crypto.randomUUID(),
         question_id: question.id,
         student_id: currentUser.id,
@@ -93,8 +159,18 @@ export default function QuestionPage() {
         ai_feedback: null,
         score: "amber", // Placeholder, will be updated after self-assessment
         submitted_at: new Date().toISOString(),
-        self_assessed: true,
+        self_assessed: false,
       })
+
+      // Track question submission
+      if (user) {
+        await supabase.from('user_activity').insert({
+          user_id: user.id,
+          event: 'submitted_question',
+          path: `/questions/${topicSlug}`,
+          user_email: user.email
+        })
+      }
     }
 
     setIsSubmitting(false)
@@ -115,7 +191,7 @@ export default function QuestionPage() {
   }
 
   const handleTryAnother = () => {
-    const newQuestion = getRandomQuestionForTopic(topicSlug)
+    const newQuestion = getRandomQuestionForTopic(topicSlug, freeUser, userType)
     setQuestion(newQuestion)
     setAnswer(null)
     setSelfAssessmentScore(null)
@@ -125,6 +201,7 @@ export default function QuestionPage() {
     if (!question) return
 
     const newAnswer: Answer = {
+      /* TODO: add following data to supabase table structure */
       id: crypto.randomUUID(),
       question_id: question.id,
       student_id: currentUser.id,
@@ -132,7 +209,7 @@ export default function QuestionPage() {
       ai_feedback: isCorrect ? "Well done! You selected the correct answer." : "Try to understand why this answer is incorrect.",
       score: isCorrect ? "green" : "red",
       submitted_at: new Date().toISOString(),
-      self_assessed: true,
+      self_assessed: false,
     }
 
     saveAnswer(newAnswer)
@@ -151,7 +228,7 @@ export default function QuestionPage() {
       ai_feedback: isCorrect ? "Well done! You selected the correct answers." : "Try to understand why these answers are incorrect.",
       score: isCorrect ? "green" : "red",
       submitted_at: new Date().toISOString(),
-      self_assessed: true,
+      self_assessed: false,
     }
 
     saveAnswer(newAnswer)
@@ -162,7 +239,7 @@ export default function QuestionPage() {
   const handleMatchingAnswer = (selections: Record<string, string[]>) => {
     if (!question) return
 
-    const isCorrect = question.pairs?.every(pair => 
+    const isCorrect = question.pairs?.every(pair =>
       selections[pair.statement]?.includes(pair.match)
     ) || false
 
@@ -174,7 +251,7 @@ export default function QuestionPage() {
       ai_feedback: isCorrect ? "Well done! You matched all items correctly." : "Some matches are incorrect. Try again!",
       score: isCorrect ? "green" : "red",
       submitted_at: new Date().toISOString(),
-      self_assessed: true,
+      self_assessed: false,
     }
 
     saveAnswer(newAnswer)
@@ -195,7 +272,7 @@ export default function QuestionPage() {
       ai_feedback: isCorrect ? "Correct! Well done!" : "Incorrect. Try to understand why this is wrong.",
       score: isCorrect ? "green" : "red",
       submitted_at: new Date().toISOString(),
-      self_assessed: true,
+      self_assessed: false,
     }
 
     saveAnswer(newAnswer)
@@ -205,10 +282,11 @@ export default function QuestionPage() {
 
   // Mock feedback generator - this would be replaced by actual AI API call
   const generateMockFeedback = (response: string, question: Question) => {
+    /* TODO: create AI feedback connnection */
     // Very basic mock logic - in reality this would be an AI model
     const responseLength = response.length
-    const modelAnswer = Array.isArray(question.model_answer) 
-      ? question.model_answer.join(" ") 
+    const modelAnswer = Array.isArray(question.model_answer)
+      ? question.model_answer.join(" ")
       : question.model_answer
     const hasKeywords = modelAnswer
       .toLowerCase()
@@ -281,39 +359,26 @@ export default function QuestionPage() {
           <Link href="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Topics
           </Link>
-          <h1 className="text-3xl font-bold mt-4 mb-2">{topic.name}</h1>
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <h1 className="text-3xl font-bold mt-4 mb-2">{topic.name}</h1>
+            <UserLogin email={user?.email} />
+          </div>
+
+
           <p className="text-muted-foreground">{topic.description}</p>
         </div>
 
-        {!hasPaid && (
-          <Card className="mb-6 bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="shrink-0 bg-emerald-100 p-2 rounded-full">
-                  <Lock className="h-5 w-5 text-emerald-600" />
-                </div>
-                <div>
-                  <h3 className="font-medium text-emerald-800">Free Version</h3>
-                  <p className="text-sm text-emerald-700">
-                    You&apos;re using the free version. Upgrade to get AI-powered feedback and personalized recommendations.
-                  </p>
-                </div>
-                <div className="ml-auto">
-                  <Link href="/coming-soon">
-                    <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700">
-                      Upgrade
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        <div className="mb-6 md:mb-8">
+          {freeUser && <CTABanner variant="free" />}
+          {!freeUser && userType === "basic" && <CTABanner variant="basic" />}
+          {!freeUser && userType === "revisionAI" && <CTABanner variant="premium" />}
+        </div>
+
 
         <Card className="mb-8">
           <CardHeader>
             <CardTitle>Question</CardTitle>
-            
+
           </CardHeader>
           <CardContent>
             <div className="mb-6">
@@ -366,52 +431,122 @@ export default function QuestionPage() {
                 <div className="p-4 bg-muted rounded-md">
                   <h3 className="font-medium mb-2">Your Answer:</h3>
                   {question.type === "matching" ? (
-                    <div className="overflow-x-auto">
-                      <table className="w-full border-collapse">
-                        <thead>
-                          <tr>
-                            <th className="border p-2 text-left">Statement</th>
-                            <th className="border p-2 text-left">Your Match</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {question.pairs?.map((pair, index) => (
-                            <tr key={index}>
-                              <td className="border p-2">{pair.statement}</td>
-                              <td className="border p-2">
-                                {JSON.parse(answer.response_text)[pair.statement]?.join(", ") || "No match selected"}
-                              </td>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="overflow-x-auto">
+                        <h3 className="font-medium mb-2">Your Answer:</h3>
+                        <table className="w-full border-collapse">
+                          <thead>
+                            <tr>
+                              <th className="border p-2 text-left">Statement</th>
+                              <th className="border p-2 text-left">Your Match</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody>
+                            {question.pairs?.map((pair, index) => {
+                              const userMatches = (() => {
+                                if (!answer?.response_text) return [];
+                                try {
+                                  const parsed = JSON.parse(answer.response_text) as Record<string, string[]>;
+                                  return parsed[pair.statement] || [];
+                                } catch {
+                                  return [];
+                                }
+                              })();
+                              const isCorrect = userMatches.includes(pair.match);
+                              return (
+                                <tr key={index} className={isCorrect ? "bg-green-50" : "bg-red-50"}>
+                                  <td className="border p-2">{pair.statement}</td>
+                                  <td className="border p-2">
+                                    <div className="flex items-center gap-2">
+                                      {userMatches.join(", ") || "No match selected"}
+                                      {isCorrect ? (
+                                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                      ) : (
+                                        <XCircle className="h-4 w-4 text-red-600" />
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <h3 className="font-medium mb-2 text-emerald-700">Correct Answer:</h3>
+                        <table className="w-full border-collapse">
+                          <thead>
+                            <tr>
+                              <th className="border p-2 text-left">Statement</th>
+                              <th className="border p-2 text-left">Correct Match</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {question.pairs?.map((pair, index) => (
+                              <tr key={index} className="bg-emerald-50">
+                                <td className="border p-2">{pair.statement}</td>
+                                <td className="border p-2">{pair.match}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   ) : question.type === "true-false" ? (
-                    <div className="overflow-x-auto">
-                      <table className="w-full border-collapse">
-                        <thead>
-                          <tr>
-                            <th className="border p-2 text-left">Question</th>
-                            <th className="border p-2 text-center">Your Answer</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td className="border p-2">{question.question_text}</td>
-                            <td className="border p-2 text-center">
-                              {answer.response_text === "true" ? "True" : "False"}
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="overflow-x-auto">
+                        <h3 className="font-medium mb-2">Your Answer:</h3>
+                        <table className="w-full border-collapse">
+                          <thead>
+                            <tr>
+                              <th className="border p-2 text-left">Question</th>
+                              <th className="border p-2 text-center">Your Answer</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr className={answer?.response_text === question.model_answer ? "bg-green-50" : "bg-red-50"}>
+                              <td className="border p-2">{question.question_text}</td>
+                              <td className="border p-2 text-center">
+                                <div className="flex items-center justify-center gap-2">
+                                  {answer?.response_text ? (answer.response_text === "true" ? "True" : "False") : "No answer"}
+                                  {answer?.response_text === question.model_answer ? (
+                                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                  ) : (
+                                    <XCircle className="h-4 w-4 text-red-600" />
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <h3 className="font-medium mb-2 text-emerald-700">Correct Answer:</h3>
+                        <table className="w-full border-collapse">
+                          <thead>
+                            <tr>
+                              <th className="border p-2 text-left">Question</th>
+                              <th className="border p-2 text-center">Correct Answer</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr className="bg-emerald-50">
+                              <td className="border p-2">{question.question_text}</td>
+                              <td className="border p-2 text-center">
+                                {question.model_answer === "true" ? "True" : "False"}
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   ) : (
-                    <pre className="whitespace-pre-wrap font-sans text-sm">{answer.response_text}</pre>
+                    <pre className="whitespace-pre-wrap font-sans text-sm">{answer?.response_text}</pre>
                   )}
                 </div>
 
                 {/* For free version, show model answer first, then self-assessment */}
-                {!hasPaid && (
+                {userType !== "revisionAI" && (
                   <>
                     <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-md">
                       <h3 className="font-medium mb-2 text-emerald-700">Model Answer:</h3>
@@ -485,9 +620,9 @@ export default function QuestionPage() {
                       </div>
                     </div>
                     {question.explanation && (
-                    <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-md">
-                      <p className="whitespace-pre-wrap text-sm text-emerald-700">{question.explanation}</p>  
-                    </div>
+                      <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-md">
+                        <p className="whitespace-pre-wrap text-sm text-emerald-700">{question.explanation}</p>
+                      </div>
                     )}
                     {!selfAssessmentScore ? (
                       <SelfAssessment onSelectScore={handleSelfAssessment} />
@@ -498,7 +633,7 @@ export default function QuestionPage() {
                 )}
 
                 {/* For paid version, show AI feedback, then model answer */}
-                {hasPaid && (
+                {userType === "revisionAI" && (
                   <>
                     <FeedbackDisplay answer={answer} />
 
@@ -573,9 +708,16 @@ export default function QuestionPage() {
                         )}
                       </div>
                     </div>
-                    <div>
-                      <p className="whitespace-pre-wrap text-sm text-emerald-700">{question.explanation}</p>  
-                    </div>
+                    {question.explanation && (
+                      <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-md">
+                        <p className="whitespace-pre-wrap text-sm text-emerald-700">{question.explanation}</p>
+                      </div>
+                    )}
+                    {!selfAssessmentScore ? (
+                      <SelfAssessment onSelectScore={handleSelfAssessment} />
+                    ) : (
+                      <FeedbackDisplay answer={answer} />
+                    )}
                   </>
                 )}
 
@@ -583,7 +725,7 @@ export default function QuestionPage() {
                   <Button
                     onClick={handleTryAnother}
                     className="bg-emerald-600 hover:bg-emerald-700"
-                    disabled={!hasPaid && !selfAssessmentScore}
+                    disabled={!selfAssessmentScore}
                   >
                     <RefreshCw className="mr-2 h-4 w-4" /> Try Another Question
                   </Button>

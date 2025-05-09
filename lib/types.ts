@@ -47,5 +47,5 @@ export interface Student {
   id: string
   email: string
   created_at: string
-  has_paid: boolean
+  user_type: "revision" | "revisionAI" | null
 }

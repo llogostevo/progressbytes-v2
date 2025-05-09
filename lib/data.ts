@@ -13,6 +13,12 @@ import {
   Terminal,
 } from "lucide-react"
 
+  /* TODO: setup supabase call to get data */
+
+    /* TODO: add following data to supabase table structure */
+
+    /* TODO: add following answers to supabase table structure */
+
 // Mock data store - this would be replaced by Supabase
 const savedAnswers: Answer[] = []
 
@@ -21,14 +27,14 @@ export const currentUser: Student = {
   id: "user-1",
   email: "student@example.com",
   created_at: "2023-01-01T00:00:00Z",
-  has_paid: false, // Set to false by default for the free version
+  user_type: null, // Set to null by default for the free version
 }
 
-// Toggle this function to simulate switching between free and paid versions
-export function togglePaidStatus() {
-  currentUser.has_paid = !currentUser.has_paid
-  return currentUser.has_paid
-}
+// // Toggle this function to simulate switching between free and paid versions
+// export function togglePaidStatus() {
+//   currentUser.user_type = currentUser.user_type === "revision" ? "revisionAI" : "revision"
+//   return currentUser.user_type
+// }
 
 // Mock topics data
 export const topics: Topic[] = [
@@ -4052,13 +4058,23 @@ export function getTopicBySlug(slug: string): Topic | undefined {
   return topics.find((topic) => topic.slug === slug)
 }
 
-export function getRandomQuestionForTopic(topicSlug: string): Question {
+export function getRandomQuestionForTopic(topicSlug: string, freeUser: boolean, userType: "revision" | "revisionAI"| "basic" | null): Question {
   const topic = getTopicBySlug(topicSlug)
   if (!topic || topic.questions.length === 0) {
     throw new Error(`No questions found for topic: ${topicSlug}`)
   }
 
-  const randomIndex = Math.floor(Math.random() * topic.questions.length)
+  // Determine the number of questions based on access level
+  let length: number
+  if (userType === "revision" || userType === "revisionAI") {
+    length = topic.questions.length
+  } else if (userType === "basic") {
+    length = 10
+  } else {
+    length = 5
+  }
+
+  const randomIndex = Math.floor(Math.random() * length)
   return topic.questions[randomIndex]
 }
 

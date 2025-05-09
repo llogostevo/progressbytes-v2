@@ -7,10 +7,24 @@ import React from "react"
 
 interface TopicCardProps {
   topic: Topic
+  userType?: string
 }
 
-export function TopicCard({ topic }: TopicCardProps) {
+export function TopicCard({ topic, userType }: TopicCardProps) {
   const isDisabled = topic.disabled
+
+  // Determine the number of questions based on access level
+  let numberOfQuestions: number
+  if (userType === "revision" || userType === "revisionAI") {
+    numberOfQuestions = topic.questions.length
+  } else if (userType === "basic") {
+    numberOfQuestions = 10
+  } else {
+    numberOfQuestions = 5
+  }
+
+  // Calculate the actual number of available questions
+  const availableQuestions = Math.min(numberOfQuestions, topic.questionCount)
 
   return (
     <Card className={`h-full flex flex-col transition-all ${!isDisabled ? "hover:shadow-md" : "opacity-80"}`}>
@@ -27,7 +41,7 @@ export function TopicCard({ topic }: TopicCardProps) {
         <CardDescription>{topic.description}</CardDescription>
       </CardHeader>
       <CardContent className="flex-grow">
-        <p className="text-sm text-muted-foreground">{topic.questionCount} questions available</p>
+        <p className="text-sm text-muted-foreground">{availableQuestions} of {topic.questionCount} questions available</p>
       </CardContent>
       <CardFooter>
         {isDisabled ? (

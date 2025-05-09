@@ -9,9 +9,12 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getAllAnswers, topics, getQuestionById } from "@/lib/data"
 import type { Answer, Question, ScoreType } from "@/lib/types"
-import { CheckCircle, AlertTriangle, AlertCircle, ArrowRight } from "lucide-react"
+import { CheckCircle, AlertTriangle, AlertCircle, ArrowRight, BookOpen } from "lucide-react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
+import { User } from "@supabase/supabase-js"
+import { createClient } from "@/utils/supabase/client"
+import { UserLogin } from "@/components/user-login"
 
 export default function RevisitPage() {
   const router = useRouter()
@@ -22,6 +25,30 @@ export default function RevisitPage() {
   const [answers, setAnswers] = useState<Answer[]>([])
   const [questions, setQuestions] = useState<Record<string, Question>>({})
   const [activeTab, setActiveTab] = useState<ScoreType | "all">(tabParam || "all")
+  const [user, setUser] = useState<User | null>(null)
+
+
+  useEffect(() => {
+
+    // TODO: move this to a hook
+    const getUser = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setUser(user)
+        await supabase.from('user_activity').insert({
+          user_id: user.id,
+          event: 'visited_revisit',
+          path: '/revisit',
+          user_email: user.email
+        })
+      } else {
+        setUser(null)
+      }
+    }
+    getUser()
+  }, [])
+
 
   useEffect(() => {
     // Get all saved answers
@@ -30,11 +57,11 @@ export default function RevisitPage() {
     // Filter by topic if specified
     const filteredByTopic = topicParam
       ? savedAnswers.filter((answer) => {
-          const question = topics.flatMap((t) => t.questions).find((q) => q.id === answer.question_id)
-          return (
-            question && topics.find((t) => t.slug === topicParam)?.questions.some((q) => q.id === answer.question_id)
-          )
-        })
+        const question = topics.flatMap((t) => t.questions).find((q) => q.id === answer.question_id)
+        return (
+          question && topics.find((t) => t.slug === topicParam)?.questions.some((q) => q.id === answer.question_id)
+        )
+      })
       : savedAnswers
 
     setAnswers(filteredByTopic)
@@ -110,7 +137,12 @@ export default function RevisitPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Revisit Questions</h1>
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <h1 className="text-3xl font-bold mb-2">Revisit Questions</h1>
+            <UserLogin email={user?.email} />
+          </div>
+
+
           <p className="text-muted-foreground">
             {topicParam
               ? `Review ${activeTab !== "all" ? activeTab + " " : ""}questions from ${topics.find((t) => t.slug === topicParam)?.name || "this topic"}`
@@ -126,7 +158,7 @@ export default function RevisitPage() {
             </TabsTrigger>
             <TabsTrigger value="amber" className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" /> Amber
-            </TabsTrigger> 
+            </TabsTrigger>
             <TabsTrigger value="red" className="flex items-center gap-2">
               <AlertCircle className="h-4 w-4" /> Red
             </TabsTrigger>
@@ -173,13 +205,12 @@ export default function RevisitPage() {
                                 <CardTitle className="text-base">
                                   <pre className="whitespace-pre-wrap font-sans">{question.question_text}</pre>
                                 </CardTitle>
-                                <Badge className={`flex items-center gap-1 ${
-                                  answer.score === "green" 
-                                    ? "bg-emerald-500 hover:bg-emerald-500 text-white" 
-                                    : answer.score === "amber" 
-                                      ? "bg-amber-500 hover:bg-amber-500 text-white" 
-                                      : "bg-red-500 hover:bg-red-500 text-white"
-                                }`}>
+                                <Badge className={`flex items-center gap-1 ${answer.score === "green"
+                                  ? "bg-emerald-500 hover:bg-emerald-500 text-white"
+                                  : answer.score === "amber"
+                                    ? "bg-amber-500 hover:bg-amber-500 text-white"
+                                    : "bg-red-500 hover:bg-red-500 text-white"
+                                  }`}>
                                   {answer.score === "green" ? (
                                     <CheckCircle className="h-4 w-4" />
                                   ) : answer.score === "amber" ? (
@@ -195,33 +226,225 @@ export default function RevisitPage() {
                               <div className="space-y-4">
                                 <div>
                                   <h3 className="text-sm font-medium mb-1">Your Answer:</h3>
-                                  <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">{answer.response_text}</pre>
-                                </div>
-
-                                <div>
-                                  <h3 className="text-sm font-medium mb-1 text-emerald-700">Model Answer:</h3>
-                                  <div className="space-y-4">
-                                    <div>
-                                      {question.type === "code" && (
-                                        <h4 className="text-sm font-medium mb-1">Pseudocode:</h4>
-                                      )}
-                                      <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">{question.model_answer}</pre>
-                                    </div>
-                                    {question.model_answer_python && (
-                                      <div>
-                                        <h4 className="text-sm font-medium mb-1">Python:</h4>
-                                        <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">{question.model_answer_python}</pre>
+                                  {question.type === "matching" ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      <div className="overflow-x-auto">
+                                        <h3 className="font-medium mb-2">Your Answer:</h3>
+                                        <table className="w-full border-collapse">
+                                          <thead>
+                                            <tr>
+                                              <th className="border p-2 text-left">Statement</th>
+                                              <th className="border p-2 text-left">Your Match</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            {question.pairs?.map((pair, index) => {
+                                              const userMatches = (() => {
+                                                try {
+                                                  const parsed = JSON.parse(answer.response_text) as Record<string, string[]>;
+                                                  return parsed[pair.statement] || [];
+                                                } catch {
+                                                  return [];
+                                                }
+                                              })();
+                                              const isCorrect = userMatches.includes(pair.match);
+                                              return (
+                                                <tr key={index} className={isCorrect ? "bg-green-50" : "bg-red-50"}>
+                                                  <td className="border p-2">{pair.statement}</td>
+                                                  <td className="border p-2">
+                                                    <div className="flex items-center gap-2">
+                                                      {userMatches.join(", ") || "No match selected"}
+                                                      {isCorrect ? (
+                                                        <CheckCircle className="h-4 w-4 text-green-600" />
+                                                      ) : (
+                                                        <AlertCircle className="h-4 w-4 text-red-600" />
+                                                      )}
+                                                    </div>
+                                                  </td>
+                                                </tr>
+                                              );
+                                            })}
+                                          </tbody>
+                                        </table>
                                       </div>
-                                    )}
-                                  </div>
+                                      <div className="overflow-x-auto">
+                                        <h3 className="font-medium mb-2 text-emerald-700">Correct Answer:</h3>
+                                        <table className="w-full border-collapse">
+                                          <thead>
+                                            <tr>
+                                              <th className="border p-2 text-left">Statement</th>
+                                              <th className="border p-2 text-left">Correct Match</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            {question.pairs?.map((pair, index) => (
+                                              <tr key={index} className="bg-emerald-50">
+                                                <td className="border p-2">{pair.statement}</td>
+                                                <td className="border p-2">{pair.match}</td>
+                                              </tr>
+                                            ))}
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                    </div>
+                                  ) : question.type === "true-false" ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      <div className="overflow-x-auto">
+                                        <h3 className="font-medium mb-2">Your Answer:</h3>
+                                        <table className="w-full border-collapse">
+                                          <thead>
+                                            <tr>
+                                              <th className="border p-2 text-left">Question</th>
+                                              <th className="border p-2 text-center">Your Answer</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            <tr className={answer.response_text === question.model_answer ? "bg-green-50" : "bg-red-50"}>
+                                              <td className="border p-2">{question.question_text}</td>
+                                              <td className="border p-2 text-center">
+                                                <div className="flex items-center justify-center gap-2">
+                                                  {answer.response_text === "true" ? "True" : "False"}
+                                                  {answer.response_text === question.model_answer ? (
+                                                    <CheckCircle className="h-4 w-4 text-green-600" />
+                                                  ) : (
+                                                    <AlertCircle className="h-4 w-4 text-red-600" />
+                                                  )}
+                                                </div>
+                                              </td>
+                                            </tr>
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                      <div className="overflow-x-auto">
+                                        <h3 className="font-medium mb-2 text-emerald-700">Correct Answer:</h3>
+                                        <table className="w-full border-collapse">
+                                          <thead>
+                                            <tr>
+                                              <th className="border p-2 text-left">Question</th>
+                                              <th className="border p-2 text-center">Correct Answer</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            <tr className="bg-emerald-50">
+                                              <td className="border p-2">{question.question_text}</td>
+                                              <td className="border p-2 text-center">
+                                                {question.model_answer === "true" ? "True" : "False"}
+                                              </td>
+                                            </tr>
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                    </div>
+                                  ) : question.type === "fill-in-the-blank" ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      <div className="overflow-x-auto">
+                                        <h3 className="font-medium mb-2">Your Answer:</h3>
+                                        <table className="w-full border-collapse">
+                                          <thead>
+                                            <tr>
+                                              <th className="border p-2 text-left">Your Answer</th>
+                                              <th className="border p-2 text-center">Status</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            <tr className={answer.response_text === "Correct" ? "bg-green-50" : "bg-red-50"}>
+                                              <td className="border p-2">{answer.response_text}</td>
+                                              <td className="border p-2 text-center">
+                                                {answer.response_text === "Correct" ? (
+                                                  <CheckCircle className="h-4 w-4 text-green-600" />
+                                                ) : (
+                                                  <AlertCircle className="h-4 w-4 text-red-600" />
+                                                )}
+                                              </td>
+                                            </tr>
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                      <div className="overflow-x-auto">
+                                        <h3 className="font-medium mb-2 text-emerald-700">Correct Answer:</h3>
+                                        <table className="w-full border-collapse">
+                                          <thead>
+                                            <tr>
+                                              <th className="border p-2 text-left">Correct Answer</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            <tr className="bg-emerald-50">
+                                              <td className="border p-2">
+                                                {Array.isArray(question.model_answer) ? (
+                                                  question.order_important ? (
+                                                    <ol className="list-decimal pl-4 mb-0">
+                                                      {question.model_answer.map((ans, idx) => (
+                                                        <li key={idx}>{ans}</li>
+                                                      ))}
+                                                    </ol>
+                                                  ) : (
+                                                    <ul className="list-disc pl-4 mb-0">
+                                                      {question.model_answer.map((ans, idx) => (
+                                                        <li key={idx}>{ans}</li>
+                                                      ))}
+                                                    </ul>
+                                                  )
+                                                ) : (
+                                                  question.model_answer
+                                                )}
+                                              </td>
+                                            </tr>
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">{answer.response_text}</pre>
+                                  )}
                                 </div>
 
-                                <Button
-                                  onClick={() => router.push(`/questions/${topicSlug}`)}
-                                  className="w-full bg-emerald-600 hover:bg-emerald-700"
-                                >
-                                  Practice This Topic Again <ArrowRight className="ml-2 h-4 w-4" />
-                                </Button>
+                                {/* Remove the separate model answer section since it's now integrated into the tables */}
+                                {question.type !== "matching" && question.type !== "true-false" && question.type !== "fill-in-the-blank" && (
+                                  <div>
+                                    <h3 className="text-sm font-medium mb-1 text-emerald-700">Model Answer:</h3>
+                                    <div className="space-y-4">
+                                      <div>
+                                        {question.type === "code" && (
+                                          <h4 className="text-sm font-medium mb-1">Pseudocode:</h4>
+                                        )}
+                                        <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">{question.model_answer}</pre>
+                                      </div>
+                                      {question.model_answer_python && (
+                                        <div>
+                                          <h4 className="text-sm font-medium mb-1">Python:</h4>
+                                          <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">{question.model_answer_python}</pre>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {question.explanation && (
+                                  <div className="mt-4 p-4 bg-emerald-50 border border-emerald-100 rounded-md">
+                                    <h3 className="text-sm font-medium mb-2 text-emerald-700">Explanation:</h3>
+                                    <p className="whitespace-pre-wrap text-sm text-emerald-700">{question.explanation}</p>
+                                  </div>
+                                )}
+
+                                <div className="flex flex-col sm:flex-row gap-2">
+                                  <Button
+                                    onClick={() => router.push(`/questions/${topicSlug}?questionId=${answer.question_id}`)}
+                                    variant="outline"
+                                    className="flex-1 hover:bg-emerald-600 hover:text-white"
+                                  >
+                                    <BookOpen className="mr-2 h-4 w-4" />
+                                    Practice This Question Again <ArrowRight className="ml-2 h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    onClick={() => router.push(`/questions/${topicSlug}`)}
+                                    variant="outline"
+                                    className="flex-1 hover:bg-emerald-600 hover:text-white"
+                                  >
+                                    {topic.icon && React.createElement(topic.icon, { size: 16, className: "mr-2" })}
+                                    Practice {topic.name} Again <ArrowRight className="ml-2 h-4 w-4" />
+                                  </Button>
+                                </div>
                               </div>
                             </CardContent>
                           </Card>
