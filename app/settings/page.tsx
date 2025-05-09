@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { currentUser } from "@/lib/data"
-import { ArrowLeft, Sparkles, Activity, Users, Eye, Navigation, Home, FileText, BarChart, RefreshCw, CheckCircle } from "lucide-react"
+import { ArrowLeft, Sparkles, Activity, Users, Eye, Navigation, Home, FileText, BarChart, RefreshCw, CheckCircle, Clock, Calendar } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/utils/supabase/client"
 import { redirect } from "next/navigation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { UserSessions } from "@/components/user-sessions"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 interface UserActivity {
   id: string
@@ -20,6 +21,15 @@ interface UserActivity {
   path: string
   created_at: string
   user_email?: string
+}
+
+interface UserSession {
+  login_time: string
+  last_activity: string
+  duration_minutes: number
+  questions_submitted: number
+  pages_visited: string[]
+  events: UserActivity[]
 }
 
 export default function SettingsPage() {
@@ -31,8 +41,91 @@ export default function SettingsPage() {
   // const [navigationPaths, setNavigationPaths] = useState<string[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
+  const [selectedUser, setSelectedUser] = useState<string | null>(null)
+  const [userSessions, setUserSessions] = useState<UserSession[]>([])
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [currentSessionIndex, setCurrentSessionIndex] = useState(0)
   
   const supabase = createClient()
+
+  const formatDuration = (minutes: number) => {
+    if (minutes < 60) {
+      return `${minutes} minutes`
+    }
+    const hours = Math.floor(minutes / 60)
+    const remainingMinutes = minutes % 60
+    return `${hours}h ${remainingMinutes}m`
+  }
+
+  const handleUserClick = (email: string) => {
+    setSelectedUser(email)
+    setCurrentSessionIndex(0) // Reset to first session
+    
+    // Group activities by session for the selected user
+    const userActivities = userActivity.filter(a => a.user_email === email)
+    const sessions = new Map<string, UserSession>()
+    
+    userActivities.forEach(activity => {
+      const date = new Date(activity.created_at).toDateString()
+      if (!sessions.has(date)) {
+        sessions.set(date, {
+          login_time: activity.created_at,
+          last_activity: activity.created_at,
+          duration_minutes: 0,
+          questions_submitted: 0,
+          pages_visited: [],
+          events: []
+        })
+      }
+      
+      const session = sessions.get(date)!
+      session.events.push(activity)
+      
+      // Update last activity time
+      if (new Date(activity.created_at) > new Date(session.last_activity)) {
+        session.last_activity = activity.created_at
+      }
+      
+      // Update login time if this is earlier
+      if (new Date(activity.created_at) < new Date(session.login_time)) {
+        session.login_time = activity.created_at
+      }
+      
+      // Count questions submitted
+      if (activity.event === 'submitted_question') {
+        session.questions_submitted++
+      }
+      
+      // Track unique pages visited
+      if (!session.pages_visited.includes(activity.path)) {
+        session.pages_visited.push(activity.path)
+      }
+    })
+    
+    // Calculate duration for each session
+    const sessionsArray = Array.from(sessions.values()).map(session => ({
+      ...session,
+      duration_minutes: Math.round(
+        (new Date(session.last_activity).getTime() - new Date(session.login_time).getTime()) / (1000 * 60)
+      )
+    }))
+    
+    // Sort by most recent
+    sessionsArray.sort((a, b) => 
+      new Date(b.login_time).getTime() - new Date(a.login_time).getTime()
+    )
+    
+    setUserSessions(sessionsArray)
+    setIsDialogOpen(true)
+  }
+
+  const handlePreviousSession = () => {
+    setCurrentSessionIndex(prev => Math.max(0, prev - 1))
+  }
+
+  const handleNextSession = () => {
+    setCurrentSessionIndex(prev => Math.min(userSessions.length - 1, prev + 1))
+  }
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -286,7 +379,12 @@ export default function SettingsPage() {
                                 {activity.event === 'submitted_question' && <CheckCircle className="h-4 w-4 text-muted-foreground" />}
                                 <span className="capitalize">{activity.event.replace(/_/g, ' ')}</span>
                               </div>
-                              <div className="truncate">{activity.user_email}</div>
+                              <div 
+                                className="truncate cursor-pointer hover:text-primary"
+                                onClick={() => handleUserClick(activity.user_email || '')}
+                              >
+                                {activity.user_email}
+                              </div>
                               <div className="truncate">{activity.path}</div>
                               <div>{new Date(activity.created_at).toLocaleString()}</div>
                             </div>
@@ -325,10 +423,108 @@ export default function SettingsPage() {
           </TabsContent>
 
           <TabsContent value="sessions">
-            <UserSessions />
+            <UserSessions onUserClick={handleUserClick} />
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* User Session Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>User Activity: {selectedUser}</DialogTitle>
+            <button
+              onClick={() => setIsDialogOpen(false)}
+              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-4 w-4"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+              <span className="sr-only">Close</span>
+            </button>
+          </DialogHeader>
+          
+          {userSessions.length > 0 && (
+            <div className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5" />
+                    {new Date(userSessions[currentSessionIndex].login_time).toLocaleDateString()}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">Duration: {formatDuration(userSessions[currentSessionIndex].duration_minutes)}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">Questions: {userSessions[currentSessionIndex].questions_submitted}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Navigation className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">Pages visited: {userSessions[currentSessionIndex].pages_visited.length}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Activity className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">Total events: {userSessions[currentSessionIndex].events.length}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="border-t pt-4">
+                    <h4 className="text-sm font-medium mb-2">Pages Visited:</h4>
+                    <div className="space-y-1">
+                      {userSessions[currentSessionIndex].pages_visited.map((path, i) => (
+                        <div key={i} className="text-sm text-muted-foreground">
+                          {path}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="flex items-center justify-between">
+                <Button
+                  variant="outline"
+                  onClick={handlePreviousSession}
+                  disabled={currentSessionIndex === 0}
+                >
+                  Previous Session
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  Session {currentSessionIndex + 1} of {userSessions.length}
+                </span>
+                <Button
+                  variant="outline"
+                  onClick={handleNextSession}
+                  disabled={currentSessionIndex === userSessions.length - 1}
+                >
+                  Next Session
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

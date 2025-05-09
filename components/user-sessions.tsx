@@ -13,7 +13,11 @@ interface UserSession {
   questions_submitted: number
 }
 
-export function UserSessions() {
+interface UserSessionsProps {
+  onUserClick: (email: string) => void
+}
+
+export function UserSessions({ onUserClick }: UserSessionsProps) {
   const [sessions, setSessions] = useState<UserSession[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [totalActiveTime, setTotalActiveTime] = useState(0)
@@ -176,7 +180,12 @@ export function UserSessions() {
               {/* Sessions */}
               {sessions.slice(0, 10).map((session) => (
                 <div key={session.id} className="grid grid-cols-4 gap-4 text-sm py-2">
-                  <div className="truncate">{session.user_email}</div>
+                  <div 
+                    className="truncate cursor-pointer hover:text-primary"
+                    onClick={() => onUserClick(session.user_email)}
+                  >
+                    {session.user_email}
+                  </div>
                   <div>{new Date(session.login_time).toLocaleString()}</div>
                   <div>{formatDuration(session.duration_minutes)}</div>
                   <div>{session.questions_submitted}</div>
