@@ -414,6 +414,13 @@ export default function RevisitPage() {
                                   </div>
                                 )}
 
+                                {question.explanation && (
+                                  <div className="mt-4 p-4 bg-emerald-50 border border-emerald-100 rounded-md">
+                                    <h3 className="text-sm font-medium mb-2 text-emerald-700">Explanation:</h3>
+                                    <p className="whitespace-pre-wrap text-sm text-emerald-700">{question.explanation}</p>
+                                  </div>
+                                )}
+
                                 <div className="flex flex-col sm:flex-row gap-2">
                                   <Button
                                     onClick={() => router.push(`/questions/${topicSlug}?questionId=${answer.question_id}`)}
