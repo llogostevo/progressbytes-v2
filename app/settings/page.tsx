@@ -15,6 +15,7 @@ import { UserSessions } from "@/components/user-sessions"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { UserActivityFilter } from "@/components/user-activity-filter"
 
+// TODO: the homework dialgo is the best and should be replciated for hte other dialogs. 
 interface UserActivity {
   id: string
   user_id: string

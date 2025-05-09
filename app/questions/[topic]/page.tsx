@@ -53,9 +53,9 @@ export default function QuestionPage() {
       }
 
       const { data } = await supabase
-        .from('user_types')
+        .from('profiles')
         .select('user_type')
-        .eq('user_id', user.id)
+        .eq('userid', user.id)
         .single()
 
       if (!data) {
@@ -368,12 +368,17 @@ export default function QuestionPage() {
           <p className="text-muted-foreground">{topic.description}</p>
         </div>
 
-        <div className="mb-6 md:mb-8">
+        {/* <div className="mb-6 md:mb-8">
           {freeUser && <CTABanner variant="free" />}
           {!freeUser && userType === "basic" && <CTABanner variant="basic" />}
           {!freeUser && userType === "revisionAI" && <CTABanner variant="premium" />}
+        </div> */}
+        {/* CTA Banner */}
+        <div className="mb-6 md:mb-8">
+          {freeUser && <CTABanner variant="free" />}
+          {userType === 'basic' && <CTABanner variant="basic" />}
+          {userType === 'revision' && <CTABanner variant="premium" />}
         </div>
-
 
         <Card className="mb-8">
           <CardHeader>
