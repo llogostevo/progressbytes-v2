@@ -450,7 +450,7 @@ export default function QuestionPage() {
                 </div>
 
                 {/* For free version, show model answer first, then self-assessment */}
-                {userType == "revision" && (
+                {userType !== "revisionAI" && (
                   <>
                     <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-md">
                       <h3 className="font-medium mb-2 text-emerald-700">Model Answer:</h3>
@@ -612,9 +612,16 @@ export default function QuestionPage() {
                         )}
                       </div>
                     </div>
-                    <div>
-                      <p className="whitespace-pre-wrap text-sm text-emerald-700">{question.explanation}</p>
-                    </div>
+                    {question.explanation && (
+                      <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-md">
+                        <p className="whitespace-pre-wrap text-sm text-emerald-700">{question.explanation}</p>
+                      </div>
+                    )}
+                    {!selfAssessmentScore ? (
+                      <SelfAssessment onSelectScore={handleSelfAssessment} />
+                    ) : (
+                      <FeedbackDisplay answer={answer} />
+                    )}
                   </>
                 )}
 
