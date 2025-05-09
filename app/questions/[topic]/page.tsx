@@ -45,35 +45,23 @@ export default function QuestionPage() {
   //TODO: put this into a hook?? or into data.ts??
   useEffect(() => {
     const checkHasPaid = async () => {
-      setIsLoadingUserType(true)
       const { data: { user } } = await supabase.auth.getUser()
-
       if (!user) {
-        setUserType(null)
+        setFreeUser(true)
         setIsLoadingUserType(false)
         return
       }
 
-      if (user) {
-        setUser(user)
-        await supabase.from('user_activity').insert({
-          user_id: user.id,
-          event: 'visited_question',
-          path: '/questions/' + topicSlug,
-          user_email: user.email
-        })
-      } else {
-        setUser(null)
-      }
-
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("userid", user.id)
+      const { data } = await supabase
+        .from('user_types')
+        .select('user_type')
+        .eq('user_id', user.id)
         .single()
 
-      if (error || !data) {
+      if (!data) {
         setUserType(null)
+        setUser(user)
+        setFreeUser(true)
         setIsLoadingUserType(false)
         return
       }
@@ -84,7 +72,7 @@ export default function QuestionPage() {
       setIsLoadingUserType(false)
     }
     checkHasPaid()
-  }, [])
+  }, [supabase, topicSlug])
 
   useEffect(() => {
     if (isLoadingUserType) return

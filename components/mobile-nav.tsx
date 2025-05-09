@@ -34,12 +34,12 @@ export function MobileNav() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, [supabase, checkSession]);
 
   // Add effect to check session on route changes
   useEffect(() => {
     checkSession();
-  }, [pathname]);
+  }, [pathname, checkSession]);
 
   const handleLogout = async () => {
     const supabase = createClient()

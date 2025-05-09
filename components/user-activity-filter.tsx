@@ -16,13 +16,21 @@ interface UserActivity {
   last_activity: string
 }
 
+interface UserEvent {
+  created_at: string
+  event: string
+  path: string
+  user_id: string
+  user_email: string
+}
+
 interface UserSession {
   login_time: string
   last_activity: string
   duration_minutes: number
   questions_submitted: number
   pages_visited: string[]
-  events: any[]
+  events: UserEvent[]
   submitted_questions: { path: string; count: number }[]
 }
 
@@ -155,6 +163,15 @@ export function UserActivityFilter() {
     setCurrentSessionIndex(prev => Math.min(userSessions.length - 1, prev + 1))
   }
 
+  const applyFilters = (usersToFilter: UserActivity[]) => {
+    return usersToFilter.filter(user => {
+      const durationMatch = user.total_duration >= parseInt(minDuration)
+      const questionsMatch = user.questions_submitted >= parseInt(minQuestions)
+      const emailMatch = user.user_email.includes(emailFilter)
+      return durationMatch && questionsMatch && emailMatch
+    })
+  }
+
   useEffect(() => {
     const fetchUserActivity = async () => {
       const supabase = createClient()
@@ -233,38 +250,17 @@ export function UserActivityFilter() {
         })
 
         setUsers(usersArray)
-        applyFilters(usersArray)
+        const filtered = applyFilters(usersArray)
+        const nonFiltered = usersArray.filter(user => !filtered.includes(user))
+        setFilteredUsers(filtered)
+        setNonFilteredUsers(nonFiltered)
       }
 
       setIsLoading(false)
     }
 
     fetchUserActivity()
-  }, [timeRange])
-
-  const applyFilters = (usersToFilter: UserActivity[]) => {
-    const minDurationNum = parseInt(minDuration)
-    const minQuestionsNum = parseInt(minQuestions)
-
-    // First filter by email domain
-    const emailFiltered = usersToFilter.filter(user => 
-      user.user_email.toLowerCase().includes(emailFilter.toLowerCase())
-    )
-
-    // Then apply other filters
-    const filtered = emailFiltered.filter(user => 
-      user.total_duration >= minDurationNum && 
-      user.questions_submitted >= minQuestionsNum
-    )
-
-    const nonFiltered = emailFiltered.filter(user => 
-      user.total_duration < minDurationNum || 
-      user.questions_submitted < minQuestionsNum
-    )
-
-    setFilteredUsers(filtered)
-    setNonFilteredUsers(nonFiltered)
-  }
+  }, [timeRange, applyFilters])
 
   const handleFilterChange = () => {
     applyFilters(users)
