@@ -25,6 +25,7 @@ export function UserActivityFilter() {
   const [timeRange, setTimeRange] = useState("7") // days
   const [minDuration, setMinDuration] = useState("30") // minutes
   const [minQuestions, setMinQuestions] = useState("5") // questions
+  const [emailFilter, setEmailFilter] = useState("@centralfoundationboys.co.uk")
 
   useEffect(() => {
     const fetchUserActivity = async () => {
@@ -117,12 +118,18 @@ export function UserActivityFilter() {
     const minDurationNum = parseInt(minDuration)
     const minQuestionsNum = parseInt(minQuestions)
 
-    const filtered = usersToFilter.filter(user => 
+    // First filter by email domain
+    const emailFiltered = usersToFilter.filter(user => 
+      user.user_email.toLowerCase().includes(emailFilter.toLowerCase())
+    )
+
+    // Then apply other filters
+    const filtered = emailFiltered.filter(user => 
       user.total_duration >= minDurationNum && 
       user.questions_submitted >= minQuestionsNum
     )
 
-    const nonFiltered = usersToFilter.filter(user => 
+    const nonFiltered = emailFiltered.filter(user => 
       user.total_duration < minDurationNum || 
       user.questions_submitted < minQuestionsNum
     )
@@ -133,6 +140,12 @@ export function UserActivityFilter() {
 
   const handleFilterChange = () => {
     applyFilters(users)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleFilterChange()
+    }
   }
 
   if (isLoading) {
@@ -147,10 +160,24 @@ export function UserActivityFilter() {
           <CardTitle>Filter Criteria</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-4 gap-4">
+            <div className="space-y-2">
+              <Label>Email Domain</Label>
+              <Input
+                type="text"
+                value={emailFilter}
+                onChange={(e) => setEmailFilter(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="@centralfoundationboys.co.uk"
+              />
+            </div>
+            
             <div className="space-y-2">
               <Label>Time Range (days)</Label>
-              <Select value={timeRange} onValueChange={setTimeRange}>
+              <Select value={timeRange} onValueChange={(value) => {
+                setTimeRange(value)
+                handleFilterChange()
+              }}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select time range" />
                 </SelectTrigger>
@@ -168,6 +195,7 @@ export function UserActivityFilter() {
                 type="number"
                 value={minDuration}
                 onChange={(e) => setMinDuration(e.target.value)}
+                onKeyDown={handleKeyDown}
                 min="0"
               />
             </div>
@@ -178,6 +206,7 @@ export function UserActivityFilter() {
                 type="number"
                 value={minQuestions}
                 onChange={(e) => setMinQuestions(e.target.value)}
+                onKeyDown={handleKeyDown}
                 min="0"
               />
             </div>
