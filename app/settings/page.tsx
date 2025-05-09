@@ -28,7 +28,7 @@ export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [uniqueUsers, setUniqueUsers] = useState<number>(0)
   const [pageViews, setPageViews] = useState<Record<string, number>>({})
-  const [navigationPaths, setNavigationPaths] = useState<string[]>([])
+  // const [navigationPaths, setNavigationPaths] = useState<string[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
   
@@ -68,15 +68,15 @@ export default function SettingsPage() {
       setUniqueUsers(uniqueUserIds.size)
 
       // Calculate page views
-      const views = activity?.reduce((acc, curr) => {
-        acc[curr.path] = (acc[curr.path] || 0) + 1
-        return acc
-      }, {} as Record<string, number>) || {}
-      setPageViews(views)
+      // const views = activity?.reduce((acc, curr) => {
+      //   acc[curr.path] = (acc[curr.path] || 0) + 1
+      //   return acc
+      // }, {} as Record<string, number>) || {}
+      // setPageViews(views)
 
       // Calculate navigation paths
-      const paths = activity?.map(a => a.path) || []
-      setNavigationPaths(paths)
+      // const paths = activity?.map(a => a.path) || []
+      // setNavigationPaths(paths)
 
       setIsLoading(false)
     }
