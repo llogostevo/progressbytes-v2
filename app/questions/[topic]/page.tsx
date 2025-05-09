@@ -150,6 +150,16 @@ export default function QuestionPage() {
 
       saveAnswer(newAnswer)
       setAnswer(newAnswer)
+
+      // Track question submission
+      if (user) {
+        await supabase.from('user_activity').insert({
+          user_id: user.id,
+          event: 'submitted_question',
+          path: `/questions/${topicSlug}`,
+          user_email: user.email
+        })
+      }
     } else {
       // Free version - just save the response, self-assessment comes later
       setAnswer({
@@ -163,6 +173,16 @@ export default function QuestionPage() {
         submitted_at: new Date().toISOString(),
         self_assessed: false,
       })
+
+      // Track question submission
+      if (user) {
+        await supabase.from('user_activity').insert({
+          user_id: user.id,
+          event: 'submitted_question',
+          path: `/questions/${topicSlug}`,
+          user_email: user.email
+        })
+      }
     }
 
     setIsSubmitting(false)

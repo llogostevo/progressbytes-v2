@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { currentUser } from "@/lib/data"
-import { ArrowLeft, Sparkles, Activity, Users, Eye, Navigation } from "lucide-react"
+import { ArrowLeft, Sparkles, Activity, Users, Eye, Navigation, Home, FileText, BarChart, RefreshCw, CheckCircle } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/utils/supabase/client"
 import { redirect } from "next/navigation"
@@ -29,6 +29,8 @@ export default function SettingsPage() {
   const [uniqueUsers, setUniqueUsers] = useState<number>(0)
   const [pageViews, setPageViews] = useState<Record<string, number>>({})
   const [navigationPaths, setNavigationPaths] = useState<string[]>([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
   
   const supabase = createClient()
 
@@ -264,21 +266,56 @@ export default function SettingsPage() {
                     <div className="border-t pt-6">
                       <h3 className="font-medium mb-4">Recent Activity</h3>
                       <div className="space-y-2">
-                        {userActivity.slice(0, 10).map((activity, index) => (
-                          <div key={index} className="flex items-center justify-between text-sm">
-                            <div className="flex items-center gap-8">
-                              <div className="flex items-center gap-2 w-24">
-                                <Activity className="h-4 w-4 text-muted-foreground" />
-                                <span className="capitalize">{activity.event.replace('visited_', '')}</span>
+                        {/* Header */}
+                        <div className="grid grid-cols-4 gap-4 text-sm font-medium text-muted-foreground pb-2 border-b">
+                          <div>Event</div>
+                          <div>User</div>
+                          <div>Path</div>
+                          <div>Time</div>
+                        </div>
+                        {/* Activity Items */}
+                        {userActivity
+                          .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                          .map((activity) => (
+                            <div key={activity.id} className="grid grid-cols-4 gap-4 text-sm py-2">
+                              <div className="flex items-center gap-2">
+                                {activity.event === 'visited_home' && <Home className="h-4 w-4 text-muted-foreground" />}
+                                {activity.event === 'visited_question' && <FileText className="h-4 w-4 text-muted-foreground" />}
+                                {activity.event === 'visited_progress' && <BarChart className="h-4 w-4 text-muted-foreground" />}
+                                {activity.event === 'visited_revisit' && <RefreshCw className="h-4 w-4 text-muted-foreground" />}
+                                {activity.event === 'submitted_question' && <CheckCircle className="h-4 w-4 text-muted-foreground" />}
+                                <span className="capitalize">{activity.event.replace(/_/g, ' ')}</span>
                               </div>
-                              <span className="text-muted-foreground w-32">{activity.path}</span>
-                              <span className="text-muted-foreground w-48">{activity.user_email}</span>
+                              <div className="truncate">{activity.user_email}</div>
+                              <div className="truncate">{activity.path}</div>
+                              <div>{new Date(activity.created_at).toLocaleString()}</div>
                             </div>
-                            <span className="text-muted-foreground w-32 text-right">
-                              {new Date(activity.created_at).toLocaleString()}
-                            </span>
-                          </div>
-                        ))}
+                          ))}
+                      </div>
+                      
+                      {/* Pagination */}
+                      <div className="flex items-center justify-between mt-4">
+                        <div className="text-sm text-muted-foreground">
+                          Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, userActivity.length)} of {userActivity.length} activities
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                            disabled={currentPage === 1}
+                          >
+                            Previous
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(prev => Math.min(Math.ceil(userActivity.length / itemsPerPage), prev + 1))}
+                            disabled={currentPage >= Math.ceil(userActivity.length / itemsPerPage)}
+                          >
+                            Next
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { createClient } from "@/utils/supabase/client"
-import { Clock, Users } from "lucide-react"
+import { Clock, Users, FileText } from "lucide-react"
 
 interface UserSession {
   id: string
@@ -10,6 +10,7 @@ interface UserSession {
   login_time: string
   last_activity: string
   duration_minutes: number
+  questions_submitted: number
 }
 
 export function UserSessions() {
@@ -17,6 +18,7 @@ export function UserSessions() {
   const [isLoading, setIsLoading] = useState(true)
   const [totalActiveTime, setTotalActiveTime] = useState(0)
   const [uniqueUsers, setUniqueUsers] = useState(0)
+  const [totalQuestions, setTotalQuestions] = useState(0)
 
   useEffect(() => {
     const fetchSessions = async () => {
@@ -42,7 +44,8 @@ export function UserSessions() {
               user_email: record.user_email || 'Unknown',
               login_time: record.created_at,
               last_activity: record.created_at,
-              duration_minutes: 0
+              duration_minutes: 0,
+              questions_submitted: record.event === 'submitted_question' ? 1 : 0
             })
           } else {
             const session = userSessions.get(key)!
@@ -53,6 +56,10 @@ export function UserSessions() {
             // Update login time if this is earlier
             if (new Date(record.created_at) < new Date(session.login_time)) {
               session.login_time = record.created_at
+            }
+            // Increment questions submitted if this is a question submission
+            if (record.event === 'submitted_question') {
+              session.questions_submitted++
             }
           }
         })
@@ -78,6 +85,10 @@ export function UserSessions() {
         // Calculate total active time
         const totalTime = sessionsArray.reduce((sum, session) => sum + session.duration_minutes, 0)
         setTotalActiveTime(totalTime)
+        
+        // Calculate total questions submitted
+        const totalQuestionsSubmitted = sessionsArray.reduce((sum, session) => sum + session.questions_submitted, 0)
+        setTotalQuestions(totalQuestionsSubmitted)
         
         // Calculate unique users
         const uniqueUserIds = new Set(sessionsArray.map(s => s.user_id))
@@ -115,7 +126,7 @@ export function UserSessions() {
       <CardContent>
         <div className="space-y-8">
           {/* Overview Stats */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <Card>
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
@@ -138,6 +149,17 @@ export function UserSessions() {
                 </div>
               </CardContent>
             </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-2xl font-bold">{totalQuestions}</div>
+                    <p className="text-sm text-muted-foreground">Questions Submitted</p>
+                  </div>
+                  <FileText className="h-8 w-8 text-muted-foreground" />
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Sessions List */}
@@ -145,17 +167,19 @@ export function UserSessions() {
             <h3 className="font-medium mb-4">Recent Sessions</h3>
             <div className="space-y-2">
               {/* Header */}
-              <div className="grid grid-cols-3 gap-4 text-sm font-medium text-muted-foreground pb-2 border-b">
+              <div className="grid grid-cols-4 gap-4 text-sm font-medium text-muted-foreground pb-2 border-b">
                 <div>User</div>
                 <div>Login Time</div>
                 <div>Duration</div>
+                <div>Questions</div>
               </div>
               {/* Sessions */}
               {sessions.slice(0, 10).map((session) => (
-                <div key={session.id} className="grid grid-cols-3 gap-4 text-sm py-2">
+                <div key={session.id} className="grid grid-cols-4 gap-4 text-sm py-2">
                   <div className="truncate">{session.user_email}</div>
                   <div>{new Date(session.login_time).toLocaleString()}</div>
                   <div>{formatDuration(session.duration_minutes)}</div>
+                  <div>{session.questions_submitted}</div>
                 </div>
               ))}
             </div>
