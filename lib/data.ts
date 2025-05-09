@@ -45,7 +45,7 @@ export const topics: Topic[] = [
     name: "Systems Architecture",
     description: "Learn about CPU architecture, fetch-execute cycle, and performance factors",
     icon: Cpu,
-    questionCount: 45,
+    questionCount: 43,
     questions: [
       {
         id: "sa1",
@@ -196,6 +196,14 @@ export const topics: Topic[] = [
         question_text: "Explain why a washing machine includes an embedded system.",
         model_answer: "The embedded system controls the washing cycle, water level, and temperature. It's dedicated to this task and is not a general-purpose computer.",
         created_at: "2025-05-05T00:00:00Z"
+      },
+      {
+        id: "s14",
+        topic: "systems-architecture",
+        question_text: "List the four main steps in the fetch-execute cycle.",
+        model_answer: "1. Fetch the instruction from memory\n2. Decode the fetched instruction\n3. Execute the decoded instruction so the process runs continuously\n4. Repeat for the next instruction",
+        created_at: "2025-05-08T00:00:00Z",
+        type: "short-answer"
       },
       {
         id: "sa15",
@@ -447,14 +455,6 @@ export const topics: Topic[] = [
         topic: "systems-architecture",
         question_text: "Why is the program counter important in the fetch-decode-execute cycle?",
         model_answer: "It keeps track of the memory address of the next instruction to be fetched.",
-        created_at: "2025-05-08T00:00:00Z",
-        type: "short-answer"
-      },
-      {
-        id: "s45",
-        topic: "systems-architecture",
-        question_text: "List the four main steps in the fetch-execute cycle.",
-        model_answer: "1. Fetch the instruction from memory\n2. Decode the fetched instruction\n3. Execute the decoded instruction so the process runs continuously\n4. Repeat for the next instruction",
         created_at: "2025-05-08T00:00:00Z",
         type: "short-answer"
       }
