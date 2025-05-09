@@ -16,8 +16,8 @@ export function CTABanner({ variant }: CTABannerProps) {
           </div>
           <div className="flex-1">
             <h3 className="font-medium text-red-800">Free Version</h3>
-            <p className="text-sm text-red-700">
-              You&apos;re using the free version with limited questions. Sign up to get more questions.
+            <p className="text-sm text-red-700 mt-2">
+              <strong>Sign up with your school email</strong> to get more questions.
             </p>
           </div>
           <div className="mt-3 sm:mt-0">
