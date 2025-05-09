@@ -13,6 +13,7 @@ import { redirect } from "next/navigation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { UserSessions } from "@/components/user-sessions"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { UserActivityFilter } from "@/components/user-activity-filter"
 
 interface UserActivity {
   id: string
@@ -204,6 +205,7 @@ export default function SettingsPage() {
             <TabsTrigger value="account">Account</TabsTrigger>
             <TabsTrigger value="activity">Activity</TabsTrigger>
             <TabsTrigger value="sessions">Sessions</TabsTrigger>
+            <TabsTrigger value="homework">Homework</TabsTrigger>
           </TabsList>
 
           <TabsContent value="account">
@@ -424,6 +426,10 @@ export default function SettingsPage() {
 
           <TabsContent value="sessions">
             <UserSessions onUserClick={handleUserClick} />
+          </TabsContent>
+
+          <TabsContent value="homework">
+            <UserActivityFilter />
           </TabsContent>
         </Tabs>
       </div>
