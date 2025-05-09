@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getAllAnswers, topics, getQuestionById } from "@/lib/data"
 import type { Answer, Question, ScoreType } from "@/lib/types"
-import { CheckCircle, AlertTriangle, AlertCircle, ArrowRight } from "lucide-react"
+import { CheckCircle, AlertTriangle, AlertCircle, ArrowRight, BookOpen } from "lucide-react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { User } from "@supabase/supabase-js"
@@ -241,12 +241,24 @@ export default function RevisitPage() {
                                   </div>
                                 </div>
 
-                                <Button
-                                  onClick={() => router.push(`/questions/${topicSlug}`)}
-                                  className="w-full bg-emerald-600 hover:bg-emerald-700"
-                                >
-                                  Practice This Topic Again <ArrowRight className="ml-2 h-4 w-4" />
-                                </Button>
+                                <div className="flex flex-col sm:flex-row gap-2">
+                                  <Button
+                                    onClick={() => router.push(`/questions/${topicSlug}?questionId=${answer.question_id}`)}
+                                    variant="outline"
+                                    className="flex-1 hover:bg-emerald-600 hover:text-white"
+                                  >
+                                    <BookOpen className="mr-2 h-4 w-4" />
+                                    Practice This Question Again <ArrowRight className="ml-2 h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    onClick={() => router.push(`/questions/${topicSlug}`)}
+                                    variant="outline"
+                                    className="flex-1 hover:bg-emerald-600 hover:text-white"
+                                  >
+                                    {topic.icon && React.createElement(topic.icon, { size: 16, className: "mr-2" })}
+                                    Practice {topic.name} Again <ArrowRight className="ml-2 h-4 w-4" />
+                                  </Button>
+                                </div>
                               </div>
                             </CardContent>
                           </Card>

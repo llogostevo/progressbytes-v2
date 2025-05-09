@@ -6,7 +6,7 @@ import { FeedbackDisplay } from "@/components/feedback-display"
 import { SelfAssessment } from "@/components/self-assessment"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { getRandomQuestionForTopic, getTopicBySlug, saveAnswer, currentUser } from "@/lib/data"
+import { getRandomQuestionForTopic, getTopicBySlug, saveAnswer, currentUser, getQuestionById } from "@/lib/data"
 import type { Question, Answer, ScoreType, Topic } from "@/lib/types"
 import { ArrowLeft, RefreshCw } from "lucide-react"
 import Link from "next/link"
@@ -83,7 +83,16 @@ export default function QuestionPage() {
       setTopic(currentTopic || null)
 
       if (currentTopic) {
-        const newQuestion = getRandomQuestionForTopic(topicSlug, freeUser, userType)
+        const searchParams = new URLSearchParams(window.location.search)
+        const questionId = searchParams.get("questionId")
+        
+        let newQuestion: Question
+        if (questionId) {
+          newQuestion = getQuestionById(questionId) || getRandomQuestionForTopic(topicSlug, freeUser, userType)
+        } else {
+          newQuestion = getRandomQuestionForTopic(topicSlug, freeUser, userType)
+        }
+
         console.log("Loaded question:", {
           id: newQuestion.id,
           type: newQuestion.type,
