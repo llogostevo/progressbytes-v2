@@ -5,6 +5,7 @@ import { Settings } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/utils/supabase/server"
 import { CTABanner } from "@/components/cta-banner"
+import { UserLogin } from "@/components/user-login"
 
 export default async function Home() {
   const supabase = await createClient()
@@ -27,6 +28,8 @@ export default async function Home() {
       <div className="max-w-4xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
           <h1 className="text-2xl md:text-4xl font-bold tracking-tight">GCSE Computer Science Quiz</h1>
+          <UserLogin email={user?.email} />
+
           {userType === 'basic' || userType === 'revision' || userType === 'revision-plus' && (
             <Link href="/settings">
               <Button variant="outline" size="sm">

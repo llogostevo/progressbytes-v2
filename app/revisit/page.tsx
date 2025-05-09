@@ -12,6 +12,9 @@ import type { Answer, Question, ScoreType } from "@/lib/types"
 import { CheckCircle, AlertTriangle, AlertCircle, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
+import { User } from "@supabase/supabase-js"
+import { createClient } from "@/utils/supabase/client"
+import { UserLogin } from "@/components/user-login"
 
 export default function RevisitPage() {
   const router = useRouter()
@@ -22,6 +25,24 @@ export default function RevisitPage() {
   const [answers, setAnswers] = useState<Answer[]>([])
   const [questions, setQuestions] = useState<Record<string, Question>>({})
   const [activeTab, setActiveTab] = useState<ScoreType | "all">(tabParam || "all")
+  const [user, setUser] = useState<User | null>(null)
+  
+
+  useEffect(() => {
+
+    // TODO: move this to a hook
+    const getUser = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setUser(user)
+      } else {
+        setUser(null)
+      }
+    }
+    getUser()
+  }, [])
+
 
   useEffect(() => {
     // Get all saved answers
@@ -30,11 +51,11 @@ export default function RevisitPage() {
     // Filter by topic if specified
     const filteredByTopic = topicParam
       ? savedAnswers.filter((answer) => {
-          const question = topics.flatMap((t) => t.questions).find((q) => q.id === answer.question_id)
-          return (
-            question && topics.find((t) => t.slug === topicParam)?.questions.some((q) => q.id === answer.question_id)
-          )
-        })
+        const question = topics.flatMap((t) => t.questions).find((q) => q.id === answer.question_id)
+        return (
+          question && topics.find((t) => t.slug === topicParam)?.questions.some((q) => q.id === answer.question_id)
+        )
+      })
       : savedAnswers
 
     setAnswers(filteredByTopic)
@@ -110,7 +131,12 @@ export default function RevisitPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Revisit Questions</h1>
+          <div className="flex justify-between items-center">
+            <h1 className="text-3xl font-bold mb-2">Revisit Questions</h1>
+            <UserLogin email={user?.email} />
+          </div>
+
+
           <p className="text-muted-foreground">
             {topicParam
               ? `Review ${activeTab !== "all" ? activeTab + " " : ""}questions from ${topics.find((t) => t.slug === topicParam)?.name || "this topic"}`
@@ -126,7 +152,7 @@ export default function RevisitPage() {
             </TabsTrigger>
             <TabsTrigger value="amber" className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" /> Amber
-            </TabsTrigger> 
+            </TabsTrigger>
             <TabsTrigger value="red" className="flex items-center gap-2">
               <AlertCircle className="h-4 w-4" /> Red
             </TabsTrigger>
@@ -173,13 +199,12 @@ export default function RevisitPage() {
                                 <CardTitle className="text-base">
                                   <pre className="whitespace-pre-wrap font-sans">{question.question_text}</pre>
                                 </CardTitle>
-                                <Badge className={`flex items-center gap-1 ${
-                                  answer.score === "green" 
-                                    ? "bg-emerald-500 hover:bg-emerald-500 text-white" 
-                                    : answer.score === "amber" 
-                                      ? "bg-amber-500 hover:bg-amber-500 text-white" 
+                                <Badge className={`flex items-center gap-1 ${answer.score === "green"
+                                    ? "bg-emerald-500 hover:bg-emerald-500 text-white"
+                                    : answer.score === "amber"
+                                      ? "bg-amber-500 hover:bg-amber-500 text-white"
                                       : "bg-red-500 hover:bg-red-500 text-white"
-                                }`}>
+                                  }`}>
                                   {answer.score === "green" ? (
                                     <CheckCircle className="h-4 w-4" />
                                   ) : answer.score === "amber" ? (

@@ -19,6 +19,8 @@ import { TrueFalseQuestion } from "@/components/true-false-question"
 import { EssayQuestion } from "@/components/essay-question"
 import { createClient } from "@/utils/supabase/client"
 import { CTABanner } from "@/components/cta-banner"
+import { UserLogin } from "@/components/user-login"
+import { User } from "@supabase/supabase-js"
 
 export default function QuestionPage() {
   const params = useParams()
@@ -33,6 +35,7 @@ export default function QuestionPage() {
   const [userType, setUserType] = useState<"revision" | "revisionAI" | "basic" | null>(null)
   const [isLoadingUserType, setIsLoadingUserType] = useState(true)
   const [freeUser, setFreeUser] = useState(true)
+  const [user, setUser] = useState<User | null>(null)
   // const [hasPaid, setHasPaid] = useState(false)
 
   // const freeUser = currentUser.email === "student@example.com"
@@ -64,6 +67,7 @@ export default function QuestionPage() {
       }
 
       setUserType(data.user_type)
+      setUser(user)
       setFreeUser(false)
       setIsLoadingUserType(false)
     }
@@ -329,7 +333,12 @@ export default function QuestionPage() {
           <Link href="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Topics
           </Link>
-          <h1 className="text-3xl font-bold mt-4 mb-2">{topic.name}</h1>
+          <div className="flex justify-between items-center">
+            <h1 className="text-3xl font-bold mt-4 mb-2">{topic.name}</h1>
+            <UserLogin email={user?.email} />
+          </div>
+
+
           <p className="text-muted-foreground">{topic.description}</p>
         </div>
 

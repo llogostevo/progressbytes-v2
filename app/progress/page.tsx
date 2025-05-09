@@ -12,14 +12,33 @@ import { CheckCircle, AlertTriangle, AlertCircle, ArrowRight } from "lucide-reac
 // import { CheckCircle, AlertTriangle, AlertCircle, Sparkles, ArrowRight } from "lucide-react"
 
 import Link from "next/link"
+import { UserLogin } from "@/components/user-login"
+import { createClient } from "@/utils/supabase/client"
+import { User } from "@supabase/supabase-js"
 
 export default function ProgressPage() {
   const [answers, setAnswers] = useState<Answer[]>([])
+  const [user, setUser] = useState<User | null>(null)
 
   useEffect(() => {
     // Get all saved answers
     const savedAnswers = getAllAnswers()
     setAnswers(savedAnswers)
+  }, [])
+
+  useEffect(() => {
+
+    // TODO: move this to a hook
+    const getUser = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setUser(user)
+      } else {
+        setUser(null)
+      }
+    }
+    getUser()
   }, [])
 
   // Calculate statistics
@@ -66,7 +85,11 @@ export default function ProgressPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Your Progress</h1>
+          <div className="flex justify-between items-center">
+            <h1 className="text-3xl font-bold mb-2">Your Progress</h1>
+            <UserLogin email={user?.email} />
+          </div>
+
           <p className="text-muted-foreground">Track your performance across all topics</p>
         </div>
 
@@ -299,13 +322,12 @@ export default function ProgressPage() {
                                 <h3 className="text-sm font-medium mb-2">Self-Assessment:</h3>
                                 <div className="text-sm text-muted-foreground mb-3">
                                   You marked this as{" "}
-                                  <Badge className={`inline-flex items-center gap-1 px-2 py-0.5 ${
-                                    answer.score === "green" 
-                                      ? "bg-emerald-500 hover:bg-emerald-500 text-white" 
-                                      : answer.score === "amber" 
-                                        ? "bg-amber-500 hover:bg-amber-500 text-white" 
-                                        : "bg-red-500 hover:bg-red-500 text-white"
-                                  }`}>
+                                  <Badge className={`inline-flex items-center gap-1 px-2 py-0.5 ${answer.score === "green"
+                                    ? "bg-emerald-500 hover:bg-emerald-500 text-white"
+                                    : answer.score === "amber"
+                                      ? "bg-amber-500 hover:bg-amber-500 text-white"
+                                      : "bg-red-500 hover:bg-red-500 text-white"
+                                    }`}>
                                     {answer.score === "green" ? (
                                       <CheckCircle className="h-3 w-3" />
                                     ) : answer.score === "amber" ? (
@@ -314,10 +336,10 @@ export default function ProgressPage() {
                                       <AlertCircle className="h-3 w-3" />
                                     )}
                                     <span className="text-xs">
-                                      {answer.score === "green" 
-                                        ? "Fully Understood" 
-                                        : answer.score === "amber" 
-                                          ? "Partially Understood" 
+                                      {answer.score === "green"
+                                        ? "Fully Understood"
+                                        : answer.score === "amber"
+                                          ? "Partially Understood"
                                           : "Need More Practice"}
                                     </span>
                                   </Badge>
