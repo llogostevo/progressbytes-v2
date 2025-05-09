@@ -333,7 +333,7 @@ export default function QuestionPage() {
           <Link href="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Topics
           </Link>
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col md:flex-row justify-between items-center">
             <h1 className="text-3xl font-bold mt-4 mb-2">{topic.name}</h1>
             <UserLogin email={user?.email} />
           </div>

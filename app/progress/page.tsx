@@ -85,7 +85,7 @@ export default function ProgressPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col md:flex-row justify-between items-center">
             <h1 className="text-3xl font-bold mb-2">Your Progress</h1>
             <UserLogin email={user?.email} />
           </div>
