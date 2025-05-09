@@ -33,6 +33,12 @@ export function FeedbackDisplay({ answer }: FeedbackDisplayProps) {
   const config = scoreConfig[score]
   const Icon = config.icon
 
+  const getFeedbackTitle = () => {
+    if (self_assessed) return "Self-Assessment"
+    if (ai_feedback && (ai_feedback.startsWith("Well done! You") || ai_feedback.startsWith("Correct!"))) return "Feedback"
+    return "AI Feedback"
+  }
+
   return (
     <div className={`p-4 rounded-md border ${config.color}`}>
       <div className="flex items-start gap-3">
@@ -41,7 +47,7 @@ export function FeedbackDisplay({ answer }: FeedbackDisplayProps) {
         </div>
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-medium">{self_assessed ? "Self-Assessment" : "AI Feedback"}</h3>
+            <h3 className="font-medium">{getFeedbackTitle()}</h3>
             <Badge className={config.badgeColor}>{config.title}</Badge>
           </div>
           {ai_feedback && <p>{ai_feedback}</p>}

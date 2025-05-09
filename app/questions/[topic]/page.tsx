@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { getRandomQuestionForTopic, getTopicBySlug, saveAnswer, currentUser, getQuestionById } from "@/lib/data"
 import type { Question, Answer, ScoreType, Topic } from "@/lib/types"
-import { ArrowLeft, RefreshCw } from "lucide-react"
+import { ArrowLeft, RefreshCw, CheckCircle2, XCircle } from "lucide-react"
 import Link from "next/link"
 import { MultipleChoiceQuestion } from "@/components/multiple-choice-question"
 import { FillInTheBlankQuestion } from "@/components/fill-in-the-blank-question"
@@ -149,7 +149,7 @@ export default function QuestionPage() {
         ai_feedback: null,
         score: "amber", // Placeholder, will be updated after self-assessment
         submitted_at: new Date().toISOString(),
-        self_assessed: true,
+        self_assessed: false,
       })
     }
 
@@ -189,7 +189,7 @@ export default function QuestionPage() {
       ai_feedback: isCorrect ? "Well done! You selected the correct answer." : "Try to understand why this answer is incorrect.",
       score: isCorrect ? "green" : "red",
       submitted_at: new Date().toISOString(),
-      self_assessed: true,
+      self_assessed: false,
     }
 
     saveAnswer(newAnswer)
@@ -198,7 +198,6 @@ export default function QuestionPage() {
   }
 
   const handleFillInTheBlankAnswer = (isCorrect: boolean) => {
-    /* TODO: add following data to supabase table structure */
     if (!question) return
 
     const newAnswer: Answer = {
@@ -209,7 +208,7 @@ export default function QuestionPage() {
       ai_feedback: isCorrect ? "Well done! You selected the correct answers." : "Try to understand why these answers are incorrect.",
       score: isCorrect ? "green" : "red",
       submitted_at: new Date().toISOString(),
-      self_assessed: true,
+      self_assessed: false,
     }
 
     saveAnswer(newAnswer)
@@ -218,7 +217,6 @@ export default function QuestionPage() {
   }
 
   const handleMatchingAnswer = (selections: Record<string, string[]>) => {
-    /* TODO: add following data to supabase table structure */
     if (!question) return
 
     const isCorrect = question.pairs?.every(pair =>
@@ -233,7 +231,7 @@ export default function QuestionPage() {
       ai_feedback: isCorrect ? "Well done! You matched all items correctly." : "Some matches are incorrect. Try again!",
       score: isCorrect ? "green" : "red",
       submitted_at: new Date().toISOString(),
-      self_assessed: true,
+      self_assessed: false,
     }
 
     saveAnswer(newAnswer)
@@ -242,7 +240,6 @@ export default function QuestionPage() {
   }
 
   const handleTrueFalseAnswer = (answer: boolean) => {
-    /* TODO: add following data to supabase table structure */
     if (!question) return
 
     const isCorrect = answer === (question.model_answer === "true")
@@ -255,7 +252,7 @@ export default function QuestionPage() {
       ai_feedback: isCorrect ? "Correct! Well done!" : "Incorrect. Try to understand why this is wrong.",
       score: isCorrect ? "green" : "red",
       submitted_at: new Date().toISOString(),
-      self_assessed: true,
+      self_assessed: false,
     }
 
     saveAnswer(newAnswer)
@@ -414,47 +411,117 @@ export default function QuestionPage() {
                 <div className="p-4 bg-muted rounded-md">
                   <h3 className="font-medium mb-2">Your Answer:</h3>
                   {question.type === "matching" ? (
-                    <div className="overflow-x-auto">
-                      <table className="w-full border-collapse">
-                        <thead>
-                          <tr>
-                            <th className="border p-2 text-left">Statement</th>
-                            <th className="border p-2 text-left">Your Match</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {question.pairs?.map((pair, index) => (
-                            <tr key={index}>
-                              <td className="border p-2">{pair.statement}</td>
-                              <td className="border p-2">
-                                {JSON.parse(answer.response_text)[pair.statement]?.join(", ") || "No match selected"}
-                              </td>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="overflow-x-auto">
+                        <h3 className="font-medium mb-2">Your Answer:</h3>
+                        <table className="w-full border-collapse">
+                          <thead>
+                            <tr>
+                              <th className="border p-2 text-left">Statement</th>
+                              <th className="border p-2 text-left">Your Match</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody>
+                            {question.pairs?.map((pair, index) => {
+                              const userMatches = (() => {
+                                if (!answer?.response_text) return [];
+                                try {
+                                  const parsed = JSON.parse(answer.response_text) as Record<string, string[]>;
+                                  return parsed[pair.statement] || [];
+                                } catch {
+                                  return [];
+                                }
+                              })();
+                              const isCorrect = userMatches.includes(pair.match);
+                              return (
+                                <tr key={index} className={isCorrect ? "bg-green-50" : "bg-red-50"}>
+                                  <td className="border p-2">{pair.statement}</td>
+                                  <td className="border p-2">
+                                    <div className="flex items-center gap-2">
+                                      {userMatches.join(", ") || "No match selected"}
+                                      {isCorrect ? (
+                                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                      ) : (
+                                        <XCircle className="h-4 w-4 text-red-600" />
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <h3 className="font-medium mb-2 text-emerald-700">Correct Answer:</h3>
+                        <table className="w-full border-collapse">
+                          <thead>
+                            <tr>
+                              <th className="border p-2 text-left">Statement</th>
+                              <th className="border p-2 text-left">Correct Match</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {question.pairs?.map((pair, index) => (
+                              <tr key={index} className="bg-emerald-50">
+                                <td className="border p-2">{pair.statement}</td>
+                                <td className="border p-2">{pair.match}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   ) : question.type === "true-false" ? (
-                    <div className="overflow-x-auto">
-                      <table className="w-full border-collapse">
-                        <thead>
-                          <tr>
-                            <th className="border p-2 text-left">Question</th>
-                            <th className="border p-2 text-center">Your Answer</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td className="border p-2">{question.question_text}</td>
-                            <td className="border p-2 text-center">
-                              {answer.response_text === "true" ? "True" : "False"}
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="overflow-x-auto">
+                        <h3 className="font-medium mb-2">Your Answer:</h3>
+                        <table className="w-full border-collapse">
+                          <thead>
+                            <tr>
+                              <th className="border p-2 text-left">Question</th>
+                              <th className="border p-2 text-center">Your Answer</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr className={answer?.response_text === question.model_answer ? "bg-green-50" : "bg-red-50"}>
+                              <td className="border p-2">{question.question_text}</td>
+                              <td className="border p-2 text-center">
+                                <div className="flex items-center justify-center gap-2">
+                                  {answer?.response_text ? (answer.response_text === "true" ? "True" : "False") : "No answer"}
+                                  {answer?.response_text === question.model_answer ? (
+                                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                  ) : (
+                                    <XCircle className="h-4 w-4 text-red-600" />
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <h3 className="font-medium mb-2 text-emerald-700">Correct Answer:</h3>
+                        <table className="w-full border-collapse">
+                          <thead>
+                            <tr>
+                              <th className="border p-2 text-left">Question</th>
+                              <th className="border p-2 text-center">Correct Answer</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr className="bg-emerald-50">
+                              <td className="border p-2">{question.question_text}</td>
+                              <td className="border p-2 text-center">
+                                {question.model_answer === "true" ? "True" : "False"}
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   ) : (
-                    <pre className="whitespace-pre-wrap font-sans text-sm">{answer.response_text}</pre>
+                    <pre className="whitespace-pre-wrap font-sans text-sm">{answer?.response_text}</pre>
                   )}
                 </div>
 
