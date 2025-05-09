@@ -68,11 +68,11 @@ export default function SettingsPage() {
       setUniqueUsers(uniqueUserIds.size)
 
       // Calculate page views
-      // const views = activity?.reduce((acc, curr) => {
-      //   acc[curr.path] = (acc[curr.path] || 0) + 1
-      //   return acc
-      // }, {} as Record<string, number>) || {}
-      // setPageViews(views)
+      const views = activity?.reduce((acc, curr) => {
+        acc[curr.path] = (acc[curr.path] || 0) + 1
+        return acc
+      }, {} as Record<string, number>) || {}
+      setPageViews(views)
 
       // Calculate navigation paths
       // const paths = activity?.map(a => a.path) || []
