@@ -78,7 +78,7 @@ export default function TermsOfServiceMain() {
       title: "7. Disclaimer",
       content: (
         <div className="space-y-2">
-          <p>ProgressBytes is provided 'as is'. We make no warranties, expressed or implied, and hereby disclaim all warranties including:</p>
+          <p>ProgressBytes is provided &apos;as is&apos;. We make no warranties, expressed or implied, and hereby disclaim all warranties including:</p>
           <p>• The accuracy of the materials</p>
           <p>• The reliability of the service</p>
           <p>• The availability of the service</p>
@@ -151,7 +151,7 @@ export default function TermsOfServiceMain() {
               <Scale className="h-8 w-8 text-white" />
               <h1 className="text-3xl font-bold text-white">Terms of Service</h1>
             </div>
-            <p className="text-slate-300">Last updated: {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+            <p className="text-slate-300">Last updated: {new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}</p>
           </CardHeader>
 
           <CardContent className="p-8 space-y-8">
