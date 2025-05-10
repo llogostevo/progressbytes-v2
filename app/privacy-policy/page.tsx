@@ -1,4 +1,4 @@
-import PrivacyPolicyMain from "@/components/PrivacyPolicyMain"
+import PrivacyPolicyMain from "@/components/legal-components/PrivacyPolicyMain"
 
 export default function PrivacyPolicyPage() {
   return <PrivacyPolicyMain />
