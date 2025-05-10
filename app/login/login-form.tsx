@@ -53,7 +53,7 @@ function LoginFormContent() {
           <form className="space-y-4">
             {/* Email Input Field */}
             <div className="space-y-2">
-              <Label htmlFor="login-email" className="text-emerald-800">Email</Label>
+              <Label htmlFor="login-email" className="text-emerald-800">Email*</Label>
               <Input
                 id="login-email"
                 name="login-email"
@@ -66,7 +66,7 @@ function LoginFormContent() {
             {/* Password Input Field with Forgot Password Link */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="login-password" className="text-emerald-800">Password</Label>
+                <Label htmlFor="login-password" className="text-emerald-800">Password*</Label>
                 <Link href="/reset-password" className="text-xs text-emerald-600 hover:text-emerald-800 hover:underline">
                   Forgot password?
                 </Link>
@@ -96,11 +96,12 @@ function LoginFormContent() {
           <form className="space-y-4">
             {/* Email Input Field */}
             <div className="space-y-2">
-              <Label htmlFor="register-email" className="text-emerald-800">Email</Label>
+              <Label htmlFor="register-email" className="text-emerald-800">Email*</Label>
+              <p className="text-xs text-muted-foreground m-1 italic">Use your school email</p>
               <Input
                 id="register-email"
                 name="register-email"
-                placeholder="m@example.com"
+                placeholder="myemail@example.com"
                 type="email"
                 required
               />
@@ -108,7 +109,7 @@ function LoginFormContent() {
 
             {/* School Input Field */}
             <div className="space-y-2">
-              <Label htmlFor="register-school" className="text-emerald-800">School</Label>
+              <Label htmlFor="register-school" className="text-emerald-800">School*</Label>
               <Input
                 id="register-school"
                 name="register-school"
@@ -119,7 +120,7 @@ function LoginFormContent() {
 
             {/* Password Input Field */}
             <div className="space-y-2">
-              <Label htmlFor="register-password" className="text-emerald-800">Password</Label>
+              <Label htmlFor="register-password" className="text-emerald-800">Password*</Label>
               <Input
                 id="register-password"
                 name="register-password"
@@ -130,7 +131,7 @@ function LoginFormContent() {
 
             {/* Confirm Password Input Field */}
             <div className="space-y-2">
-              <Label htmlFor="register-confirm-password" className="text-emerald-800">Confirm Password</Label>
+              <Label htmlFor="register-confirm-password" className="text-emerald-800">Confirm Password*</Label>
               <Input
                 id="register-confirm-password"
                 name="register-confirm-password"
