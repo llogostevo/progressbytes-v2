@@ -162,7 +162,7 @@ function LoginFormContent() {
       {/* Terms and Privacy Policy Links */}
       <p className="text-center text-xs text-muted-foreground">
         By signing up, you agree to our{" "}
-        <Link href="#" className="text-emerald-600 hover:text-emerald-800 hover:underline">
+        <Link href="/terms-of-service" className="text-emerald-600 hover:text-emerald-800 hover:underline">
           Terms of Service
         </Link>{" "}
         and{" "}
