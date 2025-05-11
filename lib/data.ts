@@ -4070,10 +4070,10 @@ export function getRandomQuestionForTopic(topicSlug: string, freeUser: boolean, 
     length = topic.questions.length
   } else if (userType === "basic") {
     // length = 10
-    length = topic.questions.length
+    length = topic.questions.length // full access
   } else {
-    // length = 5
-    length = topic.questions.length
+    // length = 5 // basic access
+    length = topic.questions.length // full access
   }
 
   const randomIndex = Math.floor(Math.random() * length)
