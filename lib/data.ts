@@ -4069,7 +4069,7 @@ export function getRandomQuestionForTopic(topicSlug: string, freeUser: boolean, 
   if (userType === "revision" || userType === "revisionAI") {
     length = topic.questions.length
   } else if (userType === "basic") {
-    // length = 10
+    // length = 10 // basic access
     length = topic.questions.length // full access
   } else {
     // length = 5 // basic access
