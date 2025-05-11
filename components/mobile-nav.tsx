@@ -2,22 +2,38 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Home, BarChart2, BookOpen, Menu, X, User, LogOut } from "lucide-react"
+import { Home, BarChart2, BookOpen, Menu, X, User, LogOut, Settings } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/utils/supabase/client"
+
+type NavItem = {
+  name: string;
+  href?: string;
+  onClick?: () => void;
+  icon: React.ElementType;
+}
 
 export function MobileNav() {
   const pathname = usePathname()
   const router = useRouter()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [freeUser, setFreeUser] = useState(false)
+  const [userType, setUserType] = useState<"basic" | "revision" | "revisionAI" | "admin" | null>(null)
   const supabase = createClient()
 
   const checkSession = async () => {
     const { data: { session } } = await supabase.auth.getSession();
+
     setFreeUser(!session);
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (user) {
+      const { data: profiles } = await supabase.from("profiles").select("user_type").eq("userid", user.id).single();
+      setUserType(profiles?.user_type);
+    }
   }
 
   /* TODO: check whether this is a secure approach */
@@ -48,7 +64,7 @@ export function MobileNav() {
     router.push("/")
   }
 
-  const navItems = [
+  const navItems: (NavItem | null)[] = [
     {
       name: "Home",
       href: "/",
@@ -64,6 +80,11 @@ export function MobileNav() {
       href: "/revisit",
       icon: BookOpen,
     },
+    userType === "admin" ? {
+      name: "Settings",
+      href: "/settings",
+      icon: Settings,
+    } : null,
     freeUser === true ? {
       name: "Login",
       href: "/login",
@@ -72,7 +93,7 @@ export function MobileNav() {
       name: "Logout",
       onClick: handleLogout,
       icon: LogOut,
-    },
+    }
   ]
 
   const toggleMenu = () => {
@@ -96,7 +117,7 @@ export function MobileNav() {
 
           {/* Desktop navigation */}
           <nav className="hidden md:flex items-center space-x-4">
-            {navItems.map((item) => (
+            {navItems.filter((item): item is NavItem => item !== null).map((item) => (
               item.onClick ? (
                 <button
                   key={item.name}
@@ -112,7 +133,7 @@ export function MobileNav() {
               ) : (
                 <div key={item.name} className="flex items-center gap-2">
                   <Link
-                    href={item.href}
+                    href={item.href || '#'}
                     className={cn(
                       "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer",
                       pathname === item.href
@@ -123,7 +144,7 @@ export function MobileNav() {
                     <item.icon className="h-4 w-4 mr-2" />
                     {item.name}
                   </Link>
-                  
+
                 </div>
               )
             ))}
@@ -135,12 +156,12 @@ export function MobileNav() {
       {isMenuOpen && (
         <div className="md:hidden">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-b border-gray-200">
-            {navItems.map((item) => (
+            {navItems.filter((item): item is NavItem => item !== null).map((item) => (
               item.onClick ? (
                 <button
                   key={item.name}
                   onClick={() => {
-                    item.onClick()
+                    item.onClick?.()
                     setIsMenuOpen(false)
                   }}
                   className={cn(
@@ -154,7 +175,7 @@ export function MobileNav() {
               ) : (
                 <div key={item.name}>
                   <Link
-                    href={item.href}
+                    href={item.href || '#'}
                     className={cn(
                       "flex items-center px-3 py-3 text-base font-medium rounded-md transition-colors cursor-pointer",
                       pathname === item.href
