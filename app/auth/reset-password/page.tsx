@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
-import { useRouter } from 'next/navigation'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
@@ -12,7 +11,6 @@ export default function ResetPassword() {
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
-//   const router = useRouter()
   const supabase = createClient()
 
   const handleResetPassword = async (e: React.FormEvent) => {
@@ -21,17 +19,18 @@ export default function ResetPassword() {
     setMessage('')
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      const { error: updateError } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/confirm?next=/account/update-password`,
       })
 
-      if (error) {
-        setMessage(error.message)
+      if (updateError) {
+        setMessage(updateError.message)
       } else {
         setMessage('Check your email for the password reset link')
       }
     } catch (error) {
-      setMessage('An error occurred. Please try again.')
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred'
+      setMessage(`An error occurred. Please try again. ${errorMessage}`)
     } finally {
       setLoading(false)
     }
