@@ -18,17 +18,36 @@ export default function ResetPassword() {
     setLoading(true)
     setMessage('')
 
+    if (!email) {
+      setMessage('Please enter your email address')
+      setLoading(false)
+      return
+    }
+
     try {
+      console.log('Attempting to reset password for email:', email)
+      const redirectTo = `${window.location.origin}/auth/confirm?next=/account/update-password`
+      console.log('Redirect URL:', redirectTo)
+      
       const { error: updateError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/confirm?next=/account/update-password`,
+        redirectTo,
       })
 
       if (updateError) {
-        setMessage(updateError.message)
+        console.error('Reset password error:', updateError)
+        if (updateError.message.includes('Email rate limit exceeded')) {
+          setMessage('Too many attempts. Please try again later.')
+        } else if (updateError.message.includes('Invalid email')) {
+          setMessage('Please enter a valid email address')
+        } else {
+          setMessage(`Error: ${updateError.message}`)
+        }
       } else {
+        console.log('Password reset email sent successfully')
         setMessage('Check your email for the password reset link')
       }
     } catch (error) {
+      console.error('Unexpected error during password reset:', error)
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred'
       setMessage(`An error occurred. Please try again. ${errorMessage}`)
     } finally {
