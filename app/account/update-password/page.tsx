@@ -42,7 +42,8 @@ export default function UpdatePassword() {
         }, 2000)
       }
     } catch (error) {
-      setMessage('An error occurred. Please try again.')
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred'
+      setMessage(`An error occurred. Please try again. ${errorMessage}`)
     } finally {
       setLoading(false)
     }
