@@ -4069,9 +4069,11 @@ export function getRandomQuestionForTopic(topicSlug: string, freeUser: boolean, 
   if (userType === "revision" || userType === "revisionAI") {
     length = topic.questions.length
   } else if (userType === "basic") {
-    length = 10
+    // length = 10
+    length = topic.questions.length
   } else {
-    length = 5
+    // length = 5
+    length = topic.questions.length
   }
 
   const randomIndex = Math.floor(Math.random() * length)
