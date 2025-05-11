@@ -67,7 +67,7 @@ function LoginFormContent() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="login-password" className="text-emerald-800">Password*</Label>
-                <Link href="/reset-password" className="text-xs text-emerald-600 hover:text-emerald-800 hover:underline">
+                <Link href="/auth/reset-password" className="text-xs text-emerald-600 hover:text-emerald-800 hover:underline">
                   Forgot password?
                 </Link>
               </div>
