@@ -28,12 +28,12 @@ export default function UpdatePassword() {
     }
 
     try {
-      const { error } = await supabase.auth.updateUser({
+      const { error: updateError } = await supabase.auth.updateUser({
         password: password,
       })
 
-      if (error) {
-        setMessage(error.message)
+      if (updateError) {
+        setMessage(updateError.message)
       } else {
         setMessage('Password updated successfully')
         // Redirect to home page after a short delay
