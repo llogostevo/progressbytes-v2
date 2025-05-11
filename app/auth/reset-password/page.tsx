@@ -12,7 +12,7 @@ export default function ResetPassword() {
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
+//   const router = useRouter()
   const supabase = createClient()
 
   const handleResetPassword = async (e: React.FormEvent) => {
@@ -50,7 +50,7 @@ export default function ResetPassword() {
           <CardHeader className="space-y-2 text-center">
             <CardTitle className="text-3xl font-bold text-emerald-800">Reset Password</CardTitle>
             <CardDescription className="text-muted-foreground">
-              Enter your email address and we'll send you a link to reset your password
+              Enter your email address and we&apos;ll send you a link to reset your password
             </CardDescription>
           </CardHeader>
           <CardContent>
