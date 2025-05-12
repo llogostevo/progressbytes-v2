@@ -18,9 +18,11 @@ export function TopicCard({ topic, userType }: TopicCardProps) {
   if (userType === "revision" || userType === "revisionAI") {
     numberOfQuestions = topic.questions.length
   } else if (userType === "basic") {
-    numberOfQuestions = 10
+    // numberOfQuestions = 10
+    numberOfQuestions = topic.questions.length
   } else {
-    numberOfQuestions = 5
+    // numberOfQuestions = 5
+    numberOfQuestions = topic.questions.length  
   }
 
   // Calculate the actual number of available questions
