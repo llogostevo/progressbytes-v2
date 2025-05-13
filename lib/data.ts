@@ -3319,7 +3319,7 @@ export const topics: Topic[] = [
     name: "Algorithms",
     description: "Learn about algorithms, computational thinking, and problem-solving",
     icon: Code,
-    questionCount: 0,
+    questionCount: 27,
     questions: [
       {
   id: "a1",
@@ -3327,7 +3327,7 @@ export const topics: Topic[] = [
   question_text: "A teacher wants to search through a list of student names to see if a particular student is in the class. Write an algorithm that uses a linear search to do this.",
   model_answer: "function searchStudent(name)\n  for i = 0 to classList.length - 1\n    if classList[i] == name then\n      return True\n    endif\n  next i\n  return False\nendfunction",
   created_at: "2025-05-08T00:00:00Z",
-  type: "short-answer"
+  type: "code"
 },
 {
   id: "a2",
@@ -3335,7 +3335,7 @@ export const topics: Topic[] = [
   question_text: "Write an algorithm to check if a temperature value entered by a user is within the valid range of -10 to 50 degrees. Output VALID or NOT VALID.",
   model_answer: "temp = input(\"Enter temperature\")\nif temp >= -10 and temp <= 50 then\n  print(\"VALID\")\nelse\n  print(\"NOT VALID\")\nendif",
   created_at: "2025-05-08T00:00:00Z",
-  type: "short-answer"
+  type: "code"
 },
 {
   id: "a3",
@@ -3343,7 +3343,7 @@ export const topics: Topic[] = [
   question_text: "Write an algorithm that asks a user to input numbers until the total goes over 100. After each number is entered, output the running total.",
   model_answer: "total = 0\nwhile total <= 100\n  number = input(\"Enter a number\")\n  total = total + number\n  print(total)\nendwhile",
   created_at: "2025-05-08T00:00:00Z",
-  type: "short-answer"
+  type: "code"
 },
 {
   id: "a4",
@@ -3562,15 +3562,10 @@ export const topics: Topic[] = [
   model_answer: "The operator should be '<' not '>'. Fix: 'if num < 5:'",
   created_at: "2025-05-08T00:00:00Z",
   type: "short-answer"
-},
-
-
-
-
-
+}
     ],
     unit: 2,
-    disabled: true,
+    disabled: false,
   },
   {
     id: "8",
