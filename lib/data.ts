@@ -3311,6 +3311,8 @@ export const topics: Topic[] = [
 
 
   // Unit 2
+  //TODO: need trace table questions
+  //TODO: need flow chart questions
   {
     id: "7",
     slug: "algorithms",
