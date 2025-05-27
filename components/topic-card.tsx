@@ -17,11 +17,11 @@ export function TopicCard({ topic, userType }: TopicCardProps) {
   // Determine the number of questions based on access level
   let numberOfQuestions: number
   if (userType === "revision" || userType === "revisionAI") {
-    numberOfQuestions = topic.questions.length
+    numberOfQuestions = topic.questionCount
   } else if (userType === "basic") {
-    numberOfQuestions = topic.questions.length
+    numberOfQuestions = 10
   } else {
-    numberOfQuestions = topic.questions.length
+    numberOfQuestions = 5
   }
 
   // Calculate the actual number of available questions
@@ -29,7 +29,7 @@ export function TopicCard({ topic, userType }: TopicCardProps) {
 
   return (
     <Card
-      className={`h-full flex flex-col transition-all ${!isDisabled ? "hover:shadow-md hover:shadow-emerald-100 border-emerald-100" : "opacity-80"}`}
+      className={`h-full flex flex-col transition-all ${!isDisabled ? "hover:shadow-md hover:shadow-emerald-100" : "opacity-80"}`}
     >
       <CardHeader className="pb-3">
         {/* Topic number badge positioned at top right */}
@@ -45,7 +45,7 @@ export function TopicCard({ topic, userType }: TopicCardProps) {
             </div>
           </div>
           {topic.topicnumber && (
-            <Badge variant="secondary" className="text-xs font-medium shrink-0">
+            <Badge variant="outline" className="text-xs font-medium shrink-0 text-muted-foreground">
               {topic.topicnumber}
             </Badge>
           )}
@@ -62,9 +62,9 @@ export function TopicCard({ topic, userType }: TopicCardProps) {
         </div>
 
         {/* Progress bar showing question availability */}
-        <div className="mt-2 w-full bg-gray-200 rounded-full h-1.5">
+        <div className="mt-2 w-full bg-gray-100 rounded-full h-1.5">
           <div
-            className={`h-1.5 rounded-full ${isDisabled ? "bg-gray-400" : "bg-emerald-500"}`}
+            className={`h-1.5 rounded-full ${isDisabled ? "bg-gray-200" : "bg-emerald-100"}`}
             style={{ width: `${(availableQuestions / topic.questionCount) * 100}%` }}
           ></div>
         </div>
