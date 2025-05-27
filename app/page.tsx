@@ -109,7 +109,7 @@ export default async function Home() {
         units!inner (
           id,
           name,
-          sort_order
+          unit_number
         ),
         subtopics!inner (
           id,
@@ -278,7 +278,8 @@ export default async function Home() {
         icon: topic.icon ? topic.icon : undefined,
         disabled: false, // Default to false since the column doesn't exist
         slug: topic.slug,
-        unit: topic.units.sort_order, // Use the sort_order from the units table
+        unit: topic.units.unit_number,
+        unitName: topic.units.name, // Use the sort_order from the units table
         questionCount: allQuestions.length,
         questions: allQuestions,
         topicnumber: topic.topicnumber // Add the topicnumber field

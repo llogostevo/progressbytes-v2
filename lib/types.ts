@@ -39,6 +39,7 @@ export interface Topic {
   icon?: string
   topicnumber?: number
   summary?: string
+  unitName?: string
   questionCount: number
   questions: Question[]
   unit: number
