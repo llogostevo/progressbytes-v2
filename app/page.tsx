@@ -33,6 +33,7 @@ interface DBQuestion {
   model_answer: string | string[];
   options?: string[];
   correct_answer_index?: number;
+  summary?: string;
   order_important?: boolean;
   model_answer_python?: string;
   explanation?: string;
@@ -103,6 +104,7 @@ export default async function Home() {
         slug,
         icon,
         topicnumber,
+        summary,
         unit_id,
         units!inner (
           id,
@@ -272,6 +274,7 @@ export default async function Home() {
         id: topic.id,
         name: topic.name,
         description: topic.description,
+        summary: topic.summary,
         icon: topic.icon ? topic.icon : undefined,
         disabled: false, // Default to false since the column doesn't exist
         slug: topic.slug,
