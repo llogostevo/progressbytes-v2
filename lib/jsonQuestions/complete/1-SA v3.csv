@@ -1,0 +1,65 @@
+id,type,topic,question_text,model_answer,explanation,created_at,options,pairs,correctAnswerIndex
+sa1,short-answer,systems-architecture,"Outline the key steps involved in the CPU's fetch-decode-execute cycle.","1) The CPU uses the Program Counter to locate the next instruction.
+2) The instruction is fetched from memory and decoded by the Control Unit.
+3) The decoded instruction is then executed, potentially involving data processing by the ALU.",,2025-05-05T00:00:00Z,,,
+sa2,matching,systems-architecture,"Match each CPU register to its primary function:","Holds the address of the next instruction to fetch
+Stores the memory location to be accessed
+Temporarily stores data being transferred to or from memory
+Stores results from the ALU operations","Registers store temporary data or addresses that are used during instruction processing. Each has a distinct role in keeping the CPU operating efficiently.",2025-05-05T00:00:00Z,,"Program Counter (PC):Holds the address of the next instruction to fetch|Memory Address Register (MAR):Stores the memory location to be accessed|Memory Data Register (MDR):Temporarily stores data being transferred to or from memory|Accumulator (ACC):Stores results from the ALU operations",
+sa3,short-answer,systems-architecture,"Identify three CPU characteristics that influence processing speed.","1) Clock speed
+2) Cache memory size
+3) Number of processing cores",,2025-05-05T00:00:00Z,,,
+sa4,short-answer,systems-architecture,"Why is a car's cruise control considered an embedded system?","It performs one specific task (maintaining vehicle speed), is built into the vehicle, and operates with its own microcontroller and software that can't be easily changed.",,2025-05-05T00:00:00Z,,,
+sa5,short-answer,systems-architecture,"Provide an example of an embedded system found in vehicles and explain its purpose.","Example: Parking sensors.
+Explanation: These detect nearby obstacles and alert the driver. The system is purpose-built and works automatically using embedded software.",,2025-05-05T00:00:00Z,,,
+sa6,matching,systems-architecture,"Match the CPU component to what it does:","Tracks the address of the instruction to be fetched next
+Controls the timing and flow of instructions in the CPU
+Holds the address in memory to read from or write to
+Carries out calculations and logical operations","These components each contribute to processing data and instructions. The CU manages flow, the ALU handles logic, and registers help manage addresses and results.",2025-05-05T00:00:00Z,,"Program Counter:Tracks the address of the instruction to be fetched next|Control Unit:Controls the timing and flow of instructions in the CPU|Memory Address Register:Holds the address in memory to read from or write to|Arithmetic Logic Unit:Carries out calculations and logical operations",
+sa7,true-false,systems-architecture,"The CPU's cache stores frequently used instructions and data to reduce access times.","true","True – Cache memory holds recently accessed data or instructions so the CPU can reuse them quickly without fetching from slower main memory.",2025-05-05T00:00:00Z,,,
+sa8,multiple-choice,systems-architecture,"Which of the following changes is most likely to speed up a CPU's performance?","Using a higher clock speed","Increasing clock speed means the CPU can execute more instructions per second, improving performance for most tasks.",2025-05-05T00:00:00Z,"Reducing the number of cores|Lowering the cache size|Using a higher clock speed|Running fewer background apps",,2
+sa9,multiple-choice,systems-architecture,"Which component in the CPU is responsible for handling logical operations such as AND, OR, and NOT?","Arithmetic Logic Unit","The ALU is responsible for performing arithmetic and logical operations like AND, OR, and NOT.",2025-05-05T00:00:00Z,"Control Unit|Cache|Accumulator|Arithmetic Logic Unit",,3
+sa10,true-false,systems-architecture,"The Program Counter holds data being processed in the CPU.","false","False – the Program Counter holds the memory address of the next instruction to fetch, not the data being processed.",2025-05-05T00:00:00Z,,,
+sa11,multiple-choice,systems-architecture,"Which of these is an embedded system in a home environment?","Smart light switch","A smart light switch is an embedded system designed for a specific task: controlling lighting, usually with minimal hardware and limited software.",2025-05-05T00:00:00Z,"Smart light switch|Web browser|Laptop|Spreadsheet software",,0
+sa12,true-false,systems-architecture,"Embedded systems usually run many complex tasks at once.","false","False – embedded systems are built to perform specific tasks efficiently and usually run only one or a few simple tasks.",2025-05-05T00:00:00Z,,,
+sa13,short-answer,systems-architecture,"Explain why a washing machine includes an embedded system.","The embedded system controls the washing cycle, water level, and temperature. It's dedicated to this task and is not a general-purpose computer.",,2025-05-05T00:00:00Z,,,
+s14,short-answer,systems-architecture,"List the four main steps in the fetch-execute cycle.","1. Fetch the instruction from memory
+2. Decode the fetched instruction
+3. Execute the decoded instruction so the process runs continuously
+4. Repeat for the next instruction",,2025-05-08T00:00:00Z,,,
+sa15,short-answer,systems-architecture,"Outline the key steps involved in the CPU's fetch-decode-execute cycle.","1) The CPU uses the Program Counter to locate the next instruction.
+2) The instruction is fetched from memory and decoded by the Control Unit.
+3) The decoded instruction is then executed, potentially involving data processing by the ALU.",,2025-05-05T00:00:00Z,,,
+sa16,matching,systems-architecture,"Match each CPU register to its primary function:","Holds the address of the next instruction to fetch
+Stores the memory location to be accessed
+Temporarily stores data being transferred to or from memory
+Stores results from the ALU operations","Registers store temporary data or addresses that are used during instruction processing. Each has a distinct role in keeping the CPU operating efficiently.",2025-05-05T00:00:00Z,,"Program Counter (PC):Holds the address of the next instruction to fetch|Memory Address Register (MAR):Stores the memory location to be accessed|Memory Data Register (MDR):Temporarily stores data being transferred to or from memory|Accumulator (ACC):Stores results from the ALU operations",
+sa17,short-answer,systems-architecture,"Identify three CPU characteristics that influence processing speed.","1) Clock speed
+2) Cache memory size
+3) Number of processing cores",,2025-05-05T00:00:00Z,,,
+sa18,short-answer,systems-architecture,"Explain how increasing the number of CPU cores can affect performance.","More cores allow the CPU to carry out multiple tasks at the same time (parallel processing), improving performance for programs designed to take advantage of this.",,2025-05-05T00:00:00Z,,,
+sa19,multiple-choice,systems-architecture,"Which change would typically improve CPU performance the most when running a single-threaded application?","Increasing clock speed","Clock speed determines how many instructions the CPU can process per second. For single-threaded applications, more cores won't help, but a higher clock speed will.",2025-05-05T00:00:00Z,"Adding more cores|Increasing cache size|Increasing clock speed|Installing more RAM",,2
+sa20,true-false,systems-architecture,"A higher clock speed always results in faster overall performance.","false","False – While a higher clock speed can improve performance, other factors such as cooling, efficiency, and software optimization also play a role.",2025-05-05T00:00:00Z,,,
+sa21,true-false,systems-architecture,"More CPU cache helps performance by reducing the time needed to access frequently used data.","true","True – Cache memory is faster than main memory. More cache allows the CPU to store and quickly access more of the data it uses often.",2025-05-05T00:00:00Z,,,
+sa22,short-answer,systems-architecture,"What is the benefit of a larger CPU cache size?","A larger cache can hold more frequently accessed instructions and data, reducing the need to fetch from slower main memory and speeding up overall performance.",,2025-05-05T00:00:00Z,,,
+sa23,multiple-choice,systems-architecture,"Which component directly stores data the CPU is likely to reuse?","Cache","Cache memory is closer to the CPU than RAM and is used to store frequently accessed data, reducing the time it takes to fetch instructions.",2025-05-05T00:00:00Z,"RAM|Register|Cache|Hard Drive",,2
+sa24,true-false,systems-architecture,"Adding more cores always improves program performance.","false","False – Adding more cores can improve multitasking or performance for software designed to use them, but some programs can't take advantage of multiple cores.",2025-05-05T00:00:00Z,,,
+sa25,short-answer,systems-architecture,"What is an embedded system?","A computer system built into a larger device to control or monitor it.",,2025-05-08T00:00:00Z,,,
+sa26,short-answer,systems-architecture,"Give two examples of devices that contain embedded systems.","Examples: washing machine, microwave, smart TV, digital watch, car engine control unit (any two).",,2025-05-08T00:00:00Z,,,
+sa27,short-answer,systems-architecture,"Explain one reason why embedded systems are used in everyday devices.","They are cheaper, use less power, and are designed to perform a single dedicated task efficiently.",,2025-05-08T00:00:00Z,,,
+sa28,short-answer,systems-architecture,"State one difference between an embedded system and a general-purpose computer.","An embedded system is designed for one specific task, while a general-purpose computer can run many programs.",,2025-05-08T00:00:00Z,,,
+sa29,short-answer,systems-architecture,"A digital camera is an embedded system. Explain why it needs a processor and memory.","The processor controls camera functions like focus and capture. The memory stores photos and camera settings.",,2025-05-08T00:00:00Z,,,
+s30,short-answer,systems-architecture,"State the purpose of the CPU.","To fetch, decode, and execute instructions.",,2025-05-08T00:00:00Z,,,
+s31,short-answer,systems-architecture,"What is the purpose of the Arithmetic Logic Unit (ALU)?","It performs arithmetic operations and logical comparisons.",,2025-05-08T00:00:00Z,,,
+s32,short-answer,systems-architecture,"State the function of the Control Unit (CU).","It coordinates the activities of the CPU and controls the flow of data and instructions.",,2025-05-08T00:00:00Z,,,
+s33,short-answer,systems-architecture,"What is the purpose of the program counter?","It holds the memory address of the next instruction to be fetched.",,2025-05-08T00:00:00Z,,,
+s34,short-answer,systems-architecture,"Explain the purpose of the accumulator in the CPU.","It stores the result of calculations carried out by the ALU.",,2025-05-08T00:00:00Z,,,
+s35,short-answer,systems-architecture,"What is stored in the Memory Address Register (MAR)?","The address in memory where data or instructions will be read or written.",,2025-05-08T00:00:00Z,,,
+s36,short-answer,systems-architecture,"What is the role of the Memory Data Register (MDR)?","It stores the data that has been fetched from or is about to be written to memory.",,2025-05-08T00:00:00Z,,,
+s37,short-answer,systems-architecture,"What is the purpose of cache memory in the CPU?","It stores frequently used data and instructions so the CPU can access them faster than from main memory.",,2025-05-08T00:00:00Z,,,
+s38,short-answer,systems-architecture,"What does FDE stand for in relation to the CPU?","Fetch, Decode, Execute",,2025-05-08T00:00:00Z,,,
+s39,short-answer,systems-architecture,"During the fetch stage, what does the CPU do?","It retrieves the next instruction from memory using the address in the program counter.",,2025-05-08T00:00:00Z,,,
+s40,short-answer,systems-architecture,"What happens in the decode stage of the FDE cycle?","The control unit interprets the fetched instruction to determine what action is needed.",,2025-05-08T00:00:00Z,,,
+s41,short-answer,systems-architecture,"What does the CPU do in the execute stage?","It carries out the instruction, such as a calculation, data transfer, or program control.",,2025-05-08T00:00:00Z,,,
+s42,short-answer,systems-architecture,"Which registers are used during the fetch stage?","The program counter (PC), memory address register (MAR), and memory data register (MDR).",,2025-05-08T00:00:00Z,,,
+s43,short-answer,systems-architecture,"Why is the program counter important in the fetch-decode-execute cycle?","It keeps track of the memory address of the next instruction to be fetched.",,2025-05-08T00:00:00Z,,, 
