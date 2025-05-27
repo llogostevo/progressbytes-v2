@@ -54,6 +54,7 @@ interface DBTopic {
   name: string;
   description: string;
   icon?: string;
+  topicnumber?: number;
   disabled?: boolean;
   slug: string;
   unit: number;
@@ -101,6 +102,7 @@ export default async function Home() {
         description,
         slug,
         icon,
+        topicnumber,
         unit_id,
         units!inner (
           id,
@@ -275,7 +277,8 @@ export default async function Home() {
         slug: topic.slug,
         unit: topic.units.sort_order, // Use the sort_order from the units table
         questionCount: allQuestions.length,
-        questions: allQuestions
+        questions: allQuestions,
+        topicnumber: topic.topicnumber // Add the topicnumber field
       }
 
       return transformedTopic

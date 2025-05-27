@@ -28,17 +28,21 @@ export function TopicCard({ topic, userType }: TopicCardProps) {
 
   // Calculate the actual number of available questions
   const availableQuestions = Math.min(numberOfQuestions, topic.questionCount)
-  console.log(topic.icon)
 
   return (
     <Card className={`h-full flex flex-col transition-all ${!isDisabled ? "hover:shadow-md" : "opacity-80"}`}>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-            <span className={isDisabled ? "text-gray-400" : "text-emerald-500"}>
-              <DynamicIcon iconName={topic.icon} size={25} />
-            </span>
-          {topic.name}
-          
+      <CardHeader className="relative">
+        {/* Pill in the top-right */}
+        {topic.topicnumber && (
+          <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-muted text-xs font-semibold text-muted-foreground border border-border shadow">
+            {topic.topicnumber}
+          </span>
+        )}
+        <CardTitle className="flex items-center gap-3">
+          <span className={isDisabled ? "text-gray-400" : "text-emerald-500"}>
+            <DynamicIcon iconName={topic.icon} size={25} />
+          </span>
+          <span className="font-semibold text-lg">{topic.name}</span>
         </CardTitle>
         {/* <CardDescription>{topic.description}</CardDescription> */}
       </CardHeader>
