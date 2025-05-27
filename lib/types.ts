@@ -36,7 +36,7 @@ export interface Topic {
   slug: string
   name: string
   description: string
-  icon?: LucideIcon
+  icon?: string
   questionCount: number
   questions: Question[]
   unit: number

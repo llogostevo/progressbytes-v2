@@ -4,6 +4,7 @@ import type { Topic } from "@/lib/types"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import React from "react"
+import { DynamicIcon } from "@/components/ui/dynamicicon"
 
 interface TopicCardProps {
   topic: Topic
@@ -27,20 +28,19 @@ export function TopicCard({ topic, userType }: TopicCardProps) {
 
   // Calculate the actual number of available questions
   const availableQuestions = Math.min(numberOfQuestions, topic.questionCount)
+  console.log(topic.icon)
 
   return (
     <Card className={`h-full flex flex-col transition-all ${!isDisabled ? "hover:shadow-md" : "opacity-80"}`}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          {topic.icon && (
             <span className={isDisabled ? "text-gray-400" : "text-emerald-500"}>
-              {React.createElement(topic.icon, { size: 20 })}
+              <DynamicIcon iconName={topic.icon} size={25} />
             </span>
-          )}
           {topic.name}
           
         </CardTitle>
-        <CardDescription>{topic.description}</CardDescription>
+        {/* <CardDescription>{topic.description}</CardDescription> */}
       </CardHeader>
       <CardContent className="flex-grow">
         <p className="text-sm text-muted-foreground">{availableQuestions} of {topic.questionCount} questions available</p>

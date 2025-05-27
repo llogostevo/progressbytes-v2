@@ -8,6 +8,22 @@ import { CTABanner } from "@/components/cta-banner"
 import { UserLogin } from "@/components/user-login"
 import type { Topic, Question } from "@/lib/types"
 import type { LucideIcon } from "lucide-react"
+import { DynamicIcon } from "@/components/ui/dynamicicon"
+import * as Icons from 'lucide-react'
+
+// Helper function to convert snake_case to PascalCase
+// function toPascalCase(str: string): string {
+//   return str
+//     .split('_')
+//     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+//     .join('')
+// }
+
+// Helper function to get LucideIcon from string
+// function getIconFromString(iconName: string): LucideIcon | undefined {
+//   const pascalCaseName = toPascalCase(iconName)
+//   return Icons[pascalCaseName as keyof typeof Icons] as LucideIcon | undefined
+// }
 
 // Define the database response types
 interface DBQuestion {
@@ -84,6 +100,7 @@ export default async function Home() {
         name,
         description,
         slug,
+        icon,
         unit_id,
         units!inner (
           id,
@@ -253,10 +270,10 @@ export default async function Home() {
         id: topic.id,
         name: topic.name,
         description: topic.description,
-        icon: topic.icon, // We'll need to map the icon string to a LucideIcon component
+        icon: topic.icon ? topic.icon : undefined,
         disabled: false, // Default to false since the column doesn't exist
         slug: topic.slug,
-        unit: topic.units.order, // Use the order from the units table
+        unit: topic.units.sort_order, // Use the sort_order from the units table
         questionCount: allQuestions.length,
         questions: allQuestions
       }
