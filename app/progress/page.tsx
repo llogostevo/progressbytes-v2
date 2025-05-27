@@ -100,35 +100,6 @@ export default function ProgressPage() {
 
           <p className="text-muted-foreground">Track your performance across all topics</p>
         </div>
-
-        {/* TODO: need to create a component to display upgrade cards */}
-
-        {/* {!hasPaid && (
-          <Card className="mb-6 bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="shrink-0 bg-emerald-100 p-2 rounded-full">
-                  <Sparkles className="h-5 w-5 text-emerald-600" />
-                </div>
-                <div>
-                  <h3 className="font-medium text-emerald-800">Free Version</h3>
-                  <p className="text-sm text-emerald-700">
-                    You&apos;re using the free version with self-assessment. Upgrade to get AI-powered feedback and detailed
-                    analytics.
-                  </p>
-                </div>
-                <div className="ml-auto">
-                  <Link href="/coming-soon">
-                    <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700">
-                      Upgrade
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )} */}
-
         {totalAnswers === 0 ? (
           <Card>
             <CardHeader>

@@ -6,7 +6,7 @@ import { FeedbackDisplay } from "@/components/feedback-display"
 import { SelfAssessment } from "@/components/self-assessment"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { getRandomQuestionForTopic, getTopicBySlug, saveAnswer, currentUser, getQuestionById } from "@/lib/data"
+import {getTopicBySlug, saveAnswer, currentUser } from "@/lib/data"
 import type { Question, Answer, ScoreType, Topic } from "@/lib/types"
 import { ArrowLeft, RefreshCw, CheckCircle2, XCircle } from "lucide-react"
 import Link from "next/link"
@@ -21,6 +21,272 @@ import { createClient } from "@/utils/supabase/client"
 import { CTABanner } from "@/components/cta-banner"
 import { UserLogin } from "@/components/user-login"
 import { User } from "@supabase/supabase-js"
+
+// Define types for the database responses
+interface DBQuestion {
+  id: string;
+  type: string;
+  question_text: string;
+  explanation?: string;
+  created_at: string;
+  model_answer?: string;
+  multiple_choice_questions?: {
+    options: string[];
+    correct_answer_index: number;
+    model_answer?: string;
+  }[];
+  fill_in_the_blank_questions?: {
+    correct_answers: string[];
+    model_answer?: string;
+    order_important?: boolean;
+    options?: string[];
+  }[];
+  matching_questions?: Array<{
+    statement: string;
+    match: string;
+    model_answer?: string;
+  }>;
+  true_false_questions?: {
+    model_answer?: boolean;
+    correct_answer?: boolean;
+  }[];
+  code_questions?: {
+    starter_code?: string;
+    model_answer?: string;
+    language?: string;
+    model_answer_code?: string;
+  }[];
+  short_answer_questions?: {
+    model_answer: string;
+  }[];
+  essay_questions?: {
+    model_answer?: string;
+    rubric?: string;
+  }[];
+}
+
+interface DBSubtopicQuestionLink {
+  questions: DBQuestion;
+}
+
+interface DBSubtopic {
+  subtopic_question_link: DBSubtopicQuestionLink[];
+}
+
+export async function getRandomQuestionForTopic(topicSlug: string, freeUser: boolean, userType: "revision" | "revisionAI"| "basic" | null): Promise<Question> {
+  const supabase = createClient()
+
+  //TODO: get the questions from the route app instead of the database
+  
+  const { data: topicData, error: topicError } = await supabase
+    .from('topics')
+    .select('id')
+    .eq('slug', topicSlug)
+    .single()
+
+  if (topicError || !topicData) {
+    throw new Error(`No topic found for slug: ${topicSlug}`)
+  }
+
+  // Get all questions for this topic through the subtopics
+  const { data: questions, error: questionsError } = await supabase
+    .from('subtopics')
+    .select(`
+      subtopic_question_link (
+        questions (
+          id,
+          type,
+          question_text,
+          explanation,
+          created_at,
+          multiple_choice_questions (
+            options,
+            correct_answer_index,
+            model_answer
+          ),
+          fill_in_the_blank_questions (
+            correct_answers,
+            model_answer,
+            order_important,
+            options
+          ),
+          matching_questions (
+            statement,
+            match,
+            model_answer
+          ),
+          true_false_questions (
+            model_answer,
+            correct_answer
+          ),
+          code_questions (
+            starter_code,
+            model_answer,
+            language,
+            model_answer_code
+          ),
+          short_answer_questions (
+            model_answer
+          ),
+          essay_questions (
+            model_answer,
+            rubric
+          )
+        )
+      )
+    `)
+    .eq('topic_id', topicData.id)
+
+  if (questionsError || !questions) {
+    throw new Error(`Error fetching questions for topic: ${topicSlug}`)
+  }
+
+  // Flatten the questions array and transform the data
+  const allQuestions = (questions as unknown as DBSubtopic[]).flatMap(subtopic => 
+    subtopic.subtopic_question_link.flatMap(link => {
+      const question = link.questions
+      if (!question) return []
+
+      // Transform the question data to match the expected format
+      const transformedQuestion: Question = {
+        id: question.id,
+        type: question.type as Question['type'],
+        topic: topicSlug,
+        question_text: question.question_text,
+        explanation: question.explanation,
+        created_at: question.created_at,
+        model_answer: question.model_answer || '',
+        // Add type-specific data
+        ...(question.type === 'multiple-choice' && question.multiple_choice_questions?.[0] && {
+          options: question.multiple_choice_questions[0].options,
+          correctAnswerIndex: question.multiple_choice_questions[0].correct_answer_index
+        }),
+        ...(question.type === 'fill-in-the-blank' && question.fill_in_the_blank_questions?.[0] && {
+          options: question.fill_in_the_blank_questions[0].options,
+          order_important: question.fill_in_the_blank_questions[0].order_important,
+          model_answer: question.fill_in_the_blank_questions[0].correct_answers || []
+        }),
+        ...(question.type === 'matching' && {
+          pairs: question.matching_questions?.map((mq) => ({
+            statement: mq.statement,
+            match: mq.match
+          }))
+        }),
+        ...(question.type === 'code' && question.code_questions?.[0] && {
+          model_answer_python: question.code_questions[0].model_answer_code,
+          language: question.code_questions[0].language
+        })
+      }
+      return transformedQuestion
+    })
+  )
+
+  if (allQuestions.length === 0) {
+    throw new Error(`No questions found for topic: ${topicSlug}`)
+  }
+
+  // Determine the number of questions based on access level
+  let length: number
+  if (userType === "revision" || userType === "revisionAI") {
+    length = allQuestions.length
+  } else if (userType === "basic") {
+    length = allQuestions.length // full access
+  } else {
+    length = allQuestions.length // full access
+  }
+
+  const randomIndex = Math.floor(Math.random() * length)
+  return allQuestions[randomIndex]
+}
+
+export async function getQuestionById(questionId: string): Promise<Question | undefined> {
+  const supabase = createClient()
+
+  const { data: question, error } = await supabase
+    .from('questions')
+    .select(`
+      id,
+      type,
+      question_text,
+      explanation,
+      created_at,
+      multiple_choice_questions (
+        options,
+        correct_answer_index,
+        model_answer
+      ),
+      fill_in_the_blank_questions (
+        correct_answers,
+        model_answer,
+        order_important,
+        options
+      ),
+      matching_questions (
+        statement,
+        match,
+        model_answer
+      ),
+      true_false_questions (
+        model_answer,
+        correct_answer
+      ),
+      code_questions (
+        starter_code,
+        model_answer,
+        language,
+        model_answer_code
+      ),
+      short_answer_questions (
+        model_answer
+      ),
+      essay_questions (
+        model_answer,
+        rubric
+      )
+    `)
+    .eq('id', questionId)
+    .single()
+
+  if (error || !question) {
+    return undefined
+  }
+
+  // Cast the question data to our DBQuestion type
+  const dbQuestion = question as unknown as DBQuestion
+
+  // Transform the question data to match the expected format
+  const transformedQuestion: Question = {
+    id: dbQuestion.id,
+    type: dbQuestion.type as Question['type'],
+    topic: '', // This will be set by the caller
+    question_text: dbQuestion.question_text,
+    explanation: dbQuestion.explanation,
+    created_at: dbQuestion.created_at,
+    model_answer: dbQuestion.model_answer || '',
+    // Add type-specific data
+    ...(dbQuestion.type === 'multiple-choice' && dbQuestion.multiple_choice_questions?.[0] && {
+      options: dbQuestion.multiple_choice_questions[0].options,
+      correctAnswerIndex: dbQuestion.multiple_choice_questions[0].correct_answer_index
+    }),
+    ...(dbQuestion.type === 'fill-in-the-blank' && dbQuestion.fill_in_the_blank_questions?.[0] && {
+      options: dbQuestion.fill_in_the_blank_questions[0].options,
+      order_important: dbQuestion.fill_in_the_blank_questions[0].order_important,
+      model_answer: dbQuestion.fill_in_the_blank_questions[0].correct_answers || []
+    }),
+    ...(dbQuestion.type === 'matching' && {
+      pairs: dbQuestion.matching_questions?.map((mq) => ({
+        statement: mq.statement,
+        match: mq.match
+      }))
+    }),
+    ...(dbQuestion.type === 'code' && dbQuestion.code_questions?.[0] && {
+      model_answer_python: dbQuestion.code_questions[0].model_answer_code,
+      language: dbQuestion.code_questions[0].language
+    })
+  }
+
+  return transformedQuestion
+}
 
 export default function QuestionPage() {
   const params = useParams()
@@ -79,204 +345,321 @@ export default function QuestionPage() {
   useEffect(() => {
     if (isLoadingUserType) return
 
-    try {
-      const currentTopic = getTopicBySlug(topicSlug)
-      console.log("Current topic:", currentTopic)
-      setTopic(currentTopic || null)
+    const loadQuestion = async () => {
+      try {
+        const currentTopic = getTopicBySlug(topicSlug)
+        console.log("Current topic:", currentTopic)
+        setTopic(currentTopic || null)
 
-      if (currentTopic) {
-        let newQuestion: Question
-        if (questionId) {
-          newQuestion = getQuestionById(questionId) || getRandomQuestionForTopic(topicSlug, freeUser, userType)
-        } else {
-          newQuestion = getRandomQuestionForTopic(topicSlug, freeUser, userType)
+        if (currentTopic) {
+          let newQuestion: Question
+          if (questionId) {
+            const question = await getQuestionById(questionId)
+            if (question) {
+              newQuestion = question
+            } else {
+              newQuestion = await getRandomQuestionForTopic(topicSlug, freeUser, userType)
+            }
+          } else {
+            newQuestion = await getRandomQuestionForTopic(topicSlug, freeUser, userType)
+          }
+
+          console.log("Loaded question:", {
+            id: newQuestion.id,
+            type: newQuestion.type,
+            text: newQuestion.question_text,
+            options: newQuestion.options,
+            correctAnswerIndex: newQuestion.correctAnswerIndex
+          })
+          setQuestion(newQuestion)
+          setAnswer(null)
+          setSelfAssessmentScore(null)
         }
-
-        console.log("Loaded question:", {
-          id: newQuestion.id,
-          type: newQuestion.type,
-          text: newQuestion.question_text,
-          options: newQuestion.options,
-          correctAnswerIndex: newQuestion.correctAnswerIndex
-        })
-        setQuestion(newQuestion)
-        setAnswer(null)
-        setSelfAssessmentScore(null)
+      } catch (error) {
+        console.error("Error loading question:", error)
+      } finally {
+        setIsLoading(false)
       }
-    } catch (error) {
-      console.error("Error loading question:", error)
-    } finally {
-      setIsLoading(false)
     }
-  }, [topicSlug, isLoadingUserType, userType, freeUser])
+
+    loadQuestion()
+  }, [topicSlug, isLoadingUserType, userType, freeUser, questionId])
 
   const handleSubmitAnswer = async (responseText: string) => {
-    if (!question) return
+    if (!question || !user) return
 
     setIsSubmitting(true)
 
-    if (userType === "revisionAI") {
-      // Paid version - use AI feedback
-      /* TODO: setup supabase AI connection */
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+    try {
+      // Create initial answer record
+      const { data: answerData, error: insertError } = await supabase
+        .from('student_answers')
+        .insert({
+          student_id: user.id,
+          question_id: question.id,
+          response_text: responseText,
+          self_assessed: false,
+          submitted_at: new Date().toISOString()
+        })
+        .select()
+        .single()
 
-      // Mock AI feedback generation
-      const mockFeedback = generateMockFeedback(responseText, question)
+      if (insertError) throw insertError
 
-      const newAnswer: Answer = {
-        id: crypto.randomUUID(),
-        question_id: question.id,
-        student_id: currentUser.id,
-        response_text: responseText,
-        ai_feedback: mockFeedback.feedback,
-        score: mockFeedback.score,
-        submitted_at: new Date().toISOString(),
-        self_assessed: false,
-      }
+      if (userType === "revisionAI") {
+        // Paid version - use AI feedback
+        /* TODO: setup supabase AI connection */
+        // Simulate API call delay
+        await new Promise((resolve) => setTimeout(resolve, 1500))
 
-      saveAnswer(newAnswer)
-      setAnswer(newAnswer)
+        // Mock AI feedback generation
+        const mockFeedback = generateMockFeedback(responseText, question)
 
-      // Track question submission
-      if (user) {
-        await supabase.from('user_activity').insert({
-          user_id: user.id,
-          event: 'submitted_question',
-          path: `/questions/${topicSlug}`,
-          user_email: user.email
+        // Update the answer with AI feedback
+        const { error: updateError } = await supabase
+          .from('student_answers')
+          .update({
+            ai_feedback: mockFeedback.feedback,
+            ai_score: mockFeedback.score
+          })
+          .eq('id', answerData.id)
+
+        if (updateError) throw updateError
+
+        setAnswer({
+          id: answerData.id,
+          question_id: question.id,
+          student_id: user.id,
+          response_text: responseText,
+          ai_feedback: mockFeedback.feedback,
+          score: mockFeedback.score,
+          submitted_at: answerData.submitted_at,
+          self_assessed: false,
+        })
+      } else {
+        // Free version - just set the basic answer
+        setAnswer({
+          id: answerData.id,
+          question_id: question.id,
+          student_id: user.id,
+          response_text: responseText,
+          ai_feedback: null,
+          score: "amber", // Placeholder, will be updated after self-assessment
+          submitted_at: answerData.submitted_at,
+          self_assessed: false,
         })
       }
-    } else {
-      // Free version - just save the response, self-assessment comes later
-      setAnswer({
-        /* TODO: add following data to supabase table structure */
-        id: crypto.randomUUID(),
-        question_id: question.id,
-        student_id: currentUser.id,
-        response_text: responseText,
-        ai_feedback: null,
-        score: "amber", // Placeholder, will be updated after self-assessment
-        submitted_at: new Date().toISOString(),
-        self_assessed: false,
+
+      // Track question submission
+      await supabase.from('user_activity').insert({
+        user_id: user.id,
+        event: 'submitted_question',
+        path: `/questions/${topicSlug}`,
+        user_email: user.email
       })
 
-      // Track question submission
-      if (user) {
-        await supabase.from('user_activity').insert({
-          user_id: user.id,
-          event: 'submitted_question',
-          path: `/questions/${topicSlug}`,
-          user_email: user.email
+    } catch (error) {
+      console.error("Error saving answer:", error)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleSelfAssessment = async (score: ScoreType) => {
+    if (!answer || !user) return
+
+    try {
+      // Update the answer with self-assessment score
+      const { error: updateError } = await supabase
+        .from('student_answers')
+        .update({
+          student_score: score,
+          self_assessed: true
         })
+        .eq('id', answer.id)
+
+      if (updateError) throw updateError
+
+      const updatedAnswer: Answer = {
+        ...answer,
+        score: score,
+        self_assessed: true,
       }
+
+      setAnswer(updatedAnswer)
+      setSelfAssessmentScore(score)
+    } catch (error) {
+      console.error("Error updating self-assessment:", error)
     }
-
-    setIsSubmitting(false)
   }
 
-  const handleSelfAssessment = (score: ScoreType) => {
-    if (!answer) return
-
-    const updatedAnswer: Answer = {
-      ...answer,
-      score: score,
-      self_assessed: true,
+  const handleTryAnother = async () => {
+    try {
+      const newQuestion = await getRandomQuestionForTopic(topicSlug, freeUser, userType)
+      setQuestion(newQuestion)
+      setAnswer(null)
+      setSelfAssessmentScore(null)
+    } catch (error) {
+      console.error("Error loading new question:", error)
     }
-
-    saveAnswer(updatedAnswer)
-    setAnswer(updatedAnswer)
-    setSelfAssessmentScore(score)
   }
 
-  const handleTryAnother = () => {
-    const newQuestion = getRandomQuestionForTopic(topicSlug, freeUser, userType)
-    setQuestion(newQuestion)
-    setAnswer(null)
-    setSelfAssessmentScore(null)
-  }
+  const handleMultipleChoiceAnswer = async (isCorrect: boolean) => {
+    if (!question || !user) return
 
-  const handleMultipleChoiceAnswer = (isCorrect: boolean) => {
-    if (!question) return
+    try {
+      const { data: answerData, error: insertError } = await supabase
+        .from('student_answers')
+        .insert({
+          student_id: user.id,
+          question_id: question.id,
+          response_text: isCorrect ? "Correct" : "Incorrect",
+          ai_feedback: isCorrect ? "Well done! You selected the correct answer." : "Try to understand why this answer is incorrect.",
+          student_score: isCorrect ? "green" : "red",
+          self_assessed: true,
+          submitted_at: new Date().toISOString()
+        })
+        .select()
+        .single()
 
-    const newAnswer: Answer = {
-      /* TODO: add following data to supabase table structure */
-      id: crypto.randomUUID(),
-      question_id: question.id,
-      student_id: currentUser.id,
-      response_text: isCorrect ? "Correct" : "Incorrect",
-      ai_feedback: isCorrect ? "Well done! You selected the correct answer." : "Try to understand why this answer is incorrect.",
-      score: isCorrect ? "green" : "red",
-      submitted_at: new Date().toISOString(),
-      self_assessed: false,
+      if (insertError) throw insertError
+
+      const newAnswer: Answer = {
+        id: answerData.id,
+        question_id: question.id,
+        student_id: user.id,
+        response_text: isCorrect ? "Correct" : "Incorrect",
+        ai_feedback: isCorrect ? "Well done! You selected the correct answer." : "Try to understand why this answer is incorrect.",
+        score: isCorrect ? "green" : "red",
+        submitted_at: answerData.submitted_at,
+        self_assessed: true,
+      }
+
+      setAnswer(newAnswer)
+      setSelfAssessmentScore(isCorrect ? "green" : "red")
+    } catch (error) {
+      console.error("Error saving multiple choice answer:", error)
     }
-
-    saveAnswer(newAnswer)
-    setAnswer(newAnswer)
-    setSelfAssessmentScore(isCorrect ? "green" : "red")
   }
 
-  const handleFillInTheBlankAnswer = (isCorrect: boolean) => {
-    if (!question) return
+  const handleFillInTheBlankAnswer = async (isCorrect: boolean) => {
+    if (!question || !user) return
 
-    const newAnswer: Answer = {
-      id: crypto.randomUUID(),
-      question_id: question.id,
-      student_id: currentUser.id,
-      response_text: isCorrect ? "Correct" : "Incorrect",
-      ai_feedback: isCorrect ? "Well done! You selected the correct answers." : "Try to understand why these answers are incorrect.",
-      score: isCorrect ? "green" : "red",
-      submitted_at: new Date().toISOString(),
-      self_assessed: false,
+    try {
+      const { data: answerData, error: insertError } = await supabase
+        .from('student_answers')
+        .insert({
+          student_id: user.id,
+          question_id: question.id,
+          response_text: isCorrect ? "Correct" : "Incorrect",
+          ai_feedback: isCorrect ? "Well done! You selected the correct answers." : "Try to understand why these answers are incorrect.",
+          student_score: isCorrect ? "green" : "red",
+          self_assessed: true,
+          submitted_at: new Date().toISOString()
+        })
+        .select()
+        .single()
+
+      if (insertError) throw insertError
+
+      const newAnswer: Answer = {
+        id: answerData.id,
+        question_id: question.id,
+        student_id: user.id,
+        response_text: isCorrect ? "Correct" : "Incorrect",
+        ai_feedback: isCorrect ? "Well done! You selected the correct answers." : "Try to understand why these answers are incorrect.",
+        score: isCorrect ? "green" : "red",
+        submitted_at: answerData.submitted_at,
+        self_assessed: true,
+      }
+
+      setAnswer(newAnswer)
+      setSelfAssessmentScore(isCorrect ? "green" : "red")
+    } catch (error) {
+      console.error("Error saving fill in the blank answer:", error)
     }
-
-    saveAnswer(newAnswer)
-    setAnswer(newAnswer)
-    setSelfAssessmentScore(isCorrect ? "green" : "red")
   }
 
-  const handleMatchingAnswer = (selections: Record<string, string[]>) => {
-    if (!question) return
+  const handleMatchingAnswer = async (selections: Record<string, string[]>) => {
+    if (!question || !user) return
 
     const isCorrect = question.pairs?.every(pair =>
       selections[pair.statement]?.includes(pair.match)
     ) || false
 
-    const newAnswer: Answer = {
-      id: crypto.randomUUID(),
-      question_id: question.id,
-      student_id: currentUser.id,
-      response_text: JSON.stringify(selections),
-      ai_feedback: isCorrect ? "Well done! You matched all items correctly." : "Some matches are incorrect. Try again!",
-      score: isCorrect ? "green" : "red",
-      submitted_at: new Date().toISOString(),
-      self_assessed: false,
-    }
+    try {
+      const { data: answerData, error: insertError } = await supabase
+        .from('student_answers')
+        .insert({
+          student_id: user.id,
+          question_id: question.id,
+          response_text: JSON.stringify(selections),
+          ai_feedback: isCorrect ? "Well done! You matched all items correctly." : "Some matches are incorrect. Try again!",
+          student_score: isCorrect ? "green" : "red",
+          self_assessed: true,
+          submitted_at: new Date().toISOString()
+        })
+        .select()
+        .single()
 
-    saveAnswer(newAnswer)
-    setAnswer(newAnswer)
-    setSelfAssessmentScore(isCorrect ? "green" : "red")
+      if (insertError) throw insertError
+
+      const newAnswer: Answer = {
+        id: answerData.id,
+        question_id: question.id,
+        student_id: user.id,
+        response_text: JSON.stringify(selections),
+        ai_feedback: isCorrect ? "Well done! You matched all items correctly." : "Some matches are incorrect. Try again!",
+        score: isCorrect ? "green" : "red",
+        submitted_at: answerData.submitted_at,
+        self_assessed: true,
+      }
+
+      setAnswer(newAnswer)
+      setSelfAssessmentScore(isCorrect ? "green" : "red")
+    } catch (error) {
+      console.error("Error saving matching answer:", error)
+    }
   }
 
-  const handleTrueFalseAnswer = (answer: boolean) => {
-    if (!question) return
+  const handleTrueFalseAnswer = async (answer: boolean) => {
+    if (!question || !user) return
 
     const isCorrect = answer === (question.model_answer === "true")
 
-    const newAnswer: Answer = {
-      id: crypto.randomUUID(),
-      question_id: question.id,
-      student_id: currentUser.id,
-      response_text: answer ? "true" : "false",
-      ai_feedback: isCorrect ? "Correct! Well done!" : "Incorrect. Try to understand why this is wrong.",
-      score: isCorrect ? "green" : "red",
-      submitted_at: new Date().toISOString(),
-      self_assessed: false,
-    }
+    try {
+      const { data: answerData, error: insertError } = await supabase
+        .from('student_answers')
+        .insert({
+          student_id: user.id,
+          question_id: question.id,
+          response_text: answer ? "true" : "false",
+          ai_feedback: isCorrect ? "Correct! Well done!" : "Incorrect. Try to understand why this is wrong.",
+          student_score: isCorrect ? "green" : "red",
+          self_assessed: true,
+          submitted_at: new Date().toISOString()
+        })
+        .select()
+        .single()
 
-    saveAnswer(newAnswer)
-    setAnswer(newAnswer)
-    setSelfAssessmentScore(isCorrect ? "green" : "red")
+      if (insertError) throw insertError
+
+      const newAnswer: Answer = {
+        id: answerData.id,
+        question_id: question.id,
+        student_id: user.id,
+        response_text: answer ? "true" : "false",
+        ai_feedback: isCorrect ? "Correct! Well done!" : "Incorrect. Try to understand why this is wrong.",
+        score: isCorrect ? "green" : "red",
+        submitted_at: answerData.submitted_at,
+        self_assessed: true,
+      }
+
+      setAnswer(newAnswer)
+      setSelfAssessmentScore(isCorrect ? "green" : "red")
+    } catch (error) {
+      console.error("Error saving true/false answer:", error)
+    }
   }
 
   // Mock feedback generator - this would be replaced by actual AI API call
