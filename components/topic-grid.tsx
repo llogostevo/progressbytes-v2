@@ -6,6 +6,21 @@ interface TopicGridProps {
   userType?: string
 }
 
+// Helper to compare topicnumber strings like 1.1.1, 1.1.2, etc.
+function compareTopicNumbers(a?: string, b?: string) {
+  if (!a && !b) return 0;
+  if (!a) return -1;
+  if (!b) return 1;
+  const aParts = a.split('.').map(Number);
+  const bParts = b.split('.').map(Number);
+  for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+    const aVal = aParts[i] ?? 0;
+    const bVal = bParts[i] ?? 0;
+    if (aVal !== bVal) return aVal - bVal;
+  }
+  return 0;
+}
+
 export function TopicGrid({ topics, userType }: TopicGridProps) {
   // Group topics by unit and sort by topic number
   const groupedTopics = topics.reduce((acc, topic) => {
@@ -17,13 +32,11 @@ export function TopicGrid({ topics, userType }: TopicGridProps) {
     return acc
   }, {} as Record<number, Topic[]>)
 
-  // Sort topics within each unit by their topic number
+  // Sort topics within each unit by their topicnumber (natural order)
   Object.keys(groupedTopics).forEach(unit => {
-    groupedTopics[Number(unit)].sort((a, b) => {
-      const aNum = a.topicnumber ?? 0
-      const bNum = b.topicnumber ?? 0
-      return aNum - bNum
-    })
+    groupedTopics[Number(unit)].sort((a, b) =>
+      compareTopicNumbers(a.topicnumber?.toString(), b.topicnumber?.toString())
+    )
   })
 
   // Sort units numerically
