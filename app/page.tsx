@@ -279,7 +279,7 @@ export default async function Home() {
         disabled: false, // Default to false since the column doesn't exist
         slug: topic.slug,
         unit: topic.units.unit_number,
-        unitName: topic.units.name, // Use the sort_order from the units table
+        unitName: topic.units.name, 
         questionCount: allQuestions.length,
         questions: allQuestions,
         topicnumber: topic.topicnumber // Add the topicnumber field

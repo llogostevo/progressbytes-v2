@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useSearchParams } from "next/navigation"
 import { FeedbackDisplay } from "@/components/feedback-display"
 import { SelfAssessment } from "@/components/self-assessment"
 import { Button } from "@/components/ui/button"
@@ -24,7 +24,9 @@ import { User } from "@supabase/supabase-js"
 
 export default function QuestionPage() {
   const params = useParams()
+  const searchParams = useSearchParams()
   const topicSlug = params.topic as string
+  const questionId = searchParams.get("questionId")
 
   const [question, setQuestion] = useState<Question | null>(null)
   const [answer, setAnswer] = useState<Answer | null>(null)
@@ -83,9 +85,6 @@ export default function QuestionPage() {
       setTopic(currentTopic || null)
 
       if (currentTopic) {
-        const searchParams = new URLSearchParams(window.location.search)
-        const questionId = searchParams.get("questionId")
-
         let newQuestion: Question
         if (questionId) {
           newQuestion = getQuestionById(questionId) || getRandomQuestionForTopic(topicSlug, freeUser, userType)
