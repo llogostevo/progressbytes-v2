@@ -1,11 +1,48 @@
 import { TopicGrid } from "@/components/topic-grid"
-import { topics } from "@/lib/data"
+// import { topics } from "@/lib/data"
 import { Button } from "@/components/ui/button"
 import { Settings } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/utils/supabase/server"
 import { CTABanner } from "@/components/cta-banner"
 import { UserLogin } from "@/components/user-login"
+import type { Topic, Question } from "@/lib/types"
+import type { LucideIcon } from "lucide-react"
+
+// Define the database response types
+interface DBQuestion {
+  id: string;
+  type: Question['type'];
+  question_text: string;
+  model_answer: string | string[];
+  options?: string[];
+  correct_answer_index?: number;
+  order_important?: boolean;
+  model_answer_python?: string;
+  explanation?: string;
+  created_at: string;
+  pairs?: { statement: string; match: string }[];
+}
+
+interface DBSubtopicQuestionLink {
+  questions: DBQuestion;
+}
+
+interface DBSubtopic {
+  id: string;
+  subtopic_question_link: DBSubtopicQuestionLink[];
+}
+
+interface DBTopic {
+  id: string;
+  name: string;
+  description: string;
+  icon?: string;
+  disabled?: boolean;
+  slug: string;
+  unit: number;
+  subtopics: DBSubtopic[];
+}
 
 export default async function Home() {
   const supabase = await createClient()
@@ -21,7 +58,7 @@ export default async function Home() {
     .single()
 
   const userType = profile?.user_type
-  const freeUser = !user || user.email === "student@example.com"
+  const freeUser = !user
 
   // Track page visit
   if (user) {
@@ -32,6 +69,206 @@ export default async function Home() {
       user_email: user.email
     })
   }
+
+  let topics: Topic[] = []
+  if (user) {
+    /**
+     * Fetch topics with their associated questions
+     * This query gets all questions associated with a topic's subtopics
+     * in a single flattened structure, including all question type specific data
+     */
+    const { data: topicsWithQuestions, error } = await supabase
+      .from('topics')
+      .select(`
+        id,
+        name,
+        description,
+        slug,
+        unit_id,
+        units!inner (
+          id,
+          name,
+          sort_order
+        ),
+        subtopics!inner (
+          id,
+          subtopic_question_link!inner (
+            questions!inner (
+              id,
+              type,
+              question_text,
+              explanation,
+              created_at,
+              multiple_choice_questions (
+                options,
+                correct_answer_index,
+                model_answer
+              ),
+              short_answer_questions (
+                model_answer
+              ),
+              fill_in_the_blank_questions (
+                correct_answers,
+                model_answer,
+                order_important,
+                options
+              ),
+              matching_questions (
+                statement,
+                match,
+                model_answer
+              ),
+              essay_questions (
+                model_answer,
+                rubric
+              ),
+              code_questions (
+                starter_code,
+                model_answer,
+                language,
+                model_answer_code
+              )
+            )
+          )
+        )
+      `)
+      .order('name')
+
+    if (error) {
+      console.error('Error fetching topics with questions:', error)
+      return
+    }
+
+    /**
+     * Transform the data to match the expected format for the TopicCard component
+     * - Extract all questions from subtopics into a single array per topic
+     * - Combine base question data with type-specific data
+     * - Remove the subtopic hierarchy completely
+     */
+    topics = (topicsWithQuestions as unknown as any[])?.map(topic => {
+      // Get all questions from all subtopics in a single flat array
+      const allQuestions = topic.subtopics.flatMap((subtopic: { 
+        subtopic_question_link: Array<{ 
+          questions: { 
+            id: string;
+            type: Question['type'];
+            question_text: string;
+            explanation?: string;
+            created_at: string;
+            model_answer?: string;
+            multiple_choice_questions?: {
+              options: string[];
+              correct_answer_index: number;
+              model_answer?: string;
+            };
+            fill_in_the_blank_questions?: {
+              correct_answers: string[];
+              model_answer?: string;
+              order_important?: boolean;
+              options?: string[];
+            };
+            matching_questions?: Array<{
+              statement: string;
+              match: string;
+              model_answer?: string;
+            }>;
+            code_questions?: {
+              starter_code?: string;
+              model_answer?: string;
+              language?: string;
+              model_answer_code?: string;
+            };
+          }
+        }>
+      }) => 
+        subtopic.subtopic_question_link.flatMap((link: { 
+          questions: {
+            id: string;
+            type: Question['type'];
+            question_text: string;
+            explanation?: string;
+            created_at: string;
+            model_answer?: string;
+            multiple_choice_questions?: {
+              options: string[];
+              correct_answer_index: number;
+              model_answer?: string;
+            };
+            fill_in_the_blank_questions?: {
+              correct_answers: string[];
+              model_answer?: string;
+              order_important?: boolean;
+              options?: string[];
+            };
+            matching_questions?: Array<{
+              statement: string;
+              match: string;
+              model_answer?: string;
+            }>;
+            code_questions?: {
+              starter_code?: string;
+              model_answer?: string;
+              language?: string;
+              model_answer_code?: string;
+            };
+          }
+        }) => {
+          const question = link.questions
+          // Combine base question data with type-specific data
+          const questionData: Question = {
+            id: question.id,
+            type: question.type,
+            topic: topic.slug,
+            question_text: question.question_text,
+            explanation: question.explanation,
+            created_at: question.created_at,
+            model_answer: question.model_answer || '',
+            // Add type-specific data
+            ...(question.type === 'multiple-choice' && {
+              options: question.multiple_choice_questions?.options,
+              correctAnswerIndex: question.multiple_choice_questions?.correct_answer_index
+            }),
+            ...(question.type === 'fill-in-the-blank' && {
+              options: question.fill_in_the_blank_questions?.options,
+              order_important: question.fill_in_the_blank_questions?.order_important,
+              model_answer: question.fill_in_the_blank_questions?.correct_answers || []
+            }),
+            ...(question.type === 'matching' && {
+              pairs: question.matching_questions?.map((mq) => ({
+                statement: mq.statement,
+                match: mq.match
+              }))
+            }),
+            ...(question.type === 'code' && {
+              model_answer_python: question.code_questions?.model_answer_code,
+              language: question.code_questions?.language
+            })
+          }
+          return questionData
+        })
+      )
+
+      // Convert the topic to match the Topic type
+      const transformedTopic: Topic = {
+        id: topic.id,
+        name: topic.name,
+        description: topic.description,
+        icon: topic.icon, // We'll need to map the icon string to a LucideIcon component
+        disabled: false, // Default to false since the column doesn't exist
+        slug: topic.slug,
+        unit: topic.units.order, // Use the order from the units table
+        questionCount: allQuestions.length,
+        questions: allQuestions
+      }
+
+      return transformedTopic
+    }) || []
+
+    console.log('Final transformed topics:', topics)
+  }
+
+  // const courseTopics = 
+  // const courseTopicsCount = courseTopics?.length
 
   return (
     <div className="container mx-auto px-4 py-6 md:py-8">
