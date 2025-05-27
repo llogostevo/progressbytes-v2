@@ -933,7 +933,7 @@ export default function QuestionPage() {
                 </div>
 
                 {/* For free version, show model answer first, then self-assessment */}
-                {userType !== "revisionAI" && (
+                {userType  && (
                   <>
                     <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-md">
                       <h3 className="font-medium mb-2 text-emerald-700">Model Answer:</h3>
