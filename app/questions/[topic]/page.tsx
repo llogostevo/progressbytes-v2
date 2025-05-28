@@ -96,10 +96,23 @@ export async function getTopicBySlug(slug: string): Promise<Topic | undefined> {
 export async function getRandomQuestionForTopic(topicId: string, freeUser: boolean, userType: "revision" | "revisionAI"| "basic" | null): Promise<Question> {
   const supabase = createClient()
 
+  // First check if the topic exists
+  const { data: topic, error: topicError } = await supabase
+    .from('topics')
+    .select('id, name')
+    .eq('id', topicId)
+    .single()
+
+  if (topicError || !topic) {
+    throw new Error(`Topic not found with ID: ${topicId}`)
+  }
+
   // Get all questions for this topic through the subtopics
   const { data: questions, error: questionsError } = await supabase
     .from('subtopics')
     .select(`
+      id,
+      subtopictitle,
       subtopic_question_link (
         questions (
           id,
@@ -145,8 +158,12 @@ export async function getRandomQuestionForTopic(topicId: string, freeUser: boole
     `)
     .eq('topic_id', topicId)
 
-  if (questionsError || !questions) {
-    throw new Error(`Error fetching questions for topic ID: ${topicId}`)
+  if (questionsError) {
+    throw new Error(`Error fetching questions for topic ID: ${topicId}. Error: ${questionsError.message}`)
+  }
+
+  if (!questions || questions.length === 0) {
+    throw new Error(`No subtopics found for topic ID: ${topicId}`)
   }
 
   // Flatten the questions array and transform the data
@@ -159,11 +176,31 @@ export async function getRandomQuestionForTopic(topicId: string, freeUser: boole
       const transformedQuestion: Question = {
         id: question.id,
         type: question.type as Question['type'],
-        topic: '', // This will be set by the caller
+        topic: topic.name, // Set the topic name
         question_text: question.question_text,
         explanation: question.explanation,
         created_at: question.created_at,
-        model_answer: question.model_answer || '',
+        // Map model_answer based on question type
+        model_answer: (() => {
+          switch (question.type) {
+            case 'multiple-choice':
+              return question.multiple_choice_questions?.[0]?.model_answer || '';
+            case 'fill-in-the-blank':
+              return question.fill_in_the_blank_questions?.[0]?.model_answer || '';
+            case 'matching':
+              return question.matching_questions?.[0]?.model_answer || '';
+            case 'true-false':
+              return question.true_false_questions?.[0]?.model_answer?.toString() || '';
+            case 'code':
+              return question.code_questions?.[0]?.model_answer || '';
+            case 'short-answer':
+              return question.short_answer_questions?.[0]?.model_answer || '';
+            case 'essay':
+              return question.essay_questions?.[0]?.model_answer || '';
+            default:
+              return '';
+          }
+        })(),
         // Add type-specific data
         ...(question.type === 'multiple-choice' && question.multiple_choice_questions?.[0] && {
           options: question.multiple_choice_questions[0].options,
@@ -190,7 +227,7 @@ export async function getRandomQuestionForTopic(topicId: string, freeUser: boole
   )
 
   if (allQuestions.length === 0) {
-    throw new Error(`No questions found for topic ID: ${topicId}`)
+    throw new Error(`No questions found in any subtopics for topic ID: ${topicId}`)
   }
 
   // Determine the number of questions based on access level
@@ -270,7 +307,27 @@ export async function getQuestionById(questionId: string): Promise<Question | un
     question_text: dbQuestion.question_text,
     explanation: dbQuestion.explanation,
     created_at: dbQuestion.created_at,
-    model_answer: dbQuestion.model_answer || '',
+    // Map model_answer based on question type
+    model_answer: (() => {
+      switch (dbQuestion.type) {
+        case 'multiple-choice':
+          return dbQuestion.multiple_choice_questions?.[0]?.model_answer || '';
+        case 'fill-in-the-blank':
+          return dbQuestion.fill_in_the_blank_questions?.[0]?.model_answer || '';
+        case 'matching':
+          return dbQuestion.matching_questions?.[0]?.model_answer || '';
+        case 'true-false':
+          return dbQuestion.true_false_questions?.[0]?.model_answer?.toString() || '';
+        case 'code':
+          return dbQuestion.code_questions?.[0]?.model_answer || '';
+        case 'short-answer':
+          return dbQuestion.short_answer_questions?.[0]?.model_answer || '';
+        case 'essay':
+          return dbQuestion.essay_questions?.[0]?.model_answer || '';
+        default:
+          return '';
+      }
+    })(),
     // Add type-specific data
     ...(dbQuestion.type === 'multiple-choice' && dbQuestion.multiple_choice_questions?.[0] && {
       options: dbQuestion.multiple_choice_questions[0].options,
@@ -503,7 +560,10 @@ export default function QuestionPage() {
 
   const handleTryAnother = async () => {
     try {
-      const newQuestion = await getRandomQuestionForTopic(topicSlug, freeUser, userType)
+      if (!topic) {
+        throw new Error("No topic found")
+      }
+      const newQuestion = await getRandomQuestionForTopic(topic.id, freeUser, userType)
       setQuestion(newQuestion)
       setAnswer(null)
       setSelfAssessmentScore(null)
@@ -941,7 +1001,7 @@ export default function QuestionPage() {
                 </div>
 
                 {/* For free version, show model answer first, then self-assessment */}
-                {userType  && (
+                {userType && (
                   <>
                     <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-md">
                       <h3 className="font-medium mb-2 text-emerald-700">Model Answer:</h3>
@@ -1002,6 +1062,13 @@ export default function QuestionPage() {
                                 ))}
                               </ul>
                             )
+                          ) : question.type === "multiple-choice" ? (
+                            <div className="space-y-2">
+                              <p className="font-medium">Correct Answer:</p>
+                              <p>{question.options?.[question.correctAnswerIndex || 0]}</p>
+                            </div>
+                          ) : question.type === "short-answer" || question.type === "text" || question.type === "essay" ? (
+                            <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer}</pre>
                           ) : (
                             <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer}</pre>
                           )}
