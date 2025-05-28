@@ -93,20 +93,8 @@ export async function getTopicBySlug(slug: string): Promise<Topic | undefined> {
 
 // main component
 
-export async function getRandomQuestionForTopic(topicSlug: string, freeUser: boolean, userType: "revision" | "revisionAI"| "basic" | null): Promise<Question> {
+export async function getRandomQuestionForTopic(topicId: string, freeUser: boolean, userType: "revision" | "revisionAI"| "basic" | null): Promise<Question> {
   const supabase = createClient()
-
-  //TODO: get the questions from the route app instead of the database
-  
-  const { data: topicData, error: topicError } = await supabase
-    .from('topics')
-    .select('id')
-    .eq('slug', topicSlug)
-    .single()
-
-  if (topicError || !topicData) {
-    throw new Error(`No topic found for slug: ${topicSlug}`)
-  }
 
   // Get all questions for this topic through the subtopics
   const { data: questions, error: questionsError } = await supabase
@@ -155,10 +143,10 @@ export async function getRandomQuestionForTopic(topicSlug: string, freeUser: boo
         )
       )
     `)
-    .eq('topic_id', topicData.id)
+    .eq('topic_id', topicId)
 
   if (questionsError || !questions) {
-    throw new Error(`Error fetching questions for topic: ${topicSlug}`)
+    throw new Error(`Error fetching questions for topic ID: ${topicId}`)
   }
 
   // Flatten the questions array and transform the data
@@ -171,7 +159,7 @@ export async function getRandomQuestionForTopic(topicSlug: string, freeUser: boo
       const transformedQuestion: Question = {
         id: question.id,
         type: question.type as Question['type'],
-        topic: topicSlug,
+        topic: '', // This will be set by the caller
         question_text: question.question_text,
         explanation: question.explanation,
         created_at: question.created_at,
@@ -202,7 +190,7 @@ export async function getRandomQuestionForTopic(topicSlug: string, freeUser: boo
   )
 
   if (allQuestions.length === 0) {
-    throw new Error(`No questions found for topic: ${topicSlug}`)
+    throw new Error(`No questions found for topic ID: ${topicId}`)
   }
 
   // Determine the number of questions based on access level
@@ -378,10 +366,10 @@ export default function QuestionPage() {
             if (question) {
               newQuestion = question
             } else {
-              newQuestion = await getRandomQuestionForTopic(topicSlug, freeUser, userType)
+              newQuestion = await getRandomQuestionForTopic(currentTopic.id, freeUser, userType)
             }
           } else {
-            newQuestion = await getRandomQuestionForTopic(topicSlug, freeUser, userType)
+            newQuestion = await getRandomQuestionForTopic(currentTopic.id, freeUser, userType)
           }
 
           console.log("Loaded question:", {
