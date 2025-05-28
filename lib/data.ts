@@ -347,7 +347,7 @@ export const topics: Topic[] = [
         type: "short-answer"
       },
       {
-        id: "s30",
+        id: "sa30",
         topic: "systems-architecture",
         question_text: "State the purpose of the CPU.",
         model_answer: "To fetch, decode, and execute instructions.",
@@ -355,7 +355,7 @@ export const topics: Topic[] = [
         type: "short-answer"
       },
       {
-        id: "s31",
+        id: "sa31",
         topic: "systems-architecture",
         question_text: "What is the purpose of the Arithmetic Logic Unit (ALU)?",
         model_answer: "It performs arithmetic operations and logical comparisons.",
@@ -403,7 +403,7 @@ export const topics: Topic[] = [
         type: "short-answer"
       },
       {
-        id: "s37",
+        id: "sa37",
         topic: "systems-architecture",
         question_text: "What is the purpose of cache memory in the CPU?",
         model_answer: "It stores frequently used data and instructions so the CPU can access them faster than from main memory.",

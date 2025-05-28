@@ -40,7 +40,7 @@ interface DBQuestion {
     model_answer?: string;
     order_important?: boolean;
     options?: string[];
-  }[];
+  };
   matching_questions?: Array<{
     statement: string;
     match: string;
@@ -93,11 +93,11 @@ export async function getTopicBySlug(slug: string): Promise<Topic | undefined> {
 
 // Add this helper function before getRandomQuestionForTopic
 function transformQuestion(dbQuestion: DBQuestion, topicName: string): Question {
-  console.log('Raw DB Question:', {
-    id: dbQuestion.id,
+  console.log('Fill in the blank data:', {
     type: dbQuestion.type,
-    shortAnswerData: dbQuestion.short_answer_questions,
-    allQuestionData: dbQuestion  // Log the entire question object
+    fillInTheBlankData: dbQuestion.fill_in_the_blank_questions,
+    options: dbQuestion.fill_in_the_blank_questions?.options,
+    orderImportant: dbQuestion.fill_in_the_blank_questions?.order_important
   });
 
 
@@ -114,7 +114,7 @@ function transformQuestion(dbQuestion: DBQuestion, topicName: string): Question 
         case 'multiple-choice':
           return dbQuestion.multiple_choice_questions?.[0]?.model_answer || '';
         case 'fill-in-the-blank':
-          return dbQuestion.fill_in_the_blank_questions?.[0]?.model_answer || '';
+          return dbQuestion.fill_in_the_blank_questions?.model_answer || '';
         case 'matching':
           return dbQuestion.matching_questions?.[0]?.model_answer || '';
         case 'true-false':
@@ -134,9 +134,9 @@ function transformQuestion(dbQuestion: DBQuestion, topicName: string): Question 
       options: dbQuestion.multiple_choice_questions[0].options,
       correctAnswerIndex: dbQuestion.multiple_choice_questions[0].correct_answer_index
     }),
-    ...(dbQuestion.type === 'fill-in-the-blank' && dbQuestion.fill_in_the_blank_questions?.[0] && {
-      options: dbQuestion.fill_in_the_blank_questions[0].options,
-      order_important: dbQuestion.fill_in_the_blank_questions[0].order_important
+    ...(dbQuestion.type === 'fill-in-the-blank' && dbQuestion.fill_in_the_blank_questions && {
+      options: dbQuestion.fill_in_the_blank_questions.options,
+      order_important: dbQuestion.fill_in_the_blank_questions.order_important
     }),
     ...(dbQuestion.type === 'matching' && {
       pairs: dbQuestion.matching_questions?.map((mq) => ({
@@ -144,14 +144,14 @@ function transformQuestion(dbQuestion: DBQuestion, topicName: string): Question 
         match: mq.match
       }))
     }),
-    ...(dbQuestion.type === 'code' && dbQuestion.code_questions?.[0] && {
-      model_answer_python: dbQuestion.code_questions[0].model_answer_code,
-      language: dbQuestion.code_questions[0].language
+    ...(dbQuestion.type === 'code' && dbQuestion.code_questions && {
+      model_answer_python: dbQuestion.code_questions.model_answer_code,
+      language: dbQuestion.code_questions.language
     })
   };
 }
 
-export async function getRandomQuestionForTopic(topicId: string, freeUser: boolean, userType: "revision" | "revisionAI"| "basic" | null): Promise<Question> {
+export async function getRandomQuestionForTopic(topicId: string, freeUser: boolean, userType: "revision" | "revisionAI" | "basic" | null): Promise<Question> {
   const supabase = createClient()
 
   // First check if the topic exists
@@ -216,7 +216,7 @@ export async function getRandomQuestionForTopic(topicId: string, freeUser: boole
     `)
     .eq('topic_id', topicId)
 
-    console.log('Raw questions data:', JSON.stringify(questions, null, 2));
+  console.log('Raw questions data:', JSON.stringify(questions, null, 2));
 
   if (questionsError) {
     throw new Error(`Error fetching questions for topic ID: ${topicId}. Error: ${questionsError.message}`)
@@ -227,13 +227,18 @@ export async function getRandomQuestionForTopic(topicId: string, freeUser: boole
   }
 
   // Flatten the questions array and transform the data
-  const allQuestions = (questions as unknown as DBSubtopic[]).flatMap(subtopic => 
+  const allQuestions = (questions as unknown as DBSubtopic[]).flatMap(subtopic =>
     subtopic.subtopic_question_link.flatMap(link => {
       const question = link.questions
       if (!question) return []
       return transformQuestion(question, topic.name)
     })
   )
+
+  // Filter for only fill-in-the-blank questions
+  const fillInBlankQuestions = allQuestions.filter(q => q.type === 'fill-in-the-blank')
+  console.log('Fill in blank questions count:', fillInBlankQuestions.length);
+  console.log('All questions count:', allQuestions.length);
 
   if (allQuestions.length === 0) {
     throw new Error(`No questions found in any subtopics for topic ID: ${topicId}`)
@@ -249,8 +254,13 @@ export async function getRandomQuestionForTopic(topicId: string, freeUser: boole
     length = allQuestions.length // full access
   }
 
-  const randomIndex = Math.floor(Math.random() * length)
-  return allQuestions[randomIndex]
+  // const randomIndex = Math.floor(Math.random() * length)
+  // return allQuestions[randomIndex]
+
+  // Use fillInBlankQuestions instead of allQuestions for testing
+  const randomIndex = Math.floor(Math.random() * fillInBlankQuestions.length)
+  return fillInBlankQuestions[randomIndex]
+
 }
 
 export async function getQuestionById(questionId: string): Promise<Question | undefined> {
