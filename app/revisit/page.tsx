@@ -14,6 +14,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { User } from "@supabase/supabase-js"
 import { createClient } from "@/utils/supabase/client"
 import { UserLogin } from "@/components/user-login"
+import { TopicFilter } from "@/components/topic-filter"
 
 export default function RevisitPage() {
   const router = useRouter()
@@ -145,6 +146,19 @@ export default function RevisitPage() {
     window.history.pushState({}, "", newUrl)
   }
 
+  const handleTopicChange = (topic: string | null) => {
+    // Update URL without refreshing the page
+    const params = new URLSearchParams(searchParams.toString())
+    if (topic === null) {
+      params.delete("topic")
+    } else {
+      params.set("topic", topic)
+    }
+
+    const newUrl = `${window.location.pathname}?${params.toString()}`
+    window.history.pushState({}, "", newUrl)
+  }
+
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -166,11 +180,13 @@ export default function RevisitPage() {
             <UserLogin email={user?.email} />
           </div>
 
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground mb-4">
             {topicParam
               ? `Review ${activeTab !== "all" ? activeTab + " " : ""}questions from ${topics.find((t) => t.slug === topicParam)?.name || "this topic"}`
               : `Review ${activeTab !== "all" ? activeTab + " " : ""}questions you've previously answered`}
           </p>
+
+          <TopicFilter selectedTopic={topicParam} onTopicChange={handleTopicChange} />
         </div>
 
         <Tabs value={activeTab} className="mb-8" onValueChange={handleTabChange}>
