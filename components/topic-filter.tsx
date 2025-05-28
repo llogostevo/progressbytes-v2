@@ -63,7 +63,7 @@ export function TopicFilter({ selectedTopic, onTopicChange, className = "" }: To
                 <Button
                   key={topic.slug}
                   variant={selectedTopic === topic.slug ? "default" : "outline"}
-                  onClick={() => onTopicChange(topic.slug)}
+                  onClick={() => onTopicChange(selectedTopic === topic.slug ? null : topic.slug)}
                   size="sm"
                   className="flex-shrink-0"
                 >
