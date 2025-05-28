@@ -1,13 +1,12 @@
 "use client"
 
 import React from "react"
-
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { getAllAnswers, topics, getQuestionById } from "@/lib/data"
+import { topics } from "@/lib/data"
 import type { Answer, Question, ScoreType } from "@/lib/types"
 import { CheckCircle, AlertTriangle, AlertCircle, ArrowRight, BookOpen } from "lucide-react"
 import Link from "next/link"
@@ -26,16 +25,61 @@ export default function RevisitPage() {
   const [questions, setQuestions] = useState<Record<string, Question>>({})
   const [activeTab, setActiveTab] = useState<ScoreType | "all">(tabParam || "all")
   const [user, setUser] = useState<User | null>(null)
-
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-
-    // TODO: move this to a hook
     const getUser = async () => {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setUser(user)
+
+        // Fetch answers for the user
+        const { data: answersData, error } = await supabase
+          .from('student_answers')
+          .select('*')
+          .eq('student_id', user.id)
+          .order('submitted_at', { ascending: false })
+
+        if (error) {
+          console.error('Error fetching answers:', error)
+          return
+        }
+
+        // Map database fields to Answer type
+        const mappedAnswers: Answer[] = answersData.map(answer => ({
+          id: answer.id,
+          question_id: answer.question_id,
+          student_id: answer.student_id,
+          response_text: answer.response_text,
+          ai_feedback: answer.ai_feedback,
+          score: answer.student_score as ScoreType,
+          submitted_at: answer.submitted_at,
+          self_assessed: answer.self_assessed
+        }))
+
+        // Filter by topic if specified
+        const filteredByTopic = topicParam
+          ? mappedAnswers.filter((answer) => {
+            const question = topics.flatMap((t) => t.questions).find((q) => q.id === answer.question_id)
+            return (
+              question && topics.find((t) => t.slug === topicParam)?.questions.some((q) => q.id === answer.question_id)
+            )
+          })
+          : mappedAnswers
+
+        setAnswers(filteredByTopic)
+
+        // Get all questions referenced in answers
+        const questionMap: Record<string, Question> = {}
+        filteredByTopic.forEach((answer) => {
+          const question = topics.flatMap((t) => t.questions).find((q) => q.id === answer.question_id)
+          if (question) {
+            questionMap[question.id] = question
+          }
+        })
+        setQuestions(questionMap)
+
         await supabase.from('user_activity').insert({
           user_id: user.id,
           event: 'visited_revisit',
@@ -45,42 +89,10 @@ export default function RevisitPage() {
       } else {
         setUser(null)
       }
+      setIsLoading(false)
     }
     getUser()
-  }, [])
-
-
-  useEffect(() => {
-    // Get all saved answers
-    const savedAnswers = getAllAnswers()
-
-    // Filter by topic if specified
-    const filteredByTopic = topicParam
-      ? savedAnswers.filter((answer) => {
-        const question = topics.flatMap((t) => t.questions).find((q) => q.id === answer.question_id)
-        return (
-          question && topics.find((t) => t.slug === topicParam)?.questions.some((q) => q.id === answer.question_id)
-        )
-      })
-      : savedAnswers
-
-    setAnswers(filteredByTopic)
-
-    // Get all questions referenced in answers
-    const questionMap: Record<string, Question> = {}
-    filteredByTopic.forEach((answer) => {
-      const question = getQuestionById(answer.question_id)
-      if (question) {
-        questionMap[question.id] = question
-      }
-    })
-    setQuestions(questionMap)
-
-    // Set active tab from URL parameter if present
-    if (tabParam && ["green", "amber", "red"].includes(tabParam)) {
-      setActiveTab(tabParam)
-    }
-  }, [tabParam, topicParam])
+  }, [topicParam])
 
   // Filter answers by score
   const filteredAnswers = activeTab === "all" ? answers : answers.filter((answer) => answer.score === activeTab)
@@ -133,6 +145,18 @@ export default function RevisitPage() {
     window.history.pushState({}, "", newUrl)
   }
 
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-center h-64">
+            <p className="text-muted-foreground">Loading your answers...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
@@ -141,7 +165,6 @@ export default function RevisitPage() {
             <h1 className="text-3xl font-bold mb-2">Revisit Questions</h1>
             <UserLogin email={user?.email} />
           </div>
-
 
           <p className="text-muted-foreground">
             {topicParam
@@ -399,7 +422,6 @@ export default function RevisitPage() {
                                   )}
                                 </div>
 
-                                {/* Remove the separate model answer section since it's now integrated into the tables */}
                                 {question.type !== "matching" && question.type !== "true-false" && question.type !== "fill-in-the-blank" && (
                                   <div>
                                     <h3 className="text-sm font-medium mb-1 text-emerald-700">Model Answer:</h3>

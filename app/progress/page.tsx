@@ -8,32 +8,64 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { getAllAnswers, topics } from "@/lib/data"
 import type { Answer, ScoreType } from "@/lib/types"
-import { CheckCircle, AlertTriangle, AlertCircle, ArrowRight } from "lucide-react"
+import { CheckCircle, AlertTriangle, AlertCircle, ArrowRight, Calendar } from "lucide-react"
 // import { CheckCircle, AlertTriangle, AlertCircle, Sparkles, ArrowRight } from "lucide-react"
 
 import Link from "next/link"
 import { UserLogin } from "@/components/user-login"
 import { createClient } from "@/utils/supabase/client"
 import { User } from "@supabase/supabase-js"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function ProgressPage() {
   const [answers, setAnswers] = useState<Answer[]>([])
   const [user, setUser] = useState<User | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [timeFilter, setTimeFilter] = useState<'today' | 'week'>('today')
 
   useEffect(() => {
-    // Get all saved answers
-    const savedAnswers = getAllAnswers()
-    setAnswers(savedAnswers)
-  }, [])
-
-  useEffect(() => {
-
-    // TODO: move this to a hook
     const getUser = async () => {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setUser(user)
+
+        // Calculate date range based on time filter
+        const endDate = new Date()
+        const startDate = new Date()
+        if (timeFilter === 'today') {
+          startDate.setHours(0, 0, 0, 0)
+        } else {
+          startDate.setDate(startDate.getDate() - 7)
+        }
+
+        // Fetch answers for the user
+        const { data: answersData, error } = await supabase
+          .from('student_answers')
+          .select('*')
+          .eq('student_id', user.id)
+          .gte('submitted_at', startDate.toISOString())
+          .lte('submitted_at', endDate.toISOString())
+          .order('submitted_at', { ascending: false })
+
+        if (error) {
+          console.error('Error fetching answers:', error)
+          return
+        }
+
+        // Map database fields to Answer type
+        const mappedAnswers: Answer[] = answersData.map(answer => ({
+          id: answer.id,
+          question_id: answer.question_id,
+          student_id: answer.student_id,
+          response_text: answer.response_text,
+          ai_feedback: answer.ai_feedback,
+          score: answer.student_score as ScoreType,
+          submitted_at: answer.submitted_at,
+          self_assessed: answer.self_assessed
+        }))
+
+        setAnswers(mappedAnswers)
 
         await supabase.from('user_activity').insert({
           user_id: user.id,
@@ -41,13 +73,13 @@ export default function ProgressPage() {
           path: '/progress',
           user_email: user.email
         })
-
       } else {
         setUser(null)
       }
+      setIsLoading(false)
     }
     getUser()
-  }, [])
+  }, [timeFilter])
 
   // Calculate statistics
   const totalAnswers = answers.length
@@ -87,6 +119,18 @@ export default function ProgressPage() {
       case "red":
         return <AlertCircle className="h-4 w-4 text-red-500" />
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-center h-64">
+            <p className="text-muted-foreground">Loading your progress...</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -265,91 +309,115 @@ export default function ProgressPage() {
             </div>
 
             <div className="mt-8">
-              <h2 className="text-xl font-bold mb-4">Recent Answers</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold">Recent Answers</h2>
+                <Tabs value={timeFilter} onValueChange={(value) => setTimeFilter(value as 'today' | 'week')}>
+                  <TabsList>
+                    <TabsTrigger value="today" className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      Today
+                    </TabsTrigger>
+                    <TabsTrigger value="week" className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      7 Days
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
 
               <div className="space-y-4">
-                {answers.slice(0, 5).map((answer) => {
-                  const question = topics.flatMap((t) => t.questions).find((q) => q.id === answer.question_id)
+                {answers.length === 0 ? (
+                  <Card>
+                    <CardContent className="py-6">
+                      <p className="text-center text-muted-foreground">
+                        No answers found for the selected time period.
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  answers.map((answer) => {
+                    const question = topics.flatMap((t) => t.questions).find((q) => q.id === answer.question_id)
 
-                  return (
-                    <Card key={answer.id}>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-base">
-                          <pre className="whitespace-pre-wrap font-sans">{question?.question_text || "Unknown question"}</pre>
-                        </CardTitle>
-                        <CardDescription>
-                          {new Date(answer.submitted_at).toLocaleString()}
-                          <span className="ml-2 inline-flex items-center">{getScoreIcon(answer.score)}</span>
-                          {answer.self_assessed && <span className="ml-2 text-xs">(Self-assessed)</span>}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <h3 className="text-sm font-medium mb-2">Your Answer:</h3>
-                            <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">{answer.response_text}</pre>
-                          </div>
+                    return (
+                      <Card key={answer.id}>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-base">
+                            <pre className="whitespace-pre-wrap font-sans">{question?.question_text || "Unknown question"}</pre>
+                          </CardTitle>
+                          <CardDescription>
+                            {new Date(answer.submitted_at).toLocaleString()}
+                            <span className="ml-2 inline-flex items-center">{getScoreIcon(answer.score)}</span>
+                            {answer.self_assessed && <span className="ml-2 text-xs">(Self-assessed)</span>}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <h3 className="text-sm font-medium mb-2">Your Answer:</h3>
+                              <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">{answer.response_text}</pre>
+                            </div>
 
-                          <div>
-                            {answer.ai_feedback ? (
-                              <>
-                                <h3 className="text-sm font-medium mb-2">AI Feedback:</h3>
-                                <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground mb-3">{answer.ai_feedback}</pre>
-                              </>
-                            ) : (
-                              <>
-                                <h3 className="text-sm font-medium mb-2">Self-Assessment:</h3>
-                                <div className="text-sm text-muted-foreground mb-3">
-                                  You marked this as{" "}
-                                  <Badge className={`inline-flex items-center gap-1 px-2 py-0.5 ${answer.score === "green"
-                                    ? "bg-emerald-500 hover:bg-emerald-500 text-white"
-                                    : answer.score === "amber"
-                                      ? "bg-amber-500 hover:bg-amber-500 text-white"
-                                      : "bg-red-500 hover:bg-red-500 text-white"
-                                    }`}>
-                                    {answer.score === "green" ? (
-                                      <CheckCircle className="h-3 w-3" />
-                                    ) : answer.score === "amber" ? (
-                                      <AlertTriangle className="h-3 w-3" />
-                                    ) : (
-                                      <AlertCircle className="h-3 w-3" />
-                                    )}
-                                    <span className="text-xs">
-                                      {answer.score === "green"
-                                        ? "Fully Understood"
-                                        : answer.score === "amber"
-                                          ? "Partially Understood"
-                                          : "Need More Practice"}
-                                    </span>
-                                  </Badge>
-                                </div>
-                              </>
-                            )}
+                            <div>
+                              {answer.ai_feedback ? (
+                                <>
+                                  <h3 className="text-sm font-medium mb-2">AI Feedback:</h3>
+                                  <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground mb-3">{answer.ai_feedback}</pre>
+                                </>
+                              ) : (
+                                <>
+                                  <h3 className="text-sm font-medium mb-2">Self-Assessment:</h3>
+                                  <div className="text-sm text-muted-foreground mb-3">
+                                    You marked this as{" "}
+                                    <Badge className={`inline-flex items-center gap-1 px-2 py-0.5 ${answer.score === "green"
+                                      ? "bg-emerald-500 hover:bg-emerald-500 text-white"
+                                      : answer.score === "amber"
+                                        ? "bg-amber-500 hover:bg-amber-500 text-white"
+                                        : "bg-red-500 hover:bg-red-500 text-white"
+                                      }`}>
+                                      {answer.score === "green" ? (
+                                        <CheckCircle className="h-3 w-3" />
+                                      ) : answer.score === "amber" ? (
+                                        <AlertTriangle className="h-3 w-3" />
+                                      ) : (
+                                        <AlertCircle className="h-3 w-3" />
+                                      )}
+                                      <span className="text-xs">
+                                        {answer.score === "green"
+                                          ? "Fully Understood"
+                                          : answer.score === "amber"
+                                            ? "Partially Understood"
+                                            : "Need More Practice"}
+                                      </span>
+                                    </Badge>
+                                  </div>
+                                </>
+                              )}
 
-                            <div className="space-y-4">
-                              <div>
-                                {question?.type === "code" && (
-                                  <h4 className="text-sm font-medium mb-1">Pseudocode:</h4>
-                                )}
-                                <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">
-                                  {question?.model_answer || "Model answer not available"}
-                                </pre>
-                              </div>
-                              {question?.model_answer_python && (
+                              <div className="space-y-4">
                                 <div>
-                                  <h4 className="text-sm font-medium mb-1">Python:</h4>
+                                  {question?.type === "code" && (
+                                    <h4 className="text-sm font-medium mb-1">Pseudocode:</h4>
+                                  )}
                                   <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">
-                                    {question.model_answer_python}
+                                    {question?.model_answer || "Model answer not available"}
                                   </pre>
                                 </div>
-                              )}
+                                {question?.model_answer_python && (
+                                  <div>
+                                    <h4 className="text-sm font-medium mb-1">Python:</h4>
+                                    <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">
+                                      {question.model_answer_python}
+                                    </pre>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )
-                })}
+                        </CardContent>
+                      </Card>
+                    )
+                  })
+                )}
               </div>
             </div>
           </>
