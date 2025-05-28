@@ -236,14 +236,7 @@ export async function getRandomQuestionForTopic(topicId: string, freeUser: boole
     })
   )
 
-  // Filter for only fill-in-the-blank questions
-  const fillInBlankQuestions = allQuestions.filter(q => q.type === 'fill-in-the-blank')
-  console.log('Fill in blank questions count:', fillInBlankQuestions.length);
-  console.log('All questions count:', allQuestions.length);
 
-  if (allQuestions.length === 0) {
-    throw new Error(`No questions found in any subtopics for topic ID: ${topicId}`)
-  }
 
   // Determine the number of questions based on access level
   let length: number
@@ -255,12 +248,10 @@ export async function getRandomQuestionForTopic(topicId: string, freeUser: boole
     length = allQuestions.length // full access
   }
 
-  // const randomIndex = Math.floor(Math.random() * length)
-  // return allQuestions[randomIndex]
+  const randomIndex = Math.floor(Math.random() * length)
+  return allQuestions[randomIndex]
 
-  // Use fillInBlankQuestions instead of allQuestions for testing
-  const randomIndex = Math.floor(Math.random() * fillInBlankQuestions.length)
-  return fillInBlankQuestions[randomIndex]
+
 
 }
 
