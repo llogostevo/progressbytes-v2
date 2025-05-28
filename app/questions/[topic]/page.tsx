@@ -6,7 +6,7 @@ import { FeedbackDisplay } from "@/components/feedback-display"
 import { SelfAssessment } from "@/components/self-assessment"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import {getTopicBySlug, saveAnswer, currentUser } from "@/lib/data"
+import { saveAnswer, currentUser } from "@/lib/data"
 import type { Question, Answer, ScoreType, Topic } from "@/lib/types"
 import { ArrowLeft, RefreshCw, CheckCircle2, XCircle } from "lucide-react"
 import Link from "next/link"
@@ -72,6 +72,26 @@ interface DBSubtopicQuestionLink {
 interface DBSubtopic {
   subtopic_question_link: DBSubtopicQuestionLink[];
 }
+
+// Helper functions to interact with the database
+export async function getTopicBySlug(slug: string): Promise<Topic | undefined> {
+  const supabase = createClient()
+
+  const { data: topic, error } = await supabase
+    .from('topics')
+    .select('*')
+    .eq('slug', slug)
+    .single()
+
+  if (error || !topic) {
+    console.error('Error fetching topic:', error)
+    return undefined
+  }
+
+  return topic as Topic
+}
+
+// main component
 
 export async function getRandomQuestionForTopic(topicSlug: string, freeUser: boolean, userType: "revision" | "revisionAI"| "basic" | null): Promise<Question> {
   const supabase = createClient()
@@ -347,7 +367,7 @@ export default function QuestionPage() {
 
     const loadQuestion = async () => {
       try {
-        const currentTopic = getTopicBySlug(topicSlug)
+        const currentTopic = await getTopicBySlug(topicSlug)
         console.log("Current topic:", currentTopic)
         setTopic(currentTopic || null)
 
