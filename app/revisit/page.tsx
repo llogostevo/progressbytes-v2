@@ -465,23 +465,33 @@ export default function RevisitPage() {
                                   </div>
                                 )}
 
-                                <div className="flex flex-col sm:flex-row gap-2">
-                                  <Button
-                                    onClick={() => router.push(`/questions/${topicSlug}?questionId=${answer.question_id}`)}
-                                    variant="outline"
-                                    className="flex-1 hover:bg-emerald-600 hover:text-white"
-                                  >
-                                    <BookOpen className="mr-2 h-4 w-4" />
-                                    Practice This Question Again <ArrowRight className="ml-2 h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    onClick={() => router.push(`/questions/${topicSlug}`)}
-                                    variant="outline"
-                                    className="flex-1 hover:bg-emerald-600 hover:text-white"
-                                  >
-                                    {topic.icon && React.createElement(topic.icon, { size: 16, className: "mr-2" })}
-                                    Practice {topic.name} Again <ArrowRight className="ml-2 h-4 w-4" />
-                                  </Button>
+                                <div className="mt-6 pt-4 border-t border-gray-200">
+                                  <div className="flex flex-col gap-3">
+                                    <h4 className="text-sm font-medium text-gray-700 mb-2">Continue Learning:</h4>
+                                    <div className="flex flex-col sm:flex-row gap-3">
+                                      <Button
+                                        onClick={() =>
+                                          router.push(`/questions/${topicSlug}?questionId=${answer.question_id}`)
+                                        }
+                                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+                                        size="lg"
+                                      >
+                                        <BookOpen className="mr-2 h-4 w-4" />
+                                        Practice This Question Again
+                                        <ArrowRight className="ml-2 h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        onClick={() => router.push(`/questions/${topicSlug}`)}
+                                        variant="outline"
+                                        className="flex-1 border-emerald-600 text-emerald-600 hover:bg-emerald-50 shadow-sm"
+                                        size="lg"
+                                      >
+                                        {topic.icon && React.createElement(topic.icon, { size: 16, className: "mr-2" })}
+                                        Practice More {topic.name}
+                                        <ArrowRight className="ml-2 h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             </CardContent>
