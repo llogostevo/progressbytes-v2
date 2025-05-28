@@ -49,7 +49,7 @@ interface DBQuestion {
   true_false_questions?: {
     model_answer?: boolean;
     correct_answer?: boolean;
-  }[];
+  };
   code_questions?: {
     starter_code?: string;
     model_answer?: string;
@@ -93,11 +93,12 @@ export async function getTopicBySlug(slug: string): Promise<Topic | undefined> {
 
 // Add this helper function before getRandomQuestionForTopic
 function transformQuestion(dbQuestion: DBQuestion, topicName: string): Question {
-  console.log('Fill in the blank data:', {
-    type: dbQuestion.type,
-    fillInTheBlankData: dbQuestion.fill_in_the_blank_questions,
-    options: dbQuestion.fill_in_the_blank_questions?.options,
-    orderImportant: dbQuestion.fill_in_the_blank_questions?.order_important
+  // Add this right before the switch statement in transformQuestion
+  console.log("True/False question data:", {
+    rawData: dbQuestion.true_false_questions,
+    isArray: Array.isArray(dbQuestion.true_false_questions),
+    firstItem: dbQuestion.true_false_questions,
+    type: typeof dbQuestion.true_false_questions
   });
 
 
@@ -118,7 +119,7 @@ function transformQuestion(dbQuestion: DBQuestion, topicName: string): Question 
         case 'matching':
           return dbQuestion.matching_questions?.[0]?.model_answer || '';
         case 'true-false':
-          return dbQuestion.true_false_questions?.[0]?.model_answer?.toString() || '';
+          return dbQuestion.true_false_questions?.correct_answer ?? false;
         case 'code':
           return dbQuestion.code_questions?.model_answer || '';
         case 'short-answer':
@@ -395,6 +396,18 @@ export default function QuestionPage() {
             newQuestion = await getRandomQuestionForTopic(currentTopic.id, freeUser, userType)
           }
 
+          console.log("Raw question data:", newQuestion)
+          console.log("Question type:", newQuestion.type)
+          console.log("Model answer:", newQuestion.model_answer)
+          console.log("Model answer type:", typeof newQuestion.model_answer)
+          if (newQuestion.type === 'true-false') {
+            console.log("True/False specific data:", {
+              modelAnswer: newQuestion.model_answer,
+              modelAnswerType: typeof newQuestion.model_answer,
+              rawModelAnswer: newQuestion.model_answer
+            })
+          }
+
           setQuestion(newQuestion)
           setAnswer(null)
           setSelfAssessmentScore(null)
@@ -652,7 +665,7 @@ export default function QuestionPage() {
   const handleTrueFalseAnswer = async (answer: boolean) => {
     if (!question || !user) return
 
-    const isCorrect = answer === (question.model_answer === "true")
+    const isCorrect = answer === question.model_answer
 
     try {
       const { data: answerData, error: insertError } = await supabase
@@ -694,11 +707,22 @@ export default function QuestionPage() {
     /* TODO: create AI feedback connnection */
     // Very basic mock logic - in reality this would be an AI model
     const responseLength = response.length
-    const modelAnswer = Array.isArray(question.model_answer)
-      ? question.model_answer.join(" ")
-      : question.model_answer
+
+    // For true/false questions, we don't need keyword matching
+    if (question.type === 'true-false') {
+      return {
+        feedback: "Your answer has been recorded.",
+        score: "green" as ScoreType,
+      }
+    }
+
+    // For other question types, use keyword matching
+    const modelAnswer = typeof question.model_answer === 'string'
+      ? question.model_answer
+      : Array.isArray(question.model_answer)
+        ? question.model_answer.join(" ")
+        : String(question.model_answer)
     const hasKeywords = modelAnswer
-      .toLowerCase()
       .split(" ")
       .some((word: string) => response.toLowerCase().includes(word))
 
@@ -912,12 +936,12 @@ export default function QuestionPage() {
                             </tr>
                           </thead>
                           <tbody>
-                            <tr className={answer?.response_text === question.model_answer ? "bg-green-50" : "bg-red-50"}>
+                            <tr className={answer?.response_text === String(question.model_answer) ? "bg-green-50" : "bg-red-50"}>
                               <td className="border p-2">{question.question_text}</td>
                               <td className="border p-2 text-center">
                                 <div className="flex items-center justify-center gap-2">
-                                  {answer?.response_text ? (answer.response_text === "true" ? "True" : "False") : "No answer"}
-                                  {answer?.response_text === question.model_answer ? (
+                                  {answer?.response_text === "true" ? "True" : "False"}
+                                  {answer?.response_text === String(question.model_answer) ? (
                                     <CheckCircle2 className="h-4 w-4 text-green-600" />
                                   ) : (
                                     <XCircle className="h-4 w-4 text-red-600" />
@@ -941,7 +965,7 @@ export default function QuestionPage() {
                             <tr className="bg-emerald-50">
                               <td className="border p-2">{question.question_text}</td>
                               <td className="border p-2 text-center">
-                                {question.model_answer === "true" ? "True" : "False"}
+                                {typeof question.model_answer === 'boolean' ? (question.model_answer ? "True" : "False") : (question.model_answer === "true" ? "True" : "False")}
                               </td>
                             </tr>
                           </tbody>
@@ -995,7 +1019,7 @@ export default function QuestionPage() {
                                   <tr>
                                     <td className="border p-2">{question.question_text}</td>
                                     <td className="border p-2 text-center">
-                                      {question.model_answer === "true" ? "True" : "False"}
+                                      {typeof question.model_answer === 'boolean' ? (question.model_answer ? "True" : "False") : (question.model_answer === "true" ? "True" : "False")}
                                     </td>
                                   </tr>
                                 </tbody>
@@ -1091,7 +1115,7 @@ export default function QuestionPage() {
                                   <tr>
                                     <td className="border p-2">{question.question_text}</td>
                                     <td className="border p-2 text-center">
-                                      {question.model_answer === "true" ? "True" : "False"}
+                                      {typeof question.model_answer === 'boolean' ? (question.model_answer ? "True" : "False") : (question.model_answer === "true" ? "True" : "False")}
                                     </td>
                                   </tr>
                                 </tbody>

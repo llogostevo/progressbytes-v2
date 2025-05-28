@@ -7,7 +7,7 @@ export interface Question {
   topic: string
   type: "text" | "multiple-choice" | "fill-in-the-blank" | "matching" | "code" | "short-answer" | "essay" | "true-false"
   question_text: string
-  model_answer: string | string[]
+  model_answer: string | string[] | boolean
   options?: string[]
   correctAnswerIndex?: number
   order_important?: boolean

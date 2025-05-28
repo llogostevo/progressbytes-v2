@@ -15,6 +15,13 @@ export function TrueFalseQuestion({ question, onSubmit, disabled = false }: True
   const [selectedAnswer, setSelectedAnswer] = useState<boolean | null>(null)
   const [isSubmitted, setIsSubmitted] = useState(false)
 
+  console.log("TrueFalseQuestion received:", {
+    question,
+    modelAnswer: question.model_answer,
+    modelAnswerType: typeof question.model_answer,
+    rawModelAnswer: question.model_answer
+  })
+
   const handleSelectAnswer = (answer: boolean) => {
     setSelectedAnswer(answer)
   }
@@ -26,11 +33,14 @@ export function TrueFalseQuestion({ question, onSubmit, disabled = false }: True
   }
 
   const isCorrect = () => {
-    if (!isSubmitted || selectedAnswer === null) return false
-    const modelAnswer = typeof question.model_answer === 'string' 
-      ? question.model_answer.toLowerCase() 
-      : question.model_answer[0].toLowerCase()
-    return selectedAnswer === (modelAnswer === "true")
+    if (!isSubmitted || selectedAnswer === null) return false;
+    console.log("Checking correctness:", {
+      selectedAnswer,
+      modelAnswer: question.model_answer,
+      modelAnswerType: typeof question.model_answer,
+      comparison: selectedAnswer === question.model_answer
+    });
+    return selectedAnswer === question.model_answer;
   }
 
   return (
