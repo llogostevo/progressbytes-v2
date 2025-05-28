@@ -32,9 +32,11 @@ export function TopicFilter({ selectedTopic, onTopicChange, className = "" }: To
     return acc
   }, {} as Record<number, typeof topics>)
 
+  const unitEntries = Object.entries(topicsByUnit)
+
   return (
     <div className={`w-full ${className}`}>
-      <div className="mb-2">
+      <div className="mb-5">
         <Button
           variant={selectedTopic === null ? "default" : "outline"}
           onClick={() => onTopicChange(null)}
@@ -44,15 +46,18 @@ export function TopicFilter({ selectedTopic, onTopicChange, className = "" }: To
           All Topics
         </Button>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {Object.entries(topicsByUnit).map(([unit, unitTopics]) => (
-          <div key={unit} className="space-y-2">
-            <h3 className="text-base font-semibold text-muted-foreground mb-1">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {unitEntries.map(([unit, unitTopics], idx) => (
+          <div
+            key={unit}
+            className={`space-y-2 rounded-md px-5 py-5 ${idx !== 0 ? 'border-t border-muted' : ''} bg-muted/50`}
+          >
+            <h3 className="text-base font-semibold text-muted-foreground mb-3">
               {unitNames[Number(unit)] || `Unit ${unit}`}
             </h3>
             <div
-              className="grid gap-2"
-              style={{ gridAutoFlow: 'column', gridTemplateRows: 'repeat(3, minmax(0, 1fr))' }}
+              className="grid gap-2 w-full overflow-hidden"
+              style={{ gridAutoFlow: 'column', gridTemplateRows: 'repeat(3, minmax(0, 1fr))', minWidth: 0 }}
             >
               {unitTopics.map((topic) => (
                 <Button
