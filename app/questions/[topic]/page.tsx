@@ -55,14 +55,14 @@ interface DBQuestion {
     model_answer?: string;
     language?: string;
     model_answer_code?: string;
-  }[];
+  };
   short_answer_questions?: {
     model_answer: string;
-  }[];
+  };
   essay_questions?: {
     model_answer?: string;
     rubric?: string;
-  }[];
+  };
 }
 
 interface DBSubtopicQuestionLink {
@@ -91,7 +91,65 @@ export async function getTopicBySlug(slug: string): Promise<Topic | undefined> {
   return topic as Topic
 }
 
-// main component
+// Add this helper function before getRandomQuestionForTopic
+function transformQuestion(dbQuestion: DBQuestion, topicName: string): Question {
+  console.log('Raw DB Question:', {
+    id: dbQuestion.id,
+    type: dbQuestion.type,
+    shortAnswerData: dbQuestion.short_answer_questions,
+    allQuestionData: dbQuestion  // Log the entire question object
+  });
+
+
+  return {
+    id: dbQuestion.id,
+    type: dbQuestion.type as Question['type'],
+    topic: topicName,
+    question_text: dbQuestion.question_text,
+    explanation: dbQuestion.explanation,
+    created_at: dbQuestion.created_at,
+    // Map model_answer based on question type
+    model_answer: (() => {
+      switch (dbQuestion.type) {
+        case 'multiple-choice':
+          return dbQuestion.multiple_choice_questions?.[0]?.model_answer || '';
+        case 'fill-in-the-blank':
+          return dbQuestion.fill_in_the_blank_questions?.[0]?.model_answer || '';
+        case 'matching':
+          return dbQuestion.matching_questions?.[0]?.model_answer || '';
+        case 'true-false':
+          return dbQuestion.true_false_questions?.[0]?.model_answer?.toString() || '';
+        case 'code':
+          return dbQuestion.code_questions?.model_answer || '';
+        case 'short-answer':
+          return dbQuestion.short_answer_questions?.model_answer || '';
+        case 'essay':
+          return dbQuestion.essay_questions?.model_answer || '';
+        default:
+          return '';
+      }
+    })(),
+    // Add type-specific data
+    ...(dbQuestion.type === 'multiple-choice' && dbQuestion.multiple_choice_questions?.[0] && {
+      options: dbQuestion.multiple_choice_questions[0].options,
+      correctAnswerIndex: dbQuestion.multiple_choice_questions[0].correct_answer_index
+    }),
+    ...(dbQuestion.type === 'fill-in-the-blank' && dbQuestion.fill_in_the_blank_questions?.[0] && {
+      options: dbQuestion.fill_in_the_blank_questions[0].options,
+      order_important: dbQuestion.fill_in_the_blank_questions[0].order_important
+    }),
+    ...(dbQuestion.type === 'matching' && {
+      pairs: dbQuestion.matching_questions?.map((mq) => ({
+        statement: mq.statement,
+        match: mq.match
+      }))
+    }),
+    ...(dbQuestion.type === 'code' && dbQuestion.code_questions?.[0] && {
+      model_answer_python: dbQuestion.code_questions[0].model_answer_code,
+      language: dbQuestion.code_questions[0].language
+    })
+  };
+}
 
 export async function getRandomQuestionForTopic(topicId: string, freeUser: boolean, userType: "revision" | "revisionAI"| "basic" | null): Promise<Question> {
   const supabase = createClient()
@@ -158,6 +216,8 @@ export async function getRandomQuestionForTopic(topicId: string, freeUser: boole
     `)
     .eq('topic_id', topicId)
 
+    console.log('Raw questions data:', JSON.stringify(questions, null, 2));
+
   if (questionsError) {
     throw new Error(`Error fetching questions for topic ID: ${topicId}. Error: ${questionsError.message}`)
   }
@@ -171,58 +231,7 @@ export async function getRandomQuestionForTopic(topicId: string, freeUser: boole
     subtopic.subtopic_question_link.flatMap(link => {
       const question = link.questions
       if (!question) return []
-
-      // Transform the question data to match the expected format
-      const transformedQuestion: Question = {
-        id: question.id,
-        type: question.type as Question['type'],
-        topic: topic.name, // Set the topic name
-        question_text: question.question_text,
-        explanation: question.explanation,
-        created_at: question.created_at,
-        // Map model_answer based on question type
-        model_answer: (() => {
-          switch (question.type) {
-            case 'multiple-choice':
-              return question.multiple_choice_questions?.[0]?.model_answer || '';
-            case 'fill-in-the-blank':
-              return question.fill_in_the_blank_questions?.[0]?.model_answer || '';
-            case 'matching':
-              return question.matching_questions?.[0]?.model_answer || '';
-            case 'true-false':
-              return question.true_false_questions?.[0]?.model_answer?.toString() || '';
-            case 'code':
-              return question.code_questions?.[0]?.model_answer || '';
-            case 'short-answer':
-              return question.short_answer_questions?.[0]?.model_answer || '';
-            case 'essay':
-              return question.essay_questions?.[0]?.model_answer || '';
-            default:
-              return '';
-          }
-        })(),
-        // Add type-specific data
-        ...(question.type === 'multiple-choice' && question.multiple_choice_questions?.[0] && {
-          options: question.multiple_choice_questions[0].options,
-          correctAnswerIndex: question.multiple_choice_questions[0].correct_answer_index
-        }),
-        ...(question.type === 'fill-in-the-blank' && question.fill_in_the_blank_questions?.[0] && {
-          options: question.fill_in_the_blank_questions[0].options,
-          order_important: question.fill_in_the_blank_questions[0].order_important,
-          model_answer: question.fill_in_the_blank_questions[0].correct_answers || []
-        }),
-        ...(question.type === 'matching' && {
-          pairs: question.matching_questions?.map((mq) => ({
-            statement: mq.statement,
-            match: mq.match
-          }))
-        }),
-        ...(question.type === 'code' && question.code_questions?.[0] && {
-          model_answer_python: question.code_questions[0].model_answer_code,
-          language: question.code_questions[0].language
-        })
-      }
-      return transformedQuestion
+      return transformQuestion(question, topic.name)
     })
   )
 
@@ -255,6 +264,12 @@ export async function getQuestionById(questionId: string): Promise<Question | un
       question_text,
       explanation,
       created_at,
+      subtopic_id,
+      subtopics!inner (
+        topics (
+          name
+        )
+      ),
       multiple_choice_questions (
         options,
         correct_answer_index,
@@ -296,61 +311,10 @@ export async function getQuestionById(questionId: string): Promise<Question | un
     return undefined
   }
 
-  // Cast the question data to our DBQuestion type
-  const dbQuestion = question as unknown as DBQuestion
+  const topicName = question.subtopics?.[0]?.topics?.[0]?.name || ''
 
-  // Transform the question data to match the expected format
-  const transformedQuestion: Question = {
-    id: dbQuestion.id,
-    type: dbQuestion.type as Question['type'],
-    topic: '', // This will be set by the caller
-    question_text: dbQuestion.question_text,
-    explanation: dbQuestion.explanation,
-    created_at: dbQuestion.created_at,
-    // Map model_answer based on question type
-    model_answer: (() => {
-      switch (dbQuestion.type) {
-        case 'multiple-choice':
-          return dbQuestion.multiple_choice_questions?.[0]?.model_answer || '';
-        case 'fill-in-the-blank':
-          return dbQuestion.fill_in_the_blank_questions?.[0]?.model_answer || '';
-        case 'matching':
-          return dbQuestion.matching_questions?.[0]?.model_answer || '';
-        case 'true-false':
-          return dbQuestion.true_false_questions?.[0]?.model_answer?.toString() || '';
-        case 'code':
-          return dbQuestion.code_questions?.[0]?.model_answer || '';
-        case 'short-answer':
-          return dbQuestion.short_answer_questions?.[0]?.model_answer || '';
-        case 'essay':
-          return dbQuestion.essay_questions?.[0]?.model_answer || '';
-        default:
-          return '';
-      }
-    })(),
-    // Add type-specific data
-    ...(dbQuestion.type === 'multiple-choice' && dbQuestion.multiple_choice_questions?.[0] && {
-      options: dbQuestion.multiple_choice_questions[0].options,
-      correctAnswerIndex: dbQuestion.multiple_choice_questions[0].correct_answer_index
-    }),
-    ...(dbQuestion.type === 'fill-in-the-blank' && dbQuestion.fill_in_the_blank_questions?.[0] && {
-      options: dbQuestion.fill_in_the_blank_questions[0].options,
-      order_important: dbQuestion.fill_in_the_blank_questions[0].order_important,
-      model_answer: dbQuestion.fill_in_the_blank_questions[0].correct_answers || []
-    }),
-    ...(dbQuestion.type === 'matching' && {
-      pairs: dbQuestion.matching_questions?.map((mq) => ({
-        statement: mq.statement,
-        match: mq.match
-      }))
-    }),
-    ...(dbQuestion.type === 'code' && dbQuestion.code_questions?.[0] && {
-      model_answer_python: dbQuestion.code_questions[0].model_answer_code,
-      language: dbQuestion.code_questions[0].language
-    })
-  }
-
-  return transformedQuestion
+  // Transform the question using the shared function
+  return transformQuestion(question as unknown as DBQuestion, topicName)
 }
 
 export default function QuestionPage() {
@@ -429,13 +393,6 @@ export default function QuestionPage() {
             newQuestion = await getRandomQuestionForTopic(currentTopic.id, freeUser, userType)
           }
 
-          console.log("Loaded question:", {
-            id: newQuestion.id,
-            type: newQuestion.type,
-            text: newQuestion.question_text,
-            options: newQuestion.options,
-            correctAnswerIndex: newQuestion.correctAnswerIndex
-          })
           setQuestion(newQuestion)
           setAnswer(null)
           setSelfAssessmentScore(null)
@@ -795,12 +752,6 @@ export default function QuestionPage() {
     )
   }
 
-  console.log("Rendering question:", {
-    type: question.type,
-    text: question.question_text,
-    options: question.options,
-    correctAnswerIndex: question.correctAnswerIndex
-  })
 
   return (
     <div className="container mx-auto px-4 py-8">
