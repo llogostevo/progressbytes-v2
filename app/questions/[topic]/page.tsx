@@ -136,7 +136,8 @@ function transformQuestion(dbQuestion: DBQuestion, topicName: string): Question 
     }),
     ...(dbQuestion.type === 'fill-in-the-blank' && dbQuestion.fill_in_the_blank_questions && {
       options: dbQuestion.fill_in_the_blank_questions.options,
-      order_important: dbQuestion.fill_in_the_blank_questions.order_important
+      order_important: dbQuestion.fill_in_the_blank_questions.order_important,
+      model_answer: dbQuestion.fill_in_the_blank_questions.correct_answers
     }),
     ...(dbQuestion.type === 'matching' && {
       pairs: dbQuestion.matching_questions?.map((mq) => ({
