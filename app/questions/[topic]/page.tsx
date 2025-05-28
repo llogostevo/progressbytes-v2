@@ -34,7 +34,7 @@ interface DBQuestion {
     options: string[];
     correct_answer_index: number;
     model_answer?: string;
-  }[];
+  };
   fill_in_the_blank_questions?: {
     correct_answers: string[];
     model_answer?: string;
@@ -112,7 +112,7 @@ function transformQuestion(dbQuestion: DBQuestion, topicName: string): Question 
     model_answer: (() => {
       switch (dbQuestion.type) {
         case 'multiple-choice':
-          return dbQuestion.multiple_choice_questions?.[0]?.model_answer || '';
+          return dbQuestion.multiple_choice_questions?.model_answer || '';
         case 'fill-in-the-blank':
           return dbQuestion.fill_in_the_blank_questions?.model_answer || '';
         case 'matching':
@@ -130,9 +130,9 @@ function transformQuestion(dbQuestion: DBQuestion, topicName: string): Question 
       }
     })(),
     // Add type-specific data
-    ...(dbQuestion.type === 'multiple-choice' && dbQuestion.multiple_choice_questions?.[0] && {
-      options: dbQuestion.multiple_choice_questions[0].options,
-      correctAnswerIndex: dbQuestion.multiple_choice_questions[0].correct_answer_index
+    ...(dbQuestion.type === 'multiple-choice' && dbQuestion.multiple_choice_questions && {
+      options: dbQuestion.multiple_choice_questions.options,
+      correctAnswerIndex: dbQuestion.multiple_choice_questions.correct_answer_index
     }),
     ...(dbQuestion.type === 'fill-in-the-blank' && dbQuestion.fill_in_the_blank_questions && {
       options: dbQuestion.fill_in_the_blank_questions.options,
