@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { topics } from "@/lib/data"
 import type { Answer, Question, ScoreType } from "@/lib/types"
 import { CheckCircle, AlertTriangle, AlertCircle, ArrowRight, BookOpen } from "lucide-react"
 import Link from "next/link"
@@ -16,6 +15,32 @@ import { createClient } from "@/utils/supabase/client"
 import { UserLogin } from "@/components/user-login"
 import { TopicFilter } from "@/components/topic-filter"
 import { QuestionTypeFilter } from "@/components/question-type-filter"
+import { DynamicIcon } from "@/components/ui/dynamicicon"
+
+interface DBTopic {
+  id: string
+  name: string
+  description: string
+  icon?: string
+  slug: string
+  unit: number
+  disabled?: boolean
+}
+
+interface TypeSpecificData {
+  model_answer?: string | boolean | string[]
+  model_answer_code?: string
+  order_important?: boolean
+  correct_answers?: string[]
+  correct_answer?: boolean
+  options?: string[]
+  correct_answer_index?: number
+}
+
+interface MatchingPair {
+  statement: string
+  match: string
+}
 
 export default function RevisitPage() {
   const router = useRouter()
@@ -29,6 +54,7 @@ export default function RevisitPage() {
   const [activeTab, setActiveTab] = useState<ScoreType | "all">(tabParam || "all")
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [topics, setTopics] = useState<DBTopic[]>([])
 
   useEffect(() => {
     const getUser = async () => {
@@ -37,15 +63,27 @@ export default function RevisitPage() {
       if (user) {
         setUser(user)
 
+        // Fetch topics from the database
+        const { data: topicsData, error: topicsError } = await supabase
+          .from('topics')
+          .select('*')
+
+        if (topicsError) {
+          console.error('Error fetching topics:', topicsError)
+          return
+        }
+
+        setTopics(topicsData || [])
+
         // Fetch answers for the user
-        const { data: answersData, error } = await supabase
+        const { data: answersData, error: answersError } = await supabase
           .from('student_answers')
           .select('*')
           .eq('student_id', user.id)
           .order('submitted_at', { ascending: false })
 
-        if (error) {
-          console.error('Error fetching answers:', error)
+        if (answersError) {
+          console.error('Error fetching answers:', answersError)
           return
         }
 
@@ -61,27 +99,134 @@ export default function RevisitPage() {
           self_assessed: answer.self_assessed
         }))
 
+        // Get all question IDs from answers
+        const questionIds = mappedAnswers.map(answer => answer.question_id)
+
+        // Fetch questions with their type-specific data
+        const { data: questionsData, error: questionsError } = await supabase
+          .from('questions')
+          .select(`
+            *,
+            short_answer_questions(*),
+            true_false_questions(*),
+            matching_questions(*),
+            fill_in_the_blank_questions(*),
+            code_questions(*),
+            multiple_choice_questions(*),
+            essay_questions(*),
+            subtopic_question_link(
+              subtopic:subtopics(
+                topic:topics(*)
+              )
+            )
+          `)
+          .in('id', questionIds)
+
+        if (questionsError) {
+          console.error('Error fetching questions:', questionsError)
+          return
+        }
+
+        console.log('Questions data:', questionsData)
+
+        // Create a map of questions with their type-specific data
+        const questionMap: Record<string, Question> = {}
+        questionsData?.forEach(q => {
+          let typeSpecificData: TypeSpecificData | null = null
+          let pairs: MatchingPair[] = []
+          let options: string[] = []
+          let correctAnswerIndex: number = 0
+
+          switch (q.type) {
+            case 'short-answer':
+              typeSpecificData = {
+                model_answer: q.short_answer_questions?.model_answer || '',
+                model_answer_code: q.short_answer_questions?.model_answer_code,
+                order_important: q.short_answer_questions?.order_important
+              }
+              console.log('Short answer data:', {
+                questionId: q.id,
+                typeSpecificData,
+                rawData: q.short_answer_questions
+              })
+              break
+            case 'true-false':
+              typeSpecificData = q.true_false_questions?.[0] as TypeSpecificData
+              break
+            case 'matching':
+              typeSpecificData = q.matching_questions?.[0] as TypeSpecificData
+              pairs = q.matching_questions || []
+              break
+            case 'fill-in-the-blank':
+              typeSpecificData = q.fill_in_the_blank_questions?.[0] as TypeSpecificData
+              break
+            case 'code':
+              typeSpecificData = q.code_questions?.[0] as TypeSpecificData
+              break
+            case 'multiple-choice':
+              typeSpecificData = q.multiple_choice_questions?.[0] as TypeSpecificData
+              options = typeSpecificData?.options || []
+              correctAnswerIndex = typeSpecificData?.correct_answer_index || 0
+              break
+            case 'essay':
+              typeSpecificData = q.essay_questions?.[0] as TypeSpecificData
+              break
+          }
+
+          const topic = q.subtopic_question_link?.[0]?.subtopic?.topic
+
+          const mappedQuestion = {
+            id: q.id,
+            type: q.type,
+            question_text: q.question_text,
+            explanation: q.explanation,
+            topic: topic?.id,
+            model_answer: (() => {
+              switch (q.type) {
+                case 'multiple-choice':
+                  return options[correctAnswerIndex] || ''
+                case 'fill-in-the-blank':
+                  return typeSpecificData?.correct_answers || []
+                case 'true-false':
+                  return typeSpecificData?.correct_answer ?? false
+                case 'matching':
+                  return typeSpecificData?.model_answer || ''
+                case 'code':
+                case 'short-answer':
+                case 'essay':
+                  return typeSpecificData?.model_answer || ''
+                default:
+                  return ''
+              }
+            })(),
+            model_answer_python: typeSpecificData?.model_answer_code,
+            pairs: pairs,
+            order_important: typeSpecificData?.order_important,
+            options: options,
+            correctAnswerIndex: correctAnswerIndex,
+            created_at: q.created_at
+          }
+
+          console.log('Mapped question:', {
+            id: q.id,
+            type: q.type,
+            modelAnswer: mappedQuestion.model_answer
+          })
+
+          questionMap[q.id] = mappedQuestion
+        })
+
+        setQuestions(questionMap)
+
         // Filter by topic if specified
         const filteredByTopic = topicParam
           ? mappedAnswers.filter((answer) => {
-            const question = topics.flatMap((t) => t.questions).find((q) => q.id === answer.question_id)
-            return (
-              question && topics.find((t) => t.slug === topicParam)?.questions.some((q) => q.id === answer.question_id)
-            )
+            const question = questionMap[answer.question_id]
+            return question && topicsData?.some(t => t.slug === topicParam && t.id === question.topic)
           })
           : mappedAnswers
 
         setAnswers(filteredByTopic)
-
-        // Get all questions referenced in answers
-        const questionMap: Record<string, Question> = {}
-        filteredByTopic.forEach((answer) => {
-          const question = topics.flatMap((t) => t.questions).find((q) => q.id === answer.question_id)
-          if (question) {
-            questionMap[question.id] = question
-          }
-        })
-        setQuestions(questionMap)
 
         await supabase.from('user_activity').insert({
           user_id: user.id,
@@ -112,7 +257,7 @@ export default function RevisitPage() {
       const question = questions[answer.question_id]
       if (!question) return acc
 
-      const topicSlug = topics.find((t) => t.questions.some((q) => q.id === answer.question_id))?.slug || "unknown"
+      const topicSlug = topics.find((t) => t.id === question.topic)?.slug || "unknown"
 
       if (!acc[topicSlug]) {
         acc[topicSlug] = []
@@ -268,7 +413,7 @@ export default function RevisitPage() {
                   return (
                     <div key={topicSlug} className="space-y-4">
                       <h2 className="text-xl font-bold flex items-center gap-2">
-                        {topic.icon && React.createElement(topic.icon, { size: 20, className: "text-emerald-500" })}
+                        {topic.icon && <DynamicIcon name={topic.icon} size={20} className="text-emerald-500" />}
                         {topic.name}
                       </h2>
 
@@ -490,7 +635,13 @@ export default function RevisitPage() {
                                         {question.type === "code" && (
                                           <h4 className="text-sm font-medium mb-1">Pseudocode:</h4>
                                         )}
-                                        <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">{question.model_answer}</pre>
+                                        {question.type === "short-answer" ? (
+                                          <div className="bg-emerald-50 p-4 rounded-md">
+                                            <pre className="whitespace-pre-wrap font-sans text-sm text-emerald-700">{question.model_answer}</pre>
+                                          </div>
+                                        ) : (
+                                          <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">{question.model_answer}</pre>
+                                        )}
                                       </div>
                                       {question.model_answer_python && (
                                         <div>
@@ -530,7 +681,7 @@ export default function RevisitPage() {
                                         className="flex-1 border-emerald-600 text-emerald-600 hover:bg-emerald-50 shadow-sm"
                                         size="lg"
                                       >
-                                        {topic.icon && React.createElement(topic.icon, { size: 16, className: "mr-2" })}
+                                        {topic.icon && <DynamicIcon name={topic.icon} size={16} className="mr-2" />}
                                         Practice More {topic.name}
                                         <ArrowRight className="ml-2 h-4 w-4" />
                                       </Button>
