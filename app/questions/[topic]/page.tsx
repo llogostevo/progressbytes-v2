@@ -6,7 +6,6 @@ import { FeedbackDisplay } from "@/components/feedback-display"
 import { SelfAssessment } from "@/components/self-assessment"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { saveAnswer, currentUser } from "@/lib/data"
 import type { Question, Answer, ScoreType, Topic } from "@/lib/types"
 import { ArrowLeft, RefreshCw, CheckCircle2, XCircle } from "lucide-react"
 import Link from "next/link"
@@ -267,10 +266,11 @@ export async function getQuestionById(questionId: string): Promise<Question | un
       question_text,
       explanation,
       created_at,
-      subtopic_id,
-      subtopics!inner (
-        topics (
-          name
+      subtopic_question_link!inner (
+        subtopics!inner (
+          topics!inner (
+            name
+          )
         )
       ),
       multiple_choice_questions (
@@ -314,7 +314,9 @@ export async function getQuestionById(questionId: string): Promise<Question | un
     return undefined
   }
 
-  const topicName = question.subtopics?.[0]?.topics?.[0]?.name || ''
+  // Get the first topic name from the many-to-many relationship
+  // In practice, a question should belong to at least one topic through subtopics
+  const topicName = question.subtopic_question_link?.[0]?.subtopics?.[0]?.topics?.[0]?.name || ''
 
   // Transform the question using the shared function
   return transformQuestion(question as unknown as DBQuestion, topicName)

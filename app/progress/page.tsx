@@ -1,35 +1,76 @@
 "use client"
 
 import React from "react"
-
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-// import { topics } from "@/lib/data"
-import type { Answer, ScoreType } from "@/lib/types"
+import type { Answer, ScoreType, Topic, Question } from "@/lib/types"
 import { CheckCircle, AlertTriangle, AlertCircle, ArrowRight, Calendar } from "lucide-react"
-// import { CheckCircle, AlertTriangle, AlertCircle, Sparkles, ArrowRight } from "lucide-react"
-
 import Link from "next/link"
 import { UserLogin } from "@/components/user-login"
 import { createClient } from "@/utils/supabase/client"
 import { User } from "@supabase/supabase-js"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import * as Icons from 'lucide-react'
+import { DynamicIcon } from "@/components/ui/dynamicicon"
 
-// Helper function to convert snake_case to PascalCase
-function toPascalCase(str: string): string {
-  return str
-    .split('_')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join('')
+// Define types for the database responses
+interface DBQuestion {
+  id: string;
+  type: string;
+  question_text: string;
+  explanation?: string;
+  created_at: string;
+  model_answer?: string;
+  multiple_choice_questions?: {
+    options: string[];
+    correct_answer_index: number;
+    model_answer?: string;
+  };
+  fill_in_the_blank_questions?: {
+    correct_answers: string[];
+    model_answer?: string;
+    order_important?: boolean;
+    options?: string[];
+  };
+  matching_questions?: Array<{
+    statement: string;
+    match: string;
+    model_answer?: string;
+  }>;
+  code_questions?: {
+    starter_code?: string;
+    model_answer?: string;
+    language?: string;
+    model_answer_code?: string;
+  };
 }
 
-// Helper function to get LucideIcon from string
-function getIconFromString(iconName: string): LucideIcon | undefined {
-  const pascalCaseName = toPascalCase(iconName)
-  return Icons[pascalCaseName as keyof typeof Icons] as LucideIcon | undefined
+interface DBSubtopicQuestionLink {
+  questions: DBQuestion;
+}
+
+interface DBSubtopic {
+  subtopic_question_link: DBSubtopicQuestionLink[];
+}
+
+interface DBUnit {
+  id: string;
+  name: string;
+  unit_number: number;
+}
+
+interface DBTopic {
+  id: string;
+  name: string;
+  description: string;
+  slug: string;
+  icon: string;
+  topicnumber: number;
+  summary: string | null;
+  unit_id: string;
+  units: DBUnit;
+  subtopics: DBSubtopic[];
 }
 
 export default function ProgressPage() {
@@ -114,24 +155,27 @@ export default function ProgressPage() {
 
         // Transform the topics data
         const transformedTopics = topicsWithQuestions?.map(topic => {
+          const dbTopic = topic as unknown as DBTopic;
+          const dbUnit = dbTopic.units as unknown as DBUnit;
+          
           // Get all questions from all subtopics in a single flat array
-          const allQuestions = topic.subtopics.flatMap(subtopic => 
+          const allQuestions = dbTopic.subtopics.flatMap(subtopic => 
             subtopic.subtopic_question_link.flatMap(link => {
-              const question = link.questions
+              const question = link.questions as unknown as DBQuestion;
               return {
                 id: question.id,
-                type: question.type,
-                topic: topic.slug,
+                type: question.type as Question['type'],
+                topic: dbTopic.slug,
                 question_text: question.question_text,
                 explanation: question.explanation,
                 created_at: question.created_at,
                 model_answer: question.model_answer || '',
                 ...(question.type === 'multiple-choice' && {
-                  options: question.multiple_choice_questions?.options,
+                  options: question.multiple_choice_questions?.options || [],
                   correctAnswerIndex: question.multiple_choice_questions?.correct_answer_index
                 }),
                 ...(question.type === 'fill-in-the-blank' && {
-                  options: question.fill_in_the_blank_questions?.options,
+                  options: question.fill_in_the_blank_questions?.options || [],
                   order_important: question.fill_in_the_blank_questions?.order_important,
                   model_answer: question.fill_in_the_blank_questions?.correct_answers || []
                 }),
@@ -139,7 +183,7 @@ export default function ProgressPage() {
                   pairs: question.matching_questions?.map(mq => ({
                     statement: mq.statement,
                     match: mq.match
-                  }))
+                  })) || []
                 }),
                 ...(question.type === 'code' && {
                   model_answer_python: question.code_questions?.model_answer_code,
@@ -149,20 +193,22 @@ export default function ProgressPage() {
             })
           )
 
-          return {
-            id: topic.id,
-            name: topic.name,
-            description: topic.description,
-            summary: topic.summary,
-            icon: topic.icon ? getIconFromString(topic.icon) : undefined,
+          const transformedTopic: Topic = {
+            id: dbTopic.id,
+            name: dbTopic.name,
+            description: dbTopic.description,
+            summary: dbTopic.summary || undefined,
+            icon: dbTopic.icon,
             disabled: false,
-            slug: topic.slug,
-            unit: topic.units.unit_number,
-            unitName: topic.units.name,
+            slug: dbTopic.slug,
+            unit: dbUnit.unit_number,
+            unitName: dbUnit.name,
             questionCount: allQuestions.length,
             questions: allQuestions,
-            topicnumber: topic.topicnumber
+            topicnumber: dbTopic.topicnumber
           }
+
+          return transformedTopic;
         }) || []
 
         setTopics(transformedTopics)
@@ -430,7 +476,9 @@ export default function ProgressPage() {
                     <CardHeader className="pb-2">
                       <CardTitle className="text-lg flex items-center gap-2">
                         {topic.icon && (
-                          <span className="text-emerald-500">{React.createElement(topic.icon, { size: 20 })}</span>
+                          <span className="text-emerald-500">
+                            <DynamicIcon iconName={topic.icon} size={20} />
+                          </span>
                         )}
                         {topic.name}
                       </CardTitle>
@@ -506,7 +554,98 @@ export default function ProgressPage() {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                               <h3 className="text-sm font-medium mb-2">Your Answer:</h3>
-                              <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">{answer.response_text}</pre>
+                              {question?.type === "matching" ? (
+                                <div className="overflow-x-auto">
+                                  <table className="w-full border-collapse">
+                                    <thead>
+                                      <tr>
+                                        <th className="border p-2 text-left">Statement</th>
+                                        <th className="border p-2 text-left">Your Match</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {question.pairs?.map((pair, index) => {
+                                        const userMatches = (() => {
+                                          if (!answer?.response_text) return [];
+                                          try {
+                                            const parsed = JSON.parse(answer.response_text) as Record<string, string[]>;
+                                            return parsed[pair.statement] || [];
+                                          } catch {
+                                            return [];
+                                          }
+                                        })();
+                                        const isCorrect = userMatches.includes(pair.match);
+                                        return (
+                                          <tr key={index} className={isCorrect ? "bg-green-50" : "bg-red-50"}>
+                                            <td className="border p-2">{pair.statement}</td>
+                                            <td className="border p-2">
+                                              <div className="flex items-center gap-2">
+                                                {userMatches.join(", ") || "No match selected"}
+                                                {isCorrect ? (
+                                                  <CheckCircle className="h-4 w-4 text-green-600" />
+                                                ) : (
+                                                  <AlertCircle className="h-4 w-4 text-red-600" />
+                                                )}
+                                              </div>
+                                            </td>
+                                          </tr>
+                                        );
+                                      })}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              ) : question?.type === "true-false" ? (
+                                <div className="overflow-x-auto">
+                                  <table className="w-full border-collapse">
+                                    <thead>
+                                      <tr>
+                                        <th className="border p-2 text-left">Question</th>
+                                        <th className="border p-2 text-center">Your Answer</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      <tr className={answer?.response_text === String(question.model_answer) ? "bg-green-50" : "bg-red-50"}>
+                                        <td className="border p-2">{question.question_text}</td>
+                                        <td className="border p-2 text-center">
+                                          <div className="flex items-center justify-center gap-2">
+                                            {answer?.response_text === "true" ? "True" : "False"}
+                                            {answer?.response_text === String(question.model_answer) ? (
+                                              <CheckCircle className="h-4 w-4 text-green-600" />
+                                            ) : (
+                                              <AlertCircle className="h-4 w-4 text-red-600" />
+                                            )}
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+                                </div>
+                              ) : question?.type === "fill-in-the-blank" ? (
+                                <div className="overflow-x-auto">
+                                  <table className="w-full border-collapse">
+                                    <thead>
+                                      <tr>
+                                        <th className="border p-2 text-left">Your Answer</th>
+                                        <th className="border p-2 text-center">Status</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      <tr className={answer?.response_text === "Correct" ? "bg-green-50" : "bg-red-50"}>
+                                        <td className="border p-2">{answer.response_text}</td>
+                                        <td className="border p-2 text-center">
+                                          {answer?.response_text === "Correct" ? (
+                                            <CheckCircle className="h-4 w-4 text-green-600" />
+                                          ) : (
+                                            <AlertCircle className="h-4 w-4 text-red-600" />
+                                          )}
+                                        </td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+                                </div>
+                              ) : (
+                                <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">{answer.response_text}</pre>
+                              )}
                             </div>
 
                             <div>
@@ -520,12 +659,13 @@ export default function ProgressPage() {
                                   <h3 className="text-sm font-medium mb-2">Self-Assessment:</h3>
                                   <div className="text-sm text-muted-foreground mb-3">
                                     You marked this as{" "}
-                                    <Badge className={`inline-flex items-center gap-1 px-2 py-0.5 ${answer.score === "green"
-                                      ? "bg-emerald-500 hover:bg-emerald-500 text-white"
-                                      : answer.score === "amber"
-                                        ? "bg-amber-500 hover:bg-amber-500 text-white"
-                                        : "bg-red-500 hover:bg-red-500 text-white"
-                                      }`}>
+                                    <Badge className={`inline-flex items-center gap-1 px-2 py-0.5 ${
+                                      answer.score === "green"
+                                        ? "bg-emerald-500 hover:bg-emerald-500 text-white"
+                                        : answer.score === "amber"
+                                          ? "bg-amber-500 hover:bg-amber-500 text-white"
+                                          : "bg-red-500 hover:bg-red-500 text-white"
+                                    }`}>
                                       {answer.score === "green" ? (
                                         <CheckCircle className="h-3 w-3" />
                                       ) : answer.score === "amber" ? (
@@ -550,9 +690,68 @@ export default function ProgressPage() {
                                   {question?.type === "code" && (
                                     <h4 className="text-sm font-medium mb-1">Pseudocode:</h4>
                                   )}
-                                  <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">
-                                    {question?.model_answer || "Model answer not available"}
-                                  </pre>
+                                  {question?.type === "matching" ? (
+                                    <div className="overflow-x-auto">
+                                      <table className="w-full border-collapse">
+                                        <thead>
+                                          <tr>
+                                            <th className="border p-2 text-left">Statement</th>
+                                            <th className="border p-2 text-left">Correct Match</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {question.pairs?.map((pair, index) => (
+                                            <tr key={index}>
+                                              <td className="border p-2">{pair.statement}</td>
+                                              <td className="border p-2">{pair.match}</td>
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  ) : question?.type === "true-false" ? (
+                                    <div className="overflow-x-auto">
+                                      <table className="w-full border-collapse">
+                                        <thead>
+                                          <tr>
+                                            <th className="border p-2 text-left">Question</th>
+                                            <th className="border p-2 text-center">Correct Answer</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          <tr>
+                                            <td className="border p-2">{question.question_text}</td>
+                                            <td className="border p-2 text-center">
+                                              {typeof question.model_answer === 'boolean' ? (question.model_answer ? "True" : "False") : (question.model_answer === "true" ? "True" : "False")}
+                                            </td>
+                                          </tr>
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  ) : question?.type === "fill-in-the-blank" && Array.isArray(question.model_answer) ? (
+                                    question.order_important ? (
+                                      <ol className="font-sans text-sm pl-4 list-decimal">
+                                        {question.model_answer.map((ans, idx) => (
+                                          <li key={idx}>{ans}</li>
+                                        ))}
+                                      </ol>
+                                    ) : (
+                                      <ul className="font-sans text-sm pl-4 list-disc">
+                                        {question.model_answer.map((ans, idx) => (
+                                          <li key={idx}>{ans}</li>
+                                        ))}
+                                      </ul>
+                                    )
+                                  ) : question?.type === "multiple-choice" ? (
+                                    <div className="space-y-2">
+                                      <p className="font-medium">Correct Answer:</p>
+                                      <p>{question.options?.[question.correctAnswerIndex || 0]}</p>
+                                    </div>
+                                  ) : (
+                                    <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">
+                                      {question?.model_answer || "Model answer not available"}
+                                    </pre>
+                                  )}
                                 </div>
                                 {question?.model_answer_python && (
                                   <div>
