@@ -315,7 +315,14 @@ export async function getQuestionById(questionId: string): Promise<Question | un
   }
 
   // Get the first topic name from the many-to-many relationship
-  // In practice, a question should belong to at least one topic through subtopics
+  // TODO: need to capture the full hierarchy
+  /*
+      If a question is linked to multiple subtopics, and those subtopics belong to different topics, you’ll only get the first one.
+      consider capturing the full hierarchy
+      const topicNames = question.subtopic_question_link
+        ?.flatMap(link => link.subtopics?.flatMap(sub => sub.topics?.map(t => t.name)) ?? [])
+        ?? []
+  */
   const topicName = question.subtopic_question_link?.[0]?.subtopics?.[0]?.topics?.[0]?.name || ''
 
   // Transform the question using the shared function
