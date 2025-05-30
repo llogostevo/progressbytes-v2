@@ -20,6 +20,7 @@ import { createClient } from "@/utils/supabase/client"
 import { CTABanner } from "@/components/cta-banner"
 import { UserLogin } from "@/components/user-login"
 import { User } from "@supabase/supabase-js"
+import { QuestionTypeFilter } from "@/components/question-type-filter"
 
 // Define types for the database responses
 interface DBQuestion {
@@ -236,8 +237,6 @@ export async function getRandomQuestionForTopic(topicId: string, freeUser: boole
     })
   )
 
-
-
   // Determine the number of questions based on access level
   let length: number
   if (userType === "revision" || userType === "revisionAI") {
@@ -250,9 +249,39 @@ export async function getRandomQuestionForTopic(topicId: string, freeUser: boole
 
   const randomIndex = Math.floor(Math.random() * length)
   return allQuestions[randomIndex]
+}
 
+// Add this new function to get available question types
+export async function getAvailableQuestionTypes(topicId: string): Promise<string[]> {
+  const supabase = createClient()
 
+  const { data: questions, error: questionsError } = await supabase
+    .from('subtopics')
+    .select(`
+      subtopic_question_link (
+        questions (
+          type
+        )
+      )
+    `)
+    .eq('topic_id', topicId)
 
+  if (questionsError || !questions) {
+    console.error('Error fetching question types:', questionsError)
+    return []
+  }
+
+  // Get unique question types
+  const types = new Set<string>()
+  questions.forEach((subtopic: any) => {
+    subtopic.subtopic_question_link?.forEach((link: any) => {
+      if (link.questions?.type) {
+        types.add(link.questions.type)
+      }
+    })
+  })
+
+  return Array.from(types)
 }
 
 export async function getQuestionById(questionId: string): Promise<Question | undefined> {
@@ -317,7 +346,7 @@ export async function getQuestionById(questionId: string): Promise<Question | un
   // Get the first topic name from the many-to-many relationship
   // TODO: need to capture the full hierarchy
   /*
-      If a question is linked to multiple subtopics, and those subtopics belong to different topics, you’ll only get the first one.
+      If a question is linked to multiple subtopics, and those subtopics belong to different topics, you'll only get the first one.
       consider capturing the full hierarchy
       const topicNames = question.subtopic_question_link
         ?.flatMap(link => link.subtopics?.flatMap(sub => sub.topics?.map(t => t.name)) ?? [])
@@ -345,6 +374,8 @@ export default function QuestionPage() {
   const [isLoadingUserType, setIsLoadingUserType] = useState(true)
   const [freeUser, setFreeUser] = useState(true)
   const [user, setUser] = useState<User | null>(null)
+  const [selectedQuestionType, setSelectedQuestionType] = useState<string | null>(null)
+  const [availableQuestionTypes, setAvailableQuestionTypes] = useState<string[]>([])
   // const [hasPaid, setHasPaid] = useState(false)
 
   // const freeUser = currentUser.email === "student@example.com"
@@ -393,6 +424,10 @@ export default function QuestionPage() {
         setTopic(currentTopic || null)
 
         if (currentTopic) {
+          // Get available question types
+          const types = await getAvailableQuestionTypes(currentTopic.id)
+          setAvailableQuestionTypes(types)
+
           let newQuestion: Question
           if (questionId) {
             const question = await getQuestionById(questionId)
@@ -403,6 +438,22 @@ export default function QuestionPage() {
             }
           } else {
             newQuestion = await getRandomQuestionForTopic(currentTopic.id, freeUser, userType)
+          }
+
+          // If a question type is selected, keep trying until we get a matching question
+          if (selectedQuestionType) {
+            let attempts = 0
+            const maxAttempts = 10 // Prevent infinite loops
+            
+            while (newQuestion.type !== selectedQuestionType && attempts < maxAttempts) {
+              newQuestion = await getRandomQuestionForTopic(currentTopic.id, freeUser, userType)
+              attempts++
+            }
+            
+            // If we couldn't find a matching question after max attempts, show a message
+            if (attempts >= maxAttempts && newQuestion.type !== selectedQuestionType) {
+              console.warn(`Could not find a ${selectedQuestionType} question after ${maxAttempts} attempts`)
+            }
           }
 
           console.log("Raw question data:", newQuestion)
@@ -429,7 +480,7 @@ export default function QuestionPage() {
     }
 
     loadQuestion()
-  }, [topicSlug, isLoadingUserType, userType, freeUser, questionId])
+  }, [topicSlug, isLoadingUserType, userType, freeUser, questionId, selectedQuestionType])
 
   const handleSubmitAnswer = async (responseText: string) => {
     if (!question || !user) return
@@ -544,7 +595,24 @@ export default function QuestionPage() {
       if (!topic) {
         throw new Error("No topic found")
       }
-      const newQuestion = await getRandomQuestionForTopic(topic.id, freeUser, userType)
+      let newQuestion = await getRandomQuestionForTopic(topic.id, freeUser, userType)
+      
+      // If a question type is selected, keep trying until we get a matching question
+      if (selectedQuestionType) {
+        let attempts = 0
+        const maxAttempts = 10 // Prevent infinite loops
+        
+        while (newQuestion.type !== selectedQuestionType && attempts < maxAttempts) {
+          newQuestion = await getRandomQuestionForTopic(topic.id, freeUser, userType)
+          attempts++
+        }
+        
+        // If we couldn't find a matching question after max attempts, show a message
+        if (attempts >= maxAttempts && newQuestion.type !== selectedQuestionType) {
+          console.warn(`Could not find a ${selectedQuestionType} question after ${maxAttempts} attempts`)
+        }
+      }
+
       setQuestion(newQuestion)
       setAnswer(null)
       setSelfAssessmentScore(null)
@@ -553,7 +621,7 @@ export default function QuestionPage() {
     }
   }
 
-  const handleMultipleChoiceAnswer = async (isCorrect: boolean) => {
+  const handleMultipleChoiceAnswer = async (selectedIndex: number, isCorrect: boolean) => {
     if (!question || !user) return
 
     try {
@@ -562,7 +630,7 @@ export default function QuestionPage() {
         .insert({
           student_id: user.id,
           question_id: question.id,
-          response_text: isCorrect ? "Correct" : "Incorrect",
+          response_text: selectedIndex.toString(),
           ai_feedback: isCorrect ? "Well done! You selected the correct answer." : "Try to understand why this answer is incorrect.",
           student_score: isCorrect ? "green" : "red",
           self_assessed: true,
@@ -577,7 +645,7 @@ export default function QuestionPage() {
         id: answerData.id,
         question_id: question.id,
         student_id: user.id,
-        response_text: isCorrect ? "Correct" : "Incorrect",
+        response_text: selectedIndex.toString(),
         ai_feedback: isCorrect ? "Well done! You selected the correct answer." : "Try to understand why this answer is incorrect.",
         score: isCorrect ? "green" : "red",
         submitted_at: answerData.submitted_at,
@@ -591,7 +659,7 @@ export default function QuestionPage() {
     }
   }
 
-  const handleFillInTheBlankAnswer = async (isCorrect: boolean) => {
+  const handleFillInTheBlankAnswer = async (isCorrect: boolean, selectedIndexes: number[]) => {
     if (!question || !user) return
 
     try {
@@ -600,7 +668,7 @@ export default function QuestionPage() {
         .insert({
           student_id: user.id,
           question_id: question.id,
-          response_text: isCorrect ? "Correct" : "Incorrect",
+          response_text: JSON.stringify(selectedIndexes),
           ai_feedback: isCorrect ? "Well done! You selected the correct answers." : "Try to understand why these answers are incorrect.",
           student_score: isCorrect ? "green" : "red",
           self_assessed: true,
@@ -615,7 +683,7 @@ export default function QuestionPage() {
         id: answerData.id,
         question_id: question.id,
         student_id: user.id,
-        response_text: isCorrect ? "Correct" : "Incorrect",
+        response_text: JSON.stringify(selectedIndexes),
         ai_feedback: isCorrect ? "Well done! You selected the correct answers." : "Try to understand why these answers are incorrect.",
         score: isCorrect ? "green" : "red",
         submitted_at: answerData.submitted_at,
@@ -753,6 +821,12 @@ export default function QuestionPage() {
     }
   }
 
+  const handleQuestionTypeChange = (type: string | null) => {
+    setSelectedQuestionType(type)
+    setAnswer(null)
+    setSelfAssessmentScore(null)
+  }
+
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-12 flex justify-center">
@@ -804,11 +878,15 @@ export default function QuestionPage() {
           <p className="text-muted-foreground">{topic.description}</p>
         </div>
 
-        {/* <div className="mb-6 md:mb-8">
-          {freeUser && <CTABanner variant="free" />}
-          {!freeUser && userType === "basic" && <CTABanner variant="basic" />}
-          {!freeUser && userType === "revisionAI" && <CTABanner variant="premium" />}
-        </div> */}
+        {/* Add QuestionTypeFilter component with available types */}
+        <div className="mb-6">
+          <QuestionTypeFilter 
+            selectedType={selectedQuestionType} 
+            onTypeChange={handleQuestionTypeChange}
+            availableTypes={availableQuestionTypes}
+          />
+        </div>
+
         {/* CTA Banner */}
         <div className="mb-6 md:mb-8">
           {freeUser && <CTABanner variant="free" />}
@@ -975,6 +1053,133 @@ export default function QuestionPage() {
                               <td className="border p-2">{question.question_text}</td>
                               <td className="border p-2 text-center">
                                 {typeof question.model_answer === 'boolean' ? (question.model_answer ? "True" : "False") : (question.model_answer === "true" ? "True" : "False")}
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ) : question.type === "multiple-choice" ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="overflow-x-auto">
+                        <h3 className="font-medium mb-2">Your Answer:</h3>
+                        <table className="w-full border-collapse">
+                          <thead>
+                            <tr>
+                              <th className="border p-2 text-left">Question</th>
+                              <th className="border p-2 text-center">Your Answer</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr className={answer?.response_text === String(question.correctAnswerIndex) ? "bg-green-50" : "bg-red-50"}>
+                              <td className="border p-2">{question.question_text}</td>
+                              <td className="border p-2 text-center">
+                                <div className="flex items-center justify-center gap-2">
+                                  {question.options?.[parseInt(answer?.response_text || "0")] || "No answer selected"}
+                                  {answer?.response_text === String(question.correctAnswerIndex) ? (
+                                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                  ) : (
+                                    <XCircle className="h-4 w-4 text-red-600" />
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <h3 className="font-medium mb-2 text-emerald-700">Correct Answer:</h3>
+                        <table className="w-full border-collapse">
+                          <thead>
+                            <tr>
+                              <th className="border p-2 text-left">Question</th>
+                              <th className="border p-2 text-center">Correct Answer</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr className="bg-emerald-50">
+                              <td className="border p-2">{question.question_text}</td>
+                              <td className="border p-2 text-center">
+                                {question.options?.[question.correctAnswerIndex || 0]}
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ) : question.type === "fill-in-the-blank" ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="overflow-x-auto">
+                        <h3 className="font-medium mb-2">Your Answer:</h3>
+                        <table className="w-full border-collapse">
+                          <thead>
+                            <tr>
+                              <th className="border p-2 text-left">Question</th>
+                              <th className="border p-2 text-center">Your Answer</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td className="border p-2">{question.question_text}</td>
+                              <td className="border p-2">
+                                {(() => {
+                                  try {
+                                    const selectedIndexes = JSON.parse(answer?.response_text || "[]") as number[];
+                                    const selectedOptions = selectedIndexes.map(index => question.options?.[index]);
+                                    const modelAnswer = Array.isArray(question.model_answer) ? question.model_answer : [question.model_answer];
+                                    
+                                    return (
+                                      <div className="space-y-2">
+                                        {selectedOptions.map((option, i) => {
+                                          const isOptionCorrect = question.order_important
+                                            ? option === modelAnswer[i]
+                                            : modelAnswer.includes(option);
+                                          return (
+                                            <div key={i} className={`flex items-center gap-2 ${isOptionCorrect ? "text-green-600" : "text-red-600"}`}>
+                                              {option || "No answer selected"}
+                                              {isOptionCorrect ? (
+                                                <CheckCircle2 className="h-4 w-4" />
+                                              ) : (
+                                                <XCircle className="h-4 w-4" />
+                                              )}
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    );
+                                  } catch {
+                                    return "Invalid answer format";
+                                  }
+                                })()}
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <h3 className="font-medium mb-2 text-emerald-700">Correct Answer:</h3>
+                        <table className="w-full border-collapse">
+                          <thead>
+                            <tr>
+                              <th className="border p-2 text-left">Question</th>
+                              <th className="border p-2 text-center">Correct Answer</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td className="border p-2">{question.question_text}</td>
+                              <td className="border p-2">
+                                {Array.isArray(question.model_answer) ? (
+                                  <div className="space-y-2">
+                                    {question.model_answer.map((answer, i) => (
+                                      <div key={i} className="text-emerald-600">
+                                        {answer}
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  "No correct answer available"
+                                )}
                               </td>
                             </tr>
                           </tbody>

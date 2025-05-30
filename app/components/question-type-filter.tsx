@@ -6,6 +6,7 @@ interface QuestionTypeFilterProps {
 }
 
 const questionTypes = [
+  { value: "multiple-choice", label: "Multiple Choice" },
   { value: "short-answer", label: "Short Answer" },
   { value: "true-false", label: "True/False" },
   { value: "matching", label: "Matching" },

@@ -110,7 +110,11 @@ export default function RevisitPage() {
             short_answer_questions(*),
             true_false_questions(*),
             matching_questions(*),
-            fill_in_the_blank_questions(*),
+            fill_in_the_blank_questions(
+              options,
+              correct_answers,
+              order_important
+            ),
             code_questions(*),
             multiple_choice_questions(*),
             essay_questions(*),
@@ -136,6 +140,7 @@ export default function RevisitPage() {
           let pairs: MatchingPair[] = []
           let options: string[] = []
           let correctAnswerIndex: number = 0
+          let correctAnswers: string[] = []
 
           switch (q.type) {
             case 'short-answer':
@@ -159,14 +164,20 @@ export default function RevisitPage() {
               break
             case 'fill-in-the-blank':
               typeSpecificData = q.fill_in_the_blank_questions?.[0] as TypeSpecificData
+              options = q.fill_in_the_blank_questions?.[0]?.options || []
+              correctAnswers = q.fill_in_the_blank_questions?.[0]?.correct_answers || []
               break
             case 'code':
               typeSpecificData = q.code_questions?.[0] as TypeSpecificData
               break
             case 'multiple-choice':
-              typeSpecificData = q.multiple_choice_questions?.[0] as TypeSpecificData
-              options = typeSpecificData?.options || []
-              correctAnswerIndex = typeSpecificData?.correct_answer_index || 0
+              // Handle both array and object cases
+              const mcq = Array.isArray(q.multiple_choice_questions)
+                ? q.multiple_choice_questions[0]
+                : q.multiple_choice_questions;
+              typeSpecificData = mcq as TypeSpecificData;
+              options = typeSpecificData?.options || [];
+              correctAnswerIndex = typeSpecificData?.correct_answer_index || 0;
               break
             case 'essay':
               typeSpecificData = q.essay_questions?.[0] as TypeSpecificData
@@ -186,7 +197,7 @@ export default function RevisitPage() {
                 case 'multiple-choice':
                   return options[correctAnswerIndex] || ''
                 case 'fill-in-the-blank':
-                  return typeSpecificData?.correct_answers || []
+                  return correctAnswers
                 case 'true-false':
                   return typeSpecificData?.correct_answer ?? false
                 case 'matching':
@@ -570,19 +581,57 @@ export default function RevisitPage() {
                                         <table className="w-full border-collapse">
                                           <thead>
                                             <tr>
-                                              <th className="border p-2 text-left">Your Answer</th>
-                                              <th className="border p-2 text-center">Status</th>
+                                              <th className="border p-2 text-left">Question</th>
+                                              <th className="border p-2 text-center">Your Answer</th>
                                             </tr>
                                           </thead>
                                           <tbody>
-                                            <tr className={answer.response_text === "Correct" ? "bg-green-50" : "bg-red-50"}>
-                                              <td className="border p-2">{answer.response_text}</td>
-                                              <td className="border p-2 text-center">
-                                                {answer.response_text === "Correct" ? (
-                                                  <CheckCircle className="h-4 w-4 text-green-600" />
-                                                ) : (
-                                                  <AlertCircle className="h-4 w-4 text-red-600" />
-                                                )}
+                                            <tr>
+                                              <td className="border p-2">{question.question_text}</td>
+                                              <td className="border p-2">
+                                                {(() => {
+                                                  // DEBUG: Print selectedIndexes, options, modelAnswer, and order_important for troubleshooting
+                                                  let selectedIndexes: number[] = [];
+                                                  let oldFormat = false;
+                                                  try {
+                                                    const parsed = JSON.parse(answer.response_text || "[]");
+                                                    if (Array.isArray(parsed)) {
+                                                      selectedIndexes = parsed;
+                                                    } else {
+                                                      oldFormat = true;
+                                                    }
+                                                  } catch (e) {
+                                                    oldFormat = true;
+                                                  }
+                                                  const options = Array.isArray(question.options) ? question.options : [];
+                                                  const blanksCount = Array.isArray(question.model_answer) ? question.model_answer.length : selectedIndexes.length;
+                                                  const modelAnswer = Array.isArray(question.model_answer) ? question.model_answer : [question.model_answer];
+                                                  console.log('DEBUG FIB:', { selectedIndexes, options, modelAnswer, order_important: question.order_important });
+                                                  if (oldFormat) {
+                                                    return <div className="text-red-600">This answer was submitted using an old format and cannot be displayed.</div>;
+                                                  }
+                                                  return (
+                                                    <div className="space-y-2">
+                                                      {Array.from({ length: blanksCount }).map((_, i) => {
+                                                        const selectedIndex = selectedIndexes[i];
+                                                        const option = typeof selectedIndex === 'number' && options[selectedIndex] !== undefined ? options[selectedIndex] : undefined;
+                                                        const isOptionCorrect = option !== undefined && (question.order_important
+                                                          ? option === modelAnswer[i]
+                                                          : modelAnswer.includes(option));
+                                                        return (
+                                                          <div key={i} className={`flex items-center gap-2 ${isOptionCorrect ? "text-green-600" : "text-red-600"}`}>
+                                                            {option || "No answer selected"}
+                                                            {option
+                                                              ? (isOptionCorrect
+                                                                ? <CheckCircle className="h-4 w-4" />
+                                                                : <AlertCircle className="h-4 w-4" />)
+                                                              : <AlertCircle className="h-4 w-4" />}
+                                                          </div>
+                                                        );
+                                                      })}
+                                                    </div>
+                                                  );
+                                                })()}
                                               </td>
                                             </tr>
                                           </tbody>
@@ -593,31 +642,113 @@ export default function RevisitPage() {
                                         <table className="w-full border-collapse">
                                           <thead>
                                             <tr>
-                                              <th className="border p-2 text-left">Correct Answer</th>
+                                              <th className="border p-2 text-left">Question</th>
+                                              <th className="border p-2 text-center">Correct Answer</th>
                                             </tr>
                                           </thead>
                                           <tbody>
-                                            <tr className="bg-emerald-50">
+                                            <tr>
+                                              <td className="border p-2">{question.question_text}</td>
                                               <td className="border p-2">
                                                 {Array.isArray(question.model_answer) ? (
                                                   question.order_important ? (
                                                     <ol className="list-decimal pl-4 mb-0">
                                                       {question.model_answer.map((ans, idx) => (
-                                                        <li key={idx}>{ans}</li>
+                                                        <li key={idx} className="text-emerald-600">{ans}</li>
                                                       ))}
                                                     </ol>
                                                   ) : (
                                                     <ul className="list-disc pl-4 mb-0">
                                                       {question.model_answer.map((ans, idx) => (
-                                                        <li key={idx}>{ans}</li>
+                                                        <li key={idx} className="text-emerald-600">{ans}</li>
                                                       ))}
                                                     </ul>
                                                   )
                                                 ) : (
-                                                  question.model_answer
+                                                  <span className="text-emerald-600">{question.model_answer}</span>
                                                 )}
                                               </td>
                                             </tr>
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                    </div>
+                                  ) : question.type === "multiple-choice" ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      <div className="overflow-x-auto">
+                                        <h3 className="font-medium mb-2">Your Answer:</h3>
+                                        <table className="w-full border-collapse">
+                                          <thead>
+                                            <tr>
+                                              <th className="border p-2 text-left">Question</th>
+                                              <th className="border p-2 text-left">Your Selection</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            {question.options && question.options.map((option, index) => {
+                                              const userSelectedIndex = parseInt(answer?.response_text ?? "-1");
+                                              const isSelected = userSelectedIndex === index;
+                                              const isCorrect = index === question.correctAnswerIndex;
+                                              return (
+                                                <tr
+                                                  key={index}
+                                                  className={isSelected
+                                                    ? isCorrect
+                                                      ? "bg-green-50"
+                                                      : "bg-red-50"
+                                                    : ""
+                                                  }
+                                                >
+                                                  <td className="border p-2">
+                                                    {index === 0 ? question.question_text : ""}
+                                                  </td>
+                                                  <td className="border p-2">
+                                                    <div className="flex items-center gap-2">
+                                                      {option}
+                                                      {isSelected && (
+                                                        isCorrect
+                                                          ? <CheckCircle className="h-4 w-4 text-green-600 ml-2" />
+                                                          : <AlertCircle className="h-4 w-4 text-red-600 ml-2" />
+                                                      )}
+                                                    </div>
+                                                  </td>
+                                                </tr>
+                                              );
+                                            })}
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                      <div className="overflow-x-auto">
+                                        <h3 className="font-medium mb-2 text-emerald-700">Correct Answer:</h3>
+                                        <table className="w-full border-collapse">
+                                          <thead>
+                                            <tr>
+                                              <th className="border p-2 text-left">Question</th>
+                                              <th className="border p-2 text-left">Correct Option</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            {question.options && question.options.map((option, index) => (
+                                              <tr
+                                                key={index}
+                                                className={index === question.correctAnswerIndex
+                                                  ? "bg-emerald-50"
+                                                  : ""
+                                                }
+                                              >
+                                                <td className="border p-2">
+                                                  {index === 0 ? question.question_text : ""}
+                                                </td>
+                                                <td className="border p-2">
+                                                  <div className="flex items-center gap-2">
+                                                    {option}
+                                                    {index === question.correctAnswerIndex && (
+                                                      <CheckCircle className="h-4 w-4 text-emerald-600 ml-2" />
+                                                    )}
+                                                  </div>
+                                                </td>
+                                              </tr>
+                                            ))}
                                           </tbody>
                                         </table>
                                       </div>

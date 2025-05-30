@@ -3,9 +3,11 @@ import { Button } from "@/components/ui/button"
 interface QuestionTypeFilterProps {
   selectedType: string | null
   onTypeChange: (type: string | null) => void
+  availableTypes?: string[]
 }
 
 const questionTypes = [
+  { value: "multiple-choice", label: "Multiple Choice" },
   { value: "short-answer", label: "Short Answer" },
   { value: "true-false", label: "True/False" },
   { value: "matching", label: "Matching" },
@@ -13,7 +15,11 @@ const questionTypes = [
   { value: "code", label: "Code Question" },
 ]
 
-export function QuestionTypeFilter({ selectedType, onTypeChange }: QuestionTypeFilterProps) {
+export function QuestionTypeFilter({ selectedType, onTypeChange, availableTypes }: QuestionTypeFilterProps) {
+  const filteredQuestionTypes = availableTypes 
+    ? questionTypes.filter(type => availableTypes.includes(type.value))
+    : questionTypes
+
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap gap-2">
@@ -25,7 +31,7 @@ export function QuestionTypeFilter({ selectedType, onTypeChange }: QuestionTypeF
         >
           All Types
         </Button>
-        {questionTypes.map((type) => (
+        {filteredQuestionTypes.map((type) => (
           <Button
             key={type.value}
             variant={selectedType === type.value ? "default" : "outline"}

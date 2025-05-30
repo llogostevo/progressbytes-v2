@@ -7,9 +7,9 @@ import { createClient } from "@/utils/supabase/server"
 import { CTABanner } from "@/components/cta-banner"
 import { UserLogin } from "@/components/user-login"
 import type { Topic, Question } from "@/lib/types"
-import type { LucideIcon } from "lucide-react"
-import { DynamicIcon } from "@/components/ui/dynamicicon"
-import * as Icons from 'lucide-react'
+// import type { LucideIcon } from "lucide-react"
+// import { DynamicIcon } from "@/components/ui/dynamicicon"
+// import * as Icons from 'lucide-react'
 
 // Helper function to convert snake_case to PascalCase
 // function toPascalCase(str: string): string {
@@ -50,17 +50,17 @@ interface DBSubtopic {
   subtopic_question_link: DBSubtopicQuestionLink[];
 }
 
-interface DBTopic {
-  id: string;
-  name: string;
-  description: string;
-  icon?: string;
-  topicnumber?: number;
-  disabled?: boolean;
-  slug: string;
-  unit: number;
-  subtopics: DBSubtopic[];
-}
+// interface DBTopic {
+//   id: string;
+//   name: string;
+//   description: string;
+//   icon?: string;
+//   topicnumber?: number;
+//   disabled?: boolean;
+//   slug: string;
+//   unit: number;
+//   subtopics: DBSubtopic[];
+// }
 
 export default async function Home() {
   const supabase = await createClient()
