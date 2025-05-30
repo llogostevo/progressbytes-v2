@@ -6,7 +6,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { getAllAnswers, topics } from "@/lib/data"
+// import { topics } from "@/lib/data"
 import type { Answer, ScoreType } from "@/lib/types"
 import { CheckCircle, AlertTriangle, AlertCircle, ArrowRight, Calendar } from "lucide-react"
 // import { CheckCircle, AlertTriangle, AlertCircle, Sparkles, ArrowRight } from "lucide-react"
@@ -16,12 +16,28 @@ import { UserLogin } from "@/components/user-login"
 import { createClient } from "@/utils/supabase/client"
 import { User } from "@supabase/supabase-js"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import * as Icons from 'lucide-react'
+
+// Helper function to convert snake_case to PascalCase
+function toPascalCase(str: string): string {
+  return str
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join('')
+}
+
+// Helper function to get LucideIcon from string
+function getIconFromString(iconName: string): LucideIcon | undefined {
+  const pascalCaseName = toPascalCase(iconName)
+  return Icons[pascalCaseName as keyof typeof Icons] as LucideIcon | undefined
+}
 
 export default function ProgressPage() {
   const [answers, setAnswers] = useState<Answer[]>([])
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [timeFilter, setTimeFilter] = useState<'today' | 'week' | 'all'>('today')
+  const [topics, setTopics] = useState<Topic[]>([])
 
   useEffect(() => {
     const getUser = async () => {
@@ -29,6 +45,127 @@ export default function ProgressPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setUser(user)
+
+        // Fetch topics with their associated questions
+        const { data: topicsWithQuestions, error: topicsError } = await supabase
+          .from('topics')
+          .select(`
+            id,
+            name,
+            description,
+            slug,
+            icon,
+            topicnumber,
+            summary,
+            unit_id,
+            units!inner (
+              id,
+              name,
+              unit_number
+            ),
+            subtopics!inner (
+              id,
+              subtopic_question_link!inner (
+                questions!inner (
+                  id,
+                  type,
+                  question_text,
+                  explanation,
+                  created_at,
+                  multiple_choice_questions (
+                    options,
+                    correct_answer_index,
+                    model_answer
+                  ),
+                  short_answer_questions (
+                    model_answer
+                  ),
+                  fill_in_the_blank_questions (
+                    correct_answers,
+                    model_answer,
+                    order_important,
+                    options
+                  ),
+                  matching_questions (
+                    statement,
+                    match,
+                    model_answer
+                  ),
+                  essay_questions (
+                    model_answer,
+                    rubric
+                  ),
+                  code_questions (
+                    starter_code,
+                    model_answer,
+                    language,
+                    model_answer_code
+                  )
+                )
+              )
+            )
+          `)
+          .order('name')
+
+        if (topicsError) {
+          console.error('Error fetching topics:', topicsError)
+          return
+        }
+
+        // Transform the topics data
+        const transformedTopics = topicsWithQuestions?.map(topic => {
+          // Get all questions from all subtopics in a single flat array
+          const allQuestions = topic.subtopics.flatMap(subtopic => 
+            subtopic.subtopic_question_link.flatMap(link => {
+              const question = link.questions
+              return {
+                id: question.id,
+                type: question.type,
+                topic: topic.slug,
+                question_text: question.question_text,
+                explanation: question.explanation,
+                created_at: question.created_at,
+                model_answer: question.model_answer || '',
+                ...(question.type === 'multiple-choice' && {
+                  options: question.multiple_choice_questions?.options,
+                  correctAnswerIndex: question.multiple_choice_questions?.correct_answer_index
+                }),
+                ...(question.type === 'fill-in-the-blank' && {
+                  options: question.fill_in_the_blank_questions?.options,
+                  order_important: question.fill_in_the_blank_questions?.order_important,
+                  model_answer: question.fill_in_the_blank_questions?.correct_answers || []
+                }),
+                ...(question.type === 'matching' && {
+                  pairs: question.matching_questions?.map(mq => ({
+                    statement: mq.statement,
+                    match: mq.match
+                  }))
+                }),
+                ...(question.type === 'code' && {
+                  model_answer_python: question.code_questions?.model_answer_code,
+                  language: question.code_questions?.language
+                })
+              }
+            })
+          )
+
+          return {
+            id: topic.id,
+            name: topic.name,
+            description: topic.description,
+            summary: topic.summary,
+            icon: topic.icon ? getIconFromString(topic.icon) : undefined,
+            disabled: false,
+            slug: topic.slug,
+            unit: topic.units.unit_number,
+            unitName: topic.units.name,
+            questionCount: allQuestions.length,
+            questions: allQuestions,
+            topicnumber: topic.topicnumber
+          }
+        }) || []
+
+        setTopics(transformedTopics)
 
         // Build query based on timeFilter
         let query = supabase
