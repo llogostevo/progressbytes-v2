@@ -159,7 +159,7 @@ export default function RevisitPage() {
   const handleTabChange = (value: string) => {
     setActiveTab(value as ScoreType | "all")
 
-    // Update URL without refreshing the page
+    // Update URL using Next.js router
     const params = new URLSearchParams(searchParams.toString())
     if (value === "all") {
       params.delete("tab")
@@ -167,12 +167,11 @@ export default function RevisitPage() {
       params.set("tab", value)
     }
 
-    const newUrl = `${window.location.pathname}?${params.toString()}`
-    window.history.pushState({}, "", newUrl)
+    router.push(`?${params.toString()}`)
   }
 
   const handleTopicChange = (topic: string | null) => {
-    // Update URL without refreshing the page
+    // Update URL using Next.js router
     const params = new URLSearchParams(searchParams.toString())
     if (topic === null) {
       params.delete("topic")
@@ -180,8 +179,7 @@ export default function RevisitPage() {
       params.set("topic", topic)
     }
 
-    const newUrl = `${window.location.pathname}?${params.toString()}`
-    window.history.pushState({}, "", newUrl)
+    router.push(`?${params.toString()}`)
   }
 
   if (isLoading) {
@@ -213,7 +211,7 @@ export default function RevisitPage() {
 
           <div className="space-y-4 mb-8">
             <TopicFilter selectedTopic={topicParam} onTopicChange={handleTopicChange} />
-            <div className="bg-muted/50 rounded-xl p-6 border border-muted">
+            <div className="bg-muted/50 rounded-lg p-3 border border-muted">
               <QuestionTypeFilter 
                 selectedType={typeParam} 
                 onTypeChange={(type: string | null) => {
@@ -223,8 +221,7 @@ export default function RevisitPage() {
                   } else {
                     params.set("type", type)
                   }
-                  const newUrl = `${window.location.pathname}?${params.toString()}`
-                  window.history.pushState({}, "", newUrl)
+                  router.push(`?${params.toString()}`)
                 }} 
               />
             </div>

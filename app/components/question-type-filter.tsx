@@ -16,7 +16,8 @@ const questionTypes = [
 export function QuestionTypeFilter({ selectedType, onTypeChange }: QuestionTypeFilterProps) {
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap gap-2">
+      <h3 className="text-sm font-medium">Type</h3>
+      <div className="grid grid-cols-2 gap-2">
         <Button
           variant={selectedType === null ? "default" : "outline"}
           size="sm"
