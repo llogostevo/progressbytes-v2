@@ -302,17 +302,6 @@ export default function ProgressPage() {
     {} as Record<string, Answer[]>,
   )
 
-  const getScoreIcon = (score: ScoreType) => {
-    switch (score) {
-      case "green":
-        return <CheckCircle className="h-4 w-4 text-emerald-500" />
-      case "amber":
-        return <AlertTriangle className="h-4 w-4 text-amber-500" />
-      case "red":
-        return <AlertCircle className="h-4 w-4 text-red-500" />
-    }
-  }
-
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -458,317 +447,69 @@ export default function ProgressPage() {
               </CardFooter>
             </Card>
 
-            <h2 className="text-xl font-bold mb-4">Performance by Topic</h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {Object.entries(answersByTopic).map(([topicSlug, topicAnswers]) => {
-                const topic = topics.find((t) => t.slug === topicSlug)
-                if (!topic) return null
-
-                const topicScores = {
-                  green: topicAnswers.filter((a) => a.score === "green").length,
-                  amber: topicAnswers.filter((a) => a.score === "amber").length,
-                  red: topicAnswers.filter((a) => a.score === "red").length,
-                }
-
-                return (
-                  <Card key={topicSlug}>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        {topic.icon && (
-                          <span className="text-emerald-500">
-                            <DynamicIcon iconName={topic.icon} size={20} />
-                          </span>
-                        )}
-                        {topic.name}
-                      </CardTitle>
-                      <CardDescription>
-                        {topicAnswers.length} question{topicAnswers.length !== 1 ? "s" : ""} answered
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex gap-2 mb-4">
-                        <Badge variant="outline" className="flex items-center gap-1">
-                          <CheckCircle className="h-3 w-3 text-emerald-500" />
-                          {topicScores.green}
-                        </Badge>
-                        <Badge variant="outline" className="flex items-center gap-1">
-                          <AlertTriangle className="h-3 w-3 text-amber-500" />
-                          {topicScores.amber}
-                        </Badge>
-                        <Badge variant="outline" className="flex items-center gap-1">
-                          <AlertCircle className="h-3 w-3 text-red-500" />
-                          {topicScores.red}
-                        </Badge>
-                      </div>
-
-                      <div className="flex gap-2">
-                        <Link href={`/questions/${topicSlug}`} className="flex-1">
-                          <Button size="sm" variant="outline" className="w-full">
-                            Continue Practice
-                          </Button>
-                        </Link>
-                        <Link href={`/revisit?topic=${topicSlug}`} className="flex-1">
-                          <Button size="sm" className="w-full bg-emerald-600 hover:bg-emerald-700">
-                            Revisit Questions <ArrowRight className="ml-1 h-3 w-3" />
-                          </Button>
-                        </Link>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
-            </div>
-
             <div className="mt-8">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold">Recent Answers</h2>
+                <h2 className="text-xl font-bold">Performance by Topic</h2>
               </div>
 
-              <div className="space-y-4">
-                {answers.length === 0 ? (
-                  <Card>
-                    <CardContent className="py-6">
-                      <p className="text-center text-muted-foreground">
-                        No answers found for the selected time period.
-                      </p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  answers.map((answer) => {
-                    const question = topics.flatMap((t) => t.questions).find((q) => q.id === answer.question_id)
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {Object.entries(answersByTopic).map(([topicSlug, topicAnswers]) => {
+                  const topic = topics.find((t) => t.slug === topicSlug)
+                  if (!topic) return null
 
-                    return (
-                      <Card key={answer.id}>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-base">
-                            <pre className="whitespace-pre-wrap font-sans">{question?.question_text || "Unknown question"}</pre>
-                          </CardTitle>
-                          <CardDescription>
-                            {new Date(answer.submitted_at).toLocaleString()}
-                            <span className="ml-2 inline-flex items-center">{getScoreIcon(answer.score)}</span>
-                            {answer.self_assessed && <span className="ml-2 text-xs">(Self-assessed)</span>}
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <h3 className="text-sm font-medium mb-2">Your Answer:</h3>
-                              {question?.type === "matching" ? (
-                                <div className="overflow-x-auto">
-                                  <table className="w-full border-collapse">
-                                    <thead>
-                                      <tr>
-                                        <th className="border p-2 text-left">Statement</th>
-                                        <th className="border p-2 text-left">Your Match</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {question.pairs?.map((pair, index) => {
-                                        const userMatches = (() => {
-                                          if (!answer?.response_text) return [];
-                                          try {
-                                            const parsed = JSON.parse(answer.response_text) as Record<string, string[]>;
-                                            return parsed[pair.statement] || [];
-                                          } catch {
-                                            return [];
-                                          }
-                                        })();
-                                        const isCorrect = userMatches.includes(pair.match);
-                                        return (
-                                          <tr key={index} className={isCorrect ? "bg-green-50" : "bg-red-50"}>
-                                            <td className="border p-2">{pair.statement}</td>
-                                            <td className="border p-2">
-                                              <div className="flex items-center gap-2">
-                                                {userMatches.join(", ") || "No match selected"}
-                                                {isCorrect ? (
-                                                  <CheckCircle className="h-4 w-4 text-green-600" />
-                                                ) : (
-                                                  <AlertCircle className="h-4 w-4 text-red-600" />
-                                                )}
-                                              </div>
-                                            </td>
-                                          </tr>
-                                        );
-                                      })}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              ) : question?.type === "true-false" ? (
-                                <div className="overflow-x-auto">
-                                  <table className="w-full border-collapse">
-                                    <thead>
-                                      <tr>
-                                        <th className="border p-2 text-left">Question</th>
-                                        <th className="border p-2 text-center">Your Answer</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      <tr className={answer?.response_text === String(question.model_answer) ? "bg-green-50" : "bg-red-50"}>
-                                        <td className="border p-2">{question.question_text}</td>
-                                        <td className="border p-2 text-center">
-                                          <div className="flex items-center justify-center gap-2">
-                                            {answer?.response_text === "true" ? "True" : "False"}
-                                            {answer?.response_text === String(question.model_answer) ? (
-                                              <CheckCircle className="h-4 w-4 text-green-600" />
-                                            ) : (
-                                              <AlertCircle className="h-4 w-4 text-red-600" />
-                                            )}
-                                          </div>
-                                        </td>
-                                      </tr>
-                                    </tbody>
-                                  </table>
-                                </div>
-                              ) : question?.type === "fill-in-the-blank" ? (
-                                <div className="overflow-x-auto">
-                                  <table className="w-full border-collapse">
-                                    <thead>
-                                      <tr>
-                                        <th className="border p-2 text-left">Your Answer</th>
-                                        <th className="border p-2 text-center">Status</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      <tr className={answer?.response_text === "Correct" ? "bg-green-50" : "bg-red-50"}>
-                                        <td className="border p-2">{answer.response_text}</td>
-                                        <td className="border p-2 text-center">
-                                          {answer?.response_text === "Correct" ? (
-                                            <CheckCircle className="h-4 w-4 text-green-600" />
-                                          ) : (
-                                            <AlertCircle className="h-4 w-4 text-red-600" />
-                                          )}
-                                        </td>
-                                      </tr>
-                                    </tbody>
-                                  </table>
-                                </div>
-                              ) : (
-                                <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">{answer.response_text}</pre>
-                              )}
-                            </div>
+                  const topicScores = {
+                    green: topicAnswers.filter((a) => a.score === "green").length,
+                    amber: topicAnswers.filter((a) => a.score === "amber").length,
+                    red: topicAnswers.filter((a) => a.score === "red").length,
+                  }
 
-                            <div>
-                              {answer.ai_feedback ? (
-                                <>
-                                  <h3 className="text-sm font-medium mb-2">AI Feedback:</h3>
-                                  <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground mb-3">{answer.ai_feedback}</pre>
-                                </>
-                              ) : (
-                                <>
-                                  <h3 className="text-sm font-medium mb-2">Self-Assessment:</h3>
-                                  <div className="text-sm text-muted-foreground mb-3">
-                                    You marked this as{" "}
-                                    <Badge className={`inline-flex items-center gap-1 px-2 py-0.5 ${
-                                      answer.score === "green"
-                                        ? "bg-emerald-500 hover:bg-emerald-500 text-white"
-                                        : answer.score === "amber"
-                                          ? "bg-amber-500 hover:bg-amber-500 text-white"
-                                          : "bg-red-500 hover:bg-red-500 text-white"
-                                    }`}>
-                                      {answer.score === "green" ? (
-                                        <CheckCircle className="h-3 w-3" />
-                                      ) : answer.score === "amber" ? (
-                                        <AlertTriangle className="h-3 w-3" />
-                                      ) : (
-                                        <AlertCircle className="h-3 w-3" />
-                                      )}
-                                      <span className="text-xs">
-                                        {answer.score === "green"
-                                          ? "Fully Understood"
-                                          : answer.score === "amber"
-                                            ? "Partially Understood"
-                                            : "Need More Practice"}
-                                      </span>
-                                    </Badge>
-                                  </div>
-                                </>
-                              )}
+                  return (
+                    <Card key={topicSlug}>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          {topic.icon && (
+                            <span className="text-emerald-500">
+                              <DynamicIcon iconName={topic.icon} size={20} />
+                            </span>
+                          )}
+                          {topic.name}
+                        </CardTitle>
+                        <CardDescription>
+                          {topicAnswers.length} question{topicAnswers.length !== 1 ? "s" : ""} answered
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex gap-2 mb-4">
+                          <Badge variant="outline" className="flex items-center gap-1">
+                            <CheckCircle className="h-3 w-3 text-emerald-500" />
+                            {topicScores.green}
+                          </Badge>
+                          <Badge variant="outline" className="flex items-center gap-1">
+                            <AlertTriangle className="h-3 w-3 text-amber-500" />
+                            {topicScores.amber}
+                          </Badge>
+                          <Badge variant="outline" className="flex items-center gap-1">
+                            <AlertCircle className="h-3 w-3 text-red-500" />
+                            {topicScores.red}
+                          </Badge>
+                        </div>
 
-                              <div className="space-y-4">
-                                <div>
-                                  {question?.type === "code" && (
-                                    <h4 className="text-sm font-medium mb-1">Pseudocode:</h4>
-                                  )}
-                                  {question?.type === "matching" ? (
-                                    <div className="overflow-x-auto">
-                                      <table className="w-full border-collapse">
-                                        <thead>
-                                          <tr>
-                                            <th className="border p-2 text-left">Statement</th>
-                                            <th className="border p-2 text-left">Correct Match</th>
-                                          </tr>
-                                        </thead>
-                                        <tbody>
-                                          {question.pairs?.map((pair, index) => (
-                                            <tr key={index}>
-                                              <td className="border p-2">{pair.statement}</td>
-                                              <td className="border p-2">{pair.match}</td>
-                                            </tr>
-                                          ))}
-                                        </tbody>
-                                      </table>
-                                    </div>
-                                  ) : question?.type === "true-false" ? (
-                                    <div className="overflow-x-auto">
-                                      <table className="w-full border-collapse">
-                                        <thead>
-                                          <tr>
-                                            <th className="border p-2 text-left">Question</th>
-                                            <th className="border p-2 text-center">Correct Answer</th>
-                                          </tr>
-                                        </thead>
-                                        <tbody>
-                                          <tr>
-                                            <td className="border p-2">{question.question_text}</td>
-                                            <td className="border p-2 text-center">
-                                              {typeof question.model_answer === 'boolean' ? (question.model_answer ? "True" : "False") : (question.model_answer === "true" ? "True" : "False")}
-                                            </td>
-                                          </tr>
-                                        </tbody>
-                                      </table>
-                                    </div>
-                                  ) : question?.type === "fill-in-the-blank" && Array.isArray(question.model_answer) ? (
-                                    question.order_important ? (
-                                      <ol className="font-sans text-sm pl-4 list-decimal">
-                                        {question.model_answer.map((ans, idx) => (
-                                          <li key={idx}>{ans}</li>
-                                        ))}
-                                      </ol>
-                                    ) : (
-                                      <ul className="font-sans text-sm pl-4 list-disc">
-                                        {question.model_answer.map((ans, idx) => (
-                                          <li key={idx}>{ans}</li>
-                                        ))}
-                                      </ul>
-                                    )
-                                  ) : question?.type === "multiple-choice" ? (
-                                    <div className="space-y-2">
-                                      <p className="font-medium">Correct Answer:</p>
-                                      <p>{question.options?.[question.correctAnswerIndex || 0]}</p>
-                                    </div>
-                                  ) : (
-                                    <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">
-                                      {question?.model_answer || "Model answer not available"}
-                                    </pre>
-                                  )}
-                                </div>
-                                {question?.model_answer_python && (
-                                  <div>
-                                    <h4 className="text-sm font-medium mb-1">Python:</h4>
-                                    <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">
-                                      {question.model_answer_python}
-                                    </pre>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )
-                  })
-                )}
+                        <div className="flex gap-2">
+                          <Link href={`/questions/${topicSlug}`} className="flex-1">
+                            <Button size="sm" variant="outline" className="w-full">
+                              Continue Practice
+                            </Button>
+                          </Link>
+                          <Link href={`/revisit?topic=${topicSlug}`} className="flex-1">
+                            <Button size="sm" className="w-full bg-emerald-600 hover:bg-emerald-700">
+                              Revisit Questions <ArrowRight className="ml-1 h-3 w-3" />
+                            </Button>
+                          </Link>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
               </div>
             </div>
           </>
