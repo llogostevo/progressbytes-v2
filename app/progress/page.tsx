@@ -500,7 +500,7 @@ export default function ProgressPage() {
                               Continue Practice
                             </Button>
                           </Link>
-                          <Link href={`/revisit?topic=${topicSlug}`} className="flex-1">
+                          <Link href="/revisit" className="flex-1">
                             <Button size="sm" className="w-full bg-emerald-600 hover:bg-emerald-700">
                               Revisit Questions <ArrowRight className="ml-1 h-3 w-3" />
                             </Button>
