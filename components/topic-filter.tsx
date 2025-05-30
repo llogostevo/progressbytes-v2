@@ -1,6 +1,24 @@
 import React from "react"
-import { topics } from "@/lib/data"
 import { Button } from "@/components/ui/button"
+import { DynamicIcon } from "@/components/ui/dynamicicon"
+
+interface Topic {
+  id: string
+  name: string
+  description: string
+  icon?: string
+  slug: string
+  unit: number
+  disabled?: boolean
+  topicnumber?: string
+}
+
+interface TopicFilterProps {
+  selectedTopic: string | null
+  onTopicChange: (topic: string | null) => void
+  topics: Topic[]
+  className?: string
+}
 
 // Map unit numbers to full unit names
 const unitNames: Record<number, string> = {
@@ -9,19 +27,27 @@ const unitNames: Record<number, string> = {
   // Add more units as needed
 }
 
-interface TopicFilterProps {
-  selectedTopic: string | null
-  onTopicChange: (topic: string | null) => void
-  className?: string
+// Helper function to compare topic numbers like "1.1.1", "1.1.2", etc.
+function compareTopicNumbers(a?: string, b?: string) {
+  if (!a && !b) return 0;
+  if (!a) return -1;
+  if (!b) return 1;
+  
+  const aParts = a.split('.').map(Number);
+  const bParts = b.split('.').map(Number);
+  
+  for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+    const aVal = aParts[i] ?? 0;
+    const bVal = bParts[i] ?? 0;
+    if (aVal !== bVal) return aVal - bVal;
+  }
+  return 0;
 }
 
 // Estimate: button height ~32px, gap-2 = 8px, so 3 rows: 3*32 + 2*8 = 112px
-const MAX_ROWS = 3
-const BUTTON_HEIGHT = 32
-const GAP = 8
-const MAX_HEIGHT = MAX_ROWS * BUTTON_HEIGHT + (MAX_ROWS - 1) * GAP // 112px
 
-export function TopicFilter({ selectedTopic, onTopicChange, className = "" }: TopicFilterProps) {
+
+export function TopicFilter({ selectedTopic, onTopicChange, topics, className = "" }: TopicFilterProps) {
   // Group topics by unit
   const topicsByUnit = topics.reduce((acc, topic) => {
     const unit = topic.unit || 0
@@ -30,7 +56,12 @@ export function TopicFilter({ selectedTopic, onTopicChange, className = "" }: To
     }
     acc[unit].push(topic)
     return acc
-  }, {} as Record<number, typeof topics>)
+  }, {} as Record<number, Topic[]>)
+
+  // Sort topics within each unit by their topic number
+  Object.keys(topicsByUnit).forEach(unit => {
+    topicsByUnit[Number(unit)].sort((a, b) => compareTopicNumbers(a.topicnumber, b.topicnumber))
+  })
 
   const unitEntries = Object.entries(topicsByUnit)
 
@@ -46,7 +77,7 @@ export function TopicFilter({ selectedTopic, onTopicChange, className = "" }: To
           All Topics
         </Button>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-4 w-full gap-6">
         {unitEntries.map(([unit, unitTopics], idx) => (
           <div
             key={unit}
@@ -65,9 +96,12 @@ export function TopicFilter({ selectedTopic, onTopicChange, className = "" }: To
                   variant={selectedTopic === topic.slug ? "default" : "outline"}
                   onClick={() => onTopicChange(selectedTopic === topic.slug ? null : topic.slug)}
                   size="sm"
-                  className="flex-shrink-0"
+                  className="flex-shrink-0 justify-start text-left"
                 >
-                  {topic.icon && React.createElement(topic.icon, { size: 14, className: "mr-1" })}
+                  {topic.icon && <DynamicIcon iconName={topic.icon} size={14} className="mr-1" />}
+                  {topic.topicnumber && (
+                    <span className="text-muted-foreground mr-1">{topic.topicnumber}</span>
+                  )}
                   {topic.name}
                 </Button>
               ))}

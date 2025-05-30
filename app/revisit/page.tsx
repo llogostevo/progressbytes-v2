@@ -371,7 +371,7 @@ export default function RevisitPage() {
           </p>
 
           <div className="space-y-4 mb-8">
-            <TopicFilter selectedTopic={topicParam} onTopicChange={handleTopicChange} />
+            <TopicFilter selectedTopic={topicParam} onTopicChange={handleTopicChange} topics={topics} />
             <div className="bg-muted/50 rounded-lg p-3 border border-muted">
               <QuestionTypeFilter 
                 selectedType={typeParam} 
