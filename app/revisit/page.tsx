@@ -15,12 +15,14 @@ import { User } from "@supabase/supabase-js"
 import { createClient } from "@/utils/supabase/client"
 import { UserLogin } from "@/components/user-login"
 import { TopicFilter } from "@/components/topic-filter"
+import { QuestionTypeFilter } from "@/components/question-type-filter"
 
 export default function RevisitPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const tabParam = searchParams.get("tab") as ScoreType | null
   const topicParam = searchParams.get("topic")
+  const typeParam = searchParams.get("type")
 
   const [answers, setAnswers] = useState<Answer[]>([])
   const [questions, setQuestions] = useState<Record<string, Question>>({})
@@ -95,8 +97,14 @@ export default function RevisitPage() {
     getUser()
   }, [topicParam])
 
-  // Filter answers by score
-  const filteredAnswers = activeTab === "all" ? answers : answers.filter((answer) => answer.score === activeTab)
+  // Filter answers by score and type
+  const filteredAnswers = answers
+    .filter((answer) => activeTab === "all" || answer.score === activeTab)
+    .filter((answer) => {
+      if (typeParam === "all" || !typeParam) return true
+      const question = questions[answer.question_id]
+      return question?.type === typeParam
+    })
 
   // Group answers by topic
   const answersByTopic = filteredAnswers.reduce(
@@ -128,6 +136,23 @@ export default function RevisitPage() {
         return "Partially Understood"
       case "red":
         return "Need More Practice"
+    }
+  }
+
+  const getQuestionTypeLabel = (type: string) => {
+    switch (type) {
+      case "short-answer":
+        return "Short Answer"
+      case "true-false":
+        return "True/False"
+      case "matching":
+        return "Matching"
+      case "fill-in-the-blank":
+        return "Fill in the Blank"
+      case "code":
+        return "Code Question"
+      default:
+        return type.charAt(0).toUpperCase() + type.slice(1)
     }
   }
 
@@ -186,7 +211,24 @@ export default function RevisitPage() {
               : `Review ${activeTab !== "all" ? activeTab + " " : ""}questions you've previously answered`}
           </p>
 
-          <TopicFilter selectedTopic={topicParam} onTopicChange={handleTopicChange} />
+          <div className="space-y-4 mb-8">
+            <TopicFilter selectedTopic={topicParam} onTopicChange={handleTopicChange} />
+            <div className="bg-muted/50 rounded-xl p-6 border border-muted">
+              <QuestionTypeFilter 
+                selectedType={typeParam} 
+                onTypeChange={(type: string | null) => {
+                  const params = new URLSearchParams(searchParams.toString())
+                  if (type === null) {
+                    params.delete("type")
+                  } else {
+                    params.set("type", type)
+                  }
+                  const newUrl = `${window.location.pathname}?${params.toString()}`
+                  window.history.pushState({}, "", newUrl)
+                }} 
+              />
+            </div>
+          </div>
         </div>
 
         <Tabs value={activeTab} className="mb-8" onValueChange={handleTabChange}>
@@ -244,21 +286,26 @@ export default function RevisitPage() {
                                 <CardTitle className="text-base">
                                   <pre className="whitespace-pre-wrap font-sans">{question.question_text}</pre>
                                 </CardTitle>
-                                <Badge className={`flex items-center gap-1 ${answer.score === "green"
-                                  ? "bg-emerald-500 hover:bg-emerald-500 text-white"
-                                  : answer.score === "amber"
-                                    ? "bg-amber-500 hover:bg-amber-500 text-white"
-                                    : "bg-red-500 hover:bg-red-500 text-white"
-                                  }`}>
-                                  {answer.score === "green" ? (
-                                    <CheckCircle className="h-4 w-4" />
-                                  ) : answer.score === "amber" ? (
-                                    <AlertTriangle className="h-4 w-4" />
-                                  ) : (
-                                    <AlertCircle className="h-4 w-4" />
-                                  )}
-                                  <span>{getScoreLabel(answer.score)}</span>
-                                </Badge>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline" className="text-xs">
+                                    {getQuestionTypeLabel(question.type)}
+                                  </Badge>
+                                  <Badge className={`flex items-center gap-1 ${answer.score === "green"
+                                    ? "bg-emerald-500 hover:bg-emerald-500 text-white"
+                                    : answer.score === "amber"
+                                      ? "bg-amber-500 hover:bg-amber-500 text-white"
+                                      : "bg-red-500 hover:bg-red-500 text-white"
+                                    }`}>
+                                    {answer.score === "green" ? (
+                                      <CheckCircle className="h-4 w-4" />
+                                    ) : answer.score === "amber" ? (
+                                      <AlertTriangle className="h-4 w-4" />
+                                    ) : (
+                                      <AlertCircle className="h-4 w-4" />
+                                    )}
+                                    <span>{getScoreLabel(answer.score)}</span>
+                                  </Badge>
+                                </div>
                               </div>
                             </CardHeader>
                             <CardContent>
