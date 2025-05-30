@@ -141,6 +141,7 @@ export default function RevisitPage() {
           let options: string[] = []
           let correctAnswerIndex: number = 0
           let correctAnswers: string[] = []
+          let fibq = undefined;
 
           switch (q.type) {
             case 'short-answer':
@@ -163,9 +164,13 @@ export default function RevisitPage() {
               pairs = q.matching_questions || []
               break
             case 'fill-in-the-blank':
-              typeSpecificData = q.fill_in_the_blank_questions?.[0] as TypeSpecificData
-              options = q.fill_in_the_blank_questions?.[0]?.options || []
-              correctAnswers = q.fill_in_the_blank_questions?.[0]?.correct_answers || []
+              fibq = q.fill_in_the_blank_questions;
+              if (Array.isArray(fibq)) {
+                fibq = fibq[0];
+              }
+              typeSpecificData = fibq as TypeSpecificData;
+              options = fibq?.options || [];
+              correctAnswers = fibq?.correct_answers || [];
               break
             case 'code':
               typeSpecificData = q.code_questions?.[0] as TypeSpecificData
@@ -212,7 +217,7 @@ export default function RevisitPage() {
             })(),
             model_answer_python: typeSpecificData?.model_answer_code,
             pairs: pairs,
-            order_important: typeSpecificData?.order_important,
+            order_important: fibq?.order_important,
             options: options,
             correctAnswerIndex: correctAnswerIndex,
             created_at: q.created_at
@@ -600,7 +605,7 @@ export default function RevisitPage() {
                                                     } else {
                                                       oldFormat = true;
                                                     }
-                                                  } catch (e) {
+                                                  } catch  {
                                                     oldFormat = true;
                                                   }
                                                   const options = Array.isArray(question.options) ? question.options : [];
