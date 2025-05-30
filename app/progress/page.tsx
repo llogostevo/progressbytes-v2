@@ -21,7 +21,7 @@ export default function ProgressPage() {
   const [answers, setAnswers] = useState<Answer[]>([])
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [timeFilter, setTimeFilter] = useState<'today' | 'week'>('today')
+  const [timeFilter, setTimeFilter] = useState<'today' | 'week' | 'all'>('today')
 
   useEffect(() => {
     const getUser = async () => {
@@ -30,23 +30,32 @@ export default function ProgressPage() {
       if (user) {
         setUser(user)
 
-        // Calculate date range based on time filter
-        const endDate = new Date()
-        const startDate = new Date()
-        if (timeFilter === 'today') {
-          startDate.setHours(0, 0, 0, 0)
-        } else {
-          startDate.setDate(startDate.getDate() - 7)
-        }
-
-        // Fetch answers for the user
-        const { data: answersData, error } = await supabase
+        // Build query based on timeFilter
+        let query = supabase
           .from('student_answers')
           .select('*')
           .eq('student_id', user.id)
-          .gte('submitted_at', startDate.toISOString())
-          .lte('submitted_at', endDate.toISOString())
-          .order('submitted_at', { ascending: false })
+
+        if (timeFilter === 'today') {
+          const startDate = new Date()
+          startDate.setHours(0, 0, 0, 0)
+          const endDate = new Date()
+          query = query
+            .gte('submitted_at', startDate.toISOString())
+            .lte('submitted_at', endDate.toISOString())
+        } else if (timeFilter === 'week') {
+          const startDate = new Date()
+          startDate.setDate(startDate.getDate() - 7)
+          const endDate = new Date()
+          query = query
+            .gte('submitted_at', startDate.toISOString())
+            .lte('submitted_at', endDate.toISOString())
+        }
+        // If 'all', do not add date filters
+
+        query = query.order('submitted_at', { ascending: false })
+
+        const { data: answersData, error } = await query
 
         if (error) {
           console.error('Error fetching answers:', error)
@@ -141,8 +150,26 @@ export default function ProgressPage() {
             <h1 className="text-3xl font-bold mb-2">Your Progress</h1>
             <UserLogin email={user?.email} />
           </div>
-
           <p className="text-muted-foreground">Track your performance across all topics</p>
+          {/* Time Filter Tabs - always visible */}
+          <div className="flex items-center justify-end mt-4">
+            <Tabs value={timeFilter} onValueChange={(value) => setTimeFilter(value as 'today' | 'week' | 'all')}>
+              <TabsList>
+                <TabsTrigger value="today" className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Today
+                </TabsTrigger>
+                <TabsTrigger value="week" className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  7 Days
+                </TabsTrigger>
+                <TabsTrigger value="all" className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  All Time
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </div>
         {totalAnswers === 0 ? (
           <Card>
@@ -311,18 +338,6 @@ export default function ProgressPage() {
             <div className="mt-8">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold">Recent Answers</h2>
-                <Tabs value={timeFilter} onValueChange={(value) => setTimeFilter(value as 'today' | 'week')}>
-                  <TabsList>
-                    <TabsTrigger value="today" className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4" />
-                      Today
-                    </TabsTrigger>
-                    <TabsTrigger value="week" className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4" />
-                      7 Days
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
               </div>
 
               <div className="space-y-4">
