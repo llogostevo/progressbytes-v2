@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { Answer, Question, ScoreType } from "@/lib/types"
-import { CheckCircle, AlertTriangle, AlertCircle, ArrowRight, BookOpen } from "lucide-react"
+import { CheckCircle, AlertTriangle, AlertCircle, ArrowRight, BookOpen, HelpCircle } from "lucide-react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { User } from "@supabase/supabase-js"
@@ -438,20 +438,24 @@ export default function RevisitPage() {
                                   <Badge variant="outline" className="text-xs">
                                     {getQuestionTypeLabel(question.type)}
                                   </Badge>
-                                  <Badge className={`flex items-center gap-1 ${answer.score === "green"
-                                    ? "bg-emerald-500 hover:bg-emerald-500 text-white"
-                                    : answer.score === "amber"
-                                      ? "bg-amber-500 hover:bg-amber-500 text-white"
-                                      : "bg-red-500 hover:bg-red-500 text-white"
+                                  <Badge className={`flex items-center gap-1 ${!answer.score
+                                    ? "bg-gray-100 hover:bg-gray-200 text-gray-600"
+                                    : answer.score === "green"
+                                      ? "bg-emerald-50 hover:bg-emerald-100 text-emerald-700"
+                                      : answer.score === "amber"
+                                        ? "bg-amber-50 hover:bg-amber-100 text-amber-700"
+                                        : "bg-red-50 hover:bg-red-100 text-red-700"
                                     }`}>
-                                    {answer.score === "green" ? (
+                                    {!answer.score ? (
+                                      <HelpCircle className="h-4 w-4" />
+                                    ) : answer.score === "green" ? (
                                       <CheckCircle className="h-4 w-4" />
                                     ) : answer.score === "amber" ? (
                                       <AlertTriangle className="h-4 w-4" />
                                     ) : (
                                       <AlertCircle className="h-4 w-4" />
                                     )}
-                                    <span>{getScoreLabel(answer.score)}</span>
+                                    <span>{!answer.score ? "Not assessed" : getScoreLabel(answer.score)}</span>
                                   </Badge>
                                 </div>
                               </div>
