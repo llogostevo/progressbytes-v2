@@ -149,7 +149,7 @@ export default function RevisitPage() {
                 model_answer_code: q.short_answer_questions?.model_answer_code,
                 order_important: q.short_answer_questions?.order_important
               }
-             
+
               break
             case 'true-false':
               typeSpecificData = q.true_false_questions?.[0] as TypeSpecificData
@@ -363,8 +363,8 @@ export default function RevisitPage() {
           <div className="space-y-4 mb-8">
             <TopicFilter selectedTopic={topicParam} onTopicChange={handleTopicChange} topics={topics} />
             <div className="bg-muted/50 rounded-lg p-3 border border-muted">
-              <QuestionTypeFilter 
-                selectedType={typeParam} 
+              <QuestionTypeFilter
+                selectedType={typeParam}
                 onTypeChange={(type: string | null) => {
                   const params = new URLSearchParams(searchParams.toString())
                   if (type === null) {
@@ -373,7 +373,7 @@ export default function RevisitPage() {
                     params.set("type", type)
                   }
                   router.push(`?${params.toString()}`)
-                }} 
+                }}
               />
             </div>
           </div>
@@ -463,7 +463,7 @@ export default function RevisitPage() {
                             <CardContent>
                               <div className="space-y-4">
                                 <div>
-                                  <h3 className="text-sm font-medium mb-1">Your Answer:</h3>
+                                  {/* MATCHING QUESTION */}
                                   {question.type === "matching" ? (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                       <div className="overflow-x-auto">
@@ -525,6 +525,7 @@ export default function RevisitPage() {
                                         </table>
                                       </div>
                                     </div>
+                                    // TRUE/FALSE QUESTION
                                   ) : question.type === "true-false" ? (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                       <div className="overflow-x-auto">
@@ -573,6 +574,7 @@ export default function RevisitPage() {
                                         </table>
                                       </div>
                                     </div>
+                                    // FILL IN THE BLANK QUESTION
                                   ) : question.type === "fill-in-the-blank" ? (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                       <div className="overflow-x-auto">
@@ -599,7 +601,7 @@ export default function RevisitPage() {
                                                     } else {
                                                       oldFormat = true;
                                                     }
-                                                  } catch  {
+                                                  } catch {
                                                     oldFormat = true;
                                                   }
                                                   const options = Array.isArray(question.options) ? question.options : [];
@@ -671,6 +673,7 @@ export default function RevisitPage() {
                                         </table>
                                       </div>
                                     </div>
+                                    // MULTIPLE CHOICE QUESTION
                                   ) : question.type === "multiple-choice" ? (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                       <div className="overflow-x-auto">
@@ -752,10 +755,14 @@ export default function RevisitPage() {
                                       </div>
                                     </div>
                                   ) : (
-                                    <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">{answer.response_text}</pre>
+                                    <div>
+                                      <h3 className="text-sm font-medium mb-1">Your Answer:</h3>
+                                      <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">{answer.response_text}</pre>
+                                    </div>
                                   )}
                                 </div>
 
+                                {/* Model Answers */}
                                 {question.type !== "matching" && question.type !== "true-false" && question.type !== "fill-in-the-blank" && (
                                   <div>
                                     <h3 className="text-sm font-medium mb-1 text-emerald-700">Model Answer:</h3>
@@ -781,7 +788,7 @@ export default function RevisitPage() {
                                     </div>
                                   </div>
                                 )}
-
+                                {/* Explanation */}
                                 {question.explanation && (
                                   <div className="mt-4 p-4 bg-emerald-50 border border-emerald-100 rounded-md">
                                     <h3 className="text-sm font-medium mb-2 text-emerald-700">Explanation:</h3>
@@ -789,6 +796,7 @@ export default function RevisitPage() {
                                   </div>
                                 )}
 
+                                {/* Continue Learning */}
                                 <div className="mt-6 pt-4 border-t border-gray-200">
                                   <div className="flex flex-col gap-3">
                                     <h4 className="text-sm font-medium text-gray-700 mb-2">Continue Learning:</h4>
