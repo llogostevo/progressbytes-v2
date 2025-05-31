@@ -219,7 +219,8 @@ export default function RevisitPage() {
             order_important: fibq?.order_important,
             options: options,
             correctAnswerIndex: correctAnswerIndex,
-            created_at: q.created_at
+            created_at: q.created_at,
+            correct_answer: q.true_false_questions?.[0]?.correct_answer
           }
 
 
@@ -552,14 +553,12 @@ export default function RevisitPage() {
                                             </tr>
                                           </thead>
                                           <tbody>
-                                            <tr className={answer.response_text === question.model_answer ? "bg-green-50" : "bg-red-50"}>
+                                            <tr className={(answer.response_text === "true" === Boolean(question.model_answer)) ? "bg-green-50" : "bg-red-50"}>
                                               <td className="border p-2">{question.question_text}</td>
-                                              <td className="border p-2 text-center">
-                                                {answer.response_text === "true" ? "True" : "False"}
-                                              </td>
+                                              <td className="border p-2 text-center">{answer.response_text === "true" ? "True" : "False"}</td>
                                               <td className="border p-2 text-center">
                                                 <div className="flex justify-center">
-                                                  {answer.response_text === question.model_answer ? (
+                                                  {(answer.response_text === "true" === Boolean(question.model_answer)) ? (
                                                     <CheckCircle className="h-3 w-3 text-green-600" />
                                                   ) : (
                                                     <AlertCircle className="h-3 w-3 text-red-600" />
@@ -584,7 +583,7 @@ export default function RevisitPage() {
                                             <tr className="bg-emerald-50">
                                               <td className="border p-2">{question.question_text}</td>
                                               <td className="border p-2 text-center">
-                                                {question.model_answer === "true" ? "True" : "False"}
+                                                {question.correct_answer ? "True" : "False"}
                                               </td>
                                               <td className="border p-2 text-center">
                                                 <div className="flex justify-center">
