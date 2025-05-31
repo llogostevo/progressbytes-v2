@@ -168,7 +168,11 @@ export default function RevisitPage() {
               correctAnswers = fibq?.correct_answers || [];
               break
             case 'code':
-              typeSpecificData = q.code_questions?.[0] as TypeSpecificData
+              console.log('CODE QUESTION:', q.code_questions)
+              typeSpecificData = {
+                model_answer: q.code_questions?.model_answer || '',
+                model_answer_code: q.code_questions?.model_answer_code
+              }
               break
             case 'multiple-choice':
               // Handle both array and object cases
@@ -538,24 +542,27 @@ export default function RevisitPage() {
                                   ) : question.type === "true-false" ? (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                       <div className="overflow-x-auto">
-                                        <h3 className="font-medium mb-2">Your Answer:</h3>
-                                        <table className="w-full border-collapse">
+                                        <h3 className="font-medium mb-2 text-sm">Your Answer:</h3>
+                                        <table className="w-full border-collapse text-sm">
                                           <thead>
                                             <tr>
-                                              <th className="border p-2 text-left">Question</th>
-                                              <th className="border p-2 text-center">Your Answer</th>
+                                              <th className="border p-2 text-left bg-gray-50">Question</th>
+                                              <th className="border p-2 text-center bg-gray-50">Your Answer</th>
+                                              <th className="border p-2 text-center bg-gray-50 w-12">Status</th>
                                             </tr>
                                           </thead>
                                           <tbody>
                                             <tr className={answer.response_text === question.model_answer ? "bg-green-50" : "bg-red-50"}>
                                               <td className="border p-2">{question.question_text}</td>
                                               <td className="border p-2 text-center">
-                                                <div className="flex items-center justify-center gap-2">
-                                                  {answer.response_text === "true" ? "True" : "False"}
+                                                {answer.response_text === "true" ? "True" : "False"}
+                                              </td>
+                                              <td className="border p-2 text-center">
+                                                <div className="flex justify-center">
                                                   {answer.response_text === question.model_answer ? (
-                                                    <CheckCircle className="h-4 w-4 text-green-600" />
+                                                    <CheckCircle className="h-3 w-3 text-green-600" />
                                                   ) : (
-                                                    <AlertCircle className="h-4 w-4 text-red-600" />
+                                                    <AlertCircle className="h-3 w-3 text-red-600" />
                                                   )}
                                                 </div>
                                               </td>
@@ -564,12 +571,13 @@ export default function RevisitPage() {
                                         </table>
                                       </div>
                                       <div className="overflow-x-auto">
-                                        <h3 className="font-medium mb-2 text-emerald-700">Correct Answer:</h3>
-                                        <table className="w-full border-collapse">
+                                        <h3 className="font-medium mb-2 text-sm text-emerald-700">Correct Answer:</h3>
+                                        <table className="w-full border-collapse text-sm">
                                           <thead>
                                             <tr>
-                                              <th className="border p-2 text-left">Question</th>
-                                              <th className="border p-2 text-center">Correct Answer</th>
+                                              <th className="border p-2 text-left bg-gray-50">Question</th>
+                                              <th className="border p-2 text-center bg-gray-50">Correct Answer</th>
+                                              <th className="border p-2 text-center bg-gray-50 w-12">Status</th>
                                             </tr>
                                           </thead>
                                           <tbody>
@@ -577,6 +585,11 @@ export default function RevisitPage() {
                                               <td className="border p-2">{question.question_text}</td>
                                               <td className="border p-2 text-center">
                                                 {question.model_answer === "true" ? "True" : "False"}
+                                              </td>
+                                              <td className="border p-2 text-center">
+                                                <div className="flex justify-center">
+                                                  <CheckCircle className="h-3 w-3 text-emerald-600" />
+                                                </div>
                                               </td>
                                             </tr>
                                           </tbody>
@@ -587,12 +600,12 @@ export default function RevisitPage() {
                                   ) : question.type === "fill-in-the-blank" ? (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                       <div className="overflow-x-auto">
-                                        <h3 className="font-medium mb-2">Your Answer:</h3>
-                                        <table className="w-full border-collapse">
+                                        <h3 className="font-medium mb-2 text-sm">Your Answer:</h3>
+                                        <table className="w-full border-collapse text-sm">
                                           <thead>
                                             <tr>
-                                              <th className="border p-2 text-left">Question</th>
-                                              <th className="border p-2 text-center">Your Answer</th>
+                                              <th className="border p-2 text-left bg-gray-50">Question</th>
+                                              <th className="border p-2 text-left bg-gray-50">Your Answer</th>
                                             </tr>
                                           </thead>
                                           <tbody>
@@ -600,7 +613,6 @@ export default function RevisitPage() {
                                               <td className="border p-2">{question.question_text}</td>
                                               <td className="border p-2">
                                                 {(() => {
-                                                  // DEBUG: Print selectedIndexes, options, modelAnswer, and order_important for troubleshooting
                                                   let selectedIndexes: number[] = [];
                                                   let oldFormat = false;
                                                   try {
@@ -620,7 +632,7 @@ export default function RevisitPage() {
                                                     return <div className="text-red-600">This answer was submitted using an old format and cannot be displayed.</div>;
                                                   }
                                                   return (
-                                                    <div className="space-y-2">
+                                                    <div className="space-y-1">
                                                       {Array.from({ length: blanksCount }).map((_, i) => {
                                                         const selectedIndex = selectedIndexes[i];
                                                         const option = typeof selectedIndex === 'number' && options[selectedIndex] !== undefined ? options[selectedIndex] : undefined;
@@ -628,13 +640,8 @@ export default function RevisitPage() {
                                                           ? option === modelAnswer[i]
                                                           : modelAnswer.includes(option));
                                                         return (
-                                                          <div key={i} className={`flex items-center gap-2 ${isOptionCorrect ? "text-green-600" : "text-red-600"}`}>
+                                                          <div key={i} className={`${isOptionCorrect ? "text-green-600" : "text-red-600"}`}>
                                                             {option || "No answer selected"}
-                                                            {option
-                                                              ? (isOptionCorrect
-                                                                ? <CheckCircle className="h-4 w-4" />
-                                                                : <AlertCircle className="h-4 w-4" />)
-                                                              : <AlertCircle className="h-4 w-4" />}
                                                           </div>
                                                         );
                                                       })}
@@ -647,12 +654,12 @@ export default function RevisitPage() {
                                         </table>
                                       </div>
                                       <div className="overflow-x-auto">
-                                        <h3 className="font-medium mb-2 text-emerald-700">Correct Answer:</h3>
-                                        <table className="w-full border-collapse">
+                                        <h3 className="font-medium mb-2 text-sm text-emerald-700">Correct Answer:</h3>
+                                        <table className="w-full border-collapse text-sm">
                                           <thead>
                                             <tr>
-                                              <th className="border p-2 text-left">Question</th>
-                                              <th className="border p-2 text-center">Correct Answer</th>
+                                              <th className="border p-2 text-left bg-gray-50">Question</th>
+                                              <th className="border p-2 text-left bg-gray-50">Correct Answer</th>
                                             </tr>
                                           </thead>
                                           <tbody>
@@ -780,20 +787,25 @@ export default function RevisitPage() {
                                     <div className="space-y-4">
                                       <div>
                                         {question.type === "code" && (
-                                          <h4 className="text-sm font-medium mb-2 text-gray-700">Pseudocode:</h4>
+                                          <>
+                                            <h4 className="text-sm font-medium mb-2 text-gray-700">Pseudocode:</h4>
+                                            <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+                                              <pre className="whitespace-pre-wrap font-sans text-sm text-gray-700">{question.model_answer}</pre>
+                                            </div>
+                                          </>
                                         )}
                                         {question.type === "short-answer" ? (
                                           <div className="bg-emerald-50 p-4 rounded-md border border-emerald-100">
                                             <pre className="whitespace-pre-wrap font-sans text-sm text-emerald-700">{question.model_answer}</pre>
                                           </div>
-                                        ) : (
+                                        ) : question.type !== "code" && (
                                           <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
                                             <pre className="whitespace-pre-wrap font-sans text-sm text-gray-700">{question.model_answer}</pre>
                                           </div>
                                         )}
                                       </div>
                                       {question.model_answer_python && (
-                                        <div>
+                                          <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
                                           <h4 className="text-sm font-medium mb-1">Python:</h4>
                                           <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">{question.model_answer_python}</pre>
                                         </div>
