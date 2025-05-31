@@ -435,15 +435,12 @@ export default function RevisitPage() {
                         return (
                           <Card key={`${answer.question_id}-${answer.score}`}>
                             <CardHeader className="pb-2">
-                              <div className="flex items-center justify-between">
-                                <CardTitle className="text-base">
-                                  <pre className="whitespace-pre-wrap font-sans">{question.question_text}</pre>
-                                </CardTitle>
-                                <div className="flex items-center gap-2">
-                                  <Badge variant="outline" className="text-xs">
+                              <div className="flex flex-col gap-3">
+                                <div className="flex justify-end gap-2 shrink-0">
+                                  <Badge variant="outline" className="text-xs whitespace-nowrap">
                                     {getQuestionTypeLabel(question.type)}
                                   </Badge>
-                                  <Badge className={`flex items-center gap-1 ${!answer.score
+                                  <Badge className={`flex items-center gap-1 whitespace-nowrap ${!answer.score
                                     ? "bg-gray-100 hover:bg-gray-200 text-gray-600"
                                     : answer.score === "green"
                                       ? "bg-emerald-50 hover:bg-emerald-100 text-emerald-700"
@@ -463,6 +460,11 @@ export default function RevisitPage() {
                                     <span>{!answer.score ? "Not assessed" : getScoreLabel(answer.score)}</span>
                                   </Badge>
                                 </div>
+                                <CardTitle className="text-lg font-semibold leading-relaxed">
+                                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                                    <pre className="whitespace-pre-wrap font-sans text-gray-800">{question.question_text}</pre>
+                                  </div>
+                                </CardTitle>
                               </div>
                             </CardHeader>
                             <CardContent>
@@ -692,12 +694,13 @@ export default function RevisitPage() {
                                   ) : question.type === "multiple-choice" ? (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                       <div className="overflow-x-auto">
-                                        <h3 className="font-medium mb-2">Your Answer:</h3>
-                                        <table className="w-full border-collapse">
+                                        <h3 className="font-medium mb-2 text-sm">Your Answer:</h3>
+                                        <table className="w-full border-collapse text-sm table-fixed">
                                           <thead>
                                             <tr>
-                                              <th className="border p-2 text-left">Question</th>
-                                              <th className="border p-2 text-left">Your Selection</th>
+                                              <th className="border p-2 text-left bg-gray-50 w-1/2">Question</th>
+                                              <th className="border p-2 text-left bg-gray-50 w-1/3">Your Selection</th>
+                                              <th className="border p-2 text-center bg-gray-50 w-12">Status</th>
                                             </tr>
                                           </thead>
                                           <tbody>
@@ -708,23 +711,27 @@ export default function RevisitPage() {
                                               return (
                                                 <tr
                                                   key={index}
-                                                  className={isSelected
+                                                  className={`h-12 ${isSelected
                                                     ? isCorrect
                                                       ? "bg-green-50"
                                                       : "bg-red-50"
                                                     : ""
-                                                  }
+                                                  }`}
                                                 >
-                                                  <td className="border p-2">
-                                                    {index === 0 ? question.question_text : ""}
+                                                  <td className="border p-2 align-middle">
+                                                    {isSelected ? question.question_text : ""}
                                                   </td>
-                                                  <td className="border p-2">
+                                                  <td className="border p-2 align-middle">
                                                     <div className="flex items-center gap-2">
                                                       {option}
+                                                    </div>
+                                                  </td>
+                                                  <td className="border p-2 text-center align-middle">
+                                                    <div className="flex justify-center">
                                                       {isSelected && (
                                                         isCorrect
-                                                          ? <CheckCircle className="h-4 w-4 text-green-600 ml-2" />
-                                                          : <AlertCircle className="h-4 w-4 text-red-600 ml-2" />
+                                                          ? <CheckCircle className="h-3 w-3 text-green-600" />
+                                                          : <AlertCircle className="h-3 w-3 text-red-600" />
                                                       )}
                                                     </div>
                                                   </td>
@@ -735,31 +742,36 @@ export default function RevisitPage() {
                                         </table>
                                       </div>
                                       <div className="overflow-x-auto">
-                                        <h3 className="font-medium mb-2 text-emerald-700">Correct Answer:</h3>
-                                        <table className="w-full border-collapse">
+                                        <h3 className="font-medium mb-2 text-sm text-emerald-700">Correct Answer:</h3>
+                                        <table className="w-full border-collapse text-sm table-fixed">
                                           <thead>
                                             <tr>
-                                              <th className="border p-2 text-left">Question</th>
-                                              <th className="border p-2 text-left">Correct Option</th>
+                                              <th className="border p-2 text-left bg-gray-50 w-1/2">Question</th>
+                                              <th className="border p-2 text-left bg-gray-50 w-1/3">Correct Option</th>
+                                              <th className="border p-2 text-center bg-gray-50 w-12">Status</th>
                                             </tr>
                                           </thead>
                                           <tbody>
                                             {question.options && question.options.map((option, index) => (
                                               <tr
                                                 key={index}
-                                                className={index === question.correctAnswerIndex
+                                                className={`h-12 ${index === question.correctAnswerIndex
                                                   ? "bg-emerald-50"
                                                   : ""
-                                                }
+                                                }`}
                                               >
-                                                <td className="border p-2">
-                                                  {index === 0 ? question.question_text : ""}
+                                                <td className="border p-2 align-middle">
+                                                  {index === question.correctAnswerIndex ? question.question_text : ""}
                                                 </td>
-                                                <td className="border p-2">
+                                                <td className="border p-2 align-middle">
                                                   <div className="flex items-center gap-2">
                                                     {option}
+                                                  </div>
+                                                </td>
+                                                <td className="border p-2 text-center align-middle">
+                                                  <div className="flex justify-center">
                                                     {index === question.correctAnswerIndex && (
-                                                      <CheckCircle className="h-4 w-4 text-emerald-600 ml-2" />
+                                                      <CheckCircle className="h-3 w-3 text-emerald-600" />
                                                     )}
                                                   </div>
                                                 </td>
