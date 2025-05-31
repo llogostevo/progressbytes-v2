@@ -467,12 +467,13 @@ export default function RevisitPage() {
                                   {question.type === "matching" ? (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                       <div className="overflow-x-auto">
-                                        <h3 className="font-medium mb-2">Your Answer:</h3>
-                                        <table className="w-full border-collapse">
+                                        <h3 className="font-medium mb-2 text-sm">Your Answer:</h3>
+                                        <table className="w-full border-collapse text-sm">
                                           <thead>
                                             <tr>
-                                              <th className="border p-2 text-left">Statement</th>
-                                              <th className="border p-2 text-left">Your Match</th>
+                                              <th className="border p-2 text-left bg-gray-50">Statement</th>
+                                              <th className="border p-2 text-left bg-gray-50">Your Match</th>
+                                              <th className="border p-2 text-center bg-gray-50 w-12">Status</th>
                                             </tr>
                                           </thead>
                                           <tbody>
@@ -490,12 +491,14 @@ export default function RevisitPage() {
                                                 <tr key={index} className={isCorrect ? "bg-green-50" : "bg-red-50"}>
                                                   <td className="border p-2">{pair.statement}</td>
                                                   <td className="border p-2">
-                                                    <div className="flex items-center gap-2">
-                                                      {userMatches.join(", ") || "No match selected"}
+                                                    {userMatches.join(", ") || "No match selected"}
+                                                  </td>
+                                                  <td className="border p-2 text-center">
+                                                    <div className="flex justify-center">
                                                       {isCorrect ? (
-                                                        <CheckCircle className="h-4 w-4 text-green-600" />
+                                                        <CheckCircle className="h-3 w-3 text-green-600" />
                                                       ) : (
-                                                        <AlertCircle className="h-4 w-4 text-red-600" />
+                                                        <AlertCircle className="h-3 w-3 text-red-600" />
                                                       )}
                                                     </div>
                                                   </td>
@@ -506,12 +509,13 @@ export default function RevisitPage() {
                                         </table>
                                       </div>
                                       <div className="overflow-x-auto">
-                                        <h3 className="font-medium mb-2 text-emerald-700">Correct Answer:</h3>
-                                        <table className="w-full border-collapse">
+                                        <h3 className="font-medium mb-2 text-sm text-emerald-700">Correct Answer:</h3>
+                                        <table className="w-full border-collapse text-sm">
                                           <thead>
                                             <tr>
-                                              <th className="border p-2 text-left">Statement</th>
-                                              <th className="border p-2 text-left">Correct Match</th>
+                                              <th className="border p-2 text-left bg-gray-50">Statement</th>
+                                              <th className="border p-2 text-left bg-gray-50">Correct Match</th>
+                                              <th className="border p-2 text-center bg-gray-50 w-12">Status</th>
                                             </tr>
                                           </thead>
                                           <tbody>
@@ -519,6 +523,11 @@ export default function RevisitPage() {
                                               <tr key={index} className="bg-emerald-50">
                                                 <td className="border p-2">{pair.statement}</td>
                                                 <td className="border p-2">{pair.match}</td>
+                                                <td className="border p-2 text-center">
+                                                  <div className="flex justify-center">
+                                                    <CheckCircle className="h-3 w-3 text-emerald-600" />
+                                                  </div>
+                                                </td>
                                               </tr>
                                             ))}
                                           </tbody>
@@ -756,27 +765,31 @@ export default function RevisitPage() {
                                     </div>
                                   ) : (
                                     <div>
-                                      <h3 className="text-sm font-medium mb-1">Your Answer:</h3>
-                                      <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">{answer.response_text}</pre>
+                                      <h3 className="text-sm font-medium mb-2 text-gray-700">Your Answer:</h3>
+                                      <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+                                        <pre className="whitespace-pre-wrap font-sans text-sm text-gray-700">{answer.response_text}</pre>
+                                      </div>
                                     </div>
                                   )}
                                 </div>
 
                                 {/* Model Answers */}
-                                {question.type !== "matching" && question.type !== "true-false" && question.type !== "fill-in-the-blank" && (
+                                {question.type !== "matching" && question.type !== "true-false" && question.type !== "fill-in-the-blank" && question.type !== "multiple-choice" && (
                                   <div>
-                                    <h3 className="text-sm font-medium mb-1 text-emerald-700">Model Answer:</h3>
+                                    <h3 className="text-sm font-medium mb-2 text-emerald-700">Model Answer:</h3>
                                     <div className="space-y-4">
                                       <div>
                                         {question.type === "code" && (
-                                          <h4 className="text-sm font-medium mb-1">Pseudocode:</h4>
+                                          <h4 className="text-sm font-medium mb-2 text-gray-700">Pseudocode:</h4>
                                         )}
                                         {question.type === "short-answer" ? (
-                                          <div className="bg-emerald-50 p-4 rounded-md">
+                                          <div className="bg-emerald-50 p-4 rounded-md border border-emerald-100">
                                             <pre className="whitespace-pre-wrap font-sans text-sm text-emerald-700">{question.model_answer}</pre>
                                           </div>
                                         ) : (
-                                          <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">{question.model_answer}</pre>
+                                          <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+                                            <pre className="whitespace-pre-wrap font-sans text-sm text-gray-700">{question.model_answer}</pre>
+                                          </div>
                                         )}
                                       </div>
                                       {question.model_answer_python && (
@@ -790,9 +803,11 @@ export default function RevisitPage() {
                                 )}
                                 {/* Explanation */}
                                 {question.explanation && (
-                                  <div className="mt-4 p-4 bg-emerald-50 border border-emerald-100 rounded-md">
-                                    <h3 className="text-sm font-medium mb-2 text-emerald-700">Explanation:</h3>
-                                    <p className="whitespace-pre-wrap text-sm text-emerald-700">{question.explanation}</p>
+                                  <div>
+                                    <h3 className="text-sm font-medium mb-2 text-gray-700">Explanation:</h3>
+                                    <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+                                      <p className="whitespace-pre-wrap text-sm text-gray-700">{question.explanation}</p>
+                                    </div>
                                   </div>
                                 )}
 
