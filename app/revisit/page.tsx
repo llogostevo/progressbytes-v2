@@ -131,7 +131,6 @@ export default function RevisitPage() {
           return
         }
 
-        console.log('Questions data:', questionsData)
 
         // Create a map of questions with their type-specific data
         const questionMap: Record<string, Question> = {}
@@ -150,11 +149,7 @@ export default function RevisitPage() {
                 model_answer_code: q.short_answer_questions?.model_answer_code,
                 order_important: q.short_answer_questions?.order_important
               }
-              console.log('Short answer data:', {
-                questionId: q.id,
-                typeSpecificData,
-                rawData: q.short_answer_questions
-              })
+             
               break
             case 'true-false':
               typeSpecificData = q.true_false_questions?.[0] as TypeSpecificData
@@ -223,11 +218,6 @@ export default function RevisitPage() {
             created_at: q.created_at
           }
 
-          console.log('Mapped question:', {
-            id: q.id,
-            type: q.type,
-            modelAnswer: mappedQuestion.model_answer
-          })
 
           questionMap[q.id] = mappedQuestion
         })
@@ -611,7 +601,6 @@ export default function RevisitPage() {
                                                   const options = Array.isArray(question.options) ? question.options : [];
                                                   const blanksCount = Array.isArray(question.model_answer) ? question.model_answer.length : selectedIndexes.length;
                                                   const modelAnswer = Array.isArray(question.model_answer) ? question.model_answer : [question.model_answer];
-                                                  console.log('DEBUG FIB:', { selectedIndexes, options, modelAnswer, order_important: question.order_important });
                                                   if (oldFormat) {
                                                     return <div className="text-red-600">This answer was submitted using an old format and cannot be displayed.</div>;
                                                   }
