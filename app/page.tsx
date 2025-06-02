@@ -26,29 +26,29 @@ import type { Topic, Question } from "@/lib/types"
 // }
 
 // Define the database response types
-interface DBQuestion {
-  id: string;
-  type: Question['type'];
-  question_text: string;
-  model_answer: string | string[];
-  options?: string[];
-  correct_answer_index?: number;
-  summary?: string;
-  order_important?: boolean;
-  model_answer_python?: string;
-  explanation?: string;
-  created_at: string;
-  pairs?: { statement: string; match: string }[];
-}
+// interface DBQuestion {
+//   id: string;
+//   type: Question['type'];
+//   question_text: string;
+//   model_answer: string | string[];
+//   options?: string[];
+//   correct_answer_index?: number;
+//   summary?: string;
+//   order_important?: boolean;
+//   model_answer_python?: string;
+//   explanation?: string;
+//   created_at: string;
+//   pairs?: { statement: string; match: string }[];
+// }
 
-interface DBSubtopicQuestionLink {
-  questions: DBQuestion;
-}
+// interface DBSubtopicQuestionLink {
+//   questions: DBQuestion;
+// }
 
-interface DBSubtopic {
-  id: string;
-  subtopic_question_link: DBSubtopicQuestionLink[];
-}
+// interface DBSubtopic {
+//   id: string;
+//   subtopic_question_link: DBSubtopicQuestionLink[];
+// }
 
 // interface DBTopic {
 //   id: string;
