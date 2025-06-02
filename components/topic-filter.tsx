@@ -50,6 +50,16 @@ export function TopicFilter({ selectedTopic, onTopicChange, topics, className = 
     setShowTopics(false)
   }
 
+  const handleTopicClick = (topicSlug: string) => {
+    if (selectedTopic === topicSlug) {
+      // If deselecting a topic, hide the topics
+      onTopicChange(null)
+      setShowTopics(false)
+    } else {
+      onTopicChange(topicSlug)
+    }
+  }
+
   return (
     <div className={`w-full ${className}`}>
       <div className="flex gap-2 mb-5">
@@ -78,7 +88,7 @@ export function TopicFilter({ selectedTopic, onTopicChange, topics, className = 
             <Button
               key={topic.slug}
               variant={selectedTopic === topic.slug ? "default" : "outline"}
-              onClick={() => onTopicChange(selectedTopic === topic.slug ? null : topic.slug)}
+              onClick={() => handleTopicClick(topic.slug)}
               size="sm"
               className="flex-shrink-0 justify-start text-left h-8 px-2"
             >
