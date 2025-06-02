@@ -44,7 +44,7 @@ export const topics: Topic[] = [
     slug: "systems-architecture",
     name: "Systems Architecture",
     description: "Learn about CPU architecture, fetch-execute cycle, and performance factors",
-    icon: Cpu,
+    icon: "cpu",
     questionCount: 43,
     questions: [
       {
@@ -87,7 +87,7 @@ export const topics: Topic[] = [
         id: "sa4",
         type: "short-answer",
         topic: "systems-architecture",
-        question_text: "Why is a car’s cruise control considered an embedded system?",
+        question_text: "Why is a car's cruise control considered an embedded system?",
         model_answer: "It performs one specific task (maintaining vehicle speed), is built into the vehicle, and operates with its own microcontroller and software that can't be easily changed.",
         created_at: "2025-05-05T00:00:00Z"
       },
@@ -132,7 +132,7 @@ export const topics: Topic[] = [
         id: "sa8",
         type: "multiple-choice",
         topic: "systems-architecture",
-        question_text: "Which of the following changes is most likely to speed up a CPU’s performance?",
+        question_text: "Which of the following changes is most likely to speed up a CPU's performance?",
         options: [
           "Reducing the number of cores",
           "Lowering the cache size",
@@ -303,7 +303,7 @@ export const topics: Topic[] = [
         topic: "systems-architecture",
         question_text: "Adding more cores always improves program performance.",
         model_answer: "false",
-        explanation: "False – Adding more cores can improve multitasking or performance for software designed to use them, but some programs can’t take advantage of multiple cores.",
+        explanation: "False – Adding more cores can improve multitasking or performance for software designed to use them, but some programs can't take advantage of multiple cores.",
         created_at: "2025-05-05T00:00:00Z"
       },
       {
@@ -471,7 +471,7 @@ export const topics: Topic[] = [
     slug: "memory-storage",
     name: "Memory & Storage",
     description: "Explore primary and secondary storage, memory hierarchy, and data representation",
-    icon: HardDrive,
+    icon: "hard-drive",
     questionCount: 79,
     questions: [
       {
@@ -773,7 +773,7 @@ export const topics: Topic[] = [
       {
         id: "ms38",
         topic: "storage",
-        question_text: "What is meant by the term ‘resolution’ in relation to digital images?",
+        question_text: "What is meant by the term 'resolution' in relation to digital images?",
         model_answer: "The number of pixels in an image, usually given as width × height.",
         created_at: "2025-05-08T00:00:00Z",
         type: "short-answer"
@@ -781,7 +781,7 @@ export const topics: Topic[] = [
       {
         id: "ms39",
         topic: "storage",
-        question_text: "What is meant by ‘colour depth’ in a digital image?",
+        question_text: "What is meant by 'colour depth' in a digital image?",
         model_answer: "The number of bits used to represent the colour of each pixel.",
         created_at: "2025-05-08T00:00:00Z",
         type: "short-answer"
@@ -845,7 +845,7 @@ export const topics: Topic[] = [
       {
         id: "ms47",
         topic: "storage",
-        question_text: "What is meant by the term ‘sample rate’?",
+        question_text: "What is meant by the term 'sample rate'?",
         model_answer: "The number of samples taken per second, measured in Hertz (Hz).",
         created_at: "2025-05-08T00:00:00Z",
         type: "short-answer"
@@ -853,7 +853,7 @@ export const topics: Topic[] = [
       {
         id: "ms48",
         topic: "storage",
-        question_text: "What is meant by ‘bit depth’ in sound recording?",
+        question_text: "What is meant by 'bit depth' in sound recording?",
         model_answer: "The number of bits used to store each sound sample.",
         created_at: "2025-05-08T00:00:00Z",
         type: "short-answer"
@@ -1116,7 +1116,7 @@ export const topics: Topic[] = [
     slug: "networks",
     name: "Computer Networks",
     description: "Explore network types, topologies, hardware, protocols, and internet communication",
-    icon: Network,
+    icon: "network",
     questionCount: 99,
     unit: 1,
     disabled: false,
@@ -2097,7 +2097,7 @@ export const topics: Topic[] = [
     slug: "network-security",
     name: "Network Security",
     description: "Learn about security threats, prevention methods, and encryption",
-    icon: Shield,
+    icon: "shield",
     questionCount: 38,
     questions: [
       {
@@ -2326,8 +2326,8 @@ export const topics: Topic[] = [
         id: "ns23",
         type: "short-answer",
         topic: "network-security",
-        question_text: "Explain how malware can be used to collect personal data from a user’s device.",
-        model_answer: "Malware such as spyware can secretly monitor a user’s activity, capturing personal data like login credentials or financial information.",
+        question_text: "Explain how malware can be used to collect personal data from a user's device.",
+        model_answer: "Malware such as spyware can secretly monitor a user's activity, capturing personal data like login credentials or financial information.",
         created_at: "2025-05-05T00:00:00Z"
       },
       {
@@ -2420,7 +2420,7 @@ export const topics: Topic[] = [
         id: "ns31",
         type: "true-false",
         topic: "network-security",
-        question_text: "SQL injection involves inserting malicious code into a website’s database query.",
+        question_text: "SQL injection involves inserting malicious code into a website's database query.",
         model_answer: "true",
         explanation: "True – SQL injection is a form of attack where malicious SQL statements are inserted into a query to manipulate or access database information.",
         created_at: "2025-05-05T00:00:00Z"
@@ -2521,7 +2521,7 @@ export const topics: Topic[] = [
     slug: "systems-software",
     name: "Systems Software",
     description: "Understand operating systems, utility software, and system management",
-    icon: Settings,
+    icon: "settings",
     questionCount: 62,
     questions: [
       {
@@ -2595,7 +2595,7 @@ export const topics: Topic[] = [
         id: "s6",
         type: "short-answer",
         topic: "systems-software",
-        question_text: "Describe how a computer’s hard drive may become fragmented over time.",
+        question_text: "Describe how a computer's hard drive may become fragmented over time.",
         model_answer: "As files are added and removed, gaps form on the disk. New files may not fit into these gaps completely, so they get split across multiple locations, causing fragmentation.",
         created_at: "2025-05-05T00:00:00Z"
       },
@@ -3015,7 +3015,7 @@ export const topics: Topic[] = [
         id: "s51",
         type: "true-false",
         topic: "systems-software",
-        question_text: "Encryption software ensures data can’t be accessed by unauthorised users.",
+        question_text: "Encryption software ensures data can't be accessed by unauthorised users.",
         model_answer: "true",
         explanation: "True – Encryption changes the data into unreadable form unless a user has the correct key to decrypt it.",
         "created_at": "2025-05-05T00:00:00Z"
@@ -3129,7 +3129,7 @@ export const topics: Topic[] = [
     slug: "impacts",
     name: "Impacts",
     description: "Explore ethical, legal, cultural, and environmental impacts of technology",
-    icon: Globe,
+    icon: "globe",
     questionCount: 14,
     questions: [
       {
@@ -3160,7 +3160,7 @@ export const topics: Topic[] = [
         id: "i4",
         topic: "impacts",
         question_text: "A school asks students to bring their own devices for lessons. Discuss the ethical, legal, and privacy issues of this approach.",
-        model_answer: "Ethically, allowing students to bring their own devices can be more cost-effective for the school and allow students to use technology they are familiar with.\n\nHowever, it may create inequality, as not all students can afford high-quality devices, leading to a divide in learning opportunities.\n\nLegally, the school must ensure that students are safe while using their own devices, including protection against harmful online content, this can help students understand the law as they will be more engaged with their devices in school. \n\nThere are concerns about liability—who is responsible if a student’s device is lost, damaged, or misused on school premises?\n\nFrom a privacy perspective, schools might need to monitor device usage to ensure appropriate content is accessed this could help protect students, but this could be also seen as intrusive.\n\nInstalling monitoring software on personal devices may raise concerns among students and parents.\n\nAdditionally, students could use cameras or microphones inappropriately e.g. cyber bullying.\n\n However, it also gives students the opportunity of personalised learning in every subject that might see their grades improve.\n\nBalancing educational benefits with fairness, safety, and privacy is essential for this policy to work effectively.",
+        model_answer: "Ethically, allowing students to bring their own devices can be more cost-effective for the school and allow students to use technology they are familiar with.\n\nHowever, it may create inequality, as not all students can afford high-quality devices, leading to a divide in learning opportunities.\n\nLegally, the school must ensure that students are safe while using their own devices, including protection against harmful online content, this can help students understand the law as they will be more engaged with their devices in school. \n\nThere are concerns about liability—who is responsible if a student's device is lost, damaged, or misused on school premises?\n\nFrom a privacy perspective, schools might need to monitor device usage to ensure appropriate content is accessed this could help protect students, but this could be also seen as intrusive.\n\nInstalling monitoring software on personal devices may raise concerns among students and parents.\n\nAdditionally, students could use cameras or microphones inappropriately e.g. cyber bullying.\n\n However, it also gives students the opportunity of personalised learning in every subject that might see their grades improve.\n\nBalancing educational benefits with fairness, safety, and privacy is essential for this policy to work effectively.",
         created_at: "2023-05-08T00:00:00Z",
         type: "essay"
       },
@@ -3184,7 +3184,7 @@ export const topics: Topic[] = [
         id: "i7",
         topic: "impacts",
         question_text: "Discuss the impact of consumers upgrading to the latest smartphones. Ethically, Legally, Environmentally and Culturally",
-        model_answer: "For smartphone users, new devices offer better performance, features, and compatibility with apps and networks.\n\nHowever, frequently upgrading can be expensive and may lead to pressure on individuals who can’t afford it.\n\nCulturally, owning the latest technology is often associated with status, which can lead to social pressure and inequality.\n\nIt can also lead to wasteful consumer behavior, where working devices are discarded unnecessarily.\n\nEthically, this habit contributes to the digital divide, where some groups have access to better technology and others do not.\n\nEnvironmentally, discarded smartphones add to electronic waste.\n\nMany phones are not designed to be easily repaired or recycled, leading to landfill buildup and pollution.\n\nRare metals and toxic materials used in phones also damage ecosystems.\n\nWhile innovation is important, these upgrades should be balanced with sustainability and fairness.",
+        model_answer: "For smartphone users, new devices offer better performance, features, and compatibility with apps and networks.\n\nHowever, frequently upgrading can be expensive and may lead to pressure on individuals who can't afford it.\n\nCulturally, owning the latest technology is often associated with status, which can lead to social pressure and inequality.\n\nIt can also lead to wasteful consumer behavior, where working devices are discarded unnecessarily.\n\nEthically, this habit contributes to the digital divide, where some groups have access to better technology and others do not.\n\nEnvironmentally, discarded smartphones add to electronic waste.\n\nMany phones are not designed to be easily repaired or recycled, leading to landfill buildup and pollution.\n\nRare metals and toxic materials used in phones also damage ecosystems.\n\nWhile innovation is important, these upgrades should be balanced with sustainability and fairness.",
         created_at: "2023-05-08T00:00:00Z",
         type: "essay"
       },
@@ -3208,7 +3208,7 @@ export const topics: Topic[] = [
         id: "i10",
         topic: "impacts",
         question_text: "A transport company is trialling self-driving delivery vehicles. Discuss the legal, ethical, and cultural issues involved in using autonomous vehicles.",
-        model_answer: "Legally, autonomous vehicles must follow traffic laws and be safe to operate in public spaces.\n\nIf an accident occurs, it's unclear who is at fault — the company, the software developers, or the vehicle manufacturer.\n\nEthically, these vehicles could reduce human error and prevent injuries, but they may also replace jobs and reduce income for delivery drivers.\n\nCulturally, there may be resistance from communities that don’t trust driverless technology or worry about their safety.\n\nHowever, others may see it as a sign of progress and innovation.\n\nPublic education and transparent testing are key to gaining acceptance.",
+        model_answer: "Legally, autonomous vehicles must follow traffic laws and be safe to operate in public spaces.\n\nIf an accident occurs, it's unclear who is at fault — the company, the software developers, or the vehicle manufacturer.\n\nEthically, these vehicles could reduce human error and prevent injuries, but they may also replace jobs and reduce income for delivery drivers.\n\nCulturally, there may be resistance from communities that don't trust driverless technology or worry about their safety.\n\nHowever, others may see it as a sign of progress and innovation.\n\nPublic education and transparent testing are key to gaining acceptance.",
         created_at: "2023-05-08T00:00:00Z",
         type: "essay"
       },
@@ -3242,11 +3242,11 @@ export const topics: Topic[] = [
         topic: "legal",
         question_text: "Match each scenario to the correct law it relates to:",
         pairs: [
-          { statement: "A company transmits personal data to another company without the individual’s permission.", match: "Data Protection Act (2018)" },
-          { statement: "A school accidentally publishes their students’ addresses on the school website.", match: "Data Protection Act (2018)" },
+          { statement: "A company transmits personal data to another company without the individual's permission.", match: "Data Protection Act (2018)" },
+          { statement: "A school accidentally publishes their students' addresses on the school website.", match: "Data Protection Act (2018)" },
           { statement: "The interface for a piece of software is replicated by a rival company.", match: "Copyright, Designs and Patents Act (1988)" },
           { statement: "A user leaves a computer logged on and another person leaves them a message on their desktop.", match: "Computer Misuse Act (1990)" },
-          { statement: "A student guesses their teacher’s password and accesses their computer account.", match: "Computer Misuse Act (1990)" }
+          { statement: "A student guesses their teacher's password and accesses their computer account.", match: "Computer Misuse Act (1990)" }
         ],
         model_answer: [
           "Data Protection Act (2018)",
@@ -3255,7 +3255,7 @@ export const topics: Topic[] = [
           "Computer Misuse Act (1990)",
           "Computer Misuse Act (1990)"
         ],
-        explanation: "The Data Protection Act protects individuals’ personal data, which is breached when data is shared or published without consent.\n\n The Copyright, Designs and Patents Act protects original work like software interfaces from being copied.\n\n  The Computer Misuse Act makes it illegal to access or alter someone’s computer or data without permission, including guessing passwords or interfering with logged-in accounts.",
+        explanation: "The Data Protection Act protects individuals' personal data, which is breached when data is shared or published without consent.\n\n The Copyright, Designs and Patents Act protects original work like software interfaces from being copied.\n\n  The Computer Misuse Act makes it illegal to access or alter someone's computer or data without permission, including guessing passwords or interfering with logged-in accounts.",
         created_at: "2025-05-08T00:00:00Z"
       },
       {
@@ -3291,7 +3291,7 @@ export const topics: Topic[] = [
           { statement: "A programmer wants to protect their work from being copied or distributed.", match: "Copyright, Designs and Patents Act (1988)" },
           { statement: "A person logs into a computer without permission by guessing the password.", match: "Computer Misuse Act (1990)" },
           { statement: "A person makes a request to view financial information held by a public authority.", match: "Freedom of Information Act (2000)" },
-          { statement: "A hacker gains access to a company’s files over a network without permission.", match: "Computer Misuse Act (1990)" },
+          { statement: "A hacker gains access to a company's files over a network without permission.", match: "Computer Misuse Act (1990)" },
           { statement: "A company collects data that it does not need about its customers.", match: "Data Protection Act (2018)" }
         ],
         model_answer: [
@@ -3318,7 +3318,7 @@ export const topics: Topic[] = [
     slug: "algorithms",
     name: "Algorithms",
     description: "Learn about algorithms, computational thinking, and problem-solving",
-    icon: Code,
+    icon: "code",
     questionCount: 27,
     questions: [
       {
@@ -3380,7 +3380,7 @@ export const topics: Topic[] = [
 {
   id: "a8",
   topic: "algorithms",
-  question_text: "State the most appropriate data type for each of the following:\n\na) A person’s shoe size (e.g. 7, 8.5)\nb) A list of usernames\nc) Whether a password is correct or not",
+  question_text: "State the most appropriate data type for each of the following:\n\na) A person's shoe size (e.g. 7, 8.5)\nb) A list of usernames\nc) Whether a password is correct or not",
   model_answer: "a) Real\nb) Array (of Strings)\nc) Boolean",
   created_at: "2025-05-08T00:00:00Z",
   type: "short-answer"
@@ -3485,12 +3485,12 @@ export const topics: Topic[] = [
   topic: "algorithms",
   question_text: "Match each principle of computational thinking to its correct description:",
   pairs: [
-    { statement: "Abstraction", match: "Removing unnecessary detail to focus on what’s important" },
+    { statement: "Abstraction", match: "Removing unnecessary detail to focus on what's important" },
     { statement: "Decomposition", match: "Breaking a problem down into smaller, manageable parts" },
     { statement: "Algorithmic thinking", match: "Creating a clear, step-by-step solution to a problem" }
   ],
   model_answer: [
-    "Removing unnecessary detail to focus on what’s important",
+    "Removing unnecessary detail to focus on what's important",
     "Breaking a problem down into smaller, manageable parts",
     "Creating a clear, step-by-step solution to a problem"
   ],
@@ -3572,7 +3572,7 @@ export const topics: Topic[] = [
     slug: "programming-fundamentals",
     name: "Programming Fundamentals",
     description: "Master variables, data types, operators, and control structures",
-    icon: FileCode,
+    icon: "file-code",
     questionCount: 54,
     questions: [
       {
@@ -4127,7 +4127,7 @@ export const topics: Topic[] = [
     slug: "robust-programs",
     name: "Producing Robust Programs",
     description: "Learn defensive design, testing, and maintenance techniques",
-    icon: Puzzle,
+    icon: "puzzle",
     questionCount: 0,
     questions: [],
     unit: 2,
@@ -4138,7 +4138,7 @@ export const topics: Topic[] = [
     slug: "boolean-logic",
     name: "Boolean Logic",
     description: "Understand logic gates, truth tables, and Boolean expressions",
-    icon: Binary,
+    icon: "binary",
     questionCount: 0,
     questions: [],
     unit: 2,
@@ -4149,7 +4149,7 @@ export const topics: Topic[] = [
     slug: "languages-and-idEs",
     name: "Languages & IDEs",
     description: "Explore programming languages, translators, and development environments",
-    icon: Terminal,
+    icon: "terminal",
     questionCount: 13,
     questions: [
       {
