@@ -1133,7 +1133,7 @@ export default function QuestionPage() {
                                         {selectedOptions.map((option, i) => {
                                           const isOptionCorrect = question.order_important
                                             ? option === modelAnswer[i]
-                                            : modelAnswer.includes(option);
+                                            : option ? modelAnswer.includes(option) : false;
                                           return (
                                             <div key={i} className={`flex items-center gap-2 ${isOptionCorrect ? "text-green-600" : "text-red-600"}`}>
                                               {option || "No answer selected"}
