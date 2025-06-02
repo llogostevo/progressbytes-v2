@@ -74,7 +74,7 @@ interface DBSubtopic {
 }
 
 // Helper functions to interact with the database
-export async function getTopicBySlug(slug: string): Promise<Topic | undefined> {
+async function getTopicBySlug(slug: string): Promise<Topic | undefined> {
   const supabase = createClient()
 
   const { data: topic, error } = await supabase
@@ -153,7 +153,7 @@ function transformQuestion(dbQuestion: DBQuestion, topicName: string): Question 
   };
 }
 
-export async function getRandomQuestionForTopic(topicId: string, freeUser: boolean, userType: "revision" | "revisionAI" | "basic" | null): Promise<Question> {
+async function getRandomQuestionForTopic(topicId: string, freeUser: boolean, userType: "revision" | "revisionAI" | "basic" | null): Promise<Question> {
   const supabase = createClient()
 
   // First check if the topic exists
@@ -252,7 +252,7 @@ export async function getRandomQuestionForTopic(topicId: string, freeUser: boole
 }
 
 // Add this new function to get available question types
-export async function getAvailableQuestionTypes(topicId: string): Promise<string[]> {
+async function getAvailableQuestionTypes(topicId: string): Promise<string[]> {
   const supabase = createClient()
 
   const { data: questions, error: questionsError } = await supabase
@@ -286,7 +286,7 @@ export async function getAvailableQuestionTypes(topicId: string): Promise<string
   return Array.from(types)
 }
 
-export async function getQuestionById(questionId: string): Promise<Question | undefined> {
+async function getQuestionById(questionId: string): Promise<Question | undefined> {
   const supabase = createClient()
 
   const { data: question, error } = await supabase
