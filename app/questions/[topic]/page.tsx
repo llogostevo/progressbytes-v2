@@ -274,7 +274,7 @@ export async function getAvailableQuestionTypes(topicId: string): Promise<string
   // Get unique question types
   const types = new Set<string>()
   // TODO: fix the type error
-  // @ts-ignore - this is a workaround to fix the type error
+  // @ts-expect-error - this is a workaround to fix the type error
   questions.forEach((subtopic: DBSubtopic) => {
     subtopic.subtopic_question_link?.forEach((link: DBSubtopicQuestionLink) => {
       if (link.questions?.type) {
