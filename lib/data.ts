@@ -1,17 +1,17 @@
 import type { Topic, Question, Answer, Student } from "@/lib/types"
-import {
-  Network,
-  Cpu,
-  HardDrive,
-  Shield,
-  Settings,
-  Globe,
-  Code,
-  FileCode,
-  Puzzle,
-  Binary,
-  Terminal,
-} from "lucide-react"
+// import {
+//   Network,
+//   Cpu,
+//   HardDrive,
+//   Shield,
+//   Settings,
+//   Globe,
+//   Code,
+//   FileCode,
+//   Puzzle,
+//   Binary,
+//   Terminal,
+// } from "lucide-react"
 
   /* TODO: setup supabase call to get data */
 
