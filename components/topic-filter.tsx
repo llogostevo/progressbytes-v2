@@ -14,8 +14,8 @@ interface Topic {
 }
 
 interface TopicFilterProps {
-  selectedTopic: string | null
-  onTopicChange: (topic: string | null) => void
+  selectedTopics: string[]
+  onTopicChange: (topics: string[]) => void
   topics: Topic[]
   className?: string
 }
@@ -39,32 +39,35 @@ function compareTopicNumbers(a?: string, b?: string) {
 
 // Estimate: button height ~32px, gap-2 = 8px, so 3 rows: 3*32 + 2*8 = 112px
 
-export function TopicFilter({ selectedTopic, onTopicChange, topics, className = "" }: TopicFilterProps) {
-  const [showTopics, setShowTopics] = useState(false)
+export function TopicFilter({ selectedTopics, onTopicChange, topics, className = "" }: TopicFilterProps) {
+  const [showTopics, setShowTopics] = useState(selectedTopics.length > 0)
   
   // Sort all topics by their topic number
   const sortedTopics = [...topics].sort((a, b) => compareTopicNumbers(a.topicnumber, b.topicnumber))
 
   const handleAllTopicsClick = () => {
-    onTopicChange(null)
+    onTopicChange([])
     setShowTopics(false)
   }
 
   const handleTopicClick = (topicSlug: string) => {
-    if (selectedTopic === topicSlug) {
-      // If deselecting a topic, hide the topics
-      onTopicChange(null)
+    const newSelectedTopics = selectedTopics.includes(topicSlug)
+      ? selectedTopics.filter(t => t !== topicSlug)
+      : [...selectedTopics, topicSlug]
+    
+    // If we're deselecting the last topic, hide the topics
+    if (selectedTopics.includes(topicSlug) && newSelectedTopics.length === 0) {
       setShowTopics(false)
-    } else {
-      onTopicChange(topicSlug)
     }
+    
+    onTopicChange(newSelectedTopics)
   }
 
   return (
     <div className={`w-full ${className}`}>
       <div className="flex gap-2 mb-5">
         <Button
-          variant={selectedTopic === null ? "default" : "outline"}
+          variant={selectedTopics.length === 0 ? "default" : "outline"}
           onClick={handleAllTopicsClick}
           size="sm"
           className="flex-shrink-0"
@@ -87,7 +90,7 @@ export function TopicFilter({ selectedTopic, onTopicChange, topics, className = 
           {sortedTopics.map((topic) => (
             <Button
               key={topic.slug}
-              variant={selectedTopic === topic.slug ? "default" : "outline"}
+              variant={selectedTopics.includes(topic.slug) ? "default" : "outline"}
               onClick={() => handleTopicClick(topic.slug)}
               size="sm"
               className="flex-shrink-0 justify-start text-left h-8 px-2"

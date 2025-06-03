@@ -1,7 +1,6 @@
 "use client"
 
-import React from "react"
-import { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -46,16 +45,31 @@ export default function RevisitPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const tabParam = searchParams.get("tab") as ScoreType | null
-  const topicParam = searchParams.get("topic")
   const typeParam = searchParams.get("type")
+  const selectedTopics = searchParams.get("topics")?.split(",") || []
 
-  const [answers, setAnswers] = useState<Answer[]>([])
-  const [questions, setQuestions] = useState<Record<string, Question>>({})
-  const [activeTab, setActiveTab] = useState<ScoreType | "all">(tabParam || "all")
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [allAnswers, setAllAnswers] = useState<Answer[]>([])
+  const [questions, setQuestions] = useState<Record<string, Question>>({})
+  const [activeTab, setActiveTab] = useState<ScoreType | "all">(tabParam || "all")
   const [topics, setTopics] = useState<DBTopic[]>([])
 
+  // Memoize filtered answers
+  const filteredAnswers = useMemo(() => {
+    if (allAnswers.length === 0 || topics.length === 0) return allAnswers
+
+    return selectedTopics.length > 0
+      ? allAnswers.filter((answer) => {
+          const question = questions[answer.question_id]
+          return question && selectedTopics.some(topicSlug => 
+            topics.some(t => t.slug === topicSlug && t.id === question.topic)
+          )
+        })
+      : allAnswers
+  }, [allAnswers, selectedTopics, topics, questions])
+
+  // First useEffect for initial data loading
   useEffect(() => {
     const getUser = async () => {
       const supabase = createClient()
@@ -130,7 +144,6 @@ export default function RevisitPage() {
           console.error('Error fetching questions:', questionsError)
           return
         }
-
 
         // Create a map of questions with their type-specific data
         const questionMap: Record<string, Question> = {}
@@ -223,21 +236,11 @@ export default function RevisitPage() {
             correct_answer: q.true_false_questions?.[0]?.correct_answer
           }
 
-
           questionMap[q.id] = mappedQuestion
         })
 
         setQuestions(questionMap)
-
-        // Filter by topic if specified
-        const filteredByTopic = topicParam
-          ? mappedAnswers.filter((answer) => {
-            const question = questionMap[answer.question_id]
-            return question && topicsData?.some(t => t.slug === topicParam && t.id === question.topic)
-          })
-          : mappedAnswers
-
-        setAnswers(filteredByTopic)
+        setAllAnswers(mappedAnswers)
 
         await supabase.from('user_activity').insert({
           user_id: user.id,
@@ -251,38 +254,42 @@ export default function RevisitPage() {
       setIsLoading(false)
     }
     getUser()
-  }, [topicParam])
+  }, [])
 
   // Filter answers by score and type
-  const filteredAnswers = answers
-    .filter((answer) => activeTab === "all" || answer.score === activeTab)
-    .filter((answer) => {
-      if (typeParam === "all" || !typeParam) return true
-      const question = questions[answer.question_id]
-      return question?.type === typeParam
-    })
+  const filteredAnswersByScoreAndType = useMemo(() => {
+    return filteredAnswers
+      .filter((answer) => activeTab === "all" || answer.score === activeTab)
+      .filter((answer) => {
+        if (typeParam === "all" || !typeParam) return true
+        const question = questions[answer.question_id]
+        return question?.type === typeParam
+      })
+  }, [filteredAnswers, activeTab, typeParam, questions])
 
   // Group answers by topic
-  const answersByTopic = filteredAnswers.reduce(
-    (acc, answer) => {
-      const question = questions[answer.question_id]
-      if (!question) return acc
+  const answersByTopic = useMemo(() => {
+    return filteredAnswersByScoreAndType.reduce(
+      (acc, answer) => {
+        const question = questions[answer.question_id]
+        if (!question) return acc
 
-      const topicSlug = topics.find((t) => t.id === question.topic)?.slug || "unknown"
+        const topicSlug = topics.find((t) => t.id === question.topic)?.slug || "unknown"
 
-      if (!acc[topicSlug]) {
-        acc[topicSlug] = []
-      }
+        if (!acc[topicSlug]) {
+          acc[topicSlug] = []
+        }
 
-      // Only add if not already in the array (avoid duplicates)
-      if (!acc[topicSlug].some((a) => a.question_id === answer.question_id)) {
-        acc[topicSlug].push(answer)
-      }
+        // Only add if not already in the array (avoid duplicates)
+        if (!acc[topicSlug].some((a) => a.question_id === answer.question_id)) {
+          acc[topicSlug].push(answer)
+        }
 
-      return acc
-    },
-    {} as Record<string, Answer[]>,
-  )
+        return acc
+      },
+      {} as Record<string, Answer[]>,
+    )
+  }, [filteredAnswersByScoreAndType, questions, topics])
 
   const getScoreLabel = (score: ScoreType) => {
     switch (score) {
@@ -326,15 +333,13 @@ export default function RevisitPage() {
     router.push(`?${params.toString()}`)
   }
 
-  const handleTopicChange = (topic: string | null) => {
-    // Update URL using Next.js router
+  const handleTopicChange = (topics: string[]) => {
     const params = new URLSearchParams(searchParams.toString())
-    if (topic === null) {
-      params.delete("topic")
+    if (topics.length === 0) {
+      params.delete("topics")
     } else {
-      params.set("topic", topic)
+      params.set("topics", topics.join(","))
     }
-
     router.push(`?${params.toString()}`)
   }
 
@@ -360,13 +365,13 @@ export default function RevisitPage() {
           </div>
 
           <p className="text-muted-foreground mb-4">
-            {topicParam
-              ? `Review ${activeTab !== "all" ? activeTab + " " : ""}questions from ${topics.find((t) => t.slug === topicParam)?.name || "this topic"}`
+            {selectedTopics.length > 0
+              ? `Review ${activeTab !== "all" ? activeTab + " " : ""}questions from selected topics`
               : `Review ${activeTab !== "all" ? activeTab + " " : ""}questions you've previously answered`}
           </p>
 
           <div className="space-y-4 mb-8">
-            <TopicFilter selectedTopic={topicParam} onTopicChange={handleTopicChange} topics={topics} />
+            <TopicFilter selectedTopics={selectedTopics} onTopicChange={handleTopicChange} topics={topics} />
             <div className="bg-muted/50 rounded-lg p-3 border border-muted">
               <QuestionTypeFilter
                 selectedType={typeParam}
