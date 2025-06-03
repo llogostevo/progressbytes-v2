@@ -23,6 +23,16 @@ interface UserActivity {
   path: string
   created_at: string
   user_email?: string
+  score?: 'correct' | 'incorrect'
+  question_type?: string
+  question_text?: string
+  topic?: string
+}
+
+interface Student {
+  id: string
+  email: string
+  name?: string
 }
 
 interface UserSession {
@@ -47,6 +57,9 @@ export default function SettingsPage() {
   const [userSessions, setUserSessions] = useState<UserSession[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [currentSessionIndex, setCurrentSessionIndex] = useState(0)
+  const [topics, setTopics] = useState<Array<{ id: string; name: string; slug: string }>>([])
+  const [students, setStudents] = useState<Student[]>([])
+  const [selectedStudent, setSelectedStudent] = useState<string | null>(null)
   
   const supabase = createClient()
 
@@ -146,6 +159,33 @@ export default function SettingsPage() {
 
       setUserType(profiles?.user_type)
 
+      // Fetch students
+      const { data: studentsData, error: studentsError } = await supabase
+        .from("profiles")
+        .select("id, email, name")
+        .order('email')
+
+      if (studentsError) {
+        console.error('Error fetching students:', studentsError)
+      } else {
+        setStudents(studentsData || [])
+        if (studentsData && studentsData.length > 0) {
+          setSelectedStudent(studentsData[0].id)
+        }
+      }
+
+      // Fetch topics
+      const { data: topicsData, error: topicsError } = await supabase
+        .from("topics")
+        .select("id, name, slug")
+        .order('name')
+
+      if (topicsError) {
+        console.error('Error fetching topics:', topicsError)
+      } else {
+        setTopics(topicsData || [])
+      }
+
       // Fetch all user activity
       const { data: activity } = await supabase
         .from("user_activity")
@@ -207,6 +247,7 @@ export default function SettingsPage() {
             <TabsTrigger value="activity">Activity</TabsTrigger>
             <TabsTrigger value="sessions">Sessions</TabsTrigger>
             <TabsTrigger value="homework">Homework</TabsTrigger>
+            <TabsTrigger value="performance">Performance</TabsTrigger>
           </TabsList>
 
           <TabsContent value="account">
@@ -431,6 +472,204 @@ export default function SettingsPage() {
 
           <TabsContent value="homework">
             <UserActivityFilter />
+          </TabsContent>
+
+          <TabsContent value="performance">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <BarChart className="h-5 w-5 mr-2" />
+                  Student Performance
+                </CardTitle>
+                <CardDescription>Track student progress across topics and question types</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="text-center py-4">Loading performance data...</div>
+                ) : (
+                  <div className="space-y-8">
+                    {/* Student Selector */}
+                    <div className="flex items-center gap-4">
+                      <Label htmlFor="student">Select Student</Label>
+                      <select
+                        id="student"
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        value={selectedStudent || ''}
+                        onChange={(e) => setSelectedStudent(e.target.value)}
+                      >
+                        {students.map((student) => (
+                          <option key={student.id} value={student.id}>
+                            {student.name || student.email}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Overall Performance */}
+                    <div className="border-t pt-6">
+                      <h3 className="font-medium mb-4">Overall Performance</h3>
+                      <div className="grid grid-cols-3 gap-4">
+                        {(() => {
+                          const studentActivity = userActivity.filter(
+                            a => a.user_id === selectedStudent && a.event === 'submitted_question'
+                          );
+                          const totalQuestions = studentActivity.length;
+                          const correctAnswers = studentActivity.filter(
+                            a => a.score === 'correct'
+                          ).length;
+                          const successRate = totalQuestions > 0 
+                            ? Math.round((correctAnswers / totalQuestions) * 100) 
+                            : 0;
+
+                          return (
+                            <>
+                              <Card>
+                                <CardContent className="pt-6">
+                                  <div className="text-2xl font-bold">{totalQuestions}</div>
+                                  <p className="text-sm text-muted-foreground">Total Questions</p>
+                                </CardContent>
+                              </Card>
+                              <Card>
+                                <CardContent className="pt-6">
+                                  <div className="text-2xl font-bold">{correctAnswers}</div>
+                                  <p className="text-sm text-muted-foreground">Correct Answers</p>
+                                </CardContent>
+                              </Card>
+                              <Card>
+                                <CardContent className="pt-6">
+                                  <div className="text-2xl font-bold">{successRate}%</div>
+                                  <p className="text-sm text-muted-foreground">Success Rate</p>
+                                </CardContent>
+                              </Card>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    </div>
+
+                    {/* Topic Performance */}
+                    <div className="border-t pt-6">
+                      <h3 className="font-medium mb-4">Topic Performance</h3>
+                      <div className="space-y-4">
+                        {topics.map((topic) => {
+                          const topicAnswers = userActivity.filter(
+                            a => a.user_id === selectedStudent && 
+                                 a.event === 'submitted_question' && 
+                                 a.path.includes(topic.slug)
+                          );
+                          const correctAnswers = topicAnswers.filter(
+                            a => a.score === 'correct'
+                          ).length;
+                          const totalAnswers = topicAnswers.length;
+                          const successRate = totalAnswers > 0 
+                            ? Math.round((correctAnswers / totalAnswers) * 100) 
+                            : 0;
+
+                          return (
+                            <Card key={topic.id}>
+                              <CardContent className="pt-6">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <h4 className="font-medium">{topic.name}</h4>
+                                    <p className="text-sm text-muted-foreground">
+                                      {correctAnswers} correct out of {totalAnswers} attempts
+                                    </p>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="text-2xl font-bold">{successRate}%</div>
+                                    <p className="text-sm text-muted-foreground">Success Rate</p>
+                                  </div>
+                                </div>
+                                <div className="mt-4 w-full bg-secondary h-2 rounded-full">
+                                  <div 
+                                    className="bg-primary h-2 rounded-full transition-all"
+                                    style={{ width: `${successRate}%` }}
+                                  />
+                                </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Question Type Performance */}
+                    <div className="border-t pt-6">
+                      <h3 className="font-medium mb-4">Question Type Performance</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        {['multiple-choice', 'short-answer', 'true-false', 'matching'].map((type) => {
+                          const typeAnswers = userActivity.filter(
+                            a => a.user_id === selectedStudent && 
+                                 a.event === 'submitted_question' && 
+                                 a.question_type === type
+                          );
+                          const correctAnswers = typeAnswers.filter(
+                            a => a.score === 'correct'
+                          ).length;
+                          const totalAnswers = typeAnswers.length;
+                          const successRate = totalAnswers > 0 
+                            ? Math.round((correctAnswers / totalAnswers) * 100) 
+                            : 0;
+
+                          return (
+                            <Card key={type}>
+                              <CardContent className="pt-6">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <h4 className="font-medium capitalize">{type.replace(/-/g, ' ')}</h4>
+                                    <p className="text-sm text-muted-foreground">
+                                      {correctAnswers} correct out of {totalAnswers} attempts
+                                    </p>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="text-2xl font-bold">{successRate}%</div>
+                                    <p className="text-sm text-muted-foreground">Success Rate</p>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Recent Performance */}
+                    <div className="border-t pt-6">
+                      <h3 className="font-medium mb-4">Recent Performance</h3>
+                      <div className="space-y-2">
+                        {userActivity
+                          .filter(a => a.user_id === selectedStudent && a.event === 'submitted_question')
+                          .slice(0, 5)
+                          .map((activity) => (
+                            <Card key={activity.id}>
+                              <CardContent className="pt-6">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <h4 className="font-medium">{activity.question_text}</h4>
+                                    <p className="text-sm text-muted-foreground">
+                                      {activity.topic} • {activity.question_type}
+                                    </p>
+                                  </div>
+                                  <div className={`text-right ${
+                                    activity.score === 'correct' ? 'text-green-600' : 'text-red-600'
+                                  }`}>
+                                    <div className="text-2xl font-bold capitalize">
+                                      {activity.score}
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">
+                                      {new Date(activity.created_at).toLocaleDateString()}
+                                    </p>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

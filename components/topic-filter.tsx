@@ -40,7 +40,7 @@ function compareTopicNumbers(a?: string, b?: string) {
 // Estimate: button height ~32px, gap-2 = 8px, so 3 rows: 3*32 + 2*8 = 112px
 
 export function TopicFilter({ selectedTopic, onTopicChange, topics, className = "" }: TopicFilterProps) {
-  const [showTopics, setShowTopics] = useState(true)
+  const [showTopics, setShowTopics] = useState(false)
   
   // Sort all topics by their topic number
   const sortedTopics = [...topics].sort((a, b) => compareTopicNumbers(a.topicnumber, b.topicnumber))
