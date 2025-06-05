@@ -8,7 +8,7 @@ import type { Question } from "@/lib/types"
 
 interface FillInTheBlankQuestionProps {
     question: Question
-    onAnswerSelected: (isCorrect: boolean) => void
+    onAnswerSelected: (isCorrect: boolean, selectedIndexes: number[]) => void
 }
 
 export function FillInTheBlankQuestion({ question, onAnswerSelected }: FillInTheBlankQuestionProps) {
@@ -91,8 +91,13 @@ export function FillInTheBlankQuestion({ question, onAnswerSelected }: FillInThe
             isCorrect = JSON.stringify(sortedSelected) === JSON.stringify(sortedModel)
         }
 
+        // Get the indexes of the selected options in the original options array
+        const selectedIndexes = selectedOptions.map(option => 
+            question.options?.indexOf(option) ?? -1
+        )
+
         setIsAnswered(true)
-        onAnswerSelected(isCorrect)
+        onAnswerSelected(isCorrect, selectedIndexes)
     }
 
     return (

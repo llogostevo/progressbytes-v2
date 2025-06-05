@@ -73,16 +73,16 @@ export function MatchingQuestion({ question, onSubmit, disabled = false }: Match
               <tr key={rowIndex}>
                 <td className="border p-2">{pair.statement}</td>
                 {uniqueMatches.map((match, colIndex) => (
-                  <td key={colIndex} className="border p-2 text-center">
-                    <button
-                      onClick={() => handleToggleMatch(pair.statement, match)}
-                      disabled={disabled || isSubmitted}
-                      className={`w-full h-full p-2 rounded ${
-                        selections[pair.statement]?.includes(match)
-                          ? 'bg-emerald-100'
-                          : 'hover:bg-gray-100'
-                      }`}
-                    >
+                  <td 
+                    key={colIndex} 
+                    className={`border p-2 text-center cursor-pointer ${
+                      selections[pair.statement]?.includes(match)
+                        ? 'bg-emerald-100'
+                        : 'hover:bg-gray-100'
+                    }`}
+                    onClick={() => !disabled && !isSubmitted && handleToggleMatch(pair.statement, match)}
+                  >
+                    <div className="w-full h-full p-2">
                       {selections[pair.statement]?.includes(match) && !isSubmitted && (
                         <div className="flex justify-center">
                           <CheckCircle2 className="h-5 w-5 text-emerald-600" />
@@ -97,7 +97,7 @@ export function MatchingQuestion({ question, onSubmit, disabled = false }: Match
                           ) : null}
                         </div>
                       )}
-                    </button>
+                    </div>
                   </td>
                 ))}
               </tr>

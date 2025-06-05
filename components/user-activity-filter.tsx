@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { createClient } from "@/utils/supabase/client"
 import { Button } from "@/components/ui/button"
@@ -163,14 +163,14 @@ export function UserActivityFilter() {
     setCurrentSessionIndex(prev => Math.min(userSessions.length - 1, prev + 1))
   }
 
-  const applyFilters = (usersToFilter: UserActivity[]) => {
+  const applyFilters = useCallback((usersToFilter: UserActivity[]) => {
     return usersToFilter.filter(user => {
       const durationMatch = user.total_duration >= parseInt(minDuration)
       const questionsMatch = user.questions_submitted >= parseInt(minQuestions)
       const emailMatch = user.user_email.includes(emailFilter)
       return durationMatch && questionsMatch && emailMatch
     })
-  }
+  }, [minDuration, minQuestions, emailFilter])
 
   useEffect(() => {
     const fetchUserActivity = async () => {

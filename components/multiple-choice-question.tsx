@@ -8,7 +8,7 @@ import { CheckCircle2, XCircle } from "lucide-react"
 interface MultipleChoiceQuestionProps {
   options: string[]
   correctAnswerIndex: number
-  onAnswerSelected: (isCorrect: boolean) => void
+  onAnswerSelected: (selectedIndex: number, isCorrect: boolean) => void
 }
 
 export function MultipleChoiceQuestion({
@@ -23,7 +23,7 @@ export function MultipleChoiceQuestion({
     const index = parseInt(value)
     setSelectedOption(index)
     setIsAnswered(true)
-    onAnswerSelected(index === correctAnswerIndex)
+    onAnswerSelected(index, index === correctAnswerIndex)
   }
 
   return (
@@ -37,10 +37,10 @@ export function MultipleChoiceQuestion({
       >
         {options.map((option, index) => (
           <div key={index} className="flex items-center space-x-2">
-            <RadioGroupItem value={index.toString()} id={`option-${index}`} />
+            <RadioGroupItem value={index.toString()} id={`option-${index}`} className="cursor-pointer" />
             <Label
               htmlFor={`option-${index}`}
-              className={`flex items-center gap-2 ${
+              className={`flex items-center gap-2 cursor-pointer ${
                 isAnswered
                   ? index === correctAnswerIndex
                     ? "text-green-600"

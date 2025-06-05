@@ -2,9 +2,9 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Home, BarChart2, BookOpen, Menu, X, User, LogOut, Settings } from "lucide-react"
+import { BarChart2, BookOpen, Menu, X, User, LogOut, Settings } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/utils/supabase/client"
 
@@ -23,18 +23,16 @@ export function MobileNav() {
   const [userType, setUserType] = useState<"basic" | "revision" | "revisionAI" | "admin" | null>(null)
   const supabase = createClient()
 
-  const checkSession = async () => {
+  const checkSession = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession();
-
     setFreeUser(!session);
 
     const { data: { user } } = await supabase.auth.getUser();
-
     if (user) {
       const { data: profiles } = await supabase.from("profiles").select("user_type").eq("userid", user.id).single();
       setUserType(profiles?.user_type);
     }
-  }
+  }, [supabase]);
 
   /* TODO: check whether this is a secure approach */
 
@@ -66,9 +64,9 @@ export function MobileNav() {
 
   const navItems: (NavItem | null)[] = [
     {
-      name: "Home",
+      name: "Quizzes",
       href: "/",
-      icon: Home,
+      icon: BookOpen,
     },
     {
       name: "Progress",

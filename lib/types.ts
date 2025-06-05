@@ -1,5 +1,3 @@
-import type { LucideIcon } from "lucide-react"
-
 export type ScoreType = "green" | "amber" | "red"
 
 export interface Question {
@@ -7,10 +5,11 @@ export interface Question {
   topic: string
   type: "text" | "multiple-choice" | "fill-in-the-blank" | "matching" | "code" | "short-answer" | "essay" | "true-false"
   question_text: string
-  model_answer: string | string[]
+  model_answer: string | string[] | boolean
   options?: string[]
   correctAnswerIndex?: number
   order_important?: boolean
+  correct_answer?: boolean // true-false question - need to check if this is correct
   model_answer_python?: string
   explanation?: string
   created_at: string
@@ -36,11 +35,15 @@ export interface Topic {
   slug: string
   name: string
   description: string
-  icon?: LucideIcon
+  icon?: string
+  topicnumber?: number
+  summary?: string
+  unitName?: string
   questionCount: number
   questions: Question[]
   unit: number
   disabled?: boolean
+  active?: boolean
 }
 
 export interface Student {

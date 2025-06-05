@@ -15,6 +15,13 @@ export function TrueFalseQuestion({ question, onSubmit, disabled = false }: True
   const [selectedAnswer, setSelectedAnswer] = useState<boolean | null>(null)
   const [isSubmitted, setIsSubmitted] = useState(false)
 
+  console.log("TrueFalseQuestion received:", {
+    question,
+    modelAnswer: question.model_answer,
+    modelAnswerType: typeof question.model_answer,
+    rawModelAnswer: question.model_answer
+  })
+
   const handleSelectAnswer = (answer: boolean) => {
     setSelectedAnswer(answer)
   }
@@ -26,11 +33,14 @@ export function TrueFalseQuestion({ question, onSubmit, disabled = false }: True
   }
 
   const isCorrect = () => {
-    if (!isSubmitted || selectedAnswer === null) return false
-    const modelAnswer = typeof question.model_answer === 'string' 
-      ? question.model_answer.toLowerCase() 
-      : question.model_answer[0].toLowerCase()
-    return selectedAnswer === (modelAnswer === "true")
+    if (!isSubmitted || selectedAnswer === null) return false;
+    console.log("Checking correctness:", {
+      selectedAnswer,
+      modelAnswer: question.model_answer,
+      modelAnswerType: typeof question.model_answer,
+      comparison: selectedAnswer === question.model_answer
+    });
+    return selectedAnswer === question.model_answer;
   }
 
   return (
@@ -47,16 +57,15 @@ export function TrueFalseQuestion({ question, onSubmit, disabled = false }: True
           <tbody>
             <tr>
               <td className="border p-2">{question.question_text}</td>
-              <td className="border p-2 text-center">
-                <button
-                  onClick={() => handleSelectAnswer(true)}
-                  disabled={disabled || isSubmitted}
-                  className={`w-full h-full p-2 rounded ${
-                    selectedAnswer === true
-                      ? 'bg-emerald-100'
-                      : 'hover:bg-gray-100'
-                  }`}
-                >
+              <td 
+                className={`border p-2 text-center cursor-pointer ${
+                  selectedAnswer === true
+                    ? 'bg-emerald-100'
+                    : 'hover:bg-gray-100'
+                }`}
+                onClick={() => !disabled && !isSubmitted && handleSelectAnswer(true)}
+              >
+                <div className="w-full h-full p-2">
                   {selectedAnswer === true && !isSubmitted && (
                     <div className="flex justify-center">
                       <Check className="h-5 w-5 text-emerald-600" />
@@ -71,18 +80,17 @@ export function TrueFalseQuestion({ question, onSubmit, disabled = false }: True
                       ) : null}
                     </div>
                   )}
-                </button>
+                </div>
               </td>
-              <td className="border p-2 text-center">
-                <button
-                  onClick={() => handleSelectAnswer(false)}
-                  disabled={disabled || isSubmitted}
-                  className={`w-full h-full p-2 rounded ${
-                    selectedAnswer === false
-                      ? 'bg-emerald-100'
-                      : 'hover:bg-gray-100'
-                  }`}
-                >
+              <td 
+                className={`border p-2 text-center cursor-pointer ${
+                  selectedAnswer === false
+                    ? 'bg-emerald-100'
+                    : 'hover:bg-gray-100'
+                }`}
+                onClick={() => !disabled && !isSubmitted && handleSelectAnswer(false)}
+              >
+                <div className="w-full h-full p-2">
                   {selectedAnswer === false && !isSubmitted && (
                     <div className="flex justify-center">
                       <Check className="h-5 w-5 text-emerald-600" />
@@ -97,7 +105,7 @@ export function TrueFalseQuestion({ question, onSubmit, disabled = false }: True
                       ) : null}
                     </div>
                   )}
-                </button>
+                </div>
               </td>
             </tr>
           </tbody>
