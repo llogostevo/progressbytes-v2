@@ -21,6 +21,7 @@ import { CTABanner } from "@/components/cta-banner"
 import { UserLogin } from "@/components/user-login"
 import { User } from "@supabase/supabase-js"
 import { QuestionTypeFilter } from "@/components/question-type-filter"
+import { SubtopicFilter } from "@/components/subtopic-filter"
 
 // Define types for the database responses
 interface DBQuestion {
@@ -153,7 +154,31 @@ function transformQuestion(dbQuestion: DBQuestion, topicName: string): Question 
   };
 }
 
-async function getRandomQuestionForTopic(topicId: string, freeUser: boolean, userType: "revision" | "revisionAI" | "basic" | null): Promise<Question> {
+// Add this new function to get subtopics for a topic
+async function getSubtopicsForTopic(topicId: string): Promise<Array<{ id: string; subtopictitle: string }>> {
+  const supabase = createClient()
+
+  const { data: subtopicsData, error: subtopicsError } = await supabase
+    .from('subtopics')
+    .select('id, subtopictitle')
+    .eq('topic_id', topicId)
+
+  if (subtopicsError || !subtopicsData) {
+    console.error('Error fetching subtopics:', subtopicsError)
+    return []
+  }
+
+  return subtopicsData
+}
+
+// Modify the getRandomQuestionForTopic function to return null when no questions are found
+async function getRandomQuestionForTopic(
+  topicId: string, 
+  freeUser: boolean, 
+  userType: "revision" | "revisionAI" | "basic" | null,
+  selectedSubtopics: string[],
+  selectedQuestionType?: string | null
+): Promise<Question | null> {
   const supabase = createClient()
 
   // First check if the topic exists
@@ -168,7 +193,7 @@ async function getRandomQuestionForTopic(topicId: string, freeUser: boolean, use
   }
 
   // Get all questions for this topic through the subtopics
-  const { data: questions, error: questionsError } = await supabase
+  let query = supabase
     .from('subtopics')
     .select(`
       id,
@@ -218,7 +243,12 @@ async function getRandomQuestionForTopic(topicId: string, freeUser: boolean, use
     `)
     .eq('topic_id', topicId)
 
-  console.log('Raw questions data:', JSON.stringify(questions, null, 2));
+  // Add subtopic filter if subtopics are selected
+  if (selectedSubtopics.length > 0) {
+    query = query.in('id', selectedSubtopics)
+  }
+
+  const { data: questions, error: questionsError } = await query
 
   if (questionsError) {
     throw new Error(`Error fetching questions for topic ID: ${topicId}. Error: ${questionsError.message}`)
@@ -237,18 +267,27 @@ async function getRandomQuestionForTopic(topicId: string, freeUser: boolean, use
     })
   )
 
+  // Filter questions by type if a type is selected
+  const filteredQuestions = selectedQuestionType
+    ? allQuestions.filter(q => q.type === selectedQuestionType)
+    : allQuestions
+
+  if (filteredQuestions.length === 0) {
+    return null
+  }
+
   // Determine the number of questions based on access level
   let length: number
   if (userType === "revision" || userType === "revisionAI") {
-    length = allQuestions.length
+    length = filteredQuestions.length
   } else if (userType === "basic") {
-    length = allQuestions.length // full access
+    length = filteredQuestions.length // full access
   } else {
-    length = allQuestions.length // full access
+    length = filteredQuestions.length // full access
   }
 
   const randomIndex = Math.floor(Math.random() * length)
-  return allQuestions[randomIndex]
+  return filteredQuestions[randomIndex]
 }
 
 // Add this new function to get available question types
@@ -378,7 +417,8 @@ export default function QuestionPage() {
   const [user, setUser] = useState<User | null>(null)
   const [selectedQuestionType, setSelectedQuestionType] = useState<string | null>(null)
   const [availableQuestionTypes, setAvailableQuestionTypes] = useState<string[]>([])
-  // const [hasPaid, setHasPaid] = useState(false)
+  const [subtopics, setSubtopics] = useState<Array<{ id: string; subtopictitle: string }>>([])
+  const [selectedSubtopics, setSelectedSubtopics] = useState<string[]>([])
 
   // const freeUser = currentUser.email === "student@example.com"
 
@@ -430,32 +470,27 @@ export default function QuestionPage() {
           const types = await getAvailableQuestionTypes(currentTopic.id)
           setAvailableQuestionTypes(types)
 
-          let newQuestion: Question
+          // Get subtopics for the current topic
+          const subtopicsData = await getSubtopicsForTopic(currentTopic.id)
+          setSubtopics(subtopicsData)
+
+          let newQuestion: Question | null
           if (questionId) {
             const question = await getQuestionById(questionId)
             if (question) {
               newQuestion = question
             } else {
-              newQuestion = await getRandomQuestionForTopic(currentTopic.id, freeUser, userType)
+              newQuestion = await getRandomQuestionForTopic(currentTopic.id, freeUser, userType, selectedSubtopics, selectedQuestionType)
             }
           } else {
-            newQuestion = await getRandomQuestionForTopic(currentTopic.id, freeUser, userType)
+            newQuestion = await getRandomQuestionForTopic(currentTopic.id, freeUser, userType, selectedSubtopics, selectedQuestionType)
           }
 
-          // If a question type is selected, keep trying until we get a matching question
-          if (selectedQuestionType) {
-            let attempts = 0
-            const maxAttempts = 10 // Prevent infinite loops
-            
-            while (newQuestion.type !== selectedQuestionType && attempts < maxAttempts) {
-              newQuestion = await getRandomQuestionForTopic(currentTopic.id, freeUser, userType)
-              attempts++
-            }
-            
-            // If we couldn't find a matching question after max attempts, show a message
-            if (attempts >= maxAttempts && newQuestion.type !== selectedQuestionType) {
-              console.warn(`Could not find a ${selectedQuestionType} question after ${maxAttempts} attempts`)
-            }
+          if (!newQuestion) {
+            setQuestion(null)
+            setAnswer(null)
+            setSelfAssessmentScore(null)
+            return
           }
 
           console.log("Raw question data:", newQuestion)
@@ -482,7 +517,7 @@ export default function QuestionPage() {
     }
 
     loadQuestion()
-  }, [topicSlug, isLoadingUserType, userType, freeUser, questionId, selectedQuestionType])
+  }, [topicSlug, isLoadingUserType, userType, freeUser, questionId, selectedQuestionType, selectedSubtopics])
 
   const handleSubmitAnswer = async (responseText: string) => {
     if (!question || !user) return
@@ -597,22 +632,13 @@ export default function QuestionPage() {
       if (!topic) {
         throw new Error("No topic found")
       }
-      let newQuestion = await getRandomQuestionForTopic(topic.id, freeUser, userType)
+      const newQuestion = await getRandomQuestionForTopic(topic.id, freeUser, userType, selectedSubtopics, selectedQuestionType)
       
-      // If a question type is selected, keep trying until we get a matching question
-      if (selectedQuestionType) {
-        let attempts = 0
-        const maxAttempts = 10 // Prevent infinite loops
-        
-        while (newQuestion.type !== selectedQuestionType && attempts < maxAttempts) {
-          newQuestion = await getRandomQuestionForTopic(topic.id, freeUser, userType)
-          attempts++
-        }
-        
-        // If we couldn't find a matching question after max attempts, show a message
-        if (attempts >= maxAttempts && newQuestion.type !== selectedQuestionType) {
-          console.warn(`Could not find a ${selectedQuestionType} question after ${maxAttempts} attempts`)
-        }
+      if (!newQuestion) {
+        setQuestion(null)
+        setAnswer(null)
+        setSelfAssessmentScore(null)
+        return
       }
 
       setQuestion(newQuestion)
@@ -842,14 +868,14 @@ export default function QuestionPage() {
     )
   }
 
-  if (!topic || !question) {
-    console.log("No topic or question found:", { topic, question })
+  if (!topic) {
+    console.log("No topic found:", { topic })
     return (
       <div className="container mx-auto px-4 py-12 flex justify-center">
         <Card className="w-full max-w-2xl">
           <CardHeader>
             <CardTitle>Topic not found</CardTitle>
-            <CardDescription>The topic you&apos;re looking for doesn&apos;t exist or has no questions.</CardDescription>
+            <CardDescription>The topic you're looking for doesn't exist or has no questions.</CardDescription>
           </CardHeader>
           <CardContent>
             <Link href="/">
@@ -863,7 +889,6 @@ export default function QuestionPage() {
     )
   }
 
-
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-3xl mx-auto">
@@ -875,9 +900,16 @@ export default function QuestionPage() {
             <h1 className="text-3xl font-bold mt-4 mb-2">{topic.name}</h1>
             <UserLogin email={user?.email} />
           </div>
-
-
           <p className="text-muted-foreground">{topic.description}</p>
+        </div>
+
+        {/* Add SubtopicFilter component */}
+        <div className="mb-6">
+          <SubtopicFilter
+            selectedSubtopics={selectedSubtopics}
+            onSubtopicChange={setSelectedSubtopics}
+            subtopics={subtopics}
+          />
         </div>
 
         {/* Add QuestionTypeFilter component with available types */}
@@ -896,502 +928,524 @@ export default function QuestionPage() {
           {userType === 'revision' && <CTABanner variant="premium" />}
         </div>
 
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Question</CardTitle>
-
-          </CardHeader>
-          <CardContent>
-            <div className="mb-6">
-              <p className="text-lg whitespace-pre-wrap">{question.question_text}</p>
-            </div>
-            {!answer ? (
-              question.type === "multiple-choice" ? (
-                <MultipleChoiceQuestion
-                  options={question.options || []}
-                  correctAnswerIndex={question.correctAnswerIndex || 0}
-                  onAnswerSelected={handleMultipleChoiceAnswer}
-                />
-              ) : question.type === "fill-in-the-blank" ? (
-                <FillInTheBlankQuestion
-                  question={question}
-                  onAnswerSelected={handleFillInTheBlankAnswer}
-                />
-              ) : question.type === "code" ? (
-                <CodeQuestion
-                  onSubmit={handleSubmitAnswer}
-                  disabled={isSubmitting}
-                />
-              ) : question.type === "matching" ? (
-                <MatchingQuestion
-                  question={question}
-                  onSubmit={handleMatchingAnswer}
-                  disabled={isSubmitting}
-                />
-              ) : question.type === "true-false" ? (
-                <TrueFalseQuestion
-                  question={question}
-                  onSubmit={handleTrueFalseAnswer}
-                  disabled={isSubmitting}
-                />
-              ) : question.type === "text" || question.type === "short-answer" ? (
-                <TextQuestion
-                  onSubmit={handleSubmitAnswer}
-                  disabled={isSubmitting}
-                />
-              ) : question.type === "essay" ? (
-                <EssayQuestion
-                  onSubmit={handleSubmitAnswer}
-                  disabled={isSubmitting}
-                  minWords={20}
-                  maxWords={500}
-                />
-              ) : null
-            ) : (
-              <div className="space-y-6">
-                <div className="p-4 bg-muted rounded-md">
-                  <h3 className="font-medium mb-2">Your Answer:</h3>
-                  {question.type === "matching" ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="overflow-x-auto">
-                        <h3 className="font-medium mb-2">Your Answer:</h3>
-                        <table className="w-full border-collapse">
-                          <thead>
-                            <tr>
-                              <th className="border p-2 text-left">Statement</th>
-                              <th className="border p-2 text-left">Your Match</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {question.pairs?.map((pair, index) => {
-                              const userMatches = (() => {
-                                if (!answer?.response_text) return [];
-                                try {
-                                  const parsed = JSON.parse(answer.response_text) as Record<string, string[]>;
-                                  return parsed[pair.statement] || [];
-                                } catch {
-                                  return [];
-                                }
-                              })();
-                              const isCorrect = userMatches.includes(pair.match);
-                              return (
-                                <tr key={index} className={isCorrect ? "bg-green-50" : "bg-red-50"}>
-                                  <td className="border p-2">{pair.statement}</td>
-                                  <td className="border p-2">
-                                    <div className="flex items-center gap-2">
-                                      {userMatches.join(", ") || "No match selected"}
-                                      {isCorrect ? (
-                                        <CheckCircle2 className="h-4 w-4 text-green-600" />
-                                      ) : (
-                                        <XCircle className="h-4 w-4 text-red-600" />
-                                      )}
-                                    </div>
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                      <div className="overflow-x-auto">
-                        <h3 className="font-medium mb-2 text-emerald-700">Correct Answer:</h3>
-                        <table className="w-full border-collapse">
-                          <thead>
-                            <tr>
-                              <th className="border p-2 text-left">Statement</th>
-                              <th className="border p-2 text-left">Correct Match</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {question.pairs?.map((pair, index) => (
-                              <tr key={index} className="bg-emerald-50">
-                                <td className="border p-2">{pair.statement}</td>
-                                <td className="border p-2">{pair.match}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  ) : question.type === "true-false" ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="overflow-x-auto">
-                        <h3 className="font-medium mb-2">Your Answer:</h3>
-                        <table className="w-full border-collapse">
-                          <thead>
-                            <tr>
-                              <th className="border p-2 text-left">Question</th>
-                              <th className="border p-2 text-center">Your Answer</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr className={answer?.response_text === String(question.model_answer) ? "bg-green-50" : "bg-red-50"}>
-                              <td className="border p-2">{question.question_text}</td>
-                              <td className="border p-2 text-center">
-                                <div className="flex items-center justify-center gap-2">
-                                  {answer?.response_text === "true" ? "True" : "False"}
-                                  {answer?.response_text === String(question.model_answer) ? (
-                                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                                  ) : (
-                                    <XCircle className="h-4 w-4 text-red-600" />
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                      <div className="overflow-x-auto">
-                        <h3 className="font-medium mb-2 text-emerald-700">Correct Answer:</h3>
-                        <table className="w-full border-collapse">
-                          <thead>
-                            <tr>
-                              <th className="border p-2 text-left">Question</th>
-                              <th className="border p-2 text-center">Correct Answer</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr className="bg-emerald-50">
-                              <td className="border p-2">{question.question_text}</td>
-                              <td className="border p-2 text-center">
-                                {typeof question.model_answer === 'boolean' ? (question.model_answer ? "True" : "False") : (question.model_answer === "true" ? "True" : "False")}
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  ) : question.type === "multiple-choice" ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="overflow-x-auto">
-                        <h3 className="font-medium mb-2">Your Answer:</h3>
-                        <table className="w-full border-collapse">
-                          <thead>
-                            <tr>
-                              <th className="border p-2 text-left">Question</th>
-                              <th className="border p-2 text-center">Your Answer</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr className={answer?.response_text === String(question.correctAnswerIndex) ? "bg-green-50" : "bg-red-50"}>
-                              <td className="border p-2">{question.question_text}</td>
-                              <td className="border p-2 text-center">
-                                <div className="flex items-center justify-center gap-2">
-                                  {question.options?.[parseInt(answer?.response_text || "0")] || "No answer selected"}
-                                  {answer?.response_text === String(question.correctAnswerIndex) ? (
-                                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                                  ) : (
-                                    <XCircle className="h-4 w-4 text-red-600" />
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                      <div className="overflow-x-auto">
-                        <h3 className="font-medium mb-2 text-emerald-700">Correct Answer:</h3>
-                        <table className="w-full border-collapse">
-                          <thead>
-                            <tr>
-                              <th className="border p-2 text-left">Question</th>
-                              <th className="border p-2 text-center">Correct Answer</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr className="bg-emerald-50">
-                              <td className="border p-2">{question.question_text}</td>
-                              <td className="border p-2 text-center">
-                                {question.options?.[question.correctAnswerIndex || 0]}
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  ) : question.type === "fill-in-the-blank" ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="overflow-x-auto">
-                        <h3 className="font-medium mb-2">Your Answer:</h3>
-                        <table className="w-full border-collapse">
-                          <thead>
-                            <tr>
-                              <th className="border p-2 text-left">Question</th>
-                              <th className="border p-2 text-center">Your Answer</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr>
-                              <td className="border p-2">{question.question_text}</td>
-                              <td className="border p-2">
-                                {(() => {
-                                  try {
-                                    const selectedIndexes = JSON.parse(answer?.response_text || "[]") as number[];
-                                    const selectedOptions = selectedIndexes.map(index => question.options?.[index]);
-                                    const modelAnswer = Array.isArray(question.model_answer) ? question.model_answer : [question.model_answer];
-                                    
-                                    return (
-                                      <div className="space-y-2">
-                                        {selectedOptions.map((option, i) => {
-                                          const isOptionCorrect = question.order_important
-                                            ? option === modelAnswer[i]
-                                            : option ? modelAnswer.includes(option) : false;
-                                          return (
-                                            <div key={i} className={`flex items-center gap-2 ${isOptionCorrect ? "text-green-600" : "text-red-600"}`}>
-                                              {option || "No answer selected"}
-                                              {isOptionCorrect ? (
-                                                <CheckCircle2 className="h-4 w-4" />
-                                              ) : (
-                                                <XCircle className="h-4 w-4" />
-                                              )}
-                                            </div>
-                                          );
-                                        })}
-                                      </div>
-                                    );
-                                  } catch {
-                                    return "Invalid answer format";
-                                  }
-                                })()}
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                      <div className="overflow-x-auto">
-                        <h3 className="font-medium mb-2 text-emerald-700">Correct Answer:</h3>
-                        <table className="w-full border-collapse">
-                          <thead>
-                            <tr>
-                              <th className="border p-2 text-left">Question</th>
-                              <th className="border p-2 text-center">Correct Answer</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr>
-                              <td className="border p-2">{question.question_text}</td>
-                              <td className="border p-2">
-                                {Array.isArray(question.model_answer) ? (
-                                  <div className="space-y-2">
-                                    {question.model_answer.map((answer, i) => (
-                                      <div key={i} className="text-emerald-600">
-                                        {answer}
-                                      </div>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  "No correct answer available"
-                                )}
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  ) : (
-                    <pre className="whitespace-pre-wrap font-sans text-sm">{answer?.response_text}</pre>
-                  )}
-                </div>
-
-                {/* For free version, show model answer first, then self-assessment */}
-                {userType && (
-                  <>
-                    <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-md">
-                      <h3 className="font-medium mb-2 text-emerald-700">Model Answer:</h3>
-                      <div className="space-y-4">
-                        <div>
-                          {question.type === "code" && (
-                            <h4 className="text-sm font-medium mb-1">Pseudocode:</h4>
-                          )}
-                          {question.type === "matching" ? (
-                            <div className="overflow-x-auto">
-                              <table className="w-full border-collapse">
-                                <thead>
-                                  <tr>
-                                    <th className="border p-2 text-left">Statement</th>
-                                    <th className="border p-2 text-left">Correct Match</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {question.pairs?.map((pair, index) => (
-                                    <tr key={index}>
-                                      <td className="border p-2">{pair.statement}</td>
-                                      <td className="border p-2">{pair.match}</td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          ) : question.type === "true-false" ? (
-                            <div className="overflow-x-auto">
-                              <table className="w-full border-collapse">
-                                <thead>
-                                  <tr>
-                                    <th className="border p-2 text-left">Question</th>
-                                    <th className="border p-2 text-center">Correct Answer</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  <tr>
-                                    <td className="border p-2">{question.question_text}</td>
-                                    <td className="border p-2 text-center">
-                                      {typeof question.model_answer === 'boolean' ? (question.model_answer ? "True" : "False") : (question.model_answer === "true" ? "True" : "False")}
-                                    </td>
-                                  </tr>
-                                </tbody>
-                              </table>
-                            </div>
-                          ) : question.type === "fill-in-the-blank" && Array.isArray(question.model_answer) ? (
-                            question.order_important ? (
-                              <ol className="font-sans text-sm pl-4 list-decimal">
-                                {question.model_answer.map((ans, idx) => (
-                                  <li key={idx}>{ans}</li>
-                                ))}
-                              </ol>
-                            ) : (
-                              <ul className="font-sans text-sm pl-4 list-disc">
-                                {question.model_answer.map((ans, idx) => (
-                                  <li key={idx}>{ans}</li>
-                                ))}
-                              </ul>
-                            )
-                          ) : question.type === "multiple-choice" ? (
-                            <div className="space-y-2">
-                              <p className="font-medium">Correct Answer:</p>
-                              <p>{question.options?.[question.correctAnswerIndex || 0]}</p>
-                            </div>
-                          ) : question.type === "short-answer" || question.type === "text" || question.type === "essay" ? (
-                            <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer}</pre>
-                          ) : (
-                            <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer}</pre>
-                          )}
-                        </div>
-                        {question.model_answer_python && (
-                          <div>
-                            <h4 className="text-sm font-medium mb-1">Python:</h4>
-                            <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer_python}</pre>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    {question.explanation && (
-                      <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-md">
-                        <p className="whitespace-pre-wrap text-sm text-emerald-700">{question.explanation}</p>
-                      </div>
-                    )}
-                    {!selfAssessmentScore ? (
-                      <SelfAssessment onSelectScore={handleSelfAssessment} />
-                    ) : (
-                      <FeedbackDisplay answer={answer} />
-                    )}
-                  </>
-                )}
-
-                {/* For paid version, show AI feedback, then model answer */}
-                {userType === "revisionAI" && (
-                  <>
-                    <FeedbackDisplay answer={answer} />
-
-                    <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-md">
-                      <h3 className="font-medium mb-2 text-emerald-700">Model Answer:</h3>
-                      <div className="space-y-4">
-                        <div>
-                          {question.type === "code" && (
-                            <h4 className="text-sm font-medium mb-1">Pseudocode:</h4>
-                          )}
-                          {question.type === "matching" ? (
-                            <div className="overflow-x-auto">
-                              <table className="w-full border-collapse">
-                                <thead>
-                                  <tr>
-                                    <th className="border p-2 text-left">Statement</th>
-                                    <th className="border p-2 text-left">Correct Match</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {question.pairs?.map((pair, index) => (
-                                    <tr key={index}>
-                                      <td className="border p-2">{pair.statement}</td>
-                                      <td className="border p-2">{pair.match}</td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          ) : question.type === "true-false" ? (
-                            <div className="overflow-x-auto">
-                              <table className="w-full border-collapse">
-                                <thead>
-                                  <tr>
-                                    <th className="border p-2 text-left">Question</th>
-                                    <th className="border p-2 text-center">Correct Answer</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  <tr>
-                                    <td className="border p-2">{question.question_text}</td>
-                                    <td className="border p-2 text-center">
-                                      {typeof question.model_answer === 'boolean' ? (question.model_answer ? "True" : "False") : (question.model_answer === "true" ? "True" : "False")}
-                                    </td>
-                                  </tr>
-                                </tbody>
-                              </table>
-                            </div>
-                          ) : question.type === "fill-in-the-blank" && Array.isArray(question.model_answer) ? (
-                            question.order_important ? (
-                              <ol className="font-sans text-sm pl-4 list-decimal">
-                                {question.model_answer.map((ans, idx) => (
-                                  <li key={idx}>{ans}</li>
-                                ))}
-                              </ol>
-                            ) : (
-                              <ul className="font-sans text-sm pl-4 list-disc">
-                                {question.model_answer.map((ans, idx) => (
-                                  <li key={idx}>{ans}</li>
-                                ))}
-                              </ul>
-                            )
-                          ) : (
-                            <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer}</pre>
-                          )}
-                        </div>
-                        {question.model_answer_python && (
-                          <div>
-                            <h4 className="text-sm font-medium mb-1">Python:</h4>
-                            <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer_python}</pre>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    {question.explanation && (
-                      <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-md">
-                        <p className="whitespace-pre-wrap text-sm text-emerald-700">{question.explanation}</p>
-                      </div>
-                    )}
-                    {!selfAssessmentScore ? (
-                      <SelfAssessment onSelectScore={handleSelfAssessment} />
-                    ) : (
-                      <FeedbackDisplay answer={answer} />
-                    )}
-                  </>
-                )}
-
-                <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                  <Button
-                    onClick={handleTryAnother}
-                    className="bg-emerald-600 hover:bg-emerald-700"
-                    disabled={!selfAssessmentScore}
-                  >
-                    <RefreshCw className="mr-2 h-4 w-4" /> Try Another Question
-                  </Button>
-                  <Link href="/progress">
-                    <Button variant="outline">View My Progress</Button>
-                  </Link>
-                </div>
+        {!question ? (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>No Questions Available</CardTitle>
+              <CardDescription>
+                {selectedQuestionType 
+                  ? `There are no ${selectedQuestionType} questions available for the selected subtopics.`
+                  : "There are no questions available for the selected subtopics."}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                Please try adjusting your filters by:
+              </p>
+              <ul className="list-disc pl-6 mt-2 text-muted-foreground">
+                <li>Selecting different subtopics</li>
+                <li>Choosing a different question type</li>
+                <li>Clearing your filters to see all available questions</li>
+              </ul>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>Question</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-6">
+                <p className="text-lg whitespace-pre-wrap">{question.question_text}</p>
               </div>
-            )}
-          </CardContent>
-        </Card>
+              {!answer ? (
+                question.type === "multiple-choice" ? (
+                  <MultipleChoiceQuestion
+                    options={question.options || []}
+                    correctAnswerIndex={question.correctAnswerIndex || 0}
+                    onAnswerSelected={handleMultipleChoiceAnswer}
+                  />
+                ) : question.type === "fill-in-the-blank" ? (
+                  <FillInTheBlankQuestion
+                    question={question}
+                    onAnswerSelected={handleFillInTheBlankAnswer}
+                  />
+                ) : question.type === "code" ? (
+                  <CodeQuestion
+                    onSubmit={handleSubmitAnswer}
+                    disabled={isSubmitting}
+                  />
+                ) : question.type === "matching" ? (
+                  <MatchingQuestion
+                    question={question}
+                    onSubmit={handleMatchingAnswer}
+                    disabled={isSubmitting}
+                  />
+                ) : question.type === "true-false" ? (
+                  <TrueFalseQuestion
+                    question={question}
+                    onSubmit={handleTrueFalseAnswer}
+                    disabled={isSubmitting}
+                  />
+                ) : question.type === "text" || question.type === "short-answer" ? (
+                  <TextQuestion
+                    onSubmit={handleSubmitAnswer}
+                    disabled={isSubmitting}
+                  />
+                ) : question.type === "essay" ? (
+                  <EssayQuestion
+                    onSubmit={handleSubmitAnswer}
+                    disabled={isSubmitting}
+                    minWords={20}
+                    maxWords={500}
+                  />
+                ) : null
+              ) : (
+                <div className="space-y-6">
+                  <div className="p-4 bg-muted rounded-md">
+                    <h3 className="font-medium mb-2">Your Answer:</h3>
+                    {question.type === "matching" ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="overflow-x-auto">
+                          <h3 className="font-medium mb-2">Your Answer:</h3>
+                          <table className="w-full border-collapse">
+                            <thead>
+                              <tr>
+                                <th className="border p-2 text-left">Statement</th>
+                                <th className="border p-2 text-left">Your Match</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {question.pairs?.map((pair, index) => {
+                                const userMatches = (() => {
+                                  if (!answer?.response_text) return [];
+                                  try {
+                                    const parsed = JSON.parse(answer.response_text) as Record<string, string[]>;
+                                    return parsed[pair.statement] || [];
+                                  } catch {
+                                    return [];
+                                  }
+                                })();
+                                const isCorrect = userMatches.includes(pair.match);
+                                return (
+                                  <tr key={index} className={isCorrect ? "bg-green-50" : "bg-red-50"}>
+                                    <td className="border p-2">{pair.statement}</td>
+                                    <td className="border p-2">
+                                      <div className="flex items-center gap-2">
+                                        {userMatches.join(", ") || "No match selected"}
+                                        {isCorrect ? (
+                                          <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                        ) : (
+                                          <XCircle className="h-4 w-4 text-red-600" />
+                                        )}
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                        <div className="overflow-x-auto">
+                          <h3 className="font-medium mb-2 text-emerald-700">Correct Answer:</h3>
+                          <table className="w-full border-collapse">
+                            <thead>
+                              <tr>
+                                <th className="border p-2 text-left">Statement</th>
+                                <th className="border p-2 text-left">Correct Match</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {question.pairs?.map((pair, index) => (
+                                <tr key={index} className="bg-emerald-50">
+                                  <td className="border p-2">{pair.statement}</td>
+                                  <td className="border p-2">{pair.match}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    ) : question.type === "true-false" ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="overflow-x-auto">
+                          <h3 className="font-medium mb-2">Your Answer:</h3>
+                          <table className="w-full border-collapse">
+                            <thead>
+                              <tr>
+                                <th className="border p-2 text-left">Question</th>
+                                <th className="border p-2 text-center">Your Answer</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr className={answer?.response_text === String(question.model_answer) ? "bg-green-50" : "bg-red-50"}>
+                                <td className="border p-2">{question.question_text}</td>
+                                <td className="border p-2 text-center">
+                                  <div className="flex items-center justify-center gap-2">
+                                    {answer?.response_text === "true" ? "True" : "False"}
+                                    {answer?.response_text === String(question.model_answer) ? (
+                                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                    ) : (
+                                      <XCircle className="h-4 w-4 text-red-600" />
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        <div className="overflow-x-auto">
+                          <h3 className="font-medium mb-2 text-emerald-700">Correct Answer:</h3>
+                          <table className="w-full border-collapse">
+                            <thead>
+                              <tr>
+                                <th className="border p-2 text-left">Question</th>
+                                <th className="border p-2 text-center">Correct Answer</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr className="bg-emerald-50">
+                                <td className="border p-2">{question.question_text}</td>
+                                <td className="border p-2 text-center">
+                                  {typeof question.model_answer === 'boolean' ? (question.model_answer ? "True" : "False") : (question.model_answer === "true" ? "True" : "False")}
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    ) : question.type === "multiple-choice" ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="overflow-x-auto">
+                          <h3 className="font-medium mb-2">Your Answer:</h3>
+                          <table className="w-full border-collapse">
+                            <thead>
+                              <tr>
+                                <th className="border p-2 text-left">Question</th>
+                                <th className="border p-2 text-center">Your Answer</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr className={answer?.response_text === String(question.correctAnswerIndex) ? "bg-green-50" : "bg-red-50"}>
+                                <td className="border p-2">{question.question_text}</td>
+                                <td className="border p-2 text-center">
+                                  <div className="flex items-center justify-center gap-2">
+                                    {question.options?.[parseInt(answer?.response_text || "0")] || "No answer selected"}
+                                    {answer?.response_text === String(question.correctAnswerIndex) ? (
+                                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                    ) : (
+                                      <XCircle className="h-4 w-4 text-red-600" />
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        <div className="overflow-x-auto">
+                          <h3 className="font-medium mb-2 text-emerald-700">Correct Answer:</h3>
+                          <table className="w-full border-collapse">
+                            <thead>
+                              <tr>
+                                <th className="border p-2 text-left">Question</th>
+                                <th className="border p-2 text-center">Correct Answer</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr className="bg-emerald-50">
+                                <td className="border p-2">{question.question_text}</td>
+                                <td className="border p-2 text-center">
+                                  {question.options?.[question.correctAnswerIndex || 0]}
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    ) : question.type === "fill-in-the-blank" ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="overflow-x-auto">
+                          <h3 className="font-medium mb-2">Your Answer:</h3>
+                          <table className="w-full border-collapse">
+                            <thead>
+                              <tr>
+                                <th className="border p-2 text-left">Question</th>
+                                <th className="border p-2 text-center">Your Answer</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td className="border p-2">{question.question_text}</td>
+                                <td className="border p-2">
+                                  {(() => {
+                                    try {
+                                      const selectedIndexes = JSON.parse(answer?.response_text || "[]") as number[];
+                                      const selectedOptions = selectedIndexes.map(index => question.options?.[index]);
+                                      const modelAnswer = Array.isArray(question.model_answer) ? question.model_answer : [question.model_answer];
+                                      
+                                      return (
+                                        <div className="space-y-2">
+                                          {selectedOptions.map((option, i) => {
+                                            const isOptionCorrect = question.order_important
+                                              ? option === modelAnswer[i]
+                                              : option ? modelAnswer.includes(option) : false;
+                                            return (
+                                              <div key={i} className={`flex items-center gap-2 ${isOptionCorrect ? "text-green-600" : "text-red-600"}`}>
+                                                {option || "No answer selected"}
+                                                {isOptionCorrect ? (
+                                                  <CheckCircle2 className="h-4 w-4" />
+                                                ) : (
+                                                  <XCircle className="h-4 w-4" />
+                                                )}
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      );
+                                    } catch {
+                                      return "Invalid answer format";
+                                    }
+                                  })()}
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        <div className="overflow-x-auto">
+                          <h3 className="font-medium mb-2 text-emerald-700">Correct Answer:</h3>
+                          <table className="w-full border-collapse">
+                            <thead>
+                              <tr>
+                                <th className="border p-2 text-left">Question</th>
+                                <th className="border p-2 text-center">Correct Answer</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td className="border p-2">{question.question_text}</td>
+                                <td className="border p-2">
+                                  {Array.isArray(question.model_answer) ? (
+                                    <div className="space-y-2">
+                                      {question.model_answer.map((answer, i) => (
+                                        <div key={i} className="text-emerald-600">
+                                          {answer}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    "No correct answer available"
+                                  )}
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    ) : (
+                      <pre className="whitespace-pre-wrap font-sans text-sm">{answer?.response_text}</pre>
+                    )}
+                  </div>
+
+                  {/* For free version, show model answer first, then self-assessment */}
+                  {userType && (
+                    <>
+                      <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-md">
+                        <h3 className="font-medium mb-2 text-emerald-700">Model Answer:</h3>
+                        <div className="space-y-4">
+                          <div>
+                            {question.type === "code" && (
+                              <h4 className="text-sm font-medium mb-1">Pseudocode:</h4>
+                            )}
+                            {question.type === "matching" ? (
+                              <div className="overflow-x-auto">
+                                <table className="w-full border-collapse">
+                                  <thead>
+                                    <tr>
+                                      <th className="border p-2 text-left">Statement</th>
+                                      <th className="border p-2 text-left">Correct Match</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {question.pairs?.map((pair, index) => (
+                                      <tr key={index}>
+                                        <td className="border p-2">{pair.statement}</td>
+                                        <td className="border p-2">{pair.match}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            ) : question.type === "true-false" ? (
+                              <div className="overflow-x-auto">
+                                <table className="w-full border-collapse">
+                                  <thead>
+                                    <tr>
+                                      <th className="border p-2 text-left">Question</th>
+                                      <th className="border p-2 text-center">Correct Answer</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    <tr>
+                                      <td className="border p-2">{question.question_text}</td>
+                                      <td className="border p-2 text-center">
+                                        {typeof question.model_answer === 'boolean' ? (question.model_answer ? "True" : "False") : (question.model_answer === "true" ? "True" : "False")}
+                                      </td>
+                                    </tr>
+                                  </tbody>
+                                </table>
+                              </div>
+                            ) : question.type === "fill-in-the-blank" && Array.isArray(question.model_answer) ? (
+                              question.order_important ? (
+                                <ol className="font-sans text-sm pl-4 list-decimal">
+                                  {question.model_answer.map((ans, idx) => (
+                                    <li key={idx}>{ans}</li>
+                                  ))}
+                                </ol>
+                              ) : (
+                                <ul className="font-sans text-sm pl-4 list-disc">
+                                  {question.model_answer.map((ans, idx) => (
+                                    <li key={idx}>{ans}</li>
+                                  ))}
+                                </ul>
+                              )
+                            ) : question.type === "multiple-choice" ? (
+                              <div className="space-y-2">
+                                <p className="font-medium">Correct Answer:</p>
+                                <p>{question.options?.[question.correctAnswerIndex || 0]}</p>
+                              </div>
+                            ) : question.type === "short-answer" || question.type === "text" || question.type === "essay" ? (
+                              <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer}</pre>
+                            ) : (
+                              <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer}</pre>
+                            )}
+                          </div>
+                          {question.model_answer_python && (
+                            <div>
+                              <h4 className="text-sm font-medium mb-1">Python:</h4>
+                              <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer_python}</pre>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      {question.explanation && (
+                        <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-md">
+                          <p className="whitespace-pre-wrap text-sm text-emerald-700">{question.explanation}</p>
+                        </div>
+                      )}
+                      {!selfAssessmentScore ? (
+                        <SelfAssessment onSelectScore={handleSelfAssessment} />
+                      ) : (
+                        <FeedbackDisplay answer={answer} />
+                      )}
+                    </>
+                  )}
+
+                  {/* For paid version, show AI feedback, then model answer */}
+                  {userType === "revisionAI" && (
+                    <>
+                      <FeedbackDisplay answer={answer} />
+
+                      <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-md">
+                        <h3 className="font-medium mb-2 text-emerald-700">Model Answer:</h3>
+                        <div className="space-y-4">
+                          <div>
+                            {question.type === "code" && (
+                              <h4 className="text-sm font-medium mb-1">Pseudocode:</h4>
+                            )}
+                            {question.type === "matching" ? (
+                              <div className="overflow-x-auto">
+                                <table className="w-full border-collapse">
+                                  <thead>
+                                    <tr>
+                                      <th className="border p-2 text-left">Statement</th>
+                                      <th className="border p-2 text-left">Correct Match</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {question.pairs?.map((pair, index) => (
+                                      <tr key={index}>
+                                        <td className="border p-2">{pair.statement}</td>
+                                        <td className="border p-2">{pair.match}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            ) : question.type === "true-false" ? (
+                              <div className="overflow-x-auto">
+                                <table className="w-full border-collapse">
+                                  <thead>
+                                    <tr>
+                                      <th className="border p-2 text-left">Question</th>
+                                      <th className="border p-2 text-center">Correct Answer</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    <tr>
+                                      <td className="border p-2">{question.question_text}</td>
+                                      <td className="border p-2 text-center">
+                                        {typeof question.model_answer === 'boolean' ? (question.model_answer ? "True" : "False") : (question.model_answer === "true" ? "True" : "False")}
+                                      </td>
+                                    </tr>
+                                  </tbody>
+                                </table>
+                              </div>
+                            ) : question.type === "fill-in-the-blank" && Array.isArray(question.model_answer) ? (
+                              question.order_important ? (
+                                <ol className="font-sans text-sm pl-4 list-decimal">
+                                  {question.model_answer.map((ans, idx) => (
+                                    <li key={idx}>{ans}</li>
+                                  ))}
+                                </ol>
+                              ) : (
+                                <ul className="font-sans text-sm pl-4 list-disc">
+                                  {question.model_answer.map((ans, idx) => (
+                                    <li key={idx}>{ans}</li>
+                                  ))}
+                                </ul>
+                              )
+                            ) : (
+                              <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer}</pre>
+                            )}
+                          </div>
+                          {question.model_answer_python && (
+                            <div>
+                              <h4 className="text-sm font-medium mb-1">Python:</h4>
+                              <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer_python}</pre>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      {question.explanation && (
+                        <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-md">
+                          <p className="whitespace-pre-wrap text-sm text-emerald-700">{question.explanation}</p>
+                        </div>
+                      )}
+                      {!selfAssessmentScore ? (
+                        <SelfAssessment onSelectScore={handleSelfAssessment} />
+                      ) : (
+                        <FeedbackDisplay answer={answer} />
+                      )}
+                    </>
+                  )}
+
+                  <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                    <Button
+                      onClick={handleTryAnother}
+                      className="bg-emerald-600 hover:bg-emerald-700"
+                      disabled={!selfAssessmentScore}
+                    >
+                      <RefreshCw className="mr-2 h-4 w-4" /> Try Another Question
+                    </Button>
+                    <Link href="/progress">
+                      <Button variant="outline">View My Progress</Button>
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   )
