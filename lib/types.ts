@@ -1,4 +1,3 @@
-
 export type ScoreType = "green" | "amber" | "red"
 
 export interface Question {
@@ -44,6 +43,7 @@ export interface Topic {
   questions: Question[]
   unit: number
   disabled?: boolean
+  active?: boolean
 }
 
 export interface Student {

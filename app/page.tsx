@@ -106,6 +106,7 @@ export default async function Home() {
         topicnumber,
         summary,
         unit_id,
+        active,
         units!inner (
           id,
           name,
@@ -277,7 +278,8 @@ export default async function Home() {
         description: topic.description,
         summary: topic.summary,
         icon: topic.icon ? topic.icon : undefined,
-        disabled: false, // Default to false since the column doesn't exist
+        disabled: !topic.active, // Set disabled based on active status
+        active: topic.active,
         slug: topic.slug,
         unit: topic.units.unit_number,
         unitName: topic.units.name, 
