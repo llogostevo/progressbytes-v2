@@ -969,25 +969,39 @@ export default function QuestionPage() {
             <h1 className="text-3xl font-bold mt-4 mb-2">{topic.name}</h1>
             <UserLogin email={user?.email} />
           </div>
-          <p className="text-muted-foreground">{topic.description}</p>
         </div>
 
-        {/* Add SubtopicFilter component */}
-        <div className="mb-6">
-          <SubtopicFilter
-            selectedSubtopics={selectedSubtopics}
-            onSubtopicChange={setSelectedSubtopics}
-            subtopics={subtopics}
-          />
-        </div>
+        {/* Filters Container */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          {/* Subtopic Filter Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Filter by Subtopic</CardTitle>
+              <CardDescription>Select one or more subtopics to focus your practice</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SubtopicFilter
+                selectedSubtopics={selectedSubtopics}
+                onSubtopicChange={setSelectedSubtopics}
+                subtopics={subtopics}
+              />
+            </CardContent>
+          </Card>
 
-        {/* Add QuestionTypeFilter component with available types */}
-        <div className="mb-6">
-          <QuestionTypeFilter 
-            selectedType={selectedQuestionType} 
-            onTypeChange={handleQuestionTypeChange}
-            availableTypes={availableQuestionTypes}
-          />
+          {/* Question Type Filter Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Filter by Type</CardTitle>
+              <CardDescription>Choose question types to practice</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <QuestionTypeFilter 
+                selectedType={selectedQuestionType} 
+                onTypeChange={handleQuestionTypeChange}
+                availableTypes={availableQuestionTypes}
+              />
+            </CardContent>
+          </Card>
         </div>
 
         {/* CTA Banner */}

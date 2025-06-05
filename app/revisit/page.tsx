@@ -5,6 +5,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
 import type { Answer, Question, ScoreType } from "@/lib/types"
 import {
   CheckCircle,
@@ -16,6 +25,7 @@ import {
   User,
   GraduationCap,
   FileText,
+  Trash2,
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -142,6 +152,10 @@ export default function RevisitPage() {
   const [questions, setQuestions] = useState<Record<string, Question>>({})
   const [activeTab, setActiveTab] = useState<ScoreType | "all">(tabParam || "all")
   const [topics, setTopics] = useState<DBTopic[]>([])
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [answerToDelete, setAnswerToDelete] = useState<Answer | null>(null)
+  const [deleteConfirmation, setDeleteConfirmation] = useState("")
+  const [isDeleting, setIsDeleting] = useState(false)
 
   // Memoize filtered answers
   const filteredAnswers = useMemo(() => {
@@ -437,6 +451,46 @@ export default function RevisitPage() {
     router.push(`?${params.toString()}`)
   }
 
+  // Calculate counts for each filter
+  const totalAnswers = filteredAnswers.length
+  const scoreCount = {
+    green: filteredAnswers.filter((a) => a.score === "green").length,
+    amber: filteredAnswers.filter((a) => a.score === "amber").length,
+    red: filteredAnswers.filter((a) => a.score === "red").length,
+  }
+
+  const handleDeleteClick = (answer: Answer) => {
+    setAnswerToDelete(answer)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!answerToDelete || !user || deleteConfirmation !== "delete") return
+
+    setIsDeleting(true)
+    const supabase = createClient()
+
+    try {
+      const { error } = await supabase
+        .from("student_answers")
+        .delete()
+        .eq("id", answerToDelete.id)
+        .eq("student_id", user.id)
+
+      if (error) throw error
+
+      // Update local state
+      setAllAnswers((prev) => prev.filter((a) => a.id !== answerToDelete.id))
+      setDeleteDialogOpen(false)
+      setAnswerToDelete(null)
+      setDeleteConfirmation("")
+    } catch (error) {
+      console.error("Error deleting answer:", error)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   if (isLoading) {
     return <RevisitSkeleton />
   }
@@ -491,22 +545,62 @@ export default function RevisitPage() {
           </div>
         </div>
 
-        <Tabs value={activeTab} className="mb-8" onValueChange={handleTabChange}>
-          <TabsList className="grid grid-cols-4 mb-4">
-            <TabsTrigger value="all">All Questions</TabsTrigger>
-            <TabsTrigger value="green" className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4" /> Green
-            </TabsTrigger>
-            <TabsTrigger value="amber" className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4" /> Amber
-            </TabsTrigger>
-            <TabsTrigger value="red" className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4" /> Red
-            </TabsTrigger>
-          </TabsList>
+        {/* Filter Bar - replaces Tabs */}
+        <div className="w-full grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+          <Button
+            variant="outline"
+            className={`w-full h-12 ${activeTab === "all" ? "bg-slate-50 border-slate-500 text-slate-800" : "border-slate-200 text-slate-800"}`}
+            onClick={() => handleTabChange("all")}
+          >
+            <div className="text-center w-full">
+              <div className="font-medium flex items-center justify-center gap-1">
+                <FileText className="h-4 w-4" /> All Questions
+              </div>
+              <div className="text-xs text-muted-foreground">{totalAnswers} total</div>
+            </div>
+          </Button>
+          <Button
+            variant="outline"
+            className={`w-full h-12 ${activeTab === "green" ? "bg-emerald-50 border-emerald-600 text-emerald-700" : "border-emerald-200 text-emerald-700"} hover:bg-emerald-50`}
+            onClick={() => handleTabChange("green")}
+          >
+            <div className="text-center w-full">
+              <div className="font-medium flex items-center justify-center gap-1">
+                <CheckCircle className="h-4 w-4" /> Strong
+              </div>
+              <div className="text-xs">{scoreCount.green} questions</div>
+            </div>
+          </Button>
+          <Button
+            variant="outline"
+            className={`w-full h-12 ${activeTab === "amber" ? "bg-amber-50 border-amber-600 text-amber-700" : "border-amber-200 text-amber-700"} hover:bg-amber-50`}
+            onClick={() => handleTabChange("amber")}
+          >
+            <div className="text-center w-full">
+              <div className="font-medium flex items-center justify-center gap-1">
+                <AlertTriangle className="h-4 w-4" /> Developing
+              </div>
+              <div className="text-xs">{scoreCount.amber} questions</div>
+            </div>
+          </Button>
+          <Button
+            variant="outline"
+            className={`w-full h-12 ${activeTab === "red" ? "bg-red-50 border-red-600 text-red-700" : "border-red-200 text-red-700"} hover:bg-red-50`}
+            onClick={() => handleTabChange("red")}
+          >
+            <div className="text-center w-full">
+              <div className="font-medium flex items-center justify-center gap-1">
+                <AlertCircle className="h-4 w-4" /> Needs Work
+              </div>
+              <div className="text-xs">{scoreCount.red} questions</div>
+            </div>
+          </Button>
+        </div>
 
-          {["all", "green", "amber", "red"].map((tab) => (
-            <TabsContent key={tab} value={tab} className="space-y-6">
+        {/* Questions List - keep only the content of the selected filter */}
+        {["all", "green", "amber", "red"].map((tab) => (
+          activeTab === tab && (
+            <div key={tab} className="space-y-6">
               {Object.keys(answersByTopic).length === 0 ? (
                 <Card>
                   <CardHeader>
@@ -580,9 +674,19 @@ export default function RevisitPage() {
                                       <span>{!answer.score ? "Not assessed" : getScoreLabel(answer.score)}</span>
                                     </Badge>
                                   </div>
-                                  <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 font-medium">
-                                    {topic.name}
-                                  </Badge>
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 font-medium">
+                                      {topic.name}
+                                    </Badge>
+                                    <Button
+                                      onClick={() => handleDeleteClick(answer)}
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 text-gray-500 hover:text-red-600 hover:bg-red-50"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
                                 </div>
 
                                 {/* Question Section - Blue Theme */}
@@ -903,9 +1007,77 @@ export default function RevisitPage() {
                   )
                 })
               )}
-            </TabsContent>
-          ))}
-        </Tabs>
+            </div>
+          )
+        ))}
+
+        {/* Add Delete Dialog */}
+        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-semibold text-gray-900">Delete Attempt</DialogTitle>
+              <DialogDescription className="text-gray-500 mt-2">
+                This action cannot be undone. This will permanently delete your attempt for this question.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-6 px-1">
+              <div className="space-y-3">
+                <label htmlFor="delete-confirmation" className="text-sm font-medium text-gray-700 block">
+                  Type "delete" to confirm
+                </label>
+                <Input
+                  id="delete-confirmation"
+                  placeholder="Type 'delete' to confirm"
+                  value={deleteConfirmation}
+                  onChange={(e) => setDeleteConfirmation(e.target.value)}
+                  className={`w-full ${
+                    deleteConfirmation && deleteConfirmation !== "delete"
+                      ? "border-red-300 focus-visible:ring-red-500"
+                      : ""
+                  }`}
+                />
+                {deleteConfirmation && deleteConfirmation !== "delete" && (
+                  <p className="text-sm text-red-500 mt-1">Please type "delete" exactly to confirm</p>
+                )}
+              </div>
+            </div>
+            <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setDeleteDialogOpen(false)
+                  setAnswerToDelete(null)
+                  setDeleteConfirmation("")
+                }}
+                className="mt-2 sm:mt-0"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteConfirm}
+                disabled={deleteConfirmation !== "delete" || isDeleting}
+                className={`flex items-center gap-2 ${
+                  deleteConfirmation === "delete"
+                    ? "bg-red-600 hover:bg-red-700 text-white"
+                    : "bg-red-100 text-red-400 cursor-not-allowed"
+                }`}
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4" />
+                    Delete Attempt
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   )
