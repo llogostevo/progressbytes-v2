@@ -15,6 +15,7 @@ import { UserLogin } from "@/components/user-login"
 import { TopicFilter } from "@/components/topic-filter"
 import { QuestionTypeFilter } from "@/components/question-type-filter"
 import { DynamicIcon } from "@/components/ui/dynamicicon"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface DBTopic {
   id: string
@@ -39,6 +40,83 @@ interface TypeSpecificData {
 interface MatchingPair {
   statement: string
   match: string
+}
+
+function RevisitSkeleton() {
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-8">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-48" />
+              <Skeleton className="h-4 w-64" />
+            </div>
+            <Skeleton className="h-10 w-32" />
+          </div>
+
+          <div className="space-y-4 mb-8">
+            <div className="flex flex-wrap gap-2">
+              {[...Array(4)].map((_, i) => (
+                <Skeleton key={i} className="h-9 w-24" />
+              ))}
+            </div>
+            <div className="bg-muted/50 rounded-lg p-3 border border-muted">
+              <div className="flex flex-wrap gap-2">
+                {[...Array(6)].map((_, i) => (
+                  <Skeleton key={i} className="h-9 w-32" />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          {[...Array(3)].map((_, i) => (
+            <Card key={i}>
+              <CardHeader className="pb-2">
+                <div className="flex flex-col gap-3">
+                  <div className="flex justify-end gap-2">
+                    <Skeleton className="h-5 w-24" />
+                    <Skeleton className="h-5 w-32" />
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                    <Skeleton className="h-6 w-full" />
+                    <Skeleton className="h-6 w-3/4 mt-2" />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Skeleton className="h-4 w-32 mb-2" />
+                      <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+                        <Skeleton className="h-20 w-full" />
+                      </div>
+                    </div>
+                    <div>
+                      <Skeleton className="h-4 w-32 mb-2" />
+                      <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+                        <Skeleton className="h-20 w-full" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-6 pt-4 border-t border-gray-200">
+                    <Skeleton className="h-4 w-32 mb-2" />
+                    <div className="flex flex-col md:flex-row gap-3">
+                      <Skeleton className="h-10 w-32" />
+                      <Skeleton className="h-10 w-40" />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default function RevisitPage() {
@@ -344,15 +422,7 @@ export default function RevisitPage() {
   }
 
   if (isLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-center h-64">
-            <p className="text-muted-foreground">Loading your answers...</p>
-          </div>
-        </div>
-      </div>
-    )
+    return <RevisitSkeleton />
   }
 
   return (

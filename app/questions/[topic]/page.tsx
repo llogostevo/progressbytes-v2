@@ -22,6 +22,7 @@ import { UserLogin } from "@/components/user-login"
 import { User } from "@supabase/supabase-js"
 import { QuestionTypeFilter } from "@/components/question-type-filter"
 import { SubtopicFilter } from "@/components/subtopic-filter"
+import { Skeleton } from "@/components/ui/skeleton"
 
 // Define types for the database responses
 interface DBQuestion {
@@ -397,6 +398,83 @@ async function getQuestionById(questionId: string): Promise<Question | undefined
 
   // Transform the question using the shared function
   return transformQuestion(question as unknown as DBQuestion, topicName)
+}
+
+function QuestionSkeleton() {
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="max-w-3xl mx-auto">
+        <div className="mb-8">
+          <Skeleton className="h-4 w-32 mb-4" />
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-48" />
+              <Skeleton className="h-4 w-64" />
+            </div>
+            <Skeleton className="h-10 w-32" />
+          </div>
+        </div>
+
+        {/* Subtopic Filter Skeleton */}
+        <div className="mb-6">
+          <Skeleton className="h-4 w-32 mb-2" />
+          <div className="flex flex-wrap gap-2">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} className="h-9 w-24" />
+            ))}
+          </div>
+        </div>
+
+        {/* Question Type Filter Skeleton */}
+        <div className="mb-6">
+          <Skeleton className="h-4 w-32 mb-2" />
+          <div className="flex flex-wrap gap-2">
+            {[...Array(6)].map((_, i) => (
+              <Skeleton key={i} className="h-9 w-32" />
+            ))}
+          </div>
+        </div>
+
+        {/* Question Card Skeleton */}
+        <Card className="mb-8">
+          <CardHeader>
+            <Skeleton className="h-6 w-32 mb-2" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <Skeleton className="h-6 w-full" />
+              <Skeleton className="h-6 w-3/4" />
+              <Skeleton className="h-6 w-1/2" />
+              
+              {/* Answer Input Skeleton */}
+              <div className="mt-6">
+                <Skeleton className="h-4 w-32 mb-2" />
+                <div className="space-y-2">
+                  {[...Array(4)].map((_, i) => (
+                    <Skeleton key={i} className="h-12 w-full" />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Model Answer Skeleton */}
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-32 mb-2" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <Skeleton className="h-6 w-full" />
+              <Skeleton className="h-6 w-3/4" />
+              <Skeleton className="h-6 w-1/2" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
 }
 
 export default function QuestionPage() {
@@ -856,16 +934,7 @@ export default function QuestionPage() {
   }
 
   if (isLoading) {
-    return (
-      <div className="container mx-auto px-4 py-12 flex justify-center">
-        <Card className="w-full max-w-2xl">
-          <CardHeader>
-            <CardTitle>Loading question...</CardTitle>
-            <CardDescription>Please wait while we prepare your question.</CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    )
+    return <QuestionSkeleton />
   }
 
   if (!topic) {
