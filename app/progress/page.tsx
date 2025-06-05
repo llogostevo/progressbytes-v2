@@ -13,6 +13,7 @@ import { createClient } from "@/utils/supabase/client"
 import { User } from "@supabase/supabase-js"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DynamicIcon } from "@/components/ui/dynamicicon"
+import { Skeleton } from "@/components/ui/skeleton"
 
 // Define types for the database responses
 interface DBQuestion {
@@ -71,6 +72,98 @@ interface DBTopic {
   unit_id: string;
   units: DBUnit;
   subtopics: DBSubtopic[];
+}
+
+function ProgressSkeleton() {
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-8">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-48" />
+              <Skeleton className="h-4 w-64" />
+            </div>
+            <Skeleton className="h-10 w-32" />
+          </div>
+          <div className="flex items-center justify-end mt-4">
+            <Skeleton className="h-10 w-64" />
+          </div>
+        </div>
+
+        <Card className="mb-8">
+          <CardHeader>
+            <Skeleton className="h-6 w-48 mb-2" />
+            <Skeleton className="h-4 w-64" />
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col md:flex-row gap-4 justify-between">
+              <div className="flex-1">
+                <Skeleton className="h-4 w-full rounded-full" />
+                <div className="flex justify-between mt-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-4 md:w-1/3">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="text-center">
+                    <Skeleton className="h-8 w-8 mx-auto mb-1" />
+                    <Skeleton className="h-3 w-12 mx-auto" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter className="border-t pt-4">
+            <div className="w-full">
+              <Skeleton className="h-4 w-48 mb-3" />
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                {[...Array(4)].map((_, i) => (
+                  <Skeleton key={i} className="h-10 w-full" />
+                ))}
+              </div>
+            </div>
+          </CardFooter>
+        </Card>
+
+        <div className="mt-8">
+          <div className="flex items-center justify-between mb-4">
+            <Skeleton className="h-6 w-48" />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <Card key={i}>
+                <CardHeader className="pb-2">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-10 w-10 rounded-lg" />
+                      <Skeleton className="h-6 w-32" />
+                    </div>
+                    <Skeleton className="h-5 w-12" />
+                  </div>
+                  <Skeleton className="h-4 w-40 mt-2" />
+                </CardHeader>
+                <CardContent>
+                  <div className="flex gap-2 mb-4">
+                    {[...Array(3)].map((_, j) => (
+                      <Skeleton key={j} className="h-6 w-16" />
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Skeleton className="h-9 flex-1" />
+                    <Skeleton className="h-9 flex-1" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default function ProgressPage() {
@@ -303,15 +396,7 @@ export default function ProgressPage() {
   )
 
   if (isLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-center h-64">
-            <p className="text-muted-foreground">Loading your progress...</p>
-          </div>
-        </div>
-      </div>
-    )
+    return <ProgressSkeleton />
   }
 
   return (
@@ -469,9 +554,11 @@ export default function ProgressPage() {
                         <div className="flex items-start justify-between">
                           <CardTitle className="text-lg flex items-center gap-2">
                             {topic.icon && (
-                              <span className="text-emerald-500">
-                                <DynamicIcon iconName={topic.icon} size={20} />
-                              </span>
+                              <div className="p-2 rounded-lg bg-emerald-50">
+                                <span className="text-emerald-600">
+                                  <DynamicIcon iconName={topic.icon} size={20} />
+                                </span>
+                              </div>
                             )}
                             {topic.name}
                           </CardTitle>
