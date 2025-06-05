@@ -1,6 +1,6 @@
 "use client"
 
-// import { useState } from "react"
+import { useState } from "react"
 import { login, signup } from './actions'
 import { useSearchParams } from 'next/navigation'
 import Link from "next/link"
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Suspense } from 'react'
+import { Loader2 } from "lucide-react"
 
 /**
  * LoginForm Component
@@ -31,6 +32,25 @@ export function LoginForm() {
 function LoginFormContent() {
   const searchParams = useSearchParams()
   const tab = searchParams.get('tab') || 'login'
+  const [isLoading, setIsLoading] = useState(false)
+
+  const handleLogin = async (formData: FormData) => {
+    setIsLoading(true)
+    try {
+      await login(formData)
+    } catch (error) {
+      setIsLoading(false)
+    }
+  }
+
+  const handleSignup = async (formData: FormData) => {
+    setIsLoading(true)
+    try {
+      await signup(formData)
+    } catch (error) {
+      setIsLoading(false)
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -81,11 +101,19 @@ function LoginFormContent() {
 
             {/* Login Button - Calls the login server action */}
             <Button
-              formAction={login}
+              formAction={handleLogin}
               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
               type="submit"
+              disabled={isLoading}
             >
-              Sign In
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                'Sign In'
+              )}
             </Button>
           </form>
         </TabsContent>
@@ -142,11 +170,19 @@ function LoginFormContent() {
 
             {/* Register Button - Calls the signup server action */}
             <Button
-              formAction={signup}
+              formAction={handleSignup}
               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
               type="submit"
+              disabled={isLoading}
             >
-              Create Account
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating account...
+                </>
+              ) : (
+                'Create Account'
+              )}
             </Button>
           </form>
         </TabsContent>
