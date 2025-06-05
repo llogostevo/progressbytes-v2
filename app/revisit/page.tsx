@@ -843,23 +843,23 @@ export default function RevisitPage() {
                                 <div className="mt-6 pt-4 border-t border-gray-200">
                                   <div className="flex flex-col gap-3">
                                     <h4 className="text-sm font-medium text-gray-700 mb-2">Continue Learning:</h4>
-                                    <div className="flex flex-col sm:flex-row gap-3">
+                                    <div className="flex flex-col md:flex-row gap-3 items-start">
                                       <Button
                                         onClick={() =>
                                           router.push(`/questions/${topicSlug}?questionId=${answer.question_id}`)
                                         }
-                                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
-                                        size="lg"
+                                        className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm py-2"
+                                        size="default"
                                       >
                                         <BookOpen className="mr-2 h-4 w-4" />
-                                        Practice This Question Again
+                                        Try Again
                                         <ArrowRight className="ml-2 h-4 w-4" />
                                       </Button>
                                       <Button
                                         onClick={() => router.push(`/questions/${topicSlug}`)}
                                         variant="outline"
-                                        className="flex-1 border-emerald-600 text-emerald-600 hover:bg-emerald-50 shadow-sm"
-                                        size="lg"
+                                        className="border-emerald-600 text-emerald-600 hover:bg-emerald-50 shadow-sm py-2"
+                                        size="default"
                                       >
                                         {topic.icon && <DynamicIcon name={topic.icon} size={16} className="mr-2" />}
                                         Practice More {topic.name}
