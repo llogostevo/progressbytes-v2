@@ -862,7 +862,8 @@ export default function RevisitPage() {
                                         size="default"
                                       >
                                         {topic.icon && <DynamicIcon name={topic.icon} size={16} className="mr-2" />}
-                                        Practice More {topic.name}
+                                        <span className="hidden sm:inline">Practice More</span>
+                                        <span className="truncate max-w-[120px]">{topic.name}</span>
                                         <ArrowRight className="ml-2 h-4 w-4" />
                                       </Button>
                                     </div>
