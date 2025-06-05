@@ -827,28 +827,18 @@ export default function RevisitPage() {
                                     ) : question.type === "multiple-choice" ? (
                                       <div className="space-y-2">
                                         {question.options?.map((option, index) => {
-                                          const userSelectedIndex = Number.parseInt(answer?.response_text ?? "-1")
-                                          const isSelected = userSelectedIndex === index
                                           const isCorrect = index === question.correctAnswerIndex
 
-                                          if (!isSelected) return null
+                                          if (!isCorrect) return null
 
                                           return (
                                             <div
                                               key={index}
-                                              className={`p-2 rounded border ${
-                                                isCorrect
-                                                  ? "bg-emerald-100 border-emerald-300 text-emerald-800"
-                                                  : "bg-red-100 border-red-300 text-red-800"
-                                              }`}
+                                              className="p-2 rounded border bg-emerald-100 border-emerald-300 text-emerald-800"
                                             >
                                               <div className="flex items-center justify-between">
                                                 <span>{option}</span>
-                                                {isCorrect ? (
-                                                  <CheckCircle className="h-4 w-4" />
-                                                ) : (
-                                                  <AlertCircle className="h-4 w-4" />
-                                                )}
+                                                <CheckCircle className="h-4 w-4" />
                                               </div>
                                             </div>
                                           )
@@ -957,38 +947,6 @@ export default function RevisitPage() {
                                             </div>
                                           )
                                         })}
-                                      </div>
-                                    ) : question.type === "fill-in-the-blank" ? (
-                                      <div className="space-y-2">
-                                        {(() => {
-                                          try {
-                                            const selectedIndexes = JSON.parse(answer?.response_text || "[]") as number[];
-                                            const selectedOptions = selectedIndexes.map(index => question.options?.[index]);
-                                            const modelAnswer = Array.isArray(question.model_answer) ? question.model_answer : [question.model_answer];
-                                            
-                                            return (
-                                              <div className="space-y-2">
-                                                {selectedOptions.map((option, i) => {
-                                                  const isOptionCorrect = question.order_important
-                                                    ? option === modelAnswer[i]
-                                                    : option ? modelAnswer.includes(option) : false;
-                                                  return (
-                                                    <div key={i} className={`flex items-center gap-2 ${isOptionCorrect ? "text-emerald-600" : "text-red-600"}`}>
-                                                      {option || "No answer selected"}
-                                                      {isOptionCorrect ? (
-                                                        <CheckCircle className="h-4 w-4" />
-                                                      ) : (
-                                                        <AlertCircle className="h-4 w-4" />
-                                                      )}
-                                                    </div>
-                                                  );
-                                                })}
-                                              </div>
-                                            );
-                                          } catch {
-                                            return "Invalid answer format";
-                                          }
-                                        })()}
                                       </div>
                                     ) : (
                                       <div className="space-y-3">
