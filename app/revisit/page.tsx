@@ -706,14 +706,46 @@ export default function RevisitPage() {
                             <CardContent className="space-y-6">
                               {/* Answer Comparison Section */}
                               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                {/* Your Answer Section - Orange Theme */}
+                                {/* Your Answer Section */}
                                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                                   <div className="flex items-center gap-2 mb-3">
                                     <User className="h-4 w-4 text-gray-600" />
                                     <h3 className="font-semibold text-gray-700">Your Answer</h3>
                                   </div>
                                   <div className="bg-white border border-gray-100 rounded-md p-3 min-h-[80px]">
-                                    {question.type === "matching" ? (
+                                    {question.type === "fill-in-the-blank" ? (
+                                      <div className="space-y-2">
+                                        {(() => {
+                                          try {
+                                            const selectedIndexes = JSON.parse(answer?.response_text || "[]") as number[];
+                                            const selectedOptions = selectedIndexes.map(index => question.options?.[index]);
+                                            const modelAnswer = Array.isArray(question.model_answer) ? question.model_answer : [question.model_answer];
+                                            
+                                            return (
+                                              <div className="space-y-2">
+                                                {selectedOptions.map((option, i) => {
+                                                  const isOptionCorrect = question.order_important
+                                                    ? option === modelAnswer[i]
+                                                    : option ? modelAnswer.includes(option) : false;
+                                                  return (
+                                                    <div key={i} className={`flex items-center gap-2 ${isOptionCorrect ? "text-emerald-600" : "text-red-600"}`}>
+                                                      {option || "No answer selected"}
+                                                      {isOptionCorrect ? (
+                                                        <CheckCircle className="h-4 w-4" />
+                                                      ) : (
+                                                        <AlertCircle className="h-4 w-4" />
+                                                      )}
+                                                    </div>
+                                                  );
+                                                })}
+                                              </div>
+                                            );
+                                          } catch {
+                                            return "Invalid answer format";
+                                          }
+                                        })()}
+                                      </div>
+                                    ) : question.type === "matching" ? (
                                       <div className="overflow-x-auto">
                                         <table className="w-full border-collapse text-sm">
                                           <thead>
@@ -830,14 +862,38 @@ export default function RevisitPage() {
                                   </div>
                                 </div>
 
-                                {/* Model Answer Section - Green Theme */}
+                                {/* Model Answer Section */}
                                 <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
                                   <div className="flex items-center gap-2 mb-3">
                                     <GraduationCap className="h-4 w-4 text-emerald-600" />
                                     <h3 className="font-semibold text-emerald-700">Model Answer</h3>
                                   </div>
                                   <div className="bg-white border border-emerald-100 rounded-md p-3 min-h-[80px]">
-                                    {question.type === "matching" ? (
+                                    {question.type === "fill-in-the-blank" ? (
+                                      <div className="space-y-2">
+                                        {Array.isArray(question.model_answer) ? (
+                                          question.order_important ? (
+                                            <ol className="list-decimal pl-4 space-y-1">
+                                              {question.model_answer.map((ans, idx) => (
+                                                <li key={idx} className="text-emerald-700">
+                                                  {ans}
+                                                </li>
+                                              ))}
+                                            </ol>
+                                          ) : (
+                                            <ul className="list-disc pl-4 space-y-1">
+                                              {question.model_answer.map((ans, idx) => (
+                                                <li key={idx} className="text-emerald-700">
+                                                  {ans}
+                                                </li>
+                                              ))}
+                                            </ul>
+                                          )
+                                        ) : (
+                                          <span className="text-emerald-700">{question.model_answer}</span>
+                                        )}
+                                      </div>
+                                    ) : question.type === "matching" ? (
                                       <div className="overflow-x-auto">
                                         <table className="w-full border-collapse text-sm">
                                           <thead>
@@ -904,27 +960,35 @@ export default function RevisitPage() {
                                       </div>
                                     ) : question.type === "fill-in-the-blank" ? (
                                       <div className="space-y-2">
-                                        {Array.isArray(question.model_answer) ? (
-                                          question.order_important ? (
-                                            <ol className="list-decimal pl-4 space-y-1">
-                                              {question.model_answer.map((ans, idx) => (
-                                                <li key={idx} className="text-emerald-700">
-                                                  {ans}
-                                                </li>
-                                              ))}
-                                            </ol>
-                                          ) : (
-                                            <ul className="list-disc pl-4 space-y-1">
-                                              {question.model_answer.map((ans, idx) => (
-                                                <li key={idx} className="text-emerald-700">
-                                                  {ans}
-                                                </li>
-                                              ))}
-                                            </ul>
-                                          )
-                                        ) : (
-                                          <span className="text-emerald-700">{question.model_answer}</span>
-                                        )}
+                                        {(() => {
+                                          try {
+                                            const selectedIndexes = JSON.parse(answer?.response_text || "[]") as number[];
+                                            const selectedOptions = selectedIndexes.map(index => question.options?.[index]);
+                                            const modelAnswer = Array.isArray(question.model_answer) ? question.model_answer : [question.model_answer];
+                                            
+                                            return (
+                                              <div className="space-y-2">
+                                                {selectedOptions.map((option, i) => {
+                                                  const isOptionCorrect = question.order_important
+                                                    ? option === modelAnswer[i]
+                                                    : option ? modelAnswer.includes(option) : false;
+                                                  return (
+                                                    <div key={i} className={`flex items-center gap-2 ${isOptionCorrect ? "text-emerald-600" : "text-red-600"}`}>
+                                                      {option || "No answer selected"}
+                                                      {isOptionCorrect ? (
+                                                        <CheckCircle className="h-4 w-4" />
+                                                      ) : (
+                                                        <AlertCircle className="h-4 w-4" />
+                                                      )}
+                                                    </div>
+                                                  );
+                                                })}
+                                              </div>
+                                            );
+                                          } catch {
+                                            return "Invalid answer format";
+                                          }
+                                        })()}
                                       </div>
                                     ) : (
                                       <div className="space-y-3">
@@ -1036,7 +1100,7 @@ export default function RevisitPage() {
                   }`}
                 />
                 {deleteConfirmation && deleteConfirmation !== "delete" && (
-                  <p className="text-sm text-red-500 mt-1">Please type "delete" exactly to confirm</p>
+                  <p className="text-sm text-red-500 mt-1">Please type &quot;delete&quot; exactly to confirm</p>
                 )}
               </div>
             </div>
