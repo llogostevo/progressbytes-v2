@@ -445,7 +445,7 @@ export default function RevisitPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
-          <div className="flex flex-col md:flex-row justify-between items-center">
+          <div className="flex flex-col md:flex-row justify-between items-center mb-6">
             <div className="space-y-2">
               <h1 className="text-3xl font-bold text-gray-900">Revisit Questions</h1>
               <p className="text-muted-foreground">
@@ -457,22 +457,37 @@ export default function RevisitPage() {
             <UserLogin email={user?.email} />
           </div>
 
-          <div className="space-y-4 mb-8">
-            <TopicFilter selectedTopics={selectedTopics} onTopicChange={handleTopicChange} topics={topics} />
-            <div className="bg-muted/50 rounded-lg p-3 border border-muted">
-              <QuestionTypeFilter
-                selectedType={typeParam}
-                onTypeChange={(type: string | null) => {
-                  const params = new URLSearchParams(searchParams.toString())
-                  if (type === null) {
-                    params.delete("type")
-                  } else {
-                    params.set("type", type)
-                  }
-                  router.push(`?${params.toString()}`)
-                }}
-              />
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Filter by Topic</CardTitle>
+                <CardDescription>Select specific topics to review</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <TopicFilter selectedTopics={selectedTopics} onTopicChange={handleTopicChange} topics={topics} />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Filter by Type</CardTitle>
+                <CardDescription>Choose question types to review</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <QuestionTypeFilter
+                  selectedType={typeParam}
+                  onTypeChange={(type: string | null) => {
+                    const params = new URLSearchParams(searchParams.toString())
+                    if (type === null) {
+                      params.delete("type")
+                    } else {
+                      params.set("type", type)
+                    }
+                    router.push(`?${params.toString()}`)
+                  }}
+                />
+              </CardContent>
+            </Card>
           </div>
         </div>
 

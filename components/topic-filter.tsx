@@ -1,6 +1,12 @@
 import React, { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { DynamicIcon } from "@/components/ui/dynamicicon"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 interface Topic {
   id: string
@@ -88,19 +94,30 @@ export function TopicFilter({ selectedTopics, onTopicChange, topics, className =
       {showTopics && (
         <div className="grid grid-cols-3 w-full gap-3">
           {sortedTopics.map((topic) => (
-            <Button
-              key={topic.slug}
-              variant={selectedTopics.includes(topic.slug) ? "default" : "outline"}
-              onClick={() => handleTopicClick(topic.slug)}
-              size="sm"
-              className="flex-shrink-0 justify-start text-left h-8 px-2"
-            >
-              {topic.icon && <DynamicIcon iconName={topic.icon} size={12} className="mr-1 flex-shrink-0" />}
-              {topic.topicnumber && (
-                <span className="text-muted-foreground mr-1 flex-shrink-0">{topic.topicnumber}</span>
-              )}
-              <span className="truncate">{topic.name}</span>
-            </Button>
+            <TooltipProvider key={topic.slug}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={selectedTopics.includes(topic.slug) ? "default" : "outline"}
+                    onClick={() => handleTopicClick(topic.slug)}
+                    size="sm"
+                    className="flex-shrink-0 justify-start text-left h-8 px-2"
+                  >
+                    {topic.icon && <DynamicIcon iconName={topic.icon} size={12} className="mr-1 flex-shrink-0" />}
+                    {topic.topicnumber && (
+                      <span className="text-muted-foreground mr-1 flex-shrink-0">{topic.topicnumber}</span>
+                    )}
+                    <span className="truncate">{topic.name}</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="bg-black/80 text-white">
+                  <p className="text-sm">
+                    {topic.topicnumber && <span className="text-muted-foreground mr-1">{topic.topicnumber}</span>}
+                    {topic.name}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           ))}
         </div>
       )}

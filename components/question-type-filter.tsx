@@ -1,4 +1,10 @@
 import { Button } from "@/components/ui/button"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 interface QuestionTypeFilterProps {
   selectedType: string | null
@@ -7,12 +13,36 @@ interface QuestionTypeFilterProps {
 }
 
 const questionTypes = [
-  { value: "multiple-choice", label: "Multiple Choice" },
-  { value: "short-answer", label: "Short Answer" },
-  { value: "true-false", label: "True/False" },
-  { value: "matching", label: "Matching" },
-  { value: "fill-in-the-blank", label: "Fill in the Blank" },
-  { value: "code", label: "Code Question" },
+  { 
+    value: "multiple-choice", 
+    label: "Multiple Choice",
+    description: "Questions with predefined answer options"
+  },
+  { 
+    value: "short-answer", 
+    label: "Short Answer",
+    description: "Brief written responses to questions"
+  },
+  { 
+    value: "true-false", 
+    label: "True/False",
+    description: "Questions requiring true or false answers"
+  },
+  { 
+    value: "matching", 
+    label: "Matching",
+    description: "Match items from one list to another"
+  },
+  { 
+    value: "fill-in-the-blank", 
+    label: "Fill in the Blank",
+    description: "Complete sentences with missing words"
+  },
+  { 
+    value: "code", 
+    label: "Code Question",
+    description: "Programming and coding related questions"
+  },
 ]
 
 export function QuestionTypeFilter({ selectedType, onTypeChange, availableTypes }: QuestionTypeFilterProps) {
@@ -32,15 +62,23 @@ export function QuestionTypeFilter({ selectedType, onTypeChange, availableTypes 
           All Types
         </Button>
         {filteredQuestionTypes.map((type) => (
-          <Button
-            key={type.value}
-            variant={selectedType === type.value ? "default" : "outline"}
-            size="sm"
-            onClick={() => onTypeChange(type.value)}
-            className="text-xs"
-          >
-            {type.label}
-          </Button>
+          <TooltipProvider key={type.value}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={selectedType === type.value ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => onTypeChange(type.value)}
+                  className="text-xs"
+                >
+                  {type.label}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="bg-black/80 text-white">
+                <p className="text-sm">{type.label}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         ))}
       </div>
     </div>
