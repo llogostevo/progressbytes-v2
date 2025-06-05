@@ -37,10 +37,10 @@ export function MultipleChoiceQuestion({
       >
         {options.map((option, index) => (
           <div key={index} className="flex items-center space-x-2">
-            <RadioGroupItem value={index.toString()} id={`option-${index}`} />
+            <RadioGroupItem value={index.toString()} id={`option-${index}`} className="cursor-pointer" />
             <Label
               htmlFor={`option-${index}`}
-              className={`flex items-center gap-2 ${
+              className={`flex items-center gap-2 cursor-pointer ${
                 isAnswered
                   ? index === correctAnswerIndex
                     ? "text-green-600"

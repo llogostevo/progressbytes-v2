@@ -944,7 +944,7 @@ export default function QuestionPage() {
         <Card className="w-full max-w-2xl">
           <CardHeader>
             <CardTitle>Topic not found</CardTitle>
-            <CardDescription>The topic you're looking for doesn't exist or has no questions.</CardDescription>
+            <CardDescription>The topic you&apos;re looking for doesn&apos;t exist or has no questions.</CardDescription>
           </CardHeader>
           <CardContent>
             <Link href="/">
