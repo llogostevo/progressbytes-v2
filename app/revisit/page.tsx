@@ -4,7 +4,6 @@ import { useState, useEffect, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Dialog,
   DialogContent,
@@ -144,7 +143,7 @@ export default function RevisitPage() {
   const searchParams = useSearchParams()
   const tabParam = searchParams.get("tab") as ScoreType | null
   const typeParam = searchParams.get("type")
-  const selectedTopics = searchParams.get("topics")?.split(",") || []
+  const selectedTopics = useMemo(() => searchParams.get("topics")?.split(",") || [], [searchParams])
 
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -1023,11 +1022,11 @@ export default function RevisitPage() {
             <div className="py-6 px-1">
               <div className="space-y-3">
                 <label htmlFor="delete-confirmation" className="text-sm font-medium text-gray-700 block">
-                  Type "delete" to confirm
+                  Type &quot;delete&quot; to confirm
                 </label>
                 <Input
                   id="delete-confirmation"
-                  placeholder="Type 'delete' to confirm"
+                  placeholder="Type &quot;delete&quot; to confirm"
                   value={deleteConfirmation}
                   onChange={(e) => setDeleteConfirmation(e.target.value)}
                   className={`w-full ${
