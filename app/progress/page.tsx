@@ -466,14 +466,21 @@ export default function ProgressPage() {
                   return (
                     <Card key={topicSlug}>
                       <CardHeader className="pb-2">
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          {topic.icon && (
-                            <span className="text-emerald-500">
-                              <DynamicIcon iconName={topic.icon} size={20} />
-                            </span>
+                        <div className="flex items-start justify-between">
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            {topic.icon && (
+                              <span className="text-emerald-500">
+                                <DynamicIcon iconName={topic.icon} size={20} />
+                              </span>
+                            )}
+                            {topic.name}
+                          </CardTitle>
+                          {topic.topicnumber && (
+                            <Badge variant="outline" className="text-xs font-medium shrink-0 text-muted-foreground">
+                              {topic.topicnumber}
+                            </Badge>
                           )}
-                          {topic.name}
-                        </CardTitle>
+                        </div>
                         <CardDescription>
                           {topicAnswers.length} question{topicAnswers.length !== 1 ? "s" : ""} answered
                         </CardDescription>
