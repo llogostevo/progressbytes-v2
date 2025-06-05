@@ -430,15 +430,16 @@ export default function RevisitPage() {
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <h1 className="text-3xl font-bold mb-2">Revisit Questions</h1>
+            <div className="space-y-2">
+              <h1 className="text-3xl font-bold text-gray-900">Revisit Questions</h1>
+              <p className="text-muted-foreground">
+                {selectedTopics.length > 0
+                  ? `Review ${activeTab !== "all" ? activeTab + " " : ""}questions from selected topics`
+                  : `Review ${activeTab !== "all" ? activeTab + " " : ""}questions you've previously answered`}
+              </p>
+            </div>
             <UserLogin email={user?.email} />
           </div>
-
-          <p className="text-muted-foreground mb-4">
-            {selectedTopics.length > 0
-              ? `Review ${activeTab !== "all" ? activeTab + " " : ""}questions from selected topics`
-              : `Review ${activeTab !== "all" ? activeTab + " " : ""}questions you've previously answered`}
-          </p>
 
           <div className="space-y-4 mb-8">
             <TopicFilter selectedTopics={selectedTopics} onTopicChange={handleTopicChange} topics={topics} />
@@ -498,20 +499,26 @@ export default function RevisitPage() {
 
                   return (
                     <div key={topicSlug} className="space-y-4">
-                      <h2 className="text-xl font-bold flex items-center gap-2">
-                        {topic.icon && <DynamicIcon name={topic.icon} size={20} className="text-emerald-500" />}
-                        {topic.name}
-                      </h2>
+                      <div className="flex items-center gap-3">
+                        {topic.icon && (
+                          <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-100">
+                            <span className="text-emerald-600">
+                              <DynamicIcon name={topic.icon} size={24} />
+                            </span>
+                          </div>
+                        )}
+                        <h2 className="text-xl font-bold text-gray-900">{topic.name}</h2>
+                      </div>
 
                       {topicAnswers.map((answer) => {
                         const question = questions[answer.question_id]
                         if (!question) return null
 
                         return (
-                          <Card key={`${answer.question_id}-${answer.score}`}>
+                          <Card key={`${answer.question_id}-${answer.score}`} className="hover:shadow-md transition-shadow">
                             <CardHeader className="pb-2">
                               <div className="flex flex-col gap-3">
-                                <div className="flex justify-end gap-2 shrink-0">
+                                <div className="flex flex-wrap items-center gap-2 bg-gray-50 rounded-md px-3 py-2 mb-2 border border-gray-100">
                                   <Badge variant="outline" className="text-xs whitespace-nowrap">
                                     {getQuestionTypeLabel(question.type)}
                                   </Badge>
@@ -534,12 +541,17 @@ export default function RevisitPage() {
                                     )}
                                     <span>{!answer.score ? "Not assessed" : getScoreLabel(answer.score)}</span>
                                   </Badge>
+                                  <span className="mx-2 text-gray-300">|</span>
+                                  <span className="bg-emerald-100 text-emerald-700 font-medium px-2 py-0.5 rounded text-xs">
+                                    {topic.name}
+                                  </span>
                                 </div>
-                                <CardTitle className="text-lg font-semibold leading-relaxed">
-                                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                                    <pre className="whitespace-pre-wrap font-sans text-gray-800">{question.question_text}</pre>
+                                <div>
+                                  <h3 className="font-medium mb-2 text-sm text-gray-700">Question:</h3>
+                                  <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+                                    <pre className="whitespace-pre-wrap font-sans text-sm text-gray-700">{question.question_text}</pre>
                                   </div>
-                                </CardTitle>
+                                </div>
                               </div>
                             </CardHeader>
                             <CardContent>
@@ -549,7 +561,7 @@ export default function RevisitPage() {
                                   {question.type === "matching" ? (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                       <div className="overflow-x-auto">
-                                        <h3 className="font-medium mb-2 text-sm">Your Answer:</h3>
+                                        <h3 className="font-medium mb-2 text-sm text-gray-700">Your Answer:</h3>
                                         <table className="w-full border-collapse text-sm">
                                           <thead>
                                             <tr>
@@ -570,7 +582,7 @@ export default function RevisitPage() {
                                               })();
                                               const isCorrect = userMatches.includes(pair.match);
                                               return (
-                                                <tr key={index} className={isCorrect ? "bg-green-50" : "bg-red-50"}>
+                                                <tr key={index} className={isCorrect ? "bg-emerald-50" : "bg-red-50"}>
                                                   <td className="border p-2">{pair.statement}</td>
                                                   <td className="border p-2">
                                                     {userMatches.join(", ") || "No match selected"}
@@ -578,7 +590,7 @@ export default function RevisitPage() {
                                                   <td className="border p-2 text-center">
                                                     <div className="flex justify-center">
                                                       {isCorrect ? (
-                                                        <CheckCircle className="h-3 w-3 text-green-600" />
+                                                        <CheckCircle className="h-3 w-3 text-emerald-600" />
                                                       ) : (
                                                         <AlertCircle className="h-3 w-3 text-red-600" />
                                                       )}
@@ -616,11 +628,10 @@ export default function RevisitPage() {
                                         </table>
                                       </div>
                                     </div>
-                                    // TRUE/FALSE QUESTION
                                   ) : question.type === "true-false" ? (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                       <div className="overflow-x-auto">
-                                        <h3 className="font-medium mb-2 text-sm">Your Answer:</h3>
+                                        <h3 className="font-medium mb-2 text-sm text-gray-700">Your Answer:</h3>
                                         <table className="w-full border-collapse text-sm">
                                           <thead>
                                             <tr>
@@ -630,13 +641,13 @@ export default function RevisitPage() {
                                             </tr>
                                           </thead>
                                           <tbody>
-                                            <tr className={(answer.response_text === "true" === Boolean(question.model_answer)) ? "bg-green-50" : "bg-red-50"}>
+                                            <tr className={(answer.response_text === "true" === Boolean(question.model_answer)) ? "bg-emerald-50" : "bg-red-50"}>
                                               <td className="border p-2">{question.question_text}</td>
                                               <td className="border p-2 text-center">{answer.response_text === "true" ? "True" : "False"}</td>
                                               <td className="border p-2 text-center">
                                                 <div className="flex justify-center">
                                                   {(answer.response_text === "true" === Boolean(question.model_answer)) ? (
-                                                    <CheckCircle className="h-3 w-3 text-green-600" />
+                                                    <CheckCircle className="h-3 w-3 text-emerald-600" />
                                                   ) : (
                                                     <AlertCircle className="h-3 w-3 text-red-600" />
                                                   )}
@@ -672,11 +683,10 @@ export default function RevisitPage() {
                                         </table>
                                       </div>
                                     </div>
-                                    // FILL IN THE BLANK QUESTION
                                   ) : question.type === "fill-in-the-blank" ? (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                       <div className="overflow-x-auto">
-                                        <h3 className="font-medium mb-2 text-sm">Your Answer:</h3>
+                                        <h3 className="font-medium mb-2 text-sm text-gray-700">Your Answer:</h3>
                                         <table className="w-full border-collapse text-sm">
                                           <thead>
                                             <tr>
@@ -716,7 +726,7 @@ export default function RevisitPage() {
                                                           ? option === modelAnswer[i]
                                                           : modelAnswer.includes(option));
                                                         return (
-                                                          <div key={i} className={`${isOptionCorrect ? "text-green-600" : "text-red-600"}`}>
+                                                          <div key={i} className={`${isOptionCorrect ? "text-emerald-600" : "text-red-600"}`}>
                                                             {option || "No answer selected"}
                                                           </div>
                                                         );
@@ -765,11 +775,10 @@ export default function RevisitPage() {
                                         </table>
                                       </div>
                                     </div>
-                                    // MULTIPLE CHOICE QUESTION
                                   ) : question.type === "multiple-choice" ? (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                       <div className="overflow-x-auto">
-                                        <h3 className="font-medium mb-2 text-sm">Your Answer:</h3>
+                                        <h3 className="font-medium mb-2 text-sm text-gray-700">Your Answer:</h3>
                                         <table className="w-full border-collapse text-sm table-fixed">
                                           <thead>
                                             <tr>
@@ -788,7 +797,7 @@ export default function RevisitPage() {
                                                   key={index}
                                                   className={`h-12 ${isSelected
                                                     ? isCorrect
-                                                      ? "bg-green-50"
+                                                      ? "bg-emerald-50"
                                                       : "bg-red-50"
                                                     : ""
                                                   }`}
@@ -805,7 +814,7 @@ export default function RevisitPage() {
                                                     <div className="flex justify-center">
                                                       {isSelected && (
                                                         isCorrect
-                                                          ? <CheckCircle className="h-3 w-3 text-green-600" />
+                                                          ? <CheckCircle className="h-3 w-3 text-emerald-600" />
                                                           : <AlertCircle className="h-3 w-3 text-red-600" />
                                                       )}
                                                     </div>
