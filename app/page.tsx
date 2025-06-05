@@ -154,7 +154,7 @@ export default async function Home() {
           )
         )
       `)
-      .order('name')
+      .order('topicnumber')
 
     if (error) {
       console.error('Error fetching topics with questions:', error)
