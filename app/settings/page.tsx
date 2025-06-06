@@ -5,14 +5,15 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { ArrowLeft, Sparkles, Activity, Users, Eye, Navigation, Home, FileText, BarChart, RefreshCw, CheckCircle, Clock, Calendar } from "lucide-react"
+import { ArrowLeft, Sparkles, Activity, Users, Eye, Navigation, Home, FileText, BarChart, RefreshCw, CheckCircle, Clock, Calendar, Trash2, Plus, BookOpen, Book, GraduationCap, School, BookMarked, BookText, Library, BookOpenCheck, BookOpenText, BookOpenIcon, Bookmark, BookmarkCheck, BookmarkIcon, BookmarkPlus, BookmarkX, BookOpenIcon as BookOpenIcon2 } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/utils/supabase/client"
 import { redirect } from "next/navigation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { UserSessions } from "@/components/user-sessions"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { UserActivityFilter } from "@/components/user-activity-filter"
+import { Input } from "@/components/ui/input"
 
 // TODO: the homework dialgo is the best and should be replciated for hte other dialogs. 
 interface UserActivity {
@@ -43,6 +44,13 @@ interface UserSession {
   events: UserActivity[]
 }
 
+interface Course {
+  name: string
+  slug: string
+  description: string
+  icon: string
+}
+
 export default function SettingsPage() {
   const [userType, setUserType] = useState<"revision" | "revisionAI" | null>(null)
   const [userActivity, setUserActivity] = useState<UserActivity[]>([])
@@ -61,6 +69,13 @@ export default function SettingsPage() {
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [userCourses, setUserCourses] = useState<string[]>([])
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [courseToDelete, setCourseToDelete] = useState<string | null>(null)
+  const [deleteConfirmation, setDeleteConfirmation] = useState("")
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [addCourseDialogOpen, setAddCourseDialogOpen] = useState(false)
+  const [availableCourses, setAvailableCourses] = useState<Course[]>([])
+  const [isAddingCourse, setIsAddingCourse] = useState(false)
   
   const supabase = createClient()
 
@@ -143,6 +158,85 @@ export default function SettingsPage() {
     setCurrentSessionIndex(prev => Math.min(userSessions.length - 1, prev + 1))
   }
 
+  const handleDeleteCourse = async () => {
+    if (!courseToDelete || !userEmail || deleteConfirmation !== "delete") return
+
+    setIsDeleting(true)
+    const supabase = createClient()
+
+    try {
+      // Get current courses
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("courses")
+        .eq("email", userEmail)
+        .single()
+
+      if (!profile) throw new Error("Profile not found")
+
+      // Remove the course from the array
+      const updatedCourses = profile.courses.filter((course: string) => course !== courseToDelete)
+
+      // Update the profile
+      const { error } = await supabase
+        .from("profiles")
+        .update({ courses: updatedCourses })
+        .eq("email", userEmail)
+
+      if (error) throw error
+
+      // Update local state
+      setUserCourses(updatedCourses)
+      setDeleteDialogOpen(false)
+      setCourseToDelete(null)
+      setDeleteConfirmation("")
+    } catch (error) {
+      console.error("Error deleting course:", error)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const handleAddCourse = async (courseSlug: string) => {
+    if (!userEmail) return
+
+    setIsAddingCourse(true)
+    const supabase = createClient()
+
+    try {
+      // Get current courses
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("courses")
+        .eq("email", userEmail)
+        .single()
+
+      if (!profile) throw new Error("Profile not found")
+
+      // Add the course if it's not already in the array
+      if (!profile.courses.includes(courseSlug)) {
+        const updatedCourses = [...profile.courses, courseSlug]
+
+        // Update the profile
+        const { error } = await supabase
+          .from("profiles")
+          .update({ courses: updatedCourses })
+          .eq("email", userEmail)
+
+        if (error) throw error
+
+        // Update local state
+        setUserCourses(updatedCourses)
+      }
+
+      setAddCourseDialogOpen(false)
+    } catch (error) {
+      console.error("Error adding course:", error)
+    } finally {
+      setIsAddingCourse(false)
+    }
+  }
+
   useEffect(() => {
     const fetchUser = async () => {
       const { data: {user}, error } = await supabase.auth.getUser()
@@ -151,14 +245,18 @@ export default function SettingsPage() {
       }
       setUserEmail(user.email || null)
 
-      const { data: { profiles } } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("*")
         .eq("userid", user.id)
         .single()
 
-      setUserType(profiles?.user_type)
-      setUserCourses(profiles?.courses || [])
+      if (profileError) {
+        console.error('Error fetching profile:', profileError)
+      } else {
+        setUserType(profile?.user_type)
+        setUserCourses(profile?.courses || [])
+      }
 
       // Only fetch students if user is admin
       if (userEmail === "stevensl@centralfoundationboys.co.uk") {
@@ -223,6 +321,26 @@ export default function SettingsPage() {
     fetchUser()
   }, [supabase])
 
+  useEffect(() => {
+    const fetchCourses = async () => {
+      const supabase = createClient()
+      const { data: courses, error } = await supabase
+        .from("courses")
+        .select("*")
+        .order('name')
+
+      if (error) {
+        console.error("Error fetching courses:", error)
+      } else {
+        setAvailableCourses(courses || [])
+      }
+    }
+
+    if (addCourseDialogOpen) {
+      fetchCourses()
+    }
+  }, [addCourseDialogOpen])
+
   // Group activity by event type
   const activityStats = userActivity.reduce((acc, activity) => {
     acc[activity.event] = (acc[activity.event] || 0) + 1
@@ -271,12 +389,39 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="courses">Courses</Label>
-                  {userCourses.length > 0 ? (
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="courses">Courses</Label>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setAddCourseDialogOpen(true)}
+                      className="gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Course
+                    </Button>
+                  </div>
+                  {userCourses && userCourses.length > 0 ? (
                     <div className="space-y-2">
                       {userCourses.map((course, index) => (
-                        <div key={index} className="text-sm text-muted-foreground">
-                          {course}
+                        <div key={index} className="flex items-center justify-between text-sm text-muted-foreground">
+                          <span>{course}</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className={`text-red-600 hover:text-red-700 hover:bg-red-50 ${
+                              userCourses.length === 1 ? 'opacity-50 cursor-not-allowed' : ''
+                            }`}
+                            onClick={() => {
+                              if (userCourses.length > 1) {
+                                setCourseToDelete(course)
+                                setDeleteDialogOpen(true)
+                              }
+                            }}
+                            disabled={userCourses.length === 1}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       ))}
                     </div>
@@ -796,6 +941,157 @@ export default function SettingsPage() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Course Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold text-gray-900">Delete Course</DialogTitle>
+            <DialogDescription className="text-gray-500 mt-2">
+              This action cannot be undone. This will permanently remove this course from your profile.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-6 px-1">
+            <div className="space-y-3">
+              <label htmlFor="delete-confirmation" className="text-sm font-medium text-gray-700 block">
+                Type &quot;delete&quot; to confirm
+              </label>
+              <Input
+                id="delete-confirmation"
+                placeholder="Type &quot;delete&quot; to confirm"
+                value={deleteConfirmation}
+                onChange={(e) => setDeleteConfirmation(e.target.value)}
+                className={`w-full ${
+                  deleteConfirmation && deleteConfirmation !== "delete"
+                    ? "border-red-300 focus-visible:ring-red-500"
+                    : ""
+                }`}
+              />
+              {deleteConfirmation && deleteConfirmation !== "delete" && (
+                <p className="text-sm text-red-500 mt-1">Please type &quot;delete&quot; exactly to confirm</p>
+              )}
+            </div>
+          </div>
+          <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteDialogOpen(false)
+                setCourseToDelete(null)
+                setDeleteConfirmation("")
+              }}
+              className="mt-2 sm:mt-0"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteCourse}
+              disabled={deleteConfirmation !== "delete" || isDeleting}
+              className={`flex items-center gap-2 ${
+                deleteConfirmation === "delete"
+                  ? "bg-red-600 hover:bg-red-700 text-white"
+                  : "bg-red-100 text-red-400 cursor-not-allowed"
+              }`}
+            >
+              {isDeleting ? (
+                <>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4" />
+                  Delete Course
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Course Dialog */}
+      <Dialog open={addCourseDialogOpen} onOpenChange={setAddCourseDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold text-gray-900">Add Course</DialogTitle>
+            <DialogDescription className="text-gray-500 mt-2">
+              Select a course to add to your profile
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="space-y-1 max-h-[400px] overflow-y-auto pr-2">
+              {availableCourses
+                .filter(course => !userCourses.includes(course.slug))
+                .map((course) => {
+                  // Map icon string to Lucide component
+                  const IconComponent = (() => {
+                    switch (course.icon) {
+                      case 'book': return Book
+                      case 'book-open': return BookOpen
+                      case 'graduation-cap': return GraduationCap
+                      case 'school': return School
+                      case 'book-marked': return BookMarked
+                      case 'book-text': return BookText
+                      case 'library': return Library
+                      case 'book-open-check': return BookOpenCheck
+                      case 'book-open-text': return BookOpenText
+                      case 'bookmark': return Bookmark
+                      case 'bookmark-check': return BookmarkCheck
+                      case 'bookmark-plus': return BookmarkPlus
+                      case 'bookmark-x': return BookmarkX
+                      default: return BookOpenIcon2
+                    }
+                  })()
+
+                  return (
+                    <div
+                      key={course.slug}
+                      className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer group"
+                      onClick={() => handleAddCourse(course.slug)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-md bg-gray-100 group-hover:bg-gray-200 transition-colors">
+                          <IconComponent className="h-5 w-5 text-gray-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-sm">{course.name}</h4>
+                          <p className="text-xs text-muted-foreground line-clamp-1">{course.description}</p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        disabled={isAddingCourse}
+                      >
+                        {isAddingCourse ? (
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                        ) : (
+                          <Plus className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  )
+                })}
+              {availableCourses.filter(course => !userCourses.includes(course.slug)).length === 0 && (
+                <div className="text-center py-8 text-sm text-muted-foreground">
+                  No more courses available to add
+                </div>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setAddCourseDialogOpen(false)}
+              className="mt-2 sm:mt-0"
+            >
+              Close
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
