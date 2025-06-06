@@ -78,11 +78,11 @@ export function MobileNav() {
       href: "/revisit",
       icon: BookOpen,
     },
-    userType === "admin" ? {
+    {
       name: "Settings",
       href: "/settings",
       icon: Settings,
-    } : null,
+    },
     freeUser === true ? {
       name: "Login",
       href: "/login",

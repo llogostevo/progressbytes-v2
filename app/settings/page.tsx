@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { currentUser } from "@/lib/data"
 import { ArrowLeft, Sparkles, Activity, Users, Eye, Navigation, Home, FileText, BarChart, RefreshCw, CheckCircle, Clock, Calendar } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/utils/supabase/client"
@@ -60,6 +59,8 @@ export default function SettingsPage() {
   const [topics, setTopics] = useState<Array<{ id: string; name: string; slug: string }>>([])
   const [students, setStudents] = useState<Student[]>([])
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null)
+  const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [userCourses, setUserCourses] = useState<string[]>([])
   
   const supabase = createClient()
 
@@ -145,32 +146,35 @@ export default function SettingsPage() {
   useEffect(() => {
     const fetchUser = async () => {
       const { data: {user}, error } = await supabase.auth.getUser()
-      if (error) {
-        redirect('/')
-      } else if (user && user.email != "stevensl@centralfoundationboys.co.uk") {
+      if (error || !user) {
         redirect('/')
       }
+      setUserEmail(user.email || null)
 
       const { data: { profiles } } = await supabase
         .from("profiles")
         .select("*")
-        .eq("userid", user?.id)
+        .eq("userid", user.id)
         .single()
 
       setUserType(profiles?.user_type)
+      setUserCourses(profiles?.courses || [])
 
-      // Fetch students
-      const { data: studentsData, error: studentsError } = await supabase
-        .from("profiles")
-        .select("id, email, name")
-        .order('email')
+      // Only fetch students if user is admin
+      if (userEmail === "stevensl@centralfoundationboys.co.uk") {
+        // Fetch students
+        const { data: studentsData, error: studentsError } = await supabase
+          .from("profiles")
+          .select("id, email, name")
+          .order('email')
 
-      if (studentsError) {
-        console.error('Error fetching students:', studentsError)
-      } else {
-        setStudents(studentsData || [])
-        if (studentsData && studentsData.length > 0) {
-          setSelectedStudent(studentsData[0].id)
+        if (studentsError) {
+          console.error('Error fetching students:', studentsError)
+        } else {
+          setStudents(studentsData || [])
+          if (studentsData && studentsData.length > 0) {
+            setSelectedStudent(studentsData[0].id)
+          }
         }
       }
 
@@ -244,10 +248,14 @@ export default function SettingsPage() {
         <Tabs defaultValue="account" className="space-y-6">
           <TabsList>
             <TabsTrigger value="account">Account</TabsTrigger>
-            <TabsTrigger value="activity">Activity</TabsTrigger>
-            <TabsTrigger value="sessions">Sessions</TabsTrigger>
-            <TabsTrigger value="homework">Homework</TabsTrigger>
-            <TabsTrigger value="performance">Performance</TabsTrigger>
+            {userEmail === "stevensl@centralfoundationboys.co.uk" && (
+              <>
+                <TabsTrigger value="activity">Activity</TabsTrigger>
+                <TabsTrigger value="sessions">Sessions</TabsTrigger>
+                <TabsTrigger value="homework">Homework</TabsTrigger>
+                <TabsTrigger value="performance">Performance</TabsTrigger>
+              </>
+            )}
           </TabsList>
 
           <TabsContent value="account">
@@ -259,7 +267,22 @@ export default function SettingsPage() {
               <CardContent className="space-y-6">
                 <div className="grid gap-2">
                   <Label htmlFor="email">Email</Label>
-                  <div className="text-sm text-muted-foreground">{currentUser.email}</div>
+                  <div className="text-sm text-muted-foreground">{userEmail}</div>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="courses">Courses</Label>
+                  {userCourses.length > 0 ? (
+                    <div className="space-y-2">
+                      {userCourses.map((course, index) => (
+                        <div key={index} className="text-sm text-muted-foreground">
+                          {course}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">No courses enrolled</div>
+                  )}
                 </div>
 
                 <div className="border-t pt-4">
@@ -313,364 +336,368 @@ export default function SettingsPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="activity">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Activity className="h-5 w-5 mr-2" />
-                  Site Analytics
-                </CardTitle>
-                <CardDescription>Overview of site usage and user activity</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="text-center py-4">Loading analytics data...</div>
-                ) : (
-                  <div className="space-y-8">
-                    {/* Overview Stats */}
-                    <div className="grid grid-cols-3 gap-4">
-                      <Card>
-                        <CardContent className="pt-6">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="text-2xl font-bold">{uniqueUsers}</div>
-                              <p className="text-sm text-muted-foreground">Unique Users</p>
-                            </div>
-                            <Users className="h-8 w-8 text-muted-foreground" />
-                          </div>
-                        </CardContent>
-                      </Card>
-                      <Card>
-                        <CardContent className="pt-6">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="text-2xl font-bold">{activityStats['visited_question'] || 0}</div>
-                              <p className="text-sm text-muted-foreground">Questions Viewed</p>
-                            </div>
-                            <Eye className="h-8 w-8 text-muted-foreground" />
-                          </div>
-                        </CardContent>
-                      </Card>
-                      <Card>
-                        <CardContent className="pt-6">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="text-2xl font-bold">{userActivity.length}</div>
-                              <p className="text-sm text-muted-foreground">Total Page Views</p>
-                            </div>
-                            <Navigation className="h-8 w-8 text-muted-foreground" />
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-
-                    {/* Top Pages */}
-                    <div className="border-t pt-6">
-                      <h3 className="font-medium mb-4">Most Visited Pages</h3>
-                      <div className="space-y-2">
-                        {topPages.map(([path, count], index) => (
-                          <div key={index} className="flex items-center justify-between text-sm">
-                            <div className="flex items-center">
-                              <span className="font-medium">{index + 1}.</span>
-                              <span className="ml-2">{path}</span>
-                            </div>
-                            <span className="text-muted-foreground">{count} views</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Activity Breakdown */}
-                    <div className="border-t pt-6">
-                      <h3 className="font-medium mb-4">Activity Breakdown</h3>
-                      <div className="grid grid-cols-2 gap-4">
-                        <Card>
-                          <CardContent className="pt-6">
-                            <div className="text-2xl font-bold">{activityStats['visited_revisit'] || 0}</div>
-                            <p className="text-sm text-muted-foreground">Revisit Sessions</p>
-                          </CardContent>
-                        </Card>
-                        <Card>
-                          <CardContent className="pt-6">
-                            <div className="text-2xl font-bold">{activityStats['visited_progress'] || 0}</div>
-                            <p className="text-sm text-muted-foreground">Progress Checks</p>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    </div>
-
-                    {/* Recent Activity */}
-                    <div className="border-t pt-6">
-                      <h3 className="font-medium mb-4">Recent Activity</h3>
-                      <div className="space-y-2">
-                        {/* Header */}
-                        <div className="grid grid-cols-4 gap-4 text-sm font-medium text-muted-foreground pb-2 border-b">
-                          <div>Event</div>
-                          <div>User</div>
-                          <div>Path</div>
-                          <div>Time</div>
-                        </div>
-                        {/* Activity Items */}
-                        {userActivity
-                          .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-                          .map((activity) => (
-                            <div key={activity.id} className="grid grid-cols-4 gap-4 text-sm py-2">
-                              <div className="flex items-center gap-2">
-                                {activity.event === 'visited_home' && <Home className="h-4 w-4 text-muted-foreground" />}
-                                {activity.event === 'visited_question' && <FileText className="h-4 w-4 text-muted-foreground" />}
-                                {activity.event === 'visited_progress' && <BarChart className="h-4 w-4 text-muted-foreground" />}
-                                {activity.event === 'visited_revisit' && <RefreshCw className="h-4 w-4 text-muted-foreground" />}
-                                {activity.event === 'submitted_question' && <CheckCircle className="h-4 w-4 text-muted-foreground" />}
-                                <span className="capitalize">{activity.event.replace(/_/g, ' ')}</span>
-                              </div>
-                              <div 
-                                className="truncate cursor-pointer hover:text-primary"
-                                onClick={() => handleUserClick(activity.user_email || '')}
-                              >
-                                {activity.user_email}
-                              </div>
-                              <div className="truncate">{activity.path}</div>
-                              <div>{new Date(activity.created_at).toLocaleString()}</div>
-                            </div>
-                          ))}
-                      </div>
-                      
-                      {/* Pagination */}
-                      <div className="flex items-center justify-between mt-4">
-                        <div className="text-sm text-muted-foreground">
-                          Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, userActivity.length)} of {userActivity.length} activities
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                            disabled={currentPage === 1}
-                          >
-                            Previous
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setCurrentPage(prev => Math.min(Math.ceil(userActivity.length / itemsPerPage), prev + 1))}
-                            disabled={currentPage >= Math.ceil(userActivity.length / itemsPerPage)}
-                          >
-                            Next
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="sessions">
-            <UserSessions onUserClick={handleUserClick} />
-          </TabsContent>
-
-          <TabsContent value="homework">
-            <UserActivityFilter />
-          </TabsContent>
-
-          <TabsContent value="performance">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <BarChart className="h-5 w-5 mr-2" />
-                  Student Performance
-                </CardTitle>
-                <CardDescription>Track student progress across topics and question types</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="text-center py-4">Loading performance data...</div>
-                ) : (
-                  <div className="space-y-8">
-                    {/* Student Selector */}
-                    <div className="flex items-center gap-4">
-                      <Label htmlFor="student">Select Student</Label>
-                      <select
-                        id="student"
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        value={selectedStudent || ''}
-                        onChange={(e) => setSelectedStudent(e.target.value)}
-                      >
-                        {students.map((student) => (
-                          <option key={student.id} value={student.id}>
-                            {student.name || student.email}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Overall Performance */}
-                    <div className="border-t pt-6">
-                      <h3 className="font-medium mb-4">Overall Performance</h3>
-                      <div className="grid grid-cols-3 gap-4">
-                        {(() => {
-                          const studentActivity = userActivity.filter(
-                            a => a.user_id === selectedStudent && a.event === 'submitted_question'
-                          );
-                          const totalQuestions = studentActivity.length;
-                          const correctAnswers = studentActivity.filter(
-                            a => a.score === 'correct'
-                          ).length;
-                          const successRate = totalQuestions > 0 
-                            ? Math.round((correctAnswers / totalQuestions) * 100) 
-                            : 0;
-
-                          return (
-                            <>
-                              <Card>
-                                <CardContent className="pt-6">
-                                  <div className="text-2xl font-bold">{totalQuestions}</div>
-                                  <p className="text-sm text-muted-foreground">Total Questions</p>
-                                </CardContent>
-                              </Card>
-                              <Card>
-                                <CardContent className="pt-6">
-                                  <div className="text-2xl font-bold">{correctAnswers}</div>
-                                  <p className="text-sm text-muted-foreground">Correct Answers</p>
-                                </CardContent>
-                              </Card>
-                              <Card>
-                                <CardContent className="pt-6">
-                                  <div className="text-2xl font-bold">{successRate}%</div>
-                                  <p className="text-sm text-muted-foreground">Success Rate</p>
-                                </CardContent>
-                              </Card>
-                            </>
-                          );
-                        })()}
-                      </div>
-                    </div>
-
-                    {/* Topic Performance */}
-                    <div className="border-t pt-6">
-                      <h3 className="font-medium mb-4">Topic Performance</h3>
-                      <div className="space-y-4">
-                        {topics.map((topic) => {
-                          const topicAnswers = userActivity.filter(
-                            a => a.user_id === selectedStudent && 
-                                 a.event === 'submitted_question' && 
-                                 a.path.includes(topic.slug)
-                          );
-                          const correctAnswers = topicAnswers.filter(
-                            a => a.score === 'correct'
-                          ).length;
-                          const totalAnswers = topicAnswers.length;
-                          const successRate = totalAnswers > 0 
-                            ? Math.round((correctAnswers / totalAnswers) * 100) 
-                            : 0;
-
-                          return (
-                            <Card key={topic.id}>
-                              <CardContent className="pt-6">
-                                <div className="flex items-center justify-between">
-                                  <div>
-                                    <h4 className="font-medium">{topic.name}</h4>
-                                    <p className="text-sm text-muted-foreground">
-                                      {correctAnswers} correct out of {totalAnswers} attempts
-                                    </p>
-                                  </div>
-                                  <div className="text-right">
-                                    <div className="text-2xl font-bold">{successRate}%</div>
-                                    <p className="text-sm text-muted-foreground">Success Rate</p>
-                                  </div>
+          {userEmail === "stevensl@centralfoundationboys.co.uk" && (
+            <>
+              <TabsContent value="activity">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Activity className="h-5 w-5 mr-2" />
+                      Site Analytics
+                    </CardTitle>
+                    <CardDescription>Overview of site usage and user activity</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoading ? (
+                      <div className="text-center py-4">Loading analytics data...</div>
+                    ) : (
+                      <div className="space-y-8">
+                        {/* Overview Stats */}
+                        <div className="grid grid-cols-3 gap-4">
+                          <Card>
+                            <CardContent className="pt-6">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <div className="text-2xl font-bold">{uniqueUsers}</div>
+                                  <p className="text-sm text-muted-foreground">Unique Users</p>
                                 </div>
-                                <div className="mt-4 w-full bg-secondary h-2 rounded-full">
+                                <Users className="h-8 w-8 text-muted-foreground" />
+                              </div>
+                            </CardContent>
+                          </Card>
+                          <Card>
+                            <CardContent className="pt-6">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <div className="text-2xl font-bold">{activityStats['visited_question'] || 0}</div>
+                                  <p className="text-sm text-muted-foreground">Questions Viewed</p>
+                                </div>
+                                <Eye className="h-8 w-8 text-muted-foreground" />
+                              </div>
+                            </CardContent>
+                          </Card>
+                          <Card>
+                            <CardContent className="pt-6">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <div className="text-2xl font-bold">{userActivity.length}</div>
+                                  <p className="text-sm text-muted-foreground">Total Page Views</p>
+                                </div>
+                                <Navigation className="h-8 w-8 text-muted-foreground" />
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </div>
+
+                        {/* Top Pages */}
+                        <div className="border-t pt-6">
+                          <h3 className="font-medium mb-4">Most Visited Pages</h3>
+                          <div className="space-y-2">
+                            {topPages.map(([path, count], index) => (
+                              <div key={index} className="flex items-center justify-between text-sm">
+                                <div className="flex items-center">
+                                  <span className="font-medium">{index + 1}.</span>
+                                  <span className="ml-2">{path}</span>
+                                </div>
+                                <span className="text-muted-foreground">{count} views</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Activity Breakdown */}
+                        <div className="border-t pt-6">
+                          <h3 className="font-medium mb-4">Activity Breakdown</h3>
+                          <div className="grid grid-cols-2 gap-4">
+                            <Card>
+                              <CardContent className="pt-6">
+                                <div className="text-2xl font-bold">{activityStats['visited_revisit'] || 0}</div>
+                                <p className="text-sm text-muted-foreground">Revisit Sessions</p>
+                              </CardContent>
+                            </Card>
+                            <Card>
+                              <CardContent className="pt-6">
+                                <div className="text-2xl font-bold">{activityStats['visited_progress'] || 0}</div>
+                                <p className="text-sm text-muted-foreground">Progress Checks</p>
+                              </CardContent>
+                            </Card>
+                          </div>
+                        </div>
+
+                        {/* Recent Activity */}
+                        <div className="border-t pt-6">
+                          <h3 className="font-medium mb-4">Recent Activity</h3>
+                          <div className="space-y-2">
+                            {/* Header */}
+                            <div className="grid grid-cols-4 gap-4 text-sm font-medium text-muted-foreground pb-2 border-b">
+                              <div>Event</div>
+                              <div>User</div>
+                              <div>Path</div>
+                              <div>Time</div>
+                            </div>
+                            {/* Activity Items */}
+                            {userActivity
+                              .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                              .map((activity) => (
+                                <div key={activity.id} className="grid grid-cols-4 gap-4 text-sm py-2">
+                                  <div className="flex items-center gap-2">
+                                    {activity.event === 'visited_home' && <Home className="h-4 w-4 text-muted-foreground" />}
+                                    {activity.event === 'visited_question' && <FileText className="h-4 w-4 text-muted-foreground" />}
+                                    {activity.event === 'visited_progress' && <BarChart className="h-4 w-4 text-muted-foreground" />}
+                                    {activity.event === 'visited_revisit' && <RefreshCw className="h-4 w-4 text-muted-foreground" />}
+                                    {activity.event === 'submitted_question' && <CheckCircle className="h-4 w-4 text-muted-foreground" />}
+                                    <span className="capitalize">{activity.event.replace(/_/g, ' ')}</span>
+                                  </div>
                                   <div 
-                                    className="bg-primary h-2 rounded-full transition-all"
-                                    style={{ width: `${successRate}%` }}
-                                  />
+                                    className="truncate cursor-pointer hover:text-primary"
+                                    onClick={() => handleUserClick(activity.user_email || '')}
+                                  >
+                                    {activity.user_email}
+                                  </div>
+                                  <div className="truncate">{activity.path}</div>
+                                  <div>{new Date(activity.created_at).toLocaleString()}</div>
                                 </div>
-                              </CardContent>
-                            </Card>
-                          );
-                        })}
+                              ))}
+                          </div>
+                          
+                          {/* Pagination */}
+                          <div className="flex items-center justify-between mt-4">
+                            <div className="text-sm text-muted-foreground">
+                              Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, userActivity.length)} of {userActivity.length} activities
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                disabled={currentPage === 1}
+                              >
+                                Previous
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCurrentPage(prev => Math.min(Math.ceil(userActivity.length / itemsPerPage), prev + 1))}
+                                disabled={currentPage >= Math.ceil(userActivity.length / itemsPerPage)}
+                              >
+                                Next
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-                    {/* Question Type Performance */}
-                    <div className="border-t pt-6">
-                      <h3 className="font-medium mb-4">Question Type Performance</h3>
-                      <div className="grid grid-cols-2 gap-4">
-                        {['multiple-choice', 'short-answer', 'true-false', 'matching'].map((type) => {
-                          const typeAnswers = userActivity.filter(
-                            a => a.user_id === selectedStudent && 
-                                 a.event === 'submitted_question' && 
-                                 a.question_type === type
-                          );
-                          const correctAnswers = typeAnswers.filter(
-                            a => a.score === 'correct'
-                          ).length;
-                          const totalAnswers = typeAnswers.length;
-                          const successRate = totalAnswers > 0 
-                            ? Math.round((correctAnswers / totalAnswers) * 100) 
-                            : 0;
+              <TabsContent value="sessions">
+                <UserSessions onUserClick={handleUserClick} />
+              </TabsContent>
 
-                          return (
-                            <Card key={type}>
-                              <CardContent className="pt-6">
-                                <div className="flex items-center justify-between">
-                                  <div>
-                                    <h4 className="font-medium capitalize">{type.replace(/-/g, ' ')}</h4>
-                                    <p className="text-sm text-muted-foreground">
-                                      {correctAnswers} correct out of {totalAnswers} attempts
-                                    </p>
-                                  </div>
-                                  <div className="text-right">
-                                    <div className="text-2xl font-bold">{successRate}%</div>
-                                    <p className="text-sm text-muted-foreground">Success Rate</p>
-                                  </div>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          );
-                        })}
-                      </div>
-                    </div>
+              <TabsContent value="homework">
+                <UserActivityFilter />
+              </TabsContent>
 
-                    {/* Recent Performance */}
-                    <div className="border-t pt-6">
-                      <h3 className="font-medium mb-4">Recent Performance</h3>
-                      <div className="space-y-2">
-                        {userActivity
-                          .filter(a => a.user_id === selectedStudent && a.event === 'submitted_question')
-                          .slice(0, 5)
-                          .map((activity) => (
-                            <Card key={activity.id}>
-                              <CardContent className="pt-6">
-                                <div className="flex items-center justify-between">
-                                  <div>
-                                    <h4 className="font-medium">{activity.question_text}</h4>
-                                    <p className="text-sm text-muted-foreground">
-                                      {activity.topic} • {activity.question_type}
-                                    </p>
-                                  </div>
-                                  <div className={`text-right ${
-                                    activity.score === 'correct' ? 'text-green-600' : 'text-red-600'
-                                  }`}>
-                                    <div className="text-2xl font-bold capitalize">
-                                      {activity.score}
+              <TabsContent value="performance">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <BarChart className="h-5 w-5 mr-2" />
+                      Student Performance
+                    </CardTitle>
+                    <CardDescription>Track student progress across topics and question types</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoading ? (
+                      <div className="text-center py-4">Loading performance data...</div>
+                    ) : (
+                      <div className="space-y-8">
+                        {/* Student Selector */}
+                        <div className="flex items-center gap-4">
+                          <Label htmlFor="student">Select Student</Label>
+                          <select
+                            id="student"
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            value={selectedStudent || ''}
+                            onChange={(e) => setSelectedStudent(e.target.value)}
+                          >
+                            {students.map((student) => (
+                              <option key={student.id} value={student.id}>
+                                {student.name || student.email}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Overall Performance */}
+                        <div className="border-t pt-6">
+                          <h3 className="font-medium mb-4">Overall Performance</h3>
+                          <div className="grid grid-cols-3 gap-4">
+                            {(() => {
+                              const studentActivity = userActivity.filter(
+                                a => a.user_id === selectedStudent && a.event === 'submitted_question'
+                              );
+                              const totalQuestions = studentActivity.length;
+                              const correctAnswers = studentActivity.filter(
+                                a => a.score === 'correct'
+                              ).length;
+                              const successRate = totalQuestions > 0 
+                                ? Math.round((correctAnswers / totalQuestions) * 100) 
+                                : 0;
+
+                              return (
+                                <>
+                                  <Card>
+                                    <CardContent className="pt-6">
+                                      <div className="text-2xl font-bold">{totalQuestions}</div>
+                                      <p className="text-sm text-muted-foreground">Total Questions</p>
+                                    </CardContent>
+                                  </Card>
+                                  <Card>
+                                    <CardContent className="pt-6">
+                                      <div className="text-2xl font-bold">{correctAnswers}</div>
+                                      <p className="text-sm text-muted-foreground">Correct Answers</p>
+                                    </CardContent>
+                                  </Card>
+                                  <Card>
+                                    <CardContent className="pt-6">
+                                      <div className="text-2xl font-bold">{successRate}%</div>
+                                      <p className="text-sm text-muted-foreground">Success Rate</p>
+                                    </CardContent>
+                                  </Card>
+                                </>
+                              );
+                            })()}
+                          </div>
+                        </div>
+
+                        {/* Topic Performance */}
+                        <div className="border-t pt-6">
+                          <h3 className="font-medium mb-4">Topic Performance</h3>
+                          <div className="space-y-4">
+                            {topics.map((topic) => {
+                              const topicAnswers = userActivity.filter(
+                                a => a.user_id === selectedStudent && 
+                                     a.event === 'submitted_question' && 
+                                     a.path.includes(topic.slug)
+                              );
+                              const correctAnswers = topicAnswers.filter(
+                                a => a.score === 'correct'
+                              ).length;
+                              const totalAnswers = topicAnswers.length;
+                              const successRate = totalAnswers > 0 
+                                ? Math.round((correctAnswers / totalAnswers) * 100) 
+                                : 0;
+
+                              return (
+                                <Card key={topic.id}>
+                                  <CardContent className="pt-6">
+                                    <div className="flex items-center justify-between">
+                                      <div>
+                                        <h4 className="font-medium">{topic.name}</h4>
+                                        <p className="text-sm text-muted-foreground">
+                                          {correctAnswers} correct out of {totalAnswers} attempts
+                                        </p>
+                                      </div>
+                                      <div className="text-right">
+                                        <div className="text-2xl font-bold">{successRate}%</div>
+                                        <p className="text-sm text-muted-foreground">Success Rate</p>
+                                      </div>
                                     </div>
-                                    <p className="text-sm text-muted-foreground">
-                                      {new Date(activity.created_at).toLocaleDateString()}
-                                    </p>
-                                  </div>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          ))}
+                                    <div className="mt-4 w-full bg-secondary h-2 rounded-full">
+                                      <div 
+                                        className="bg-primary h-2 rounded-full transition-all"
+                                        style={{ width: `${successRate}%` }}
+                                      />
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Question Type Performance */}
+                        <div className="border-t pt-6">
+                          <h3 className="font-medium mb-4">Question Type Performance</h3>
+                          <div className="grid grid-cols-2 gap-4">
+                            {['multiple-choice', 'short-answer', 'true-false', 'matching'].map((type) => {
+                              const typeAnswers = userActivity.filter(
+                                a => a.user_id === selectedStudent && 
+                                     a.event === 'submitted_question' && 
+                                     a.question_type === type
+                              );
+                              const correctAnswers = typeAnswers.filter(
+                                a => a.score === 'correct'
+                              ).length;
+                              const totalAnswers = typeAnswers.length;
+                              const successRate = totalAnswers > 0 
+                                ? Math.round((correctAnswers / totalAnswers) * 100) 
+                                : 0;
+
+                              return (
+                                <Card key={type}>
+                                  <CardContent className="pt-6">
+                                    <div className="flex items-center justify-between">
+                                      <div>
+                                        <h4 className="font-medium capitalize">{type.replace(/-/g, ' ')}</h4>
+                                        <p className="text-sm text-muted-foreground">
+                                          {correctAnswers} correct out of {totalAnswers} attempts
+                                        </p>
+                                      </div>
+                                      <div className="text-right">
+                                        <div className="text-2xl font-bold">{successRate}%</div>
+                                        <p className="text-sm text-muted-foreground">Success Rate</p>
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Recent Performance */}
+                        <div className="border-t pt-6">
+                          <h3 className="font-medium mb-4">Recent Performance</h3>
+                          <div className="space-y-2">
+                            {userActivity
+                              .filter(a => a.user_id === selectedStudent && a.event === 'submitted_question')
+                              .slice(0, 5)
+                              .map((activity) => (
+                                <Card key={activity.id}>
+                                  <CardContent className="pt-6">
+                                    <div className="flex items-center justify-between">
+                                      <div>
+                                        <h4 className="font-medium">{activity.question_text}</h4>
+                                        <p className="text-sm text-muted-foreground">
+                                          {activity.topic} • {activity.question_type}
+                                        </p>
+                                      </div>
+                                      <div className={`text-right ${
+                                        activity.score === 'correct' ? 'text-green-600' : 'text-red-600'
+                                      }`}>
+                                        <div className="text-2xl font-bold capitalize">
+                                          {activity.score}
+                                        </div>
+                                        <p className="text-sm text-muted-foreground">
+                                          {new Date(activity.created_at).toLocaleDateString()}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              ))}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </>
+          )}
         </Tabs>
       </div>
 
