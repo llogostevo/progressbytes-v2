@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { createClient } from "@/utils/supabase/client"
 import { Clock, Users, FileText } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 
