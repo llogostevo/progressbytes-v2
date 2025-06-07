@@ -76,11 +76,12 @@ export default async function Home() {
   // Get the user's profile data including user_type
   const { data: profile } = await supabase
     .from('profiles')
-    .select('user_type')
+    .select('user_type, ai_interest_banner')
     .eq('email', user?.email)
     .single()
 
   const userType = profile?.user_type
+  const showAIInterestBanner = profile?.ai_interest_banner !== false
   const freeUser = !user
 
   // Track page visit
@@ -323,7 +324,7 @@ export default async function Home() {
         <div className="mb-6 md:mb-8">
           {freeUser && <CTABanner variant="free" />}
           {userType === 'basic' && <CTABanner variant="basic" />}
-          {userType === 'revision' && <CTABanner variant="premium" />}
+          {userType === 'revision' && showAIInterestBanner && <CTABanner variant="premium" userEmail={user?.email} />}
         </div>
 
         <div className="text-center mb-8">

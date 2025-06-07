@@ -22,6 +22,7 @@ const formSchema = z.object({
   examYear: z.enum(["2025", "2026", "2027", "not-applicable"], {
     required_error: "Please select when you'll be sitting your GCSE",
   }),
+  school: z.string().min(1, { message: "Please enter your school name" }),
 })
 
 type FormData = z.infer<typeof formSchema>
@@ -46,6 +47,13 @@ export default function ComingSoonPage() {
       // Create Supabase client
       const supabase = createClient()
 
+      // Get the current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      
+      if (userError || !user) {
+        throw new Error('You must be logged in to submit this form')
+      }
+
       // Log the data we're about to send
       console.log('Submitting form data:', formData)
 
@@ -57,6 +65,7 @@ export default function ComingSoonPage() {
             email: formData.email,
             user_type: formData.userType,
             exam_year: formData.examYear,
+            school: formData.school,
             created_at: new Date().toISOString(),
           },
         ])
@@ -70,6 +79,17 @@ export default function ComingSoonPage() {
           error: error
         })
         throw new Error(`Supabase error: ${error.message}`)
+      }
+
+      // Update the user's profile to hide the banner
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ ai_interest_banner: false })
+        .eq('email', user.email)
+
+      if (profileError) {
+        console.error('Error updating profile:', profileError)
+        // Don't throw here, as the main form submission was successful
       }
 
       // Show success message
@@ -173,6 +193,18 @@ export default function ComingSoonPage() {
                     className="h-10"
                   />
                   {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="school" className="text-sm font-medium">School Name</Label>
+                  <Input
+                    id="school"
+                    type="text"
+                    placeholder="Your school name"
+                    onChange={(e) => handleChange("school", e.target.value)}
+                    className="h-10"
+                  />
+                  {errors.school && <p className="text-sm text-red-500">{errors.school}</p>}
                 </div>
 
                 <div className="space-y-2">
