@@ -231,19 +231,27 @@ function ProgressCharts({ answers, topics }: { answers: Answer[]; topics: Topic[
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
                   dataKey="topicNumber"
-                  tick={({ x, y, payload }) => (
-                    <text
-                      x={x}
-                      y={y}
-                      dy={8}
-                      fontSize={9}
-                      transform={`rotate(90, ${x}, ${y})`}
-                      textAnchor="start"
-                      fill="#666"
-                    >
-                      {payload.value}
-                    </text>
-                  )}
+                  tick={({ x, y, payload }) => {
+                    const topic = topics.find(t => t.topicnumber?.toString() === payload.value);
+                    return (
+                      <Link
+                        href={`/revisit?topics=${topic?.slug}`}
+                        className="cursor-pointer hover:text-emerald-600 transition-colors"
+                      >
+                        <text
+                          x={x}
+                          y={y}
+                          dy={8}
+                          fontSize={9}
+                          transform={`rotate(90, ${x}, ${y})`}
+                          textAnchor="start"
+                          fill="currentColor"
+                        >
+                          {payload.value}
+                        </text>
+                      </Link>
+                    );
+                  }}
                   interval={0}
                   height={80}
                 />
@@ -262,6 +270,12 @@ function ProgressCharts({ answers, topics }: { answers: Answer[]; topics: Topic[
                             <p className="text-red-600">Needs Work: {data["Needs Work"]}</p>
                             <p className="font-medium mt-1">Total: {data.total}</p>
                           </div>
+                          <Link 
+                            href={`/revisit?topics=${topics.find(t => t.name === data.name)?.slug}`}
+                            className="mt-2 block text-center text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+                          >
+                            Review Questions <ArrowRight className="inline-block ml-1 h-3 w-3" />
+                          </Link>
                         </div>
                       );
                     }
@@ -285,19 +299,27 @@ function ProgressCharts({ answers, topics }: { answers: Answer[]; topics: Topic[
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
                   dataKey="topicNumber"
-                  tick={({ x, y, payload }) => (
-                    <text
-                      x={x}
-                      y={y}
-                      dy={16}
-                      fontSize={12}
-                      transform={`rotate(40, ${x}, ${y})`}
-                      textAnchor="start"
-                      fill="#666"
-                    >
-                      {payload.value}
-                    </text>
-                  )}
+                  tick={({ x, y, payload }) => {
+                    const topic = topics.find(t => t.topicnumber?.toString() === payload.value);
+                    return (
+                      <Link
+                        href={`/revisit?topics=${topic?.slug}`}
+                        className="cursor-pointer hover:text-emerald-600 transition-colors"
+                      >
+                        <text
+                          x={x}
+                          y={y}
+                          dy={16}
+                          fontSize={12}
+                          transform={`rotate(40, ${x}, ${y})`}
+                          textAnchor="start"
+                          fill="currentColor"
+                        >
+                          {payload.value}
+                        </text>
+                      </Link>
+                    );
+                  }}
                   interval={0}
                   height={60}
                 />
@@ -316,6 +338,12 @@ function ProgressCharts({ answers, topics }: { answers: Answer[]; topics: Topic[
                             <p className="text-red-600">Needs Work: {data["Needs Work"]}</p>
                             <p className="font-medium mt-1">Total: {data.total}</p>
                           </div>
+                          <Link 
+                            href={`/revisit?topics=${topics.find(t => t.name === data.name)?.slug}`}
+                            className="mt-2 block text-center text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+                          >
+                            Review Questions <ArrowRight className="inline-block ml-1 h-3 w-3" />
+                          </Link>
                         </div>
                       );
                     }
@@ -339,19 +367,27 @@ function ProgressCharts({ answers, topics }: { answers: Answer[]; topics: Topic[
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
                   dataKey="topicNumber"
-                  tick={({ x, y, payload }) => (
-                    <text
-                      x={x}
-                      y={y}
-                      dy={16}
-                      fontSize={14}
-                      transform={`rotate(40, ${x}, ${y})`}
-                      textAnchor="start"
-                      fill="#666"
-                    >
-                      {payload.value}
-                    </text>
-                  )}
+                  tick={({ x, y, payload }) => {
+                    const topic = topics.find(t => t.topicnumber?.toString() === payload.value);
+                    return (
+                      <Link
+                        href={`/revisit?topics=${topic?.slug}`}
+                        className="cursor-pointer hover:text-emerald-600 transition-colors"
+                      >
+                        <text
+                          x={x}
+                          y={y}
+                          dy={16}
+                          fontSize={14}
+                          transform={`rotate(40, ${x}, ${y})`}
+                          textAnchor="start"
+                          fill="currentColor"
+                        >
+                          {payload.value}
+                        </text>
+                      </Link>
+                    );
+                  }}
                   interval={0}
                   height={60}
                 />
