@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { UserActivityFilter } from "@/components/user-activity-filter"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { SubscriptionManager } from "../components/subscription-manager"
 
 // TODO: the homework dialgo is the best and should be replciated for hte other dialogs. 
 interface UserActivity {
@@ -77,7 +78,7 @@ export default function SettingsPage() {
   const [addCourseDialogOpen, setAddCourseDialogOpen] = useState(false)
   const [availableCourses, setAvailableCourses] = useState<Course[]>([])
   const [isAddingCourse, setIsAddingCourse] = useState(false)
-  
+
   const supabase = createClient()
 
   const formatDuration = (minutes: number) => {
@@ -92,11 +93,11 @@ export default function SettingsPage() {
   const handleUserClick = (email: string) => {
     setSelectedUser(email)
     setCurrentSessionIndex(0) // Reset to first session
-    
+
     // Group activities by session for the selected user
     const userActivities = userActivity.filter(a => a.user_email === email)
     const sessions = new Map<string, UserSession>()
-    
+
     userActivities.forEach(activity => {
       const date = new Date(activity.created_at).toDateString()
       if (!sessions.has(date)) {
@@ -109,31 +110,31 @@ export default function SettingsPage() {
           events: []
         })
       }
-      
+
       const session = sessions.get(date)!
       session.events.push(activity)
-      
+
       // Update last activity time
       if (new Date(activity.created_at) > new Date(session.last_activity)) {
         session.last_activity = activity.created_at
       }
-      
+
       // Update login time if this is earlier
       if (new Date(activity.created_at) < new Date(session.login_time)) {
         session.login_time = activity.created_at
       }
-      
+
       // Count questions submitted
       if (activity.event === 'submitted_question') {
         session.questions_submitted++
       }
-      
+
       // Track unique pages visited
       if (!session.pages_visited.includes(activity.path)) {
         session.pages_visited.push(activity.path)
       }
     })
-    
+
     // Calculate duration for each session
     const sessionsArray = Array.from(sessions.values()).map(session => ({
       ...session,
@@ -141,12 +142,12 @@ export default function SettingsPage() {
         (new Date(session.last_activity).getTime() - new Date(session.login_time).getTime()) / (1000 * 60)
       )
     }))
-    
+
     // Sort by most recent
-    sessionsArray.sort((a, b) => 
+    sessionsArray.sort((a, b) =>
       new Date(b.login_time).getTime() - new Date(a.login_time).getTime()
     )
-    
+
     setUserSessions(sessionsArray)
     setIsDialogOpen(true)
   }
@@ -240,7 +241,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const { data: {user}, error } = await supabase.auth.getUser()
+      const { data: { user }, error } = await supabase.auth.getUser()
       if (error || !user) {
         redirect('/')
       }
@@ -365,7 +366,7 @@ export default function SettingsPage() {
 
   // Get top 5 most visited pages
   const topPages = Object.entries(pageViews)
-    .sort(([,a], [,b]) => b - a)
+    .sort(([, a], [, b]) => b - a)
     .slice(0, 5)
 
   return (
@@ -425,9 +426,8 @@ export default function SettingsPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className={`text-red-600 hover:text-red-700 hover:bg-red-50 ${
-                              userCourses.length === 1 ? 'opacity-50 cursor-not-allowed' : ''
-                            }`}
+                            className={`text-red-600 hover:text-red-700 hover:bg-red-50 ${userCourses.length === 1 ? 'opacity-50 cursor-not-allowed' : ''
+                              }`}
                             onClick={() => {
                               if (userCourses.length > 1) {
                                 setCourseToDelete(course)
@@ -485,103 +485,7 @@ export default function SettingsPage() {
                 <CardDescription>Manage your subscription plan</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid gap-4">
-                  {/* Basic Plan */}
-                  <div className="rounded-md border p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-medium">Basic Plan</h3>
-                          {userType === 'basic' && (
-                            <Badge variant="secondary" className="bg-blue-100 text-blue-700">
-                              Current Plan
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Limited access with self-assessment only
-                        </p>
-                        {userType === 'basic' && planEndDate && (
-                          <p className="text-sm text-muted-foreground mt-1">
-                            Plan ends: {new Date(planEndDate).toLocaleDateString()}
-                          </p>
-                        )}
-                      </div>
-                      {userType !== 'basic' && (
-                        <Link href="/coming-soon">
-                          <Button>
-                            Downgrade
-                          </Button>
-                        </Link>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Revision Plan */}
-                  <div className="rounded-md border p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-medium">Revision Plan</h3>
-                          {userType === 'revision' && (
-                            <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">
-                              Current Plan
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Full access to all questions and topics
-                        </p>
-                        {userType === 'revision' && planEndDate && (
-                          <p className="text-sm text-muted-foreground mt-1">
-                            Plan ends: {new Date(planEndDate).toLocaleDateString()}
-                          </p>
-                        )}
-                      </div>
-                      {userType !== 'revision' && (
-                        <Link href="/coming-soon">
-                          <Button>
-                            {userType === 'revisionAI' ? "Downgrade" : "Upgrade"}
-                          </Button>
-                        </Link>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* AI Revision Plan */}
-                  <div className="rounded-md border p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-medium">AI Revision Plan</h3>
-                          {userType === 'revisionAI' && (
-                            <Badge variant="secondary" className="bg-purple-100 text-purple-700">
-                              Current Plan
-                            </Badge>
-                          )}
-                          <Badge variant="secondary" className="bg-amber-100 text-amber-700">
-                            Coming Soon
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Full access to all features including AI-powered feedback
-                        </p>
-                        {userType === 'revisionAI' && planEndDate && (
-                          <p className="text-sm text-muted-foreground mt-1">
-                            Plan ends: {new Date(planEndDate).toLocaleDateString()}
-                          </p>
-                        )}
-                      </div>
-                      {userType !== 'revisionAI' && (
-                        <Link href="/coming-soon">
-                          <Button>
-                            Register Interest
-                          </Button>
-                        </Link>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                <SubscriptionManager />
               </CardContent>
             </Card>
           </TabsContent>
@@ -698,7 +602,7 @@ export default function SettingsPage() {
                                     {activity.event === 'submitted_question' && <CheckCircle className="h-4 w-4 text-muted-foreground" />}
                                     <span className="capitalize">{activity.event.replace(/_/g, ' ')}</span>
                                   </div>
-                                  <div 
+                                  <div
                                     className="truncate cursor-pointer hover:text-primary"
                                     onClick={() => handleUserClick(activity.user_email || '')}
                                   >
@@ -709,7 +613,7 @@ export default function SettingsPage() {
                                 </div>
                               ))}
                           </div>
-                          
+
                           {/* Pagination */}
                           <div className="flex items-center justify-between mt-4">
                             <div className="text-sm text-muted-foreground">
@@ -792,8 +696,8 @@ export default function SettingsPage() {
                               const correctAnswers = studentActivity.filter(
                                 a => a.score === 'correct'
                               ).length;
-                              const successRate = totalQuestions > 0 
-                                ? Math.round((correctAnswers / totalQuestions) * 100) 
+                              const successRate = totalQuestions > 0
+                                ? Math.round((correctAnswers / totalQuestions) * 100)
                                 : 0;
 
                               return (
@@ -828,16 +732,16 @@ export default function SettingsPage() {
                           <div className="space-y-4">
                             {topics.map((topic) => {
                               const topicAnswers = userActivity.filter(
-                                a => a.user_id === selectedStudent && 
-                                     a.event === 'submitted_question' && 
-                                     a.path.includes(topic.slug)
+                                a => a.user_id === selectedStudent &&
+                                  a.event === 'submitted_question' &&
+                                  a.path.includes(topic.slug)
                               );
                               const correctAnswers = topicAnswers.filter(
                                 a => a.score === 'correct'
                               ).length;
                               const totalAnswers = topicAnswers.length;
-                              const successRate = totalAnswers > 0 
-                                ? Math.round((correctAnswers / totalAnswers) * 100) 
+                              const successRate = totalAnswers > 0
+                                ? Math.round((correctAnswers / totalAnswers) * 100)
                                 : 0;
 
                               return (
@@ -856,7 +760,7 @@ export default function SettingsPage() {
                                       </div>
                                     </div>
                                     <div className="mt-4 w-full bg-secondary h-2 rounded-full">
-                                      <div 
+                                      <div
                                         className="bg-primary h-2 rounded-full transition-all"
                                         style={{ width: `${successRate}%` }}
                                       />
@@ -874,16 +778,16 @@ export default function SettingsPage() {
                           <div className="grid grid-cols-2 gap-4">
                             {['multiple-choice', 'short-answer', 'true-false', 'matching'].map((type) => {
                               const typeAnswers = userActivity.filter(
-                                a => a.user_id === selectedStudent && 
-                                     a.event === 'submitted_question' && 
-                                     a.question_type === type
+                                a => a.user_id === selectedStudent &&
+                                  a.event === 'submitted_question' &&
+                                  a.question_type === type
                               );
                               const correctAnswers = typeAnswers.filter(
                                 a => a.score === 'correct'
                               ).length;
                               const totalAnswers = typeAnswers.length;
-                              const successRate = totalAnswers > 0 
-                                ? Math.round((correctAnswers / totalAnswers) * 100) 
+                              const successRate = totalAnswers > 0
+                                ? Math.round((correctAnswers / totalAnswers) * 100)
                                 : 0;
 
                               return (
@@ -925,9 +829,8 @@ export default function SettingsPage() {
                                           {activity.topic} • {activity.question_type}
                                         </p>
                                       </div>
-                                      <div className={`text-right ${
-                                        activity.score === 'correct' ? 'text-green-600' : 'text-red-600'
-                                      }`}>
+                                      <div className={`text-right ${activity.score === 'correct' ? 'text-green-600' : 'text-red-600'
+                                        }`}>
                                         <div className="text-2xl font-bold capitalize">
                                           {activity.score}
                                         </div>
@@ -978,7 +881,7 @@ export default function SettingsPage() {
               <span className="sr-only">Close</span>
             </button>
           </DialogHeader>
-          
+
           {userSessions.length > 0 && (
             <div className="space-y-4">
               <Card>
@@ -1011,7 +914,7 @@ export default function SettingsPage() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="border-t pt-4">
                     <h4 className="text-sm font-medium mb-2">Pages Visited:</h4>
                     <div className="space-y-1">
@@ -1068,11 +971,10 @@ export default function SettingsPage() {
                 placeholder="Type &quot;delete&quot; to confirm"
                 value={deleteConfirmation}
                 onChange={(e) => setDeleteConfirmation(e.target.value)}
-                className={`w-full ${
-                  deleteConfirmation && deleteConfirmation !== "delete"
+                className={`w-full ${deleteConfirmation && deleteConfirmation !== "delete"
                     ? "border-red-300 focus-visible:ring-red-500"
                     : ""
-                }`}
+                  }`}
               />
               {deleteConfirmation && deleteConfirmation !== "delete" && (
                 <p className="text-sm text-red-500 mt-1">Please type &quot;delete&quot; exactly to confirm</p>
@@ -1095,11 +997,10 @@ export default function SettingsPage() {
               variant="destructive"
               onClick={handleDeleteCourse}
               disabled={deleteConfirmation !== "delete" || isDeleting}
-              className={`flex items-center gap-2 ${
-                deleteConfirmation === "delete"
+              className={`flex items-center gap-2 ${deleteConfirmation === "delete"
                   ? "bg-red-600 hover:bg-red-700 text-white"
                   : "bg-red-100 text-red-400 cursor-not-allowed"
-              }`}
+                }`}
             >
               {isDeleting ? (
                 <>

@@ -1,15 +1,29 @@
+import { createClient } from '@/utils/supabase/server';
 import Stripe from 'stripe';
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('STRIPE_SECRET_KEY is not set');
 }
+type Interval = 'day' | 'week' | 'month' | 'year';
+
+interface Plan {
+  name: string;
+  slug: string;
+  description: string;
+  price: number;
+  interval: Interval;
+  features: string[];
+  daily_question_limit: number | null;
+  total_question_limit: number | null;
+  has_ai_feedback: boolean;
+}
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2023-10-16',
+  apiVersion: '2025-05-28.basil',
   typescript: true,
 });
 
-export const plans = {
+export const plans: Record<string, Plan> = {
   basic: {
     name: 'Basic Plan',
     slug: 'basic',
@@ -29,7 +43,7 @@ export const plans = {
     name: 'Revision Plan',
     slug: 'revision',
     description: 'Full access to all questions and topics',
-    price: 9.99,
+    price: 1,
     interval: 'month',
     features: [
       'Unlimited questions per day',
@@ -45,7 +59,7 @@ export const plans = {
     name: 'AI Revision Plan',
     slug: 'revisionAI',
     description: 'Full access to all features including AI-powered feedback',
-    price: 19.99,
+    price: 10,
     interval: 'month',
     features: [
       'Unlimited questions per day',
@@ -61,7 +75,7 @@ export const plans = {
 };
 
 export async function createStripeProducts() {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   for (const [key, plan] of Object.entries(plans)) {
     // Create Stripe product
