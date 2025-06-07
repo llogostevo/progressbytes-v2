@@ -16,6 +16,17 @@ import { UserActivityFilter } from "@/components/user-activity-filter"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { SubscriptionManager } from "../components/subscription-manager"
+import {
+  BarChart as RechartsBarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts"
+import { Skeleton } from "@/components/ui/skeleton"
 
 // TODO: the homework dialgo is the best and should be replciated for hte other dialogs. 
 interface UserActivity {
@@ -53,6 +64,327 @@ interface Course {
 }
 
 type UserRole = 'admin' | 'student' | 'teacher'
+
+function PerformanceGraph({ userActivity, selectedStudent, topics }: { userActivity: UserActivity[], selectedStudent: string | null, topics: Array<{ id: string; name: string; slug: string }> }) {
+  // Prepare data for the stacked bar chart
+  const barChartData = topics.map((topic) => {
+    const topicAnswers = userActivity.filter(
+      a => a.user_id === selectedStudent &&
+        a.event === 'submitted_question' &&
+        a.path.includes(topic.slug)
+    );
+    return {
+      name: topic.name,
+      topicNumber: topic.slug,
+      Strong: topicAnswers.filter(a => a.score === 'correct').length,
+      Developing: topicAnswers.filter(a => a.score === 'incorrect').length,
+      "Needs Work": 0, // Adding this to match progress page structure
+      total: topicAnswers.length,
+    }
+  }).filter(data => data.total > 0) // Only show topics with activity
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Performance by Topic</CardTitle>
+        <CardDescription>Distribution of scores across different topics</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="h-[500px] min-w-0 min-h-0">
+          {/* Mobile: vertical, small font */}
+          <div className="block md:invisible md:absolute min-w-0 min-h-0 h-full w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <RechartsBarChart
+                data={barChartData}
+                margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="topicNumber"
+                  tick={({ x, y, payload }) => (
+                    <text
+                      x={x}
+                      y={y}
+                      dy={8}
+                      fontSize={9}
+                      transform={`rotate(90, ${x}, ${y})`}
+                      textAnchor="start"
+                      fill="currentColor"
+                    >
+                      {payload.value}
+                    </text>
+                  )}
+                  interval={0}
+                />
+                <YAxis />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-white p-3 border rounded-lg shadow-lg">
+                          <p className="font-medium">{data.name}</p>
+                          <p className="text-sm text-muted-foreground">Topic {data.topicNumber}</p>
+                          <div className="mt-2 space-y-1">
+                            <p className="text-emerald-600">Strong: {data.Strong}</p>
+                            <p className="text-amber-600">Developing: {data.Developing}</p>
+                            <p className="text-red-600">Needs Work: {data["Needs Work"]}</p>
+                            <p className="font-medium mt-1">Total: {data.total}</p>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Legend />
+                <Bar dataKey="Strong" stackId="a" fill="#10b981" />
+                <Bar dataKey="Developing" stackId="a" fill="#f59e0b" />
+                <Bar dataKey="Needs Work" stackId="a" fill="#ef4444" />
+              </RechartsBarChart>
+            </ResponsiveContainer>
+          </div>
+          {/* md: diagonal, medium font */}
+          <div className="invisible md:visible md:static lg:invisible lg:absolute min-w-0 min-h-0 h-full w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <RechartsBarChart
+                data={barChartData}
+                margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="topicNumber"
+                  tick={({ x, y, payload }) => (
+                    <text
+                      x={x}
+                      y={y}
+                      dy={16}
+                      fontSize={12}
+                      transform={`rotate(40, ${x}, ${y})`}
+                      textAnchor="start"
+                      fill="currentColor"
+                    >
+                      {payload.value}
+                    </text>
+                  )}
+                  interval={0}
+                  height={60}
+                />
+                <YAxis />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-white p-3 border rounded-lg shadow-lg">
+                          <p className="font-medium">{data.name}</p>
+                          <p className="text-sm text-muted-foreground">Topic {data.topicNumber}</p>
+                          <div className="mt-2 space-y-1">
+                            <p className="text-emerald-600">Strong: {data.Strong}</p>
+                            <p className="text-amber-600">Developing: {data.Developing}</p>
+                            <p className="text-red-600">Needs Work: {data["Needs Work"]}</p>
+                            <p className="font-medium mt-1">Total: {data.total}</p>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Legend />
+                <Bar dataKey="Strong" stackId="a" fill="#10b981" />
+                <Bar dataKey="Developing" stackId="a" fill="#f59e0b" />
+                <Bar dataKey="Needs Work" stackId="a" fill="#ef4444" />
+              </RechartsBarChart>
+            </ResponsiveContainer>
+          </div>
+          {/* lg+: diagonal, larger font */}
+          <div className="invisible lg:visible lg:static min-w-0 min-h-0 h-full w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <RechartsBarChart
+                data={barChartData}
+                margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="topicNumber"
+                  tick={({ x, y, payload }) => (
+                    <text
+                      x={x}
+                      y={y}
+                      dy={16}
+                      fontSize={14}
+                      transform={`rotate(40, ${x}, ${y})`}
+                      textAnchor="start"
+                      fill="currentColor"
+                    >
+                      {payload.value}
+                    </text>
+                  )}
+                  interval={0}
+                  height={60}
+                />
+                <YAxis />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-white p-3 border rounded-lg shadow-lg">
+                          <p className="font-medium">{data.name}</p>
+                          <p className="text-sm text-muted-foreground">Topic {data.topicNumber}</p>
+                          <div className="mt-2 space-y-1">
+                            <p className="text-emerald-600">Strong: {data.Strong}</p>
+                            <p className="text-amber-600">Developing: {data.Developing}</p>
+                            <p className="text-red-600">Needs Work: {data["Needs Work"]}</p>
+                            <p className="font-medium mt-1">Total: {data.total}</p>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Legend />
+                <Bar dataKey="Strong" stackId="a" fill="#10b981" />
+                <Bar dataKey="Developing" stackId="a" fill="#f59e0b" />
+                <Bar dataKey="Needs Work" stackId="a" fill="#ef4444" />
+              </RechartsBarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function PerformanceGraphSkeleton() {
+  return (
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-6 w-48 mb-2" />
+        <Skeleton className="h-4 w-64" />
+      </CardHeader>
+      <CardContent>
+        <div className="h-[500px] min-w-0 min-h-0">
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="w-full space-y-4">
+              <div className="flex justify-between items-center">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+              <div className="space-y-2">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="flex items-center gap-4">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-4 flex-1" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function StudentSelectorSkeleton() {
+  return (
+    <div className="flex items-center gap-4">
+      <Skeleton className="h-4 w-24" />
+      <Skeleton className="h-10 flex-1" />
+    </div>
+  )
+}
+
+function ActivitySkeleton() {
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-5 w-5" />
+          <Skeleton className="h-6 w-32" />
+        </div>
+        <Skeleton className="h-4 w-64 mt-2" />
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-8">
+          {/* Overview Stats */}
+          <div className="grid grid-cols-3 gap-4">
+            {[...Array(3)].map((_, i) => (
+              <Card key={i}>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Skeleton className="h-8 w-16 mb-2" />
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+                    <Skeleton className="h-8 w-8" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Top Pages */}
+          <div className="border-t pt-6">
+            <Skeleton className="h-5 w-32 mb-4" />
+            <div className="space-y-2">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center justify-between text-sm">
+                  <Skeleton className="h-4 w-48" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Activity Breakdown */}
+          <div className="border-t pt-6">
+            <Skeleton className="h-5 w-32 mb-4" />
+            <div className="grid grid-cols-2 gap-4">
+              {[...Array(2)].map((_, i) => (
+                <Card key={i}>
+                  <CardContent className="pt-6">
+                    <Skeleton className="h-8 w-16 mb-2" />
+                    <Skeleton className="h-4 w-24" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          {/* Recent Activity */}
+          <div className="border-t pt-6">
+            <Skeleton className="h-5 w-32 mb-4" />
+            <div className="space-y-2">
+              {/* Header */}
+              <div className="grid grid-cols-4 gap-4 text-sm font-medium text-muted-foreground pb-2 border-b">
+                <div>Event</div>
+                <div>User</div>
+                <div>Path</div>
+                <div>Time</div>
+              </div>
+              {/* Activity Items */}
+              {[...Array(10)].map((_, i) => (
+                <div key={i} className="grid grid-cols-4 gap-4 text-sm py-2">
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-4 w-4" />
+                    <Skeleton className="h-4 w-24" />
+                  </div>
+                  <Skeleton className="h-4 w-48" />
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
 
 export default function SettingsPage() {
   const [userType, setUserType] = useState<"basic" | "revision" | "revisionAI" | null>(null)
@@ -496,7 +828,7 @@ export default function SettingsPage() {
                   </CardHeader>
                   <CardContent>
                     {isLoading ? (
-                      <div className="text-center py-4">Loading analytics data...</div>
+                      <ActivitySkeleton />
                     ) : (
                       <div className="space-y-8">
                         {/* Overview Stats */}
@@ -657,7 +989,10 @@ export default function SettingsPage() {
                   </CardHeader>
                   <CardContent>
                     {isLoading ? (
-                      <div className="text-center py-4">Loading performance data...</div>
+                      <div className="space-y-8">
+                        <StudentSelectorSkeleton />
+                        <PerformanceGraphSkeleton />
+                      </div>
                     ) : (
                       <div className="space-y-8">
                         {/* Student Selector */}
@@ -681,166 +1016,12 @@ export default function SettingsPage() {
                           </select>
                         </div>
 
-                        {/* Overall Performance */}
-                        <div className="border-t pt-6">
-                          <h3 className="font-medium mb-4">Overall Performance</h3>
-                          <div className="grid grid-cols-3 gap-4">
-                            {(() => {
-                              const studentActivity = userActivity.filter(
-                                a => a.user_id === selectedStudent && a.event === 'submitted_question'
-                              );
-                              const totalQuestions = studentActivity.length;
-                              const correctAnswers = studentActivity.filter(
-                                a => a.score === 'correct'
-                              ).length;
-                              const successRate = totalQuestions > 0
-                                ? Math.round((correctAnswers / totalQuestions) * 100)
-                                : 0;
-
-                              return (
-                                <>
-                                  <Card>
-                                    <CardContent className="pt-6">
-                                      <div className="text-2xl font-bold">{totalQuestions}</div>
-                                      <p className="text-sm text-muted-foreground">Total Questions</p>
-                                    </CardContent>
-                                  </Card>
-                                  <Card>
-                                    <CardContent className="pt-6">
-                                      <div className="text-2xl font-bold">{correctAnswers}</div>
-                                      <p className="text-sm text-muted-foreground">Correct Answers</p>
-                                    </CardContent>
-                                  </Card>
-                                  <Card>
-                                    <CardContent className="pt-6">
-                                      <div className="text-2xl font-bold">{successRate}%</div>
-                                      <p className="text-sm text-muted-foreground">Success Rate</p>
-                                    </CardContent>
-                                  </Card>
-                                </>
-                              );
-                            })()}
-                          </div>
-                        </div>
-
-                        {/* Topic Performance */}
-                        <div className="border-t pt-6">
-                          <h3 className="font-medium mb-4">Topic Performance</h3>
-                          <div className="space-y-4">
-                            {topics.map((topic) => {
-                              const topicAnswers = userActivity.filter(
-                                a => a.user_id === selectedStudent &&
-                                  a.event === 'submitted_question' &&
-                                  a.path.includes(topic.slug)
-                              );
-                              const correctAnswers = topicAnswers.filter(
-                                a => a.score === 'correct'
-                              ).length;
-                              const totalAnswers = topicAnswers.length;
-                              const successRate = totalAnswers > 0
-                                ? Math.round((correctAnswers / totalAnswers) * 100)
-                                : 0;
-
-                              return (
-                                <Card key={topic.id}>
-                                  <CardContent className="pt-6">
-                                    <div className="flex items-center justify-between">
-                                      <div>
-                                        <h4 className="font-medium">{topic.name}</h4>
-                                        <p className="text-sm text-muted-foreground">
-                                          {correctAnswers} correct out of {totalAnswers} attempts
-                                        </p>
-                                      </div>
-                                      <div className="text-right">
-                                        <div className="text-2xl font-bold">{successRate}%</div>
-                                        <p className="text-sm text-muted-foreground">Success Rate</p>
-                                      </div>
-                                    </div>
-                                    <div className="mt-4 w-full bg-secondary h-2 rounded-full">
-                                      <div
-                                        className="bg-primary h-2 rounded-full transition-all"
-                                        style={{ width: `${successRate}%` }}
-                                      />
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        {/* Question Type Performance */}
-                        <div className="border-t pt-6">
-                          <h3 className="font-medium mb-4">Question Type Performance</h3>
-                          <div className="grid grid-cols-2 gap-4">
-                            {['multiple-choice', 'short-answer', 'true-false', 'matching'].map((type) => {
-                              const typeAnswers = userActivity.filter(
-                                a => a.user_id === selectedStudent &&
-                                  a.event === 'submitted_question' &&
-                                  a.question_type === type
-                              );
-                              const correctAnswers = typeAnswers.filter(
-                                a => a.score === 'correct'
-                              ).length;
-                              const totalAnswers = typeAnswers.length;
-                              const successRate = totalAnswers > 0
-                                ? Math.round((correctAnswers / totalAnswers) * 100)
-                                : 0;
-
-                              return (
-                                <Card key={type}>
-                                  <CardContent className="pt-6">
-                                    <div className="flex items-center justify-between">
-                                      <div>
-                                        <h4 className="font-medium capitalize">{type.replace(/-/g, ' ')}</h4>
-                                        <p className="text-sm text-muted-foreground">
-                                          {correctAnswers} correct out of {totalAnswers} attempts
-                                        </p>
-                                      </div>
-                                      <div className="text-right">
-                                        <div className="text-2xl font-bold">{successRate}%</div>
-                                        <p className="text-sm text-muted-foreground">Success Rate</p>
-                                      </div>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        {/* Recent Performance */}
-                        <div className="border-t pt-6">
-                          <h3 className="font-medium mb-4">Recent Performance</h3>
-                          <div className="space-y-2">
-                            {userActivity
-                              .filter(a => a.user_id === selectedStudent && a.event === 'submitted_question')
-                              .slice(0, 5)
-                              .map((activity) => (
-                                <Card key={activity.id}>
-                                  <CardContent className="pt-6">
-                                    <div className="flex items-center justify-between">
-                                      <div>
-                                        <h4 className="font-medium">{activity.question_text}</h4>
-                                        <p className="text-sm text-muted-foreground">
-                                          {activity.topic} • {activity.question_type}
-                                        </p>
-                                      </div>
-                                      <div className={`text-right ${activity.score === 'correct' ? 'text-green-600' : 'text-red-600'
-                                        }`}>
-                                        <div className="text-2xl font-bold capitalize">
-                                          {activity.score}
-                                        </div>
-                                        <p className="text-sm text-muted-foreground">
-                                          {new Date(activity.created_at).toLocaleDateString()}
-                                        </p>
-                                      </div>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              ))}
-                          </div>
-                        </div>
+                        {/* Performance Graph */}
+                        <PerformanceGraph 
+                          userActivity={userActivity}
+                          selectedStudent={selectedStudent}
+                          topics={topics}
+                        />
                       </div>
                     )}
                   </CardContent>

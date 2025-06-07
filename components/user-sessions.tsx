@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { createClient } from "@/utils/supabase/client"
 import { Clock, Users, FileText } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface UserSession {
   id: string
@@ -15,6 +16,63 @@ interface UserSession {
 
 interface UserSessionsProps {
   onUserClick: (email: string) => void
+}
+
+function SessionsSkeleton() {
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-5 w-5" />
+          <Skeleton className="h-6 w-32" />
+        </div>
+        <Skeleton className="h-4 w-64 mt-2" />
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-8">
+          {/* Overview Stats */}
+          <div className="grid grid-cols-3 gap-4">
+            {[...Array(3)].map((_, i) => (
+              <Card key={i}>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Skeleton className="h-8 w-16 mb-2" />
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+                    <Skeleton className="h-8 w-8" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Sessions List */}
+          <div className="border-t pt-6">
+            <Skeleton className="h-5 w-32 mb-4" />
+            <div className="space-y-2">
+              {/* Header */}
+              <div className="grid grid-cols-4 gap-4 text-sm font-medium text-muted-foreground pb-2 border-b">
+                <div>User</div>
+                <div>Login Time</div>
+                <div>Duration</div>
+                <div>Questions</div>
+              </div>
+              {/* Sessions */}
+              {[...Array(10)].map((_, i) => (
+                <div key={i} className="grid grid-cols-4 gap-4 text-sm py-2">
+                  <Skeleton className="h-4 w-48" />
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
 }
 
 export function UserSessions({ onUserClick }: UserSessionsProps) {
@@ -115,7 +173,7 @@ export function UserSessions({ onUserClick }: UserSessionsProps) {
   }
 
   if (isLoading) {
-    return <div className="text-center py-4">Loading session data...</div>
+    return <SessionsSkeleton />
   }
 
   return (

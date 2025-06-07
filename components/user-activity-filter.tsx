@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Users, Clock, FileText, Calendar, Navigation, Activity } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface UserActivity {
   user_id: string
@@ -32,6 +33,57 @@ interface UserSession {
   pages_visited: string[]
   events: UserEvent[]
   submitted_questions: { path: string; count: number }[]
+}
+
+function FilterSkeleton() {
+  return (
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-6 w-32" />
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="space-y-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          ))}
+        </div>
+        <Skeleton className="h-10 w-32 mt-4" />
+      </CardContent>
+    </Card>
+  )
+}
+
+function ResultsSkeleton() {
+  return (
+    <div className="grid grid-cols-2 gap-6">
+      {[...Array(2)].map((_, i) => (
+        <Card key={i}>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-5 w-5" />
+              <Skeleton className="h-6 w-48" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {[...Array(5)].map((_, j) => (
+                <div key={j} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+                  <Skeleton className="h-4 w-48" />
+                  <div className="flex items-center gap-4">
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
 }
 
 export function UserActivityFilter() {
@@ -273,7 +325,12 @@ export function UserActivityFilter() {
   }
 
   if (isLoading) {
-    return <div className="text-center py-4">Loading user activity data...</div>
+    return (
+      <div className="space-y-6">
+        <FilterSkeleton />
+        <ResultsSkeleton />
+      </div>
+    )
   }
 
   return (
