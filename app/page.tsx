@@ -10,11 +10,9 @@ export default async function Home() {
   const supabase = await createClient()
 
   // Get the current user
-  const { data: { user }, error } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  if (error || !user) {
-    redirect('/')
-  }
+
 
   // Get the user's profile data including user_type
   const { data: profile } = await supabase
