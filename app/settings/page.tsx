@@ -57,37 +57,27 @@ export default function SettingsPage() {
     fetchUser()
   }, [supabase])
 
-  useEffect(() => {
-    const fetchUserActivity = async () => {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+  // useEffect(() => {
+  //   const fetchUserActivity = async () => {
+  //     const supabase = createClient()
+  //     const { data: { user } } = await supabase.auth.getUser()
 
-      if (!user) return
+  //     if (!user) return
 
-      const { data: activityData } = await supabase
-        .from("user_activity")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
+  //     const { data: activityData } = await supabase
+  //       .from("user_activity")
+  //       .select("*")
+  //       .eq("user_id", user.id)
+  //       .order("created_at", { ascending: false })
 
-      if (activityData) {
-        setUserActivity(activityData)
-        setFilteredActivity(activityData)
-      }
-    }
+  //     if (activityData) {
+  //       setUserActivity(activityData)
+  //       setFilteredActivity(activityData)
+  //     }
+  //   }
 
-    fetchUserActivity()
-  }, [])
-
-  const handleFilterChange = (filter: string) => {
-    setSelectedFilter(filter)
-    if (selectedFilter === "all") {
-      setFilteredActivity(userActivity)
-    } else {
-      const filtered = userActivity.filter(activity => activity.event === filter)
-      setFilteredActivity(filtered)
-    }
-  }
+  //   fetchUserActivity()
+  // }, [])
 
   const handleUserClick = (email: string) => {
     // Handle user click in settings page
