@@ -31,10 +31,26 @@ export async function POST(req: Request) {
       case 'customer.subscription.created':
       case 'customer.subscription.updated': {
         const subscription = event.data.object as ExtendedSubscription;
+
+        const priceId = subscription.items.data[0].price.id;
+
+        // Get the plan details from the price ID
+        const { data: plan } = await supabase
+          .from('plans')
+          .select('slug')
+          .eq('stripe_price_id', priceId)
+          .single();
+
+        if (!plan) {
+          console.error(`Plan not found for price ID: ${priceId}`);
+          break;
+        }
+
         // Update subscription in database
         await supabase
           .from('subscriptions')
           .upsert({
+            user_id: subscription.metadata.userId,
             stripe_subscription_id: subscription.id,
             stripe_customer_id: subscription.customer as string,
             status: subscription.status,
@@ -42,6 +58,11 @@ export async function POST(req: Request) {
             current_period_end: new Date((subscription.billing_cycle?.ends_at ?? 0) * 1000),
             cancel_at_period_end: subscription.cancel_at_period_end
           });
+
+        await supabase
+          .from('profiles')
+          .update({ user_type: plan.slug })
+          .eq('userid', subscription.metadata.userId);
 
         break;
       }
@@ -54,6 +75,12 @@ export async function POST(req: Request) {
           .from('subscriptions')
           .update({ status: 'canceled' })
           .eq('stripe_subscription_id', subscription.id);
+
+          // Reset user's profile to basic plan
+        await supabase
+        .from('profiles')
+        .update({ user_type: 'basic' })
+        .eq('userid', subscription.metadata.userId);
 
         break;
       }
