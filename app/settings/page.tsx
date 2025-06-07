@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, BookOpen, Book, GraduationCap, School, BookMarked, BookText, Library, BookOpenCheck, BookOpenText, Bookmark, BookmarkCheck, BookmarkPlus, BookmarkX, User, CreditCard } from "lucide-react"
+import { ArrowLeft, BookOpen, Book, GraduationCap, School, BookMarked, Library, BookOpenCheck, BookOpenText, BookmarkCheck, BookmarkPlus, BookmarkX, User, CreditCard } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/utils/supabase/client"
 import { redirect } from "next/navigation"
@@ -475,7 +475,7 @@ export default function SettingsPage() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="confirmation">Type "delete" to confirm</Label>
+              <Label htmlFor="confirmation">Type &quot;delete&quot; to confirm</Label>
               <Input
                 id="confirmation"
                 value={deleteConfirmation}

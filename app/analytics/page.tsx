@@ -35,6 +35,9 @@ interface UserActivity {
 }
 
 interface UserSession {
+  id: string
+  user_id: string
+  user_email: string
   login_time: string
   last_activity: string
   duration_minutes: number
@@ -417,6 +420,9 @@ export default function AnalyticsPage() {
       const date = new Date(activity.created_at).toDateString()
       if (!sessions.has(date)) {
         sessions.set(date, {
+          id: `${activity.user_id}_${date}`,
+          user_id: activity.user_id,
+          user_email: activity.user_email || 'Unknown',
           login_time: activity.created_at,
           last_activity: activity.created_at,
           duration_minutes: 0,
@@ -744,7 +750,7 @@ export default function AnalyticsPage() {
           </TabsContent>
 
           <TabsContent value="sessions">
-            <UserSessions onUserClick={handleUserClick} />
+            <UserSessions onUserClick={handleUserClick} sessions={userSessions} />
           </TabsContent>
 
           <TabsContent value="homework">
