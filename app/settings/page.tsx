@@ -76,7 +76,7 @@ export default function SettingsPage() {
   const [addCourseDialogOpen, setAddCourseDialogOpen] = useState(false)
   const [availableCourses, setAvailableCourses] = useState<Course[]>([])
   const [isAddingCourse, setIsAddingCourse] = useState(false)
-
+// create supabase object
   const supabase = createClient()
 
   const formatDuration = (minutes: number) => {
@@ -87,7 +87,6 @@ export default function SettingsPage() {
     const remainingMinutes = minutes % 60
     return `${hours}h ${remainingMinutes}m`
   }
-
   const handleUserClick = (email: string) => {
     setSelectedUser(email)
     setCurrentSessionIndex(0) // Reset to first session
