@@ -387,19 +387,6 @@ function ActivitySkeleton() {
 export default function SettingsPage() {
   const [userType, setUserType] = useState<"basic" | "revision" | "revisionAI" | null>(null)
   const [userRole, setUserRole] = useState<UserRole | null>(null)
-  const [userActivity, setUserActivity] = useState<UserActivity[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [uniqueUsers, setUniqueUsers] = useState<number>(0)
-  const [pageViews, setPageViews] = useState<Record<string, number>>({})
-  const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 10
-  const [selectedUser, setSelectedUser] = useState<string | null>(null)
-  const [userSessions, setUserSessions] = useState<UserSession[]>([])
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [currentSessionIndex, setCurrentSessionIndex] = useState(0)
-  const [topics, setTopics] = useState<Array<{ id: string; name: string; slug: string }>>([])
-  const [students, setStudents] = useState<Student[]>([])
-  const [selectedStudent, setSelectedStudent] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [userCourses, setUserCourses] = useState<string[]>([])
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -409,86 +396,8 @@ export default function SettingsPage() {
   const [addCourseDialogOpen, setAddCourseDialogOpen] = useState(false)
   const [availableCourses, setAvailableCourses] = useState<Course[]>([])
   const [isAddingCourse, setIsAddingCourse] = useState(false)
-// create supabase object
+
   const supabase = createClient()
-
-  const formatDuration = (minutes: number) => {
-    if (minutes < 60) {
-      return `${minutes} minutes`
-    }
-    const hours = Math.floor(minutes / 60)
-    const remainingMinutes = minutes % 60
-    return `${hours}h ${remainingMinutes}m`
-  }
-  const handleUserClick = (email: string) => {
-    setSelectedUser(email)
-    setCurrentSessionIndex(0) // Reset to first session
-
-    // Group activities by session for the selected user
-    const userActivities = userActivity.filter(a => a.user_email === email)
-    const sessions = new Map<string, UserSession>()
-
-    userActivities.forEach(activity => {
-      const date = new Date(activity.created_at).toDateString()
-      if (!sessions.has(date)) {
-        sessions.set(date, {
-          login_time: activity.created_at,
-          last_activity: activity.created_at,
-          duration_minutes: 0,
-          questions_submitted: 0,
-          pages_visited: [],
-          events: []
-        })
-      }
-
-      const session = sessions.get(date)!
-      session.events.push(activity)
-
-      // Update last activity time
-      if (new Date(activity.created_at) > new Date(session.last_activity)) {
-        session.last_activity = activity.created_at
-      }
-
-      // Update login time if this is earlier
-      if (new Date(activity.created_at) < new Date(session.login_time)) {
-        session.login_time = activity.created_at
-      }
-
-      // Count questions submitted
-      if (activity.event === 'submitted_question') {
-        session.questions_submitted++
-      }
-
-      // Track unique pages visited
-      if (!session.pages_visited.includes(activity.path)) {
-        session.pages_visited.push(activity.path)
-      }
-    })
-
-    // Calculate duration for each session
-    const sessionsArray = Array.from(sessions.values()).map(session => ({
-      ...session,
-      duration_minutes: Math.round(
-        (new Date(session.last_activity).getTime() - new Date(session.login_time).getTime()) / (1000 * 60)
-      )
-    }))
-
-    // Sort by most recent
-    sessionsArray.sort((a, b) =>
-      new Date(b.login_time).getTime() - new Date(a.login_time).getTime()
-    )
-
-    setUserSessions(sessionsArray)
-    setIsDialogOpen(true)
-  }
-
-  const handlePreviousSession = () => {
-    setCurrentSessionIndex(prev => Math.max(0, prev - 1))
-  }
-
-  const handleNextSession = () => {
-    setCurrentSessionIndex(prev => Math.min(userSessions.length - 1, prev + 1))
-  }
 
   const handleDeleteCourse = async () => {
     if (!courseToDelete || !userEmail || deleteConfirmation !== "delete") return
@@ -591,69 +500,6 @@ export default function SettingsPage() {
         setUserRole(profile?.role || 'student')
         setUserCourses(profile?.courses || [])
       }
-
-      // Fetch students if user is admin or teacher
-      if (profile?.role === 'admin' || profile?.role === 'teacher') {
-        console.log('Fetching students for role:', profile?.role) // Debug log
-        // Fetch students
-        const { data: studentsData, error: studentsError } = await supabase
-          .from("profiles")
-          .select("userid, email")
-          .neq("role", "admin")  // Exclude admins
-          .neq("role", "teacher")  // Exclude teachers
-          .order('email')
-
-        if (studentsError) {
-          console.error('Error fetching students:', studentsError)
-        } else {
-          console.log('Fetched students:', studentsData) // Debug log
-          setStudents(studentsData || [])
-          if (studentsData && studentsData.length > 0) {
-            setSelectedStudent(studentsData[0].userid)
-          }
-        }
-      }
-
-      // Fetch topics
-      const { data: topicsData, error: topicsError } = await supabase
-        .from("topics")
-        .select("id, name, slug")
-        .order('name')
-
-      if (topicsError) {
-        console.error('Error fetching topics:', topicsError)
-      } else {
-        setTopics(topicsData || [])
-      }
-
-      // Fetch all user activity
-      const { data: activity } = await supabase
-        .from("user_activity")
-        .select("*")
-        .order('created_at', { ascending: false })
-
-      if (activity) {
-        setUserActivity(activity)
-      } else {
-        setUserActivity([])
-      }
-
-      // Calculate unique users
-      const uniqueUserIds = new Set(activity?.map(a => a.user_id) || [])
-      setUniqueUsers(uniqueUserIds.size)
-
-      // Calculate page views
-      const views = activity?.reduce((acc, curr) => {
-        acc[curr.path] = (acc[curr.path] || 0) + 1
-        return acc
-      }, {} as Record<string, number>) || {}
-      setPageViews(views)
-
-      // Calculate navigation paths
-      // const paths = activity?.map(a => a.path) || []
-      // setNavigationPaths(paths)
-
-      setIsLoading(false)
     }
 
     const fetchCourses = async () => {
@@ -693,17 +539,6 @@ export default function SettingsPage() {
     }
   }, [addCourseDialogOpen, supabase])
 
-  // Group activity by event type
-  const activityStats = userActivity.reduce((acc, activity) => {
-    acc[activity.event] = (acc[activity.event] || 0) + 1
-    return acc
-  }, {} as Record<string, number>)
-
-  // Get top 5 most visited pages
-  const topPages = Object.entries(pageViews)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 5)
-
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
@@ -715,418 +550,89 @@ export default function SettingsPage() {
           <p className="text-muted-foreground">Manage your account and preferences</p>
         </div>
 
-        <Tabs defaultValue="account" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="account">Account</TabsTrigger>
-            {(userRole === 'admin' || userRole === 'teacher') && (
-              <>
-                <TabsTrigger value="activity">Activity</TabsTrigger>
-                <TabsTrigger value="sessions">Sessions</TabsTrigger>
-                <TabsTrigger value="homework">Homework</TabsTrigger>
-                <TabsTrigger value="performance">Performance</TabsTrigger>
-              </>
-            )}
-          </TabsList>
-
-          <TabsContent value="account">
-            <Card className="mb-8">
-              <CardHeader>
-                <CardTitle>Account Settings</CardTitle>
-                <CardDescription>Manage your account details and subscription</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="border rounded-lg p-4 space-y-3">
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <Label className="text-base">Account Details</Label>
-                  </div>
-                  <div className="grid gap-3">
-                    <div className="flex items-center justify-between py-2 border-b">
-                      <span className="text-sm text-muted-foreground">Email</span>
-                      <span className="font-medium text-foreground">{userEmail}</span>
-                    </div>
-                    <div className="flex items-center justify-between py-2 border-b">
-                      <span className="text-sm text-muted-foreground">Role</span>
-                      <span className="font-medium text-foreground capitalize">{userRole}</span>
-                    </div>
-                    <div className="flex items-center justify-between py-2 border-b">
-                      <span className="text-sm text-muted-foreground">Plan</span>
-                      <span className="font-medium text-foreground capitalize">{userType === 'revisionAI' ? 'AI Revision' : userType === 'revision' ? 'Revision' : 'Basic'}</span>
-                    </div>
-                    <div className="flex items-center justify-between py-2 border-b">
-                      <span className="text-sm text-muted-foreground">School</span>
-                      <span className="font-medium text-foreground">Central Foundation Boys' School</span>
-                    </div>
-                    <div className="py-2">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-muted-foreground">Courses</span>
-                      </div>
-                      {userCourses && userCourses.length > 0 ? (
-                        <div className="space-y-2 mb-3">
-                          {userCourses.map((course, index) => (
-                            <div key={index} className="flex items-center justify-between text-sm text-muted-foreground">
-                              <span>{course}</span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className={`text-red-600 hover:text-red-700 hover:bg-red-50 ${userCourses.length === 1 ? 'opacity-50 cursor-not-allowed' : ''
-                                  }`}
-                                onClick={() => {
-                                  if (userCourses.length > 1) {
-                                    setCourseToDelete(course)
-                                    setDeleteDialogOpen(true)
-                                  }
-                                }}
-                                disabled={userCourses.length === 1}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-sm text-muted-foreground mb-3">No courses enrolled</div>
-                      )}
-                      <div className="flex justify-end">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setAddCourseDialogOpen(true)}
-                          className="gap-2"
-                        >
-                          <Plus className="h-4 w-4" />
-                          Add Course
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Account Settings</CardTitle>
+            <CardDescription>Manage your account details and subscription</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="border rounded-lg p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-muted-foreground" />
+                <Label className="text-base">Account Details</Label>
+              </div>
+              <div className="grid gap-3">
+                <div className="flex items-center justify-between py-2 border-b">
+                  <span className="text-sm text-muted-foreground">Email</span>
+                  <span className="font-medium text-foreground">{userEmail}</span>
                 </div>
-
-                <div className="border rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-4">
-                    <CreditCard className="h-4 w-4 text-muted-foreground" />
-                    <Label className="text-base">Subscription</Label>
-                  </div>
-                  <SubscriptionManager />
+                <div className="flex items-center justify-between py-2 border-b">
+                  <span className="text-sm text-muted-foreground">Role</span>
+                  <span className="font-medium text-foreground capitalize">{userRole}</span>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {(userRole === 'admin' || userRole === 'teacher') && (
-            <>
-              <TabsContent value="activity">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Activity className="h-5 w-5 mr-2" />
-                      Site Analytics
-                    </CardTitle>
-                    <CardDescription>Overview of site usage and user activity</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {isLoading ? (
-                      <ActivitySkeleton />
-                    ) : (
-                      <div className="space-y-8">
-                        {/* Overview Stats */}
-                        <div className="grid grid-cols-3 gap-4">
-                          <Card>
-                            <CardContent className="pt-6">
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <div className="text-2xl font-bold">{uniqueUsers}</div>
-                                  <p className="text-sm text-muted-foreground">Unique Users</p>
-                                </div>
-                                <Users className="h-8 w-8 text-muted-foreground" />
-                              </div>
-                            </CardContent>
-                          </Card>
-                          <Card>
-                            <CardContent className="pt-6">
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <div className="text-2xl font-bold">{activityStats['visited_question'] || 0}</div>
-                                  <p className="text-sm text-muted-foreground">Questions Viewed</p>
-                                </div>
-                                <Eye className="h-8 w-8 text-muted-foreground" />
-                              </div>
-                            </CardContent>
-                          </Card>
-                          <Card>
-                            <CardContent className="pt-6">
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <div className="text-2xl font-bold">{userActivity.length}</div>
-                                  <p className="text-sm text-muted-foreground">Total Page Views</p>
-                                </div>
-                                <Navigation className="h-8 w-8 text-muted-foreground" />
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </div>
-
-                        {/* Top Pages */}
-                        <div className="border-t pt-6">
-                          <h3 className="font-medium mb-4">Most Visited Pages</h3>
-                          <div className="space-y-2">
-                            {topPages.map(([path, count], index) => (
-                              <div key={index} className="flex items-center justify-between text-sm">
-                                <div className="flex items-center">
-                                  <span className="font-medium">{index + 1}.</span>
-                                  <span className="ml-2">{path}</span>
-                                </div>
-                                <span className="text-muted-foreground">{count} views</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Activity Breakdown */}
-                        <div className="border-t pt-6">
-                          <h3 className="font-medium mb-4">Activity Breakdown</h3>
-                          <div className="grid grid-cols-2 gap-4">
-                            <Card>
-                              <CardContent className="pt-6">
-                                <div className="text-2xl font-bold">{activityStats['visited_revisit'] || 0}</div>
-                                <p className="text-sm text-muted-foreground">Revisit Sessions</p>
-                              </CardContent>
-                            </Card>
-                            <Card>
-                              <CardContent className="pt-6">
-                                <div className="text-2xl font-bold">{activityStats['visited_progress'] || 0}</div>
-                                <p className="text-sm text-muted-foreground">Progress Checks</p>
-                              </CardContent>
-                            </Card>
-                          </div>
-                        </div>
-
-                        {/* Recent Activity */}
-                        <div className="border-t pt-6">
-                          <h3 className="font-medium mb-4">Recent Activity</h3>
-                          <div className="space-y-2">
-                            {/* Header */}
-                            <div className="grid grid-cols-4 gap-4 text-sm font-medium text-muted-foreground pb-2 border-b">
-                              <div>Event</div>
-                              <div>User</div>
-                              <div>Path</div>
-                              <div>Time</div>
-                            </div>
-                            {/* Activity Items */}
-                            {userActivity
-                              .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-                              .map((activity) => (
-                                <div key={activity.id} className="grid grid-cols-4 gap-4 text-sm py-2">
-                                  <div className="flex items-center gap-2">
-                                    {activity.event === 'visited_home' && <Home className="h-4 w-4 text-muted-foreground" />}
-                                    {activity.event === 'visited_question' && <FileText className="h-4 w-4 text-muted-foreground" />}
-                                    {activity.event === 'visited_progress' && <BarChart className="h-4 w-4 text-muted-foreground" />}
-                                    {activity.event === 'visited_revisit' && <RefreshCw className="h-4 w-4 text-muted-foreground" />}
-                                    {activity.event === 'submitted_question' && <CheckCircle className="h-4 w-4 text-muted-foreground" />}
-                                    <span className="capitalize">{activity.event.replace(/_/g, ' ')}</span>
-                                  </div>
-                                  <div
-                                    className="truncate cursor-pointer hover:text-primary"
-                                    onClick={() => handleUserClick(activity.user_email || '')}
-                                  >
-                                    {activity.user_email}
-                                  </div>
-                                  <div className="truncate">{activity.path}</div>
-                                  <div>{new Date(activity.created_at).toLocaleString()}</div>
-                                </div>
-                              ))}
-                          </div>
-
-                          {/* Pagination */}
-                          <div className="flex items-center justify-between mt-4">
-                            <div className="text-sm text-muted-foreground">
-                              Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, userActivity.length)} of {userActivity.length} activities
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                                disabled={currentPage === 1}
-                              >
-                                Previous
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setCurrentPage(prev => Math.min(Math.ceil(userActivity.length / itemsPerPage), prev + 1))}
-                                disabled={currentPage >= Math.ceil(userActivity.length / itemsPerPage)}
-                              >
-                                Next
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="sessions">
-                <UserSessions onUserClick={handleUserClick} />
-              </TabsContent>
-
-              <TabsContent value="homework">
-                <UserActivityFilter />
-              </TabsContent>
-
-              <TabsContent value="performance">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <BarChart className="h-5 w-5 mr-2" />
-                      Student Performance
-                    </CardTitle>
-                    <CardDescription>Track student progress across topics and question types</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {isLoading ? (
-                      <div className="space-y-8">
-                        <StudentSelectorSkeleton />
-                        <PerformanceGraphSkeleton />
-                      </div>
-                    ) : (
-                      <div className="space-y-8">
-                        {/* Student Selector */}
-                        <div className="flex items-center gap-4">
-                          <Label htmlFor="student">Select Student</Label>
-                          <select
-                            id="student"
-                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            value={selectedStudent || ''}
-                            onChange={(e) => setSelectedStudent(e.target.value)}
+                <div className="flex items-center justify-between py-2 border-b">
+                  <span className="text-sm text-muted-foreground">Plan</span>
+                  <span className="font-medium text-foreground capitalize">{userType === 'revisionAI' ? 'AI Revision' : userType === 'revision' ? 'Revision' : 'Basic'}</span>
+                </div>
+                <div className="flex items-center justify-between py-2 border-b">
+                  <span className="text-sm text-muted-foreground">School</span>
+                  <span className="font-medium text-foreground">Central Foundation Boys' School</span>
+                </div>
+                <div className="py-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-muted-foreground">Courses</span>
+                  </div>
+                  {userCourses && userCourses.length > 0 ? (
+                    <div className="space-y-2 mb-3">
+                      {userCourses.map((course, index) => (
+                        <div key={index} className="flex items-center justify-between text-sm text-muted-foreground">
+                          <span>{course}</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className={`text-red-600 hover:text-red-700 hover:bg-red-50 ${userCourses.length === 1 ? 'opacity-50 cursor-not-allowed' : ''
+                              }`}
+                            onClick={() => {
+                              if (userCourses.length > 1) {
+                                setCourseToDelete(course)
+                                setDeleteDialogOpen(true)
+                              }
+                            }}
+                            disabled={userCourses.length === 1}
                           >
-                            {students.length === 0 ? (
-                              <option value="">No students available</option>
-                            ) : (
-                              students.map((student) => (
-                                <option key={student.userid} value={student.userid}>
-                                  {student.email}
-                                </option>
-                              ))
-                            )}
-                          </select>
-                        </div>
-
-                        {/* Performance Graph */}
-                        <PerformanceGraph 
-                          userActivity={userActivity}
-                          selectedStudent={selectedStudent}
-                          topics={topics}
-                        />
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </>
-          )}
-        </Tabs>
-      </div>
-
-      {/* User Session Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>User Activity: {selectedUser}</DialogTitle>
-            <button
-              onClick={() => setIsDialogOpen(false)}
-              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-4 w-4"
-              >
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-              <span className="sr-only">Close</span>
-            </button>
-          </DialogHeader>
-
-          {userSessions.length > 0 && (
-            <div className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5" />
-                    {new Date(userSessions[currentSessionIndex].login_time).toLocaleDateString()}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">Duration: {formatDuration(userSessions[currentSessionIndex].duration_minutes)}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">Questions: {userSessions[currentSessionIndex].questions_submitted}</span>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Navigation className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">Pages visited: {userSessions[currentSessionIndex].pages_visited.length}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Activity className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">Total events: {userSessions[currentSessionIndex].events.length}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border-t pt-4">
-                    <h4 className="text-sm font-medium mb-2">Pages Visited:</h4>
-                    <div className="space-y-1">
-                      {userSessions[currentSessionIndex].pages_visited.map((path, i) => (
-                        <div key={i} className="text-sm text-muted-foreground">
-                          {path}
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       ))}
                     </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground mb-3">No courses enrolled</div>
+                  )}
+                  <div className="flex justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setAddCourseDialogOpen(true)}
+                      className="gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Course
+                    </Button>
                   </div>
-                </CardContent>
-              </Card>
-
-              <div className="flex items-center justify-between">
-                <Button
-                  variant="outline"
-                  onClick={handlePreviousSession}
-                  disabled={currentSessionIndex === 0}
-                >
-                  Previous Session
-                </Button>
-                <span className="text-sm text-muted-foreground">
-                  Session {currentSessionIndex + 1} of {userSessions.length}
-                </span>
-                <Button
-                  variant="outline"
-                  onClick={handleNextSession}
-                  disabled={currentSessionIndex === userSessions.length - 1}
-                >
-                  Next Session
-                </Button>
+                </div>
               </div>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+
+            <div className="border rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-4">
+                <CreditCard className="h-4 w-4 text-muted-foreground" />
+                <Label className="text-base">Subscription</Label>
+              </div>
+              <SubscriptionManager />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Delete Course Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
