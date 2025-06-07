@@ -35,6 +35,7 @@ import { TopicFilter } from "@/components/topic-filter"
 import { QuestionTypeFilter } from "@/components/question-type-filter"
 import { DynamicIcon } from "@/components/ui/dynamicicon"
 import { Skeleton } from "@/components/ui/skeleton"
+import { toast } from "sonner"
 
 interface DBTopic {
   id: string
@@ -483,6 +484,7 @@ export default function RevisitPage() {
       setDeleteDialogOpen(false)
       setAnswerToDelete(null)
       setDeleteConfirmation("")
+      toast.success("Answer deleted successfully")
     } catch (error) {
       console.error("Error deleting answer:", error)
     } finally {
