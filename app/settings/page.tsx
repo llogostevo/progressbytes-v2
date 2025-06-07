@@ -30,9 +30,8 @@ interface UserActivity {
 }
 
 interface Student {
-  id: string
+  userid: string
   email: string
-  name?: string
 }
 
 interface UserSession {
@@ -263,7 +262,7 @@ export default function SettingsPage() {
         // Fetch students
         const { data: studentsData, error: studentsError } = await supabase
           .from("profiles")
-          .select("id, email, name")
+          .select("userid, email")
           .order('email')
 
         if (studentsError) {
@@ -271,7 +270,7 @@ export default function SettingsPage() {
         } else {
           setStudents(studentsData || [])
           if (studentsData && studentsData.length > 0) {
-            setSelectedStudent(studentsData[0].id)
+            setSelectedStudent(studentsData[0].userid)
           }
         }
       }
@@ -682,8 +681,8 @@ export default function SettingsPage() {
                             onChange={(e) => setSelectedStudent(e.target.value)}
                           >
                             {students.map((student) => (
-                              <option key={student.id} value={student.id}>
-                                {student.name || student.email}
+                              <option key={student.userid} value={student.userid}>
+                                {student.email}
                               </option>
                             ))}
                           </select>
