@@ -11,6 +11,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
+import { loadStripe } from '@stripe/stripe-js'
+
+// Initialize Stripe
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
 interface Course {
   name: string
@@ -35,6 +39,7 @@ export default function SettingsPage() {
   const [availableCourses, setAvailableCourses] = useState<Course[]>([])
   const [isAddingCourse, setIsAddingCourse] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingCheckout, setIsLoadingCheckout] = useState(false)
 
   const supabase = createClient()
 
@@ -114,6 +119,62 @@ export default function SettingsPage() {
       console.error("Error adding course:", error)
     } finally {
       setIsAddingCourse(false)
+    }
+  }
+
+  const handlePlanSelect = async (planType: UserType) => {
+    if (!userEmail || planType === userType) return
+
+    setIsLoadingCheckout(true)
+    try {
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          priceId: getPriceIdForPlan(planType),
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create checkout session')
+      }
+
+      if (!data.sessionId) {
+        throw new Error('No session ID returned')
+      }
+
+      const stripe = await stripePromise
+      if (!stripe) {
+        throw new Error('Stripe failed to load')
+      }
+
+      const { error } = await stripe.redirectToCheckout({
+        sessionId: data.sessionId
+      })
+
+      if (error) {
+        throw error
+      }
+    } catch (error) {
+      console.error('Error:', error)
+      alert(error instanceof Error ? error.message : 'An error occurred during checkout')
+    } finally {
+      setIsLoadingCheckout(false)
+    }
+  }
+
+  const getPriceIdForPlan = (planType: UserType): string => {
+    switch (planType) {
+      case 'revision':
+        return process.env.NEXT_PUBLIC_STRIPE_REVISION_PRICE_ID!
+      case 'revisionAI':
+        return process.env.NEXT_PUBLIC_STRIPE_REVISION_AI_PRICE_ID!
+      default:
+        return process.env.NEXT_PUBLIC_STRIPE_BASIC_PRICE_ID!
     }
   }
 
@@ -241,8 +302,13 @@ export default function SettingsPage() {
                     <Book className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm">Basic progress tracking</span>
                   </div>
-                  <Button className="w-full" variant={userType === 'basic' ? 'default' : 'outline'}>
-                    {userType === 'basic' ? 'Current Plan' : 'Select Plan'}
+                  <Button 
+                    className="w-full" 
+                    variant={userType === 'basic' ? 'default' : 'outline'}
+                    onClick={() => handlePlanSelect('basic')}
+                    disabled={isLoadingCheckout}
+                  >
+                    {userType === 'basic' ? 'Current Plan' : isLoadingCheckout ? 'Loading...' : 'Select Plan'}
                   </Button>
                 </div>
               </CardContent>
@@ -264,8 +330,13 @@ export default function SettingsPage() {
                     <BookmarkCheck className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm">Detailed progress analytics</span>
                   </div>
-                  <Button className="w-full" variant={userType === 'revision' ? 'default' : 'outline'}>
-                    {userType === 'revision' ? 'Current Plan' : 'Select Plan'}
+                  <Button 
+                    className="w-full" 
+                    variant={userType === 'revision' ? 'default' : 'outline'}
+                    onClick={() => handlePlanSelect('revision')}
+                    disabled={isLoadingCheckout}
+                  >
+                    {userType === 'revision' ? 'Current Plan' : isLoadingCheckout ? 'Loading...' : 'Select Plan'}
                   </Button>
                 </div>
               </CardContent>
@@ -287,8 +358,13 @@ export default function SettingsPage() {
                     <School className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm">AI-powered feedback</span>
                   </div>
-                  <Button className="w-full" variant={userType === 'revisionAI' ? 'default' : 'outline'}>
-                    {userType === 'revisionAI' ? 'Current Plan' : 'Select Plan'}
+                  <Button 
+                    className="w-full" 
+                    variant={userType === 'revisionAI' ? 'default' : 'outline'}
+                    onClick={() => handlePlanSelect('revisionAI')}
+                    disabled={isLoadingCheckout}
+                  >
+                    {userType === 'revisionAI' ? 'Current Plan' : isLoadingCheckout ? 'Loading...' : 'Select Plan'}
                   </Button>
                 </div>
               </CardContent>
@@ -305,9 +381,9 @@ export default function SettingsPage() {
               <CardTitle>Your Courses</CardTitle>
               <CardDescription>Manage your enrolled courses</CardDescription>
             </div>
-            <Button onClick={() => setAddCourseDialogOpen(true)}>
+            <Button onClick={() => setAddCourseDialogOpen(true)} disabled={isAddingCourse}>
               <BookmarkPlus className="h-4 w-4 mr-2" />
-              Add Course
+              {isAddingCourse ? 'Adding...' : 'Add Course'}
             </Button>
           </div>
         </CardHeader>
@@ -366,7 +442,11 @@ export default function SettingsPage() {
             {availableCourses
               .filter(course => !userCourses.includes(course.slug))
               .map(course => (
-                <Card key={course.slug} className="cursor-pointer hover:bg-muted/50" onClick={() => handleAddCourse(course.slug)}>
+                <Card 
+                  key={course.slug} 
+                  className={`cursor-pointer hover:bg-muted/50 ${isAddingCourse ? 'opacity-50 pointer-events-none' : ''}`} 
+                  onClick={() => handleAddCourse(course.slug)}
+                >
                   <CardContent className="pt-6">
                     <div className="flex items-center space-x-4">
                       {course.icon === 'book' && <Book className="h-6 w-6 text-muted-foreground" />}
