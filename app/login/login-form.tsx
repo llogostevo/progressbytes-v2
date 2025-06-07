@@ -188,6 +188,13 @@ function LoginFormContent() {
         </TabsContent>
       </Tabs>
 
+      {isLoading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/70">
+          <Loader2 className="h-10 w-10 animate-spin text-emerald-600" />
+          <span className="ml-4 text-lg text-emerald-800">Signing you in...</span>
+        </div>
+      )}
+
       {/* Divider Line */}
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
