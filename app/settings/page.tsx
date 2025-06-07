@@ -2,15 +2,12 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { ArrowLeft, Trash2, Plus, BookOpen, Book, GraduationCap, School, BookMarked, BookText, Library, BookOpenCheck, BookOpenText, Bookmark, BookmarkCheck, BookmarkPlus, BookmarkX, User, CreditCard } from "lucide-react"
+
+import { ArrowLeft, Activity, Users, Eye, Navigation, CheckCircle } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/utils/supabase/client"
 import { redirect } from "next/navigation"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { SubscriptionManager } from "../components/subscription-manager"
+
 import {
   BarChart as RechartsBarChart,
   Bar,
@@ -22,8 +19,9 @@ import {
   ResponsiveContainer,
 } from "recharts"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { UserSessions } from "@/components/user-sessions"
 
-// TODO: the homework dialgo is the best and should be replciated for hte other dialogs. 
 interface UserActivity {
   id: string
   user_id: string
@@ -393,6 +391,10 @@ export default function SettingsPage() {
   const [addCourseDialogOpen, setAddCourseDialogOpen] = useState(false)
   const [availableCourses, setAvailableCourses] = useState<Course[]>([])
   const [isAddingCourse, setIsAddingCourse] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [userActivity, setUserActivity] = useState<UserActivity[]>([])
+  const [filteredActivity, setFilteredActivity] = useState<UserActivity[]>([])
+  const [selectedFilter, setSelectedFilter] = useState<string>("all")
 
   const supabase = createClient()
 
@@ -536,249 +538,226 @@ export default function SettingsPage() {
     }
   }, [addCourseDialogOpen, supabase])
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <Link href="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Home
+  useEffect(() => {
+    const fetchUserActivity = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (!user) return
+
+      const { data: activityData } = await supabase
+        .from("user_activity")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+
+      if (activityData) {
+        setUserActivity(activityData)
+        setFilteredActivity(activityData)
+      }
+    }
+
+    fetchUserActivity()
+  }, [])
+
+  const handleFilterChange = (filter: string) => {
+    setSelectedFilter(filter)
+    if (filter === "all") {
+      setFilteredActivity(userActivity)
+    } else {
+      const filtered = userActivity.filter(activity => activity.event === filter)
+      setFilteredActivity(filtered)
+    }
+  }
+
+  const handleUserClick = (email: string) => {
+    // Handle user click in settings page
+    console.log("User clicked:", email)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center mb-8">
+          <Link href="/" className="mr-4">
+            <ArrowLeft className="h-6 w-6" />
           </Link>
-          <h1 className="text-3xl font-bold mt-4 mb-2">Settings</h1>
-          <p className="text-muted-foreground">Manage your account and preferences</p>
+          <h1 className="text-2xl font-bold">Settings</h1>
         </div>
+        <div className="grid gap-6">
+          <Skeleton className="h-[200px]" />
+          <Skeleton className="h-[400px]" />
+        </div>
+      </div>
+    )
+  }
 
-        <Card className="mb-8">
+  if (userRole !== "admin" && userRole !== "teacher") {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center mb-8">
+          <Link href="/" className="mr-4">
+            <ArrowLeft className="h-6 w-6" />
+          </Link>
+          <h1 className="text-2xl font-bold">Settings</h1>
+        </div>
+        <Card>
           <CardHeader>
-            <CardTitle>Account Settings</CardTitle>
-            <CardDescription>Manage your account details and subscription</CardDescription>
+            <CardTitle>Premium Features</CardTitle>
+            <CardDescription>
+              Upgrade to access advanced analytics and features
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="border rounded-lg p-4 space-y-3">
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-muted-foreground" />
-                <Label className="text-base">Account Details</Label>
-              </div>
-              <div className="grid gap-3">
-                <div className="flex items-center justify-between py-2 border-b">
-                  <span className="text-sm text-muted-foreground">Email</span>
-                  <span className="font-medium text-foreground">{userEmail}</span>
-                </div>
-                <div className="flex items-center justify-between py-2 border-b">
-                  <span className="text-sm text-muted-foreground">Role</span>
-                  <span className="font-medium text-foreground capitalize">{userRole}</span>
-                </div>
-                <div className="flex items-center justify-between py-2 border-b">
-                  <span className="text-sm text-muted-foreground">Plan</span>
-                  <span className="font-medium text-foreground capitalize">{userType === 'revisionAI' ? 'AI Revision' : userType === 'revision' ? 'Revision' : 'Basic'}</span>
-                </div>
-                <div className="flex items-center justify-between py-2 border-b">
-                  <span className="text-sm text-muted-foreground">School</span>
-                  <span className="font-medium text-foreground">Central Foundation Boys' School</span>
-                </div>
-                <div className="py-2">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-muted-foreground">Courses</span>
-                  </div>
-                  {userCourses && userCourses.length > 0 ? (
-                    <div className="space-y-2 mb-3">
-                      {userCourses.map((course, index) => (
-                        <div key={index} className="flex items-center justify-between text-sm text-muted-foreground">
-                          <span>{course}</span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className={`text-red-600 hover:text-red-700 hover:bg-red-50 ${userCourses.length === 1 ? 'opacity-50 cursor-not-allowed' : ''
-                              }`}
-                            onClick={() => {
-                              if (userCourses.length > 1) {
-                                setCourseToDelete(course)
-                                setDeleteDialogOpen(true)
-                              }
-                            }}
-                            disabled={userCourses.length === 1}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-sm text-muted-foreground mb-3">No courses enrolled</div>
-                  )}
-                  <div className="flex justify-end">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setAddCourseDialogOpen(true)}
-                      className="gap-2"
-                    >
-                      <Plus className="h-4 w-4" />
-                      Add Course
-                    </Button>
-                  </div>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center space-x-4">
+                <CheckCircle className="h-6 w-6 text-green-500" />
+                <div>
+                  <h3 className="font-medium">Self-Assessment</h3>
+                  <p className="text-sm text-muted-foreground">
+                    You&apos;re using the premium version with self-assessment. Coming soon get AI-powered feedback.
+                  </p>
                 </div>
               </div>
-            </div>
-
-            <div className="border rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-4">
-                <CreditCard className="h-4 w-4 text-muted-foreground" />
-                <Label className="text-base">Subscription</Label>
-              </div>
-              <SubscriptionManager />
             </div>
           </CardContent>
         </Card>
       </div>
+    )
+  }
 
-      {/* Delete Course Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-semibold text-gray-900">Delete Course</DialogTitle>
-            <DialogDescription className="text-gray-500 mt-2">
-              This action cannot be undone. This will permanently remove this course from your profile.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-6 px-1">
-            <div className="space-y-3">
-              <label htmlFor="delete-confirmation" className="text-sm font-medium text-gray-700 block">
-                Type &quot;delete&quot; to confirm
-              </label>
-              <Input
-                id="delete-confirmation"
-                placeholder="Type &quot;delete&quot; to confirm"
-                value={deleteConfirmation}
-                onChange={(e) => setDeleteConfirmation(e.target.value)}
-                className={`w-full ${deleteConfirmation && deleteConfirmation !== "delete"
-                    ? "border-red-300 focus-visible:ring-red-500"
-                    : ""
-                  }`}
-              />
-              {deleteConfirmation && deleteConfirmation !== "delete" && (
-                <p className="text-sm text-red-500 mt-1">Please type &quot;delete&quot; exactly to confirm</p>
-              )}
-            </div>
-          </div>
-          <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setDeleteDialogOpen(false)
-                setCourseToDelete(null)
-                setDeleteConfirmation("")
-              }}
-              className="mt-2 sm:mt-0"
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDeleteCourse}
-              disabled={deleteConfirmation !== "delete" || isDeleting}
-              className={`flex items-center gap-2 ${deleteConfirmation === "delete"
-                  ? "bg-red-600 hover:bg-red-700 text-white"
-                  : "bg-red-100 text-red-400 cursor-not-allowed"
-                }`}
-            >
-              {isDeleting ? (
-                <>
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  Deleting...
-                </>
-              ) : (
-                <>
-                  <Trash2 className="h-4 w-4" />
-                  Delete Course
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex items-center mb-8">
+        <Link href="/" className="mr-4">
+          <ArrowLeft className="h-6 w-6" />
+        </Link>
+        <h1 className="text-2xl font-bold">Settings</h1>
+      </div>
 
-      {/* Add Course Dialog */}
-      <Dialog open={addCourseDialogOpen} onOpenChange={setAddCourseDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-semibold text-gray-900">Add Course</DialogTitle>
-            <DialogDescription className="text-gray-500 mt-2">
-              Select a course to add to your profile
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <div className="space-y-1 max-h-[400px] overflow-y-auto pr-2">
-              {availableCourses
-                .filter(course => !userCourses.includes(course.slug))
-                .map((course) => {
-                  // Map icon string to Lucide component
-                  const IconComponent = (() => {
-                    switch (course.icon) {
-                      case 'book': return Book
-                      case 'book-open': return BookOpen
-                      case 'graduation-cap': return GraduationCap
-                      case 'school': return School
-                      case 'book-marked': return BookMarked
-                      case 'book-text': return BookText
-                      case 'library': return Library
-                      case 'book-open-check': return BookOpenCheck
-                      case 'book-open-text': return BookOpenText
-                      case 'bookmark': return Bookmark
-                      case 'bookmark-check': return BookmarkCheck
-                      case 'bookmark-plus': return BookmarkPlus
-                      case 'bookmark-x': return BookmarkX
-                      default: return BookOpen
-                    }
-                  })()
+      <Tabs defaultValue="analytics" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="activity">User Activity</TabsTrigger>
+        </TabsList>
 
-                  return (
-                    <div
-                      key={course.slug}
-                      className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer group"
-                      onClick={() => handleAddCourse(course.slug)}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-md bg-gray-100 group-hover:bg-gray-200 transition-colors">
-                          <IconComponent className="h-5 w-5 text-gray-600" />
+        <TabsContent value="analytics" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Analytics Overview</CardTitle>
+              <CardDescription>
+                View detailed analytics and user insights
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">
+                      Total Users
+                    </CardTitle>
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">0</div>
+                    <p className="text-xs text-muted-foreground">
+                      +0% from last month
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">
+                      Active Sessions
+                    </CardTitle>
+                    <Activity className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">0</div>
+                    <p className="text-xs text-muted-foreground">
+                      +0% from last month
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">
+                      Page Views
+                    </CardTitle>
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">0</div>
+                    <p className="text-xs text-muted-foreground">
+                      +0% from last month
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">
+                      Navigation Events
+                    </CardTitle>
+                    <Navigation className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">0</div>
+                    <p className="text-xs text-muted-foreground">
+                      +0% from last month
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>User Sessions</CardTitle>
+              <CardDescription>
+                View detailed user session data
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <UserSessions onUserClick={handleUserClick} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="activity" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>User Activity</CardTitle>
+              <CardDescription>
+                Track and analyze user interactions
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="mt-4 space-y-4">
+                {filteredActivity.map((activity) => (
+                  <Card key={activity.id}>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium">
+                            {activity.event}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {activity.path}
+                          </p>
                         </div>
-                        <div>
-                          <h4 className="font-medium text-sm">{course.name}</h4>
-                          <p className="text-xs text-muted-foreground line-clamp-1">{course.description}</p>
+                        <div className="text-sm text-muted-foreground">
+                          {new Date(activity.created_at).toLocaleString()}
                         </div>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        disabled={isAddingCourse}
-                      >
-                        {isAddingCourse ? (
-                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                        ) : (
-                          <Plus className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                  )
-                })}
-              {availableCourses.filter(course => !userCourses.includes(course.slug)).length === 0 && (
-                <div className="text-center py-8 text-sm text-muted-foreground">
-                  No more courses available to add
-                </div>
-              )}
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setAddCourseDialogOpen(false)}
-              className="mt-2 sm:mt-0"
-            >
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

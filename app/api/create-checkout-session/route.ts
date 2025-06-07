@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server'
-import { stripe } from '@/utils/stripe/stripe'
-import { createClient } from '@/utils/supabase/server'
+import Stripe from 'stripe'
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2025-05-28.basil',
+})
 
 export async function POST(req: Request) {
   try {
-    const { priceId, userId, email } = await req.json()
-    
+    const body = await req.json()
+    const { priceId } = body
+
     if (!priceId) {
       return NextResponse.json(
         { error: 'Price ID is required' },
@@ -13,29 +17,18 @@ export async function POST(req: Request) {
       )
     }
 
-    // Create Stripe customer
-    const customer = await stripe.customers.create({
-      email,
-      metadata: {
-        userId,
-      },
-    })
-
     // Create checkout session
     const session = await stripe.checkout.sessions.create({
-      customer: customer.id,
+      mode: 'subscription',
+      payment_method_types: ['card'],
       line_items: [
         {
           price: priceId,
           quantity: 1,
         },
       ],
-      mode: 'subscription',
-      success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/settings?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/settings?canceled=true`,
-      metadata: {
-        userId,
-      },
+      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/settings?success=true`,
+      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/settings?canceled=true`,
     })
 
     if (!session.id) {

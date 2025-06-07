@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowLeft, Activity, Users, Eye, Navigation, Home, FileText, BarChart, RefreshCw, CheckCircle, Clock, Calendar } from "lucide-react"
+import { ArrowLeft, Activity, Users, Eye, Navigation, Home, FileText, BarChart, RefreshCw, CheckCircle } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/utils/supabase/client"
 import { redirect } from "next/navigation"
@@ -34,9 +34,13 @@ interface UserActivity {
   topic?: string
 }
 
-interface Student {
-  userid: string
-  email: string
+interface UserSession {
+  login_time: string
+  last_activity: string
+  duration_minutes: number
+  questions_submitted: number
+  pages_visited: string[]
+  events: UserActivity[]
 }
 
 type UserRole = 'admin' | 'student' | 'teacher'
@@ -395,21 +399,19 @@ export default function AnalyticsPage() {
   const [pageViews, setPageViews] = useState<Record<string, number>>({})
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
-  const [selectedUser, setSelectedUser] = useState<string | null>(null)
-  const [userSessions, setUserSessions] = useState<any[]>([])
+  const [userSessions, setUserSessions] = useState<UserSession[]>([])
   const [topics, setTopics] = useState<Array<{ id: string; name: string; slug: string }>>([])
-  const [students, setStudents] = useState<Student[]>([])
+  const [students, setStudents] = useState<Array<{ userid: string; email: string }>>([])
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null)
-  const [userEmail, setUserEmail] = useState<string | null>(null)
 
   const supabase = createClient()
 
   const handleUserClick = (email: string) => {
-    setSelectedUser(email)
+    setSelectedStudent(email)
 
     // Group activities by session for the selected user
     const userActivities = userActivity.filter(a => a.user_email === email)
-    const sessions = new Map<string, any>()
+    const sessions = new Map<string, UserSession>()
 
     userActivities.forEach(activity => {
       const date = new Date(activity.created_at).toDateString()
@@ -470,7 +472,6 @@ export default function AnalyticsPage() {
       if (error || !user) {
         redirect('/')
       }
-      setUserEmail(user.email || null)
 
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
