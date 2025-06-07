@@ -12,6 +12,17 @@ import type { User } from "@supabase/supabase-js"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DynamicIcon } from "@/components/ui/dynamicicon"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts"
+import React from "react"
 
 // Define types for the database responses
 interface DBQuestion {
@@ -177,6 +188,198 @@ function compareTopicNumbers(a?: string, b?: string) {
     if (aVal !== bVal) return aVal - bVal
   }
   return 0
+}
+
+function ProgressCharts({ answers, topics }: { answers: Answer[]; topics: Topic[] }) {
+  // Prepare data for the stacked bar chart
+  const barChartData = topics.map((topic) => {
+    const topicAnswers = answers.filter((answer) =>
+      topic.questions.some((q) => q.id === answer.question_id)
+    )
+    return {
+      name: topic.name,
+      topicNumber: topic.topicnumber?.toString() || "",
+      Strong: topicAnswers.filter((a) => a.score === "green").length,
+      Developing: topicAnswers.filter((a) => a.score === "amber").length,
+      "Needs Work": topicAnswers.filter((a) => a.score === "red").length,
+      total: topicAnswers.length,
+    }
+  }).sort((a, b) => compareTopicNumbers(a.topicNumber, b.topicNumber))
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Performance by Topic</CardTitle>
+        <CardDescription>Distribution of scores across different topics</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="h-[500px] min-w-0 min-h-0">
+          {/* Mobile: vertical, small font */}
+          <div className="block md:invisible md:absolute min-w-0 min-h-0 h-full w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={barChartData}
+                margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="topicNumber"
+                  tick={({ x, y, payload }) => (
+                    <text
+                      x={x}
+                      y={y}
+                      dy={8}
+                      fontSize={9}
+                      transform={`rotate(90, ${x}, ${y})`}
+                      textAnchor="start"
+                      fill="#666"
+                    >
+                      {payload.value}
+                    </text>
+                  )}
+                  interval={0}
+                  height={80}
+                />
+                <YAxis />
+                <Tooltip
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-white p-3 border rounded-lg shadow-lg">
+                          <p className="font-medium">{data.name}</p>
+                          <p className="text-sm text-muted-foreground">Topic {data.topicNumber}</p>
+                          <div className="mt-2 space-y-1">
+                            <p className="text-emerald-600">Strong: {data.Strong}</p>
+                            <p className="text-amber-600">Developing: {data.Developing}</p>
+                            <p className="text-red-600">Needs Work: {data["Needs Work"]}</p>
+                            <p className="font-medium mt-1">Total: {data.total}</p>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Legend />
+                <Bar dataKey="Strong" stackId="a" fill="#10b981" />
+                <Bar dataKey="Developing" stackId="a" fill="#f59e0b" />
+                <Bar dataKey="Needs Work" stackId="a" fill="#ef4444" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          {/* md: diagonal, medium font */}
+          <div className="invisible md:visible md:static lg:invisible lg:absolute min-w-0 min-h-0 h-full w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={barChartData}
+                margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="topicNumber"
+                  tick={({ x, y, payload }) => (
+                    <text
+                      x={x}
+                      y={y}
+                      dy={16}
+                      fontSize={12}
+                      transform={`rotate(40, ${x}, ${y})`}
+                      textAnchor="start"
+                      fill="#666"
+                    >
+                      {payload.value}
+                    </text>
+                  )}
+                  interval={0}
+                  height={60}
+                />
+                <YAxis />
+                <Tooltip
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-white p-3 border rounded-lg shadow-lg">
+                          <p className="font-medium">{data.name}</p>
+                          <p className="text-sm text-muted-foreground">Topic {data.topicNumber}</p>
+                          <div className="mt-2 space-y-1">
+                            <p className="text-emerald-600">Strong: {data.Strong}</p>
+                            <p className="text-amber-600">Developing: {data.Developing}</p>
+                            <p className="text-red-600">Needs Work: {data["Needs Work"]}</p>
+                            <p className="font-medium mt-1">Total: {data.total}</p>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Legend />
+                <Bar dataKey="Strong" stackId="a" fill="#10b981" />
+                <Bar dataKey="Developing" stackId="a" fill="#f59e0b" />
+                <Bar dataKey="Needs Work" stackId="a" fill="#ef4444" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          {/* lg+: diagonal, larger font */}
+          <div className="invisible lg:visible lg:static min-w-0 min-h-0 h-full w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={barChartData}
+                margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="topicNumber"
+                  tick={({ x, y, payload }) => (
+                    <text
+                      x={x}
+                      y={y}
+                      dy={16}
+                      fontSize={14}
+                      transform={`rotate(40, ${x}, ${y})`}
+                      textAnchor="start"
+                      fill="#666"
+                    >
+                      {payload.value}
+                    </text>
+                  )}
+                  interval={0}
+                  height={60}
+                />
+                <YAxis />
+                <Tooltip
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-white p-3 border rounded-lg shadow-lg">
+                          <p className="font-medium">{data.name}</p>
+                          <p className="text-sm text-muted-foreground">Topic {data.topicNumber}</p>
+                          <div className="mt-2 space-y-1">
+                            <p className="text-emerald-600">Strong: {data.Strong}</p>
+                            <p className="text-amber-600">Developing: {data.Developing}</p>
+                            <p className="text-red-600">Needs Work: {data["Needs Work"]}</p>
+                            <p className="font-medium mt-1">Total: {data.total}</p>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Legend />
+                <Bar dataKey="Strong" stackId="a" fill="#10b981" />
+                <Bar dataKey="Developing" stackId="a" fill="#f59e0b" />
+                <Bar dataKey="Needs Work" stackId="a" fill="#ef4444" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
 }
 
 export default function ProgressPage() {
@@ -541,6 +744,8 @@ export default function ProgressPage() {
                 </div>
               </CardFooter>
             </Card>
+
+            <ProgressCharts answers={answers} topics={topics} />
 
             <div className="mt-8">
               <div className="flex items-center justify-between mb-4">
