@@ -62,7 +62,7 @@ export function NavBar() {
   ]
 
   return (
-    <nav className="flex items-center space-x-1">
+    <nav className="hidden md:flex items-center space-x-1">
       {navigationItems.map((item) => (
         <Link
           key={item.href}
