@@ -7,6 +7,7 @@ import { createClient } from "@/utils/supabase/server"
 import { CTABanner } from "@/components/cta-banner"
 import { UserLogin } from "@/components/user-login"
 import type { Topic, Question } from "@/lib/types"
+import { redirect } from "next/navigation"
 // import type { LucideIcon } from "lucide-react"
 // import { DynamicIcon } from "@/components/ui/dynamicicon"
 // import * as Icons from 'lucide-react'
@@ -66,7 +67,11 @@ export default async function Home() {
   const supabase = await createClient()
 
   // Get the current user
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user }, error } = await supabase.auth.getUser()
+
+  if (error || !user) {
+    redirect('/')
+  }
 
   // Get the user's profile data including user_type
   const { data: profile } = await supabase
@@ -170,9 +175,9 @@ export default async function Home() {
     // TODO: fix the type error
     // @ts-expect-error - this is a workaround to fix the type error
     topics = (topicsWithQuestions as DBTopic[])?.map(topic => {      // Get all questions from all subtopics in a single flat array
-      const allQuestions = topic.subtopics.flatMap((subtopic: { 
-        subtopic_question_link: Array<{ 
-          questions: { 
+      const allQuestions = topic.subtopics.flatMap((subtopic: {
+        subtopic_question_link: Array<{
+          questions: {
             id: string;
             type: Question['type'];
             question_text: string;
@@ -203,8 +208,8 @@ export default async function Home() {
             };
           }
         }>
-      }) => 
-        subtopic.subtopic_question_link.flatMap((link: { 
+      }) =>
+        subtopic.subtopic_question_link.flatMap((link: {
           questions: {
             id: string;
             type: Question['type'];
@@ -282,7 +287,7 @@ export default async function Home() {
         active: topic.active,
         slug: topic.slug,
         unit: topic.units.unit_number,
-        unitName: topic.units.name, 
+        unitName: topic.units.name,
         questionCount: allQuestions.length,
         questions: allQuestions,
         topicnumber: topic.topicnumber // Add the topicnumber field
@@ -304,7 +309,7 @@ export default async function Home() {
           <h1 className="text-2xl md:text-4xl font-bold tracking-tight">GCSE Computer Science Quiz</h1>
           <UserLogin email={user?.email} />
 
-          {userType === 'basic' || userType === 'revision' || userType === 'revision-plus' && (
+          {(userType === 'basic' || userType === 'revision' || userType === 'revision-plus') && (
             <Link href="/settings">
               <Button variant="outline" size="sm">
                 <Settings className="h-4 w-4 mr-2" />
