@@ -257,7 +257,7 @@ function ProgressCharts({ answers, topics }: { answers: Answer[]; topics: Topic[
                 />
                 <YAxis />
                 <Tooltip
-                  content={({ active, payload, label }) => {
+                  content={({ active, payload }) => {
                     if (active && payload && payload.length) {
                       const data = payload[0].payload;
                       return (
@@ -325,7 +325,7 @@ function ProgressCharts({ answers, topics }: { answers: Answer[]; topics: Topic[
                 />
                 <YAxis />
                 <Tooltip
-                  content={({ active, payload, label }) => {
+                  content={({ active, payload }) => {
                     if (active && payload && payload.length) {
                       const data = payload[0].payload;
                       return (
@@ -393,7 +393,7 @@ function ProgressCharts({ answers, topics }: { answers: Answer[]; topics: Topic[
                 />
                 <YAxis />
                 <Tooltip
-                  content={({ active, payload, label }) => {
+                  content={({ active, payload }) => {
                     if (active && payload && payload.length) {
                       const data = payload[0].payload;
                       return (

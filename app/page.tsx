@@ -1,67 +1,10 @@
 import { TopicGrid } from "@/components/topic-grid"
-// import { topics } from "@/lib/data"
-import { Button } from "@/components/ui/button"
-import { Settings } from "lucide-react"
-import Link from "next/link"
+
 import { createClient } from "@/utils/supabase/server"
 import { CTABanner } from "@/components/cta-banner"
 import { UserLogin } from "@/components/user-login"
 import type { Topic, Question } from "@/lib/types"
 import { redirect } from "next/navigation"
-// import type { LucideIcon } from "lucide-react"
-// import { DynamicIcon } from "@/components/ui/dynamicicon"
-// import * as Icons from 'lucide-react'
-
-// Helper function to convert snake_case to PascalCase
-// function toPascalCase(str: string): string {
-//   return str
-//     .split('_')
-//     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-//     .join('')
-// }
-
-// Helper function to get LucideIcon from string
-// function getIconFromString(iconName: string): LucideIcon | undefined {
-//   const pascalCaseName = toPascalCase(iconName)
-//   return Icons[pascalCaseName as keyof typeof Icons] as LucideIcon | undefined
-// }
-
-// Define the database response types
-// interface DBQuestion {
-//   id: string;
-//   type: Question['type'];
-//   question_text: string;
-//   model_answer: string | string[];
-//   options?: string[];
-//   correct_answer_index?: number;
-//   summary?: string;
-//   order_important?: boolean;
-//   model_answer_python?: string;
-//   explanation?: string;
-//   created_at: string;
-//   pairs?: { statement: string; match: string }[];
-// }
-
-// interface DBSubtopicQuestionLink {
-//   questions: DBQuestion;
-// }
-
-// interface DBSubtopic {
-//   id: string;
-//   subtopic_question_link: DBSubtopicQuestionLink[];
-// }
-
-// interface DBTopic {
-//   id: string;
-//   name: string;
-//   description: string;
-//   icon?: string;
-//   topicnumber?: number;
-//   disabled?: boolean;
-//   slug: string;
-//   unit: number;
-//   subtopics: DBSubtopic[];
-// }
 
 export default async function Home() {
   const supabase = await createClient()
