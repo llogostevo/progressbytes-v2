@@ -14,6 +14,7 @@ import { UserSessions } from "@/components/user-sessions"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { UserActivityFilter } from "@/components/user-activity-filter"
 import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
 
 // TODO: the homework dialgo is the best and should be replciated for hte other dialogs. 
 interface UserActivity {
@@ -51,7 +52,8 @@ interface Course {
 }
 
 export default function SettingsPage() {
-  const [userType, setUserType] = useState<"revision" | "revisionAI" | null>(null)
+  const [userType, setUserType] = useState<"basic" | "revision" | "revisionAI" | null>(null)
+  const [planEndDate, setPlanEndDate] = useState<string | null>(null)
   const [userActivity, setUserActivity] = useState<UserActivity[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [uniqueUsers, setUniqueUsers] = useState<number>(0)
@@ -255,6 +257,7 @@ export default function SettingsPage() {
       } else {
         setUserType(profile?.user_type)
         setUserCourses(profile?.courses || [])
+        setPlanEndDate(profile?.plan_end_date)
       }
 
       // Only fetch students if user is admin
@@ -450,11 +453,23 @@ export default function SettingsPage() {
                         <Sparkles className="h-4 w-4 mr-2 text-amber-500" />
                         AI Feedback Mode
                       </h3>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {userType === "revisionAI" ? "You have access to AI-powered feedback" : "Upgrade to get AI-powered feedback"}
-                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-sm text-muted-foreground">
+                          {userType === "revisionAI" ? "You have access to AI-powered feedback" : "Upgrade to get AI-powered feedback"}
+                        </p>
+                        <Badge variant="secondary" className="bg-amber-100 text-amber-700">
+                          Coming Soon
+                        </Badge>
+                      </div>
                     </div>
-                    <Switch checked={userType === "revisionAI"} id="paid-mode" />
+                    <div className="flex items-center gap-2">
+                      <Link href="/coming-soon">
+                        <Button variant="outline" size="sm" className="text-amber-700 border-amber-200 hover:bg-amber-50">
+                          Register Interest
+                        </Button>
+                      </Link>
+                      <Switch checked={userType === "revisionAI"} id="paid-mode" />
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -470,24 +485,101 @@ export default function SettingsPage() {
                 <CardDescription>Manage your subscription plan</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="rounded-md border p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-medium">{userType === "revisionAI" ? "Premium Plan" : "Free Plan"}</h3>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {userType === "revisionAI"
-                          ? "Full access to all features including AI feedback"
-                          : "Limited access with self-assessment only"}
-                      </p>
+                <div className="grid gap-4">
+                  {/* Basic Plan */}
+                  <div className="rounded-md border p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium">Basic Plan</h3>
+                          {userType === 'basic' && (
+                            <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                              Current Plan
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Limited access with self-assessment only
+                        </p>
+                        {userType === 'basic' && planEndDate && (
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Plan ends: {new Date(planEndDate).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                      {userType !== 'basic' && (
+                        <Link href="/coming-soon">
+                          <Button>
+                            Downgrade
+                          </Button>
+                        </Link>
+                      )}
                     </div>
-                    <Link href="/coming-soon">
-                      <Button
-                        variant={userType === "revisionAI" ? "outline" : "default"}
-                        className={userType === "revisionAI" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
-                      >
-                        {userType === "revisionAI" ? "Downgrade" : "Upgrade"}
-                      </Button>
-                    </Link>
+                  </div>
+
+                  {/* Revision Plan */}
+                  <div className="rounded-md border p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium">Revision Plan</h3>
+                          {userType === 'revision' && (
+                            <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">
+                              Current Plan
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Full access to all questions and topics
+                        </p>
+                        {userType === 'revision' && planEndDate && (
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Plan ends: {new Date(planEndDate).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                      {userType !== 'revision' && (
+                        <Link href="/coming-soon">
+                          <Button>
+                            {userType === 'revisionAI' ? "Downgrade" : "Upgrade"}
+                          </Button>
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* AI Revision Plan */}
+                  <div className="rounded-md border p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium">AI Revision Plan</h3>
+                          {userType === 'revisionAI' && (
+                            <Badge variant="secondary" className="bg-purple-100 text-purple-700">
+                              Current Plan
+                            </Badge>
+                          )}
+                          <Badge variant="secondary" className="bg-amber-100 text-amber-700">
+                            Coming Soon
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Full access to all features including AI-powered feedback
+                        </p>
+                        {userType === 'revisionAI' && planEndDate && (
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Plan ends: {new Date(planEndDate).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                      {userType !== 'revisionAI' && (
+                        <Link href="/coming-soon">
+                          <Button>
+                            Register Interest
+                          </Button>
+                        </Link>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardContent>

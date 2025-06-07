@@ -310,14 +310,6 @@ export default async function Home() {
           <h1 className="text-2xl md:text-4xl font-bold tracking-tight">GCSE Computer Science Quiz</h1>
           <UserLogin email={user?.email} />
 
-          {(userType === 'basic' || userType === 'revision' || userType === 'revision-plus') && (
-            <Link href="/settings">
-              <Button variant="outline" size="sm">
-                <Settings className="h-4 w-4 mr-2" />
-                Settings
-              </Button>
-            </Link>
-          )}
         </div>
 
         {/* CTA Banner */}
@@ -327,11 +319,6 @@ export default async function Home() {
           {userType === 'revision' && showAIInterestBanner && <CTABanner variant="premium" userEmail={user?.email} />}
         </div>
 
-        <div className="text-center mb-8">
-          <p className="text-base md:text-lg text-muted-foreground">
-            Select a topic below to test your knowledge with {userType == "revision plus" ? "AI-marked" : "self-assessed"} questions
-          </p>
-        </div>
 
         <TopicGrid topics={topics} userType={userType} />
       </div>
