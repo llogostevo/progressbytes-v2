@@ -35,6 +35,7 @@ import { TopicFilter } from "@/components/topic-filter"
 import { QuestionTypeFilter } from "@/components/question-type-filter"
 import { DynamicIcon } from "@/components/ui/dynamicicon"
 import { Skeleton } from "@/components/ui/skeleton"
+import { toast } from "sonner"
 
 interface DBTopic {
   id: string
@@ -451,11 +452,23 @@ export default function RevisitPage() {
   }
 
   // Calculate counts for each filter
-  const totalAnswers = filteredAnswers.length
+  const totalAnswers = filteredAnswers.filter((a) => {
+    const question = questions[a.question_id]
+    return !typeParam || typeParam === "all" || question?.type === typeParam
+  }).length
   const scoreCount = {
-    green: filteredAnswers.filter((a) => a.score === "green").length,
-    amber: filteredAnswers.filter((a) => a.score === "amber").length,
-    red: filteredAnswers.filter((a) => a.score === "red").length,
+    green: filteredAnswers.filter((a) => {
+      const question = questions[a.question_id]
+      return a.score === "green" && (!typeParam || typeParam === "all" || question?.type === typeParam)
+    }).length,
+    amber: filteredAnswers.filter((a) => {
+      const question = questions[a.question_id]
+      return a.score === "amber" && (!typeParam || typeParam === "all" || question?.type === typeParam)
+    }).length,
+    red: filteredAnswers.filter((a) => {
+      const question = questions[a.question_id]
+      return a.score === "red" && (!typeParam || typeParam === "all" || question?.type === typeParam)
+    }).length,
   }
 
   const handleDeleteClick = (answer: Answer) => {
@@ -483,6 +496,7 @@ export default function RevisitPage() {
       setDeleteDialogOpen(false)
       setAnswerToDelete(null)
       setDeleteConfirmation("")
+      toast.success("Answer deleted successfully")
     } catch (error) {
       console.error("Error deleting answer:", error)
     } finally {
@@ -544,7 +558,7 @@ export default function RevisitPage() {
           </div>
         </div>
 
-        {/* Filter Bar - replaces Tabs */}
+        {/* Filter Bar */}
         <div className="w-full grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
           <Button
             variant="outline"

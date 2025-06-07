@@ -1,81 +1,30 @@
 import { TopicGrid } from "@/components/topic-grid"
-// import { topics } from "@/lib/data"
-import { Button } from "@/components/ui/button"
-import { Settings } from "lucide-react"
-import Link from "next/link"
+
 import { createClient } from "@/utils/supabase/server"
 import { CTABanner } from "@/components/cta-banner"
 import { UserLogin } from "@/components/user-login"
 import type { Topic, Question } from "@/lib/types"
-// import type { LucideIcon } from "lucide-react"
-// import { DynamicIcon } from "@/components/ui/dynamicicon"
-// import * as Icons from 'lucide-react'
-
-// Helper function to convert snake_case to PascalCase
-// function toPascalCase(str: string): string {
-//   return str
-//     .split('_')
-//     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-//     .join('')
-// }
-
-// Helper function to get LucideIcon from string
-// function getIconFromString(iconName: string): LucideIcon | undefined {
-//   const pascalCaseName = toPascalCase(iconName)
-//   return Icons[pascalCaseName as keyof typeof Icons] as LucideIcon | undefined
-// }
-
-// Define the database response types
-// interface DBQuestion {
-//   id: string;
-//   type: Question['type'];
-//   question_text: string;
-//   model_answer: string | string[];
-//   options?: string[];
-//   correct_answer_index?: number;
-//   summary?: string;
-//   order_important?: boolean;
-//   model_answer_python?: string;
-//   explanation?: string;
-//   created_at: string;
-//   pairs?: { statement: string; match: string }[];
-// }
-
-// interface DBSubtopicQuestionLink {
-//   questions: DBQuestion;
-// }
-
-// interface DBSubtopic {
-//   id: string;
-//   subtopic_question_link: DBSubtopicQuestionLink[];
-// }
-
-// interface DBTopic {
-//   id: string;
-//   name: string;
-//   description: string;
-//   icon?: string;
-//   topicnumber?: number;
-//   disabled?: boolean;
-//   slug: string;
-//   unit: number;
-//   subtopics: DBSubtopic[];
-// }
+import { redirect } from "next/navigation"
 
 export default async function Home() {
   const supabase = await createClient()
 
   // Get the current user
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user }, error } = await supabase.auth.getUser()
+
+  if (error || !user) {
+    redirect('/')
+  }
 
   // Get the user's profile data including user_type
   const { data: profile } = await supabase
     .from('profiles')
-    .select('user_type')
+    .select('user_type, ai_interest_banner')
     .eq('email', user?.email)
     .single()
 
   const userType = profile?.user_type
+  const showAIInterestBanner = profile?.ai_interest_banner !== false
   const freeUser = !user
 
   // Track page visit
@@ -170,9 +119,9 @@ export default async function Home() {
     // TODO: fix the type error
     // @ts-expect-error - this is a workaround to fix the type error
     topics = (topicsWithQuestions as DBTopic[])?.map(topic => {      // Get all questions from all subtopics in a single flat array
-      const allQuestions = topic.subtopics.flatMap((subtopic: { 
-        subtopic_question_link: Array<{ 
-          questions: { 
+      const allQuestions = topic.subtopics.flatMap((subtopic: {
+        subtopic_question_link: Array<{
+          questions: {
             id: string;
             type: Question['type'];
             question_text: string;
@@ -203,8 +152,8 @@ export default async function Home() {
             };
           }
         }>
-      }) => 
-        subtopic.subtopic_question_link.flatMap((link: { 
+      }) =>
+        subtopic.subtopic_question_link.flatMap((link: {
           questions: {
             id: string;
             type: Question['type'];
@@ -282,7 +231,7 @@ export default async function Home() {
         active: topic.active,
         slug: topic.slug,
         unit: topic.units.unit_number,
-        unitName: topic.units.name, 
+        unitName: topic.units.name,
         questionCount: allQuestions.length,
         questions: allQuestions,
         topicnumber: topic.topicnumber // Add the topicnumber field
@@ -304,28 +253,15 @@ export default async function Home() {
           <h1 className="text-2xl md:text-4xl font-bold tracking-tight">GCSE Computer Science Quiz</h1>
           <UserLogin email={user?.email} />
 
-          {userType === 'basic' || userType === 'revision' || userType === 'revision-plus' && (
-            <Link href="/settings">
-              <Button variant="outline" size="sm">
-                <Settings className="h-4 w-4 mr-2" />
-                Settings
-              </Button>
-            </Link>
-          )}
         </div>
 
         {/* CTA Banner */}
         <div className="mb-6 md:mb-8">
           {freeUser && <CTABanner variant="free" />}
           {userType === 'basic' && <CTABanner variant="basic" />}
-          {userType === 'revision' && <CTABanner variant="premium" />}
+          {userType === 'revision' && showAIInterestBanner && <CTABanner variant="premium" userEmail={user?.email} />}
         </div>
 
-        <div className="text-center mb-8">
-          <p className="text-base md:text-lg text-muted-foreground">
-            Select a topic below to test your knowledge with {userType == "revision plus" ? "AI-marked" : "self-assessed"} questions
-          </p>
-        </div>
 
         <TopicGrid topics={topics} userType={userType} />
       </div>

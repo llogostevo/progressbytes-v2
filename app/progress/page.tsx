@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import type { Answer, ScoreType, Topic, Question } from "@/lib/types"
-import { CheckCircle, AlertTriangle, AlertCircle, ArrowRight, Calendar } from "lucide-react"
+import { CheckCircle, AlertTriangle, AlertCircle, ArrowRight, Calendar, Flame, Star } from "lucide-react"
 import Link from "next/link"
 import { UserLogin } from "@/components/user-login"
 import { createClient } from "@/utils/supabase/client"
@@ -12,6 +12,17 @@ import type { User } from "@supabase/supabase-js"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DynamicIcon } from "@/components/ui/dynamicicon"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts"
+import React from "react"
 
 // Define types for the database responses
 interface DBQuestion {
@@ -70,6 +81,13 @@ interface DBTopic {
   unit_id: string
   units: DBUnit
   subtopics: DBSubtopic[]
+}
+
+// Add new interfaces for streak tracking
+interface StreakData {
+  currentStreak: number;
+  bestStreak: number;
+  lastActiveDate: string;
 }
 
 function ProgressSkeleton() {
@@ -179,12 +197,323 @@ function compareTopicNumbers(a?: string, b?: string) {
   return 0
 }
 
+function ProgressCharts({ answers, topics }: { answers: Answer[]; topics: Topic[] }) {
+  // Prepare data for the stacked bar chart
+  const barChartData = topics.map((topic) => {
+    const topicAnswers = answers.filter((answer) =>
+      topic.questions.some((q) => q.id === answer.question_id)
+    )
+    return {
+      name: topic.name,
+      topicNumber: topic.topicnumber?.toString() || "",
+      Strong: topicAnswers.filter((a) => a.score === "green").length,
+      Developing: topicAnswers.filter((a) => a.score === "amber").length,
+      "Needs Work": topicAnswers.filter((a) => a.score === "red").length,
+      total: topicAnswers.length,
+    }
+  }).sort((a, b) => compareTopicNumbers(a.topicNumber, b.topicNumber))
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Performance by Topic</CardTitle>
+        <CardDescription>Distribution of scores across different topics</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="h-[500px] min-w-0 min-h-0">
+          {/* Mobile: vertical, small font */}
+          <div className="block md:invisible md:absolute min-w-0 min-h-0 h-full w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={barChartData}
+                margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="topicNumber"
+                  tick={({ x, y, payload }) => {
+                    const topic = topics.find(t => t.topicnumber?.toString() === payload.value);
+                    return (
+                      <Link
+                        href={`/revisit?topics=${topic?.slug}`}
+                        className="cursor-pointer hover:text-emerald-600 transition-colors"
+                      >
+                        <text
+                          x={x}
+                          y={y}
+                          dy={8}
+                          fontSize={9}
+                          transform={`rotate(90, ${x}, ${y})`}
+                          textAnchor="start"
+                          fill="currentColor"
+                        >
+                          {payload.value}
+                        </text>
+                      </Link>
+                    );
+                  }}
+                  interval={0}
+                  height={80}
+                />
+                <YAxis />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-white p-3 border rounded-lg shadow-lg">
+                          <p className="font-medium">{data.name}</p>
+                          <p className="text-sm text-muted-foreground">Topic {data.topicNumber}</p>
+                          <div className="mt-2 space-y-1">
+                            <p className="text-emerald-600">Strong: {data.Strong}</p>
+                            <p className="text-amber-600">Developing: {data.Developing}</p>
+                            <p className="text-red-600">Needs Work: {data["Needs Work"]}</p>
+                            <p className="font-medium mt-1">Total: {data.total}</p>
+                          </div>
+                          <Link 
+                            href={`/revisit?topics=${topics.find(t => t.name === data.name)?.slug}`}
+                            className="mt-2 block text-center text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+                          >
+                            Review Questions <ArrowRight className="inline-block ml-1 h-3 w-3" />
+                          </Link>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Legend />
+                <Bar dataKey="Strong" stackId="a" fill="#10b981" />
+                <Bar dataKey="Developing" stackId="a" fill="#f59e0b" />
+                <Bar dataKey="Needs Work" stackId="a" fill="#ef4444" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          {/* md: diagonal, medium font */}
+          <div className="invisible md:visible md:static lg:invisible lg:absolute min-w-0 min-h-0 h-full w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={barChartData}
+                margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="topicNumber"
+                  tick={({ x, y, payload }) => {
+                    const topic = topics.find(t => t.topicnumber?.toString() === payload.value);
+                    return (
+                      <Link
+                        href={`/revisit?topics=${topic?.slug}`}
+                        className="cursor-pointer hover:text-emerald-600 transition-colors"
+                      >
+                        <text
+                          x={x}
+                          y={y}
+                          dy={16}
+                          fontSize={12}
+                          transform={`rotate(40, ${x}, ${y})`}
+                          textAnchor="start"
+                          fill="currentColor"
+                        >
+                          {payload.value}
+                        </text>
+                      </Link>
+                    );
+                  }}
+                  interval={0}
+                  height={60}
+                />
+                <YAxis />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-white p-3 border rounded-lg shadow-lg">
+                          <p className="font-medium">{data.name}</p>
+                          <p className="text-sm text-muted-foreground">Topic {data.topicNumber}</p>
+                          <div className="mt-2 space-y-1">
+                            <p className="text-emerald-600">Strong: {data.Strong}</p>
+                            <p className="text-amber-600">Developing: {data.Developing}</p>
+                            <p className="text-red-600">Needs Work: {data["Needs Work"]}</p>
+                            <p className="font-medium mt-1">Total: {data.total}</p>
+                          </div>
+                          <Link 
+                            href={`/revisit?topics=${topics.find(t => t.name === data.name)?.slug}`}
+                            className="mt-2 block text-center text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+                          >
+                            Review Questions <ArrowRight className="inline-block ml-1 h-3 w-3" />
+                          </Link>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Legend />
+                <Bar dataKey="Strong" stackId="a" fill="#10b981" />
+                <Bar dataKey="Developing" stackId="a" fill="#f59e0b" />
+                <Bar dataKey="Needs Work" stackId="a" fill="#ef4444" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          {/* lg+: diagonal, larger font */}
+          <div className="invisible lg:visible lg:static min-w-0 min-h-0 h-full w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={barChartData}
+                margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="topicNumber"
+                  tick={({ x, y, payload }) => {
+                    const topic = topics.find(t => t.topicnumber?.toString() === payload.value);
+                    return (
+                      <Link
+                        href={`/revisit?topics=${topic?.slug}`}
+                        className="cursor-pointer hover:text-emerald-600 transition-colors"
+                      >
+                        <text
+                          x={x}
+                          y={y}
+                          dy={16}
+                          fontSize={14}
+                          transform={`rotate(40, ${x}, ${y})`}
+                          textAnchor="start"
+                          fill="currentColor"
+                        >
+                          {payload.value}
+                        </text>
+                      </Link>
+                    );
+                  }}
+                  interval={0}
+                  height={60}
+                />
+                <YAxis />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-white p-3 border rounded-lg shadow-lg">
+                          <p className="font-medium">{data.name}</p>
+                          <p className="text-sm text-muted-foreground">Topic {data.topicNumber}</p>
+                          <div className="mt-2 space-y-1">
+                            <p className="text-emerald-600">Strong: {data.Strong}</p>
+                            <p className="text-amber-600">Developing: {data.Developing}</p>
+                            <p className="text-red-600">Needs Work: {data["Needs Work"]}</p>
+                            <p className="font-medium mt-1">Total: {data.total}</p>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Legend />
+                <Bar dataKey="Strong" stackId="a" fill="#10b981" />
+                <Bar dataKey="Developing" stackId="a" fill="#f59e0b" />
+                <Bar dataKey="Needs Work" stackId="a" fill="#ef4444" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+// Add new component for streak display
+function StreakDisplay({ streakData, scorePercentages }: { streakData: StreakData; scorePercentages: { green: number; amber: number; red: number } }) {
+  const getStreakFeedback = () => {
+    if (streakData.currentStreak >= 7) {
+      return {
+        icon: <Star className="h-5 w-5 text-yellow-500" />,
+        message: "Amazing! You've maintained a week-long streak! 🔥🔥🔥🔥🔥",
+        color: "text-yellow-600"
+      }
+    } else if (streakData.currentStreak >= 3) {
+      return {
+        icon: <Flame className="h-5 w-5 text-orange-500" />,
+        message: `You're on a ${streakData.currentStreak}-day streak! Keep it going! 🔥🔥🔥`,
+        color: "text-orange-600"
+      }
+    } else if (streakData.currentStreak > 0) {
+      return {
+        icon: <Flame className="h-5 w-5 text-orange-500" />,
+        message: `You've started your streak! Come back tomorrow to keep it going! 🔥`,
+        color: "text-orange-600"
+      }
+    } else {
+      return {
+        icon: <Flame className="h-5 w-5 text-gray-400" />,
+        message: "Start your streak today by answering some questions!",
+        color: "text-gray-600"
+      }
+    }
+  }
+
+  const getPerformanceFeedback = () => {
+    if (scorePercentages.green >= 80) {
+      return "🌟 Outstanding performance! You're mastering the material!"
+    } else if (scorePercentages.green >= 60) {
+      return "💪 Strong understanding! Keep up the great work!"
+    } else if (scorePercentages.green >= 40) {
+      return "📈 Making good progress! Keep practicing!"
+    } else {
+      return "🌱 Keep practicing! Every question helps you improve!"
+    }
+  }
+
+  const streakFeedback = getStreakFeedback()
+  const performanceFeedback = getPerformanceFeedback()
+
+  return (
+    <Card className="mb-8">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          {/* <Flame className="h-5 w-5 text-orange-500" /> */}
+          Your Streak
+        </CardTitle>
+        <CardDescription className="flex items-center gap-2">
+          {streakFeedback.icon}
+          <span className={streakFeedback.color}>{streakFeedback.message}</span>
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-2 gap-6 mb-4">
+          <div className="text-center p-4 bg-orange-50 rounded-lg border border-orange-200">
+            <div className="text-sm text-orange-700 font-medium">Current Streak</div>
+            <div className="text-3xl font-bold text-orange-600">{streakData.currentStreak}</div>
+            <div className="text-xs text-orange-600">days</div>
+          </div>
+          <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
+            <div className="text-sm text-purple-700 font-medium">Best Streak</div>
+            <div className="text-3xl font-bold text-purple-600">{streakData.bestStreak}</div>
+            <div className="text-xs text-purple-600">days</div>
+          </div>
+        </div>
+        <div className="text-center p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+          <p className="text-sm text-emerald-700">{performanceFeedback}</p>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 export default function ProgressPage() {
   const [answers, setAnswers] = useState<Answer[]>([])
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [timeFilter, setTimeFilter] = useState<"today" | "week" | "all">("today")
   const [topics, setTopics] = useState<Topic[]>([])
+  const [streakData, setStreakData] = useState<StreakData>({
+    currentStreak: 0,
+    bestStreak: 0,
+    lastActiveDate: new Date().toISOString()
+  })
 
   useEffect(() => {
     const getUser = async () => {
@@ -194,6 +523,59 @@ export default function ProgressPage() {
       } = await supabase.auth.getUser()
       if (user) {
         setUser(user)
+
+        // Calculate streak data
+        const { data: activityData } = await supabase
+          .from("user_activity")
+          .select("created_at")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+
+        if (activityData) {
+          // Calculate current streak
+          let currentStreak = 0
+          let bestStreak = 0
+          let tempStreak = 0
+          // let lastDate = new Date()
+
+          // Group activities by date
+          const activitiesByDate = activityData.reduce((acc, activity) => {
+            const date = new Date(activity.created_at).toDateString()
+            if (!acc[date]) {
+              acc[date] = true
+            }
+            return acc
+          }, {} as Record<string, boolean>)
+
+          // Calculate streaks
+          const dates = Object.keys(activitiesByDate).sort().reverse()
+          for (let i = 0; i < dates.length; i++) {
+            const currentDate = new Date(dates[i])
+            const prevDate = i > 0 ? new Date(dates[i - 1]) : null
+
+            if (i === 0) {
+              tempStreak = 1
+            } else if (prevDate && isConsecutiveDay(currentDate, prevDate)) {
+              tempStreak++
+            } else {
+              tempStreak = 1
+            }
+
+            if (tempStreak > bestStreak) {
+              bestStreak = tempStreak
+            }
+
+            if (i === 0) {
+              currentStreak = tempStreak
+            }
+          }
+
+          setStreakData({
+            currentStreak,
+            bestStreak,
+            lastActiveDate: dates[0] || new Date().toISOString()
+          })
+        }
 
         // Fetch topics with their associated questions
         const { data: topicsWithQuestions, error: topicsError } = await supabase
@@ -453,6 +835,7 @@ export default function ProgressPage() {
           </Card>
         ) : (
           <>
+            <StreakDisplay streakData={streakData} scorePercentages={scorePercentages} />
             <Card className="mb-8">
               <CardHeader>
                 <CardTitle>Overall Performance</CardTitle>
@@ -541,6 +924,8 @@ export default function ProgressPage() {
                 </div>
               </CardFooter>
             </Card>
+
+            <ProgressCharts answers={answers} topics={topics} />
 
             <div className="mt-8">
               <div className="flex items-center justify-between mb-4">
@@ -634,4 +1019,11 @@ export default function ProgressPage() {
       </div>
     </div>
   )
+}
+
+// Helper function to check if two dates are consecutive days
+function isConsecutiveDay(date1: Date, date2: Date): boolean {
+  const diffTime = Math.abs(date2.getTime() - date1.getTime())
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  return diffDays === 1
 }
