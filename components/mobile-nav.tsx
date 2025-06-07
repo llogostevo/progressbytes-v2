@@ -26,10 +26,10 @@ export function MobileNav() {
     const { data: { session } } = await supabase.auth.getSession();
     setFreeUser(!session);
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: profiles } = await supabase.from("profiles").select("user_type").eq("userid", user.id).single();
-    }
+    // const { data: { user } } = await supabase.auth.getUser();
+    // if (user) {
+    //   const { data: profiles } = await supabase.from("profiles").select("user_type").eq("userid", user.id).single();
+    // }
   }, [supabase]);
 
   /* TODO: check whether this is a secure approach */

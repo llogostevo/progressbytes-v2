@@ -319,7 +319,6 @@ export default function SettingsPage() {
     }
 
     const fetchCourses = async () => {
-      const supabase = createClient()
       const { data: courses, error } = await supabase
         .from("courses")
         .select("*")
@@ -334,11 +333,11 @@ export default function SettingsPage() {
 
     fetchUser()
     fetchCourses()
-  }, [userEmail])
+  }, [userEmail, supabase])
 
   useEffect(() => {
+    const supabase = createClient()
     const fetchCourses = async () => {
-      const supabase = createClient()
       const { data: courses, error } = await supabase
         .from("courses")
         .select("*")
@@ -354,7 +353,7 @@ export default function SettingsPage() {
     if (addCourseDialogOpen) {
       fetchCourses()
     }
-  }, [addCourseDialogOpen])
+  }, [addCourseDialogOpen, supabase])
 
   // Group activity by event type
   const activityStats = userActivity.reduce((acc, activity) => {
