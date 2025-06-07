@@ -20,7 +20,6 @@ export function MobileNav() {
   const router = useRouter()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [freeUser, setFreeUser] = useState(false)
-  const [userType, setUserType] = useState<"basic" | "revision" | "revisionAI" | "admin" | null>(null)
   const supabase = createClient()
 
   const checkSession = useCallback(async () => {
@@ -30,7 +29,6 @@ export function MobileNav() {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       const { data: profiles } = await supabase.from("profiles").select("user_type").eq("userid", user.id).single();
-      setUserType(profiles?.user_type);
     }
   }, [supabase]);
 

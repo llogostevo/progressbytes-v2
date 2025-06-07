@@ -38,7 +38,7 @@ function LoginFormContent() {
     setIsLoading(true)
     try {
       await login(formData)
-    } catch (error) {
+    } catch {
       setIsLoading(false)
     }
   }
@@ -47,7 +47,7 @@ function LoginFormContent() {
     setIsLoading(true)
     try {
       await signup(formData)
-    } catch (error) {
+    } catch {
       setIsLoading(false)
     }
   }

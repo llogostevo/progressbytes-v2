@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { ArrowLeft, Sparkles, Activity, Users, Eye, Navigation, Home, FileText, BarChart, RefreshCw, CheckCircle, Clock, Calendar, Trash2, Plus, BookOpen, Book, GraduationCap, School, BookMarked, BookText, Library, BookOpenCheck, BookOpenText, BookOpenIcon, Bookmark, BookmarkCheck, BookmarkIcon, BookmarkPlus, BookmarkX, BookOpenIcon as BookOpenIcon2 } from "lucide-react"
+import { ArrowLeft, Sparkles, Activity, Users, Eye, Navigation, Home, FileText, BarChart, RefreshCw, CheckCircle, Clock, Calendar, Trash2, Plus, BookOpen, Book, GraduationCap, School, BookMarked, BookText, Library, BookOpenCheck, BookOpenText, Bookmark, BookmarkCheck, BookmarkPlus, BookmarkX } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/utils/supabase/client"
 import { redirect } from "next/navigation"
@@ -318,8 +318,23 @@ export default function SettingsPage() {
       setIsLoading(false)
     }
 
+    const fetchCourses = async () => {
+      const supabase = createClient()
+      const { data: courses, error } = await supabase
+        .from("courses")
+        .select("*")
+        .order('name')
+
+      if (error) {
+        console.error("Error fetching courses:", error)
+      } else {
+        setAvailableCourses(courses || [])
+      }
+    }
+
     fetchUser()
-  }, [supabase])
+    fetchCourses()
+  }, [userEmail])
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -1042,7 +1057,7 @@ export default function SettingsPage() {
                       case 'bookmark-check': return BookmarkCheck
                       case 'bookmark-plus': return BookmarkPlus
                       case 'bookmark-x': return BookmarkX
-                      default: return BookOpenIcon2
+                      default: return BookOpen
                     }
                   })()
 
