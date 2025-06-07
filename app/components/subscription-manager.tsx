@@ -59,50 +59,48 @@ export function SubscriptionManager() {
   }
 
   return (
-    <div className="grid gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {/* Basic Plan */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Basic Plan</CardTitle>
-          <CardDescription>Free access with limited features</CardDescription>
+      <Card className="flex flex-col h-full">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg">Basic Plan</CardTitle>
+          <CardDescription className="text-xs">Free access with limited features</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">£0</div>
-          <ul className="mt-4 space-y-2">
+        <CardContent className="flex-grow pb-2">
+          <div className="text-xl font-bold">£0</div>
+          <ul className="mt-2 space-y-1 text-sm">
             <li>5 questions per day</li>
             <li>5 total questions limit</li>
             <li>Basic self-assessment</li>
           </ul>
         </CardContent>
-        <CardFooter>
-            {/* Basic Plan */}
+        <CardFooter className="pt-2 mt-auto">
           <Button 
-            className="w-full"
+            className="w-full bg-emerald-600 hover:bg-emerald-700"
             onClick={() => handleSubscribe('price_1RXTEGCKC8acZCBT5m8JCJ0R')}
-            disabled={loading === 'price_1RXTEGCKC8acZCBT5m8JCJ0R'}
+            disabled={true}
           >
-            {loading === 'price_1RXTEGCKC8acZCBT5m8JCJ0R' ? 'Loading...' : 'Current Plan'}
+            Current Plan
           </Button>
         </CardFooter>
       </Card>
 
       {/* Revision Plan */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Revision Plan</CardTitle>
-          <CardDescription>Full access to all questions</CardDescription>
+      <Card className="flex flex-col h-full">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg">Revision Plan</CardTitle>
+          <CardDescription className="text-xs">Full access to all questions</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">£1/month</div>
-          <ul className="mt-4 space-y-2">
+        <CardContent className="flex-grow pb-2">
+          <div className="text-xl font-bold">£1/month</div>
+          <ul className="mt-2 space-y-1 text-sm">
             <li>Unlimited questions per day</li>
             <li>Unlimited total questions</li>
             <li>Full access to all topics</li>
             <li>Detailed explanations</li>
           </ul>
         </CardContent>
-        <CardFooter>
-            {/* revision plan */}
+        <CardFooter className="pt-2 mt-auto">
           <Button 
             className="w-full"
             onClick={() => handleSubscribe('price_1RXTF3CKC8acZCBTqz12OiY1')}
@@ -114,20 +112,20 @@ export function SubscriptionManager() {
       </Card>
 
       {/* AI Revision Plan */}
-      <Card>
-        <CardHeader>
-          <CardTitle>AI Revision Plan</CardTitle>
-          <CardDescription>Full access with AI feedback</CardDescription>
+      <Card className="flex flex-col h-full">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg">AI Revision Plan</CardTitle>
+          <CardDescription className="text-xs">Full access with AI feedback</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">£10/month</div>
-          <ul className="mt-4 space-y-2">
+        <CardContent className="flex-grow pb-2">
+          <div className="text-xl font-bold">£10/month</div>
+          <ul className="mt-2 space-y-1 text-sm">
             <li>All Revision Plan features</li>
             <li>AI-powered feedback</li>
-            <li>Personalized learning insights</li>
+            <li>Personalised learning insights</li>
           </ul>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="pt-2 mt-auto">
           <Button 
             className="w-full"
             onClick={() => handleSubscribe('price_1RXTFSCKC8acZCBTcTqE8OM6')}

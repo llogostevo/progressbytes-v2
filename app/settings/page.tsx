@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { ArrowLeft, Sparkles, Activity, Users, Eye, Navigation, Home, FileText, BarChart, RefreshCw, CheckCircle, Clock, Calendar, Trash2, Plus, BookOpen, Book, GraduationCap, School, BookMarked, BookText, Library, BookOpenCheck, BookOpenText, Bookmark, BookmarkCheck, BookmarkPlus, BookmarkX } from "lucide-react"
+import { ArrowLeft, Sparkles, Activity, Users, Eye, Navigation, Home, FileText, BarChart, RefreshCw, CheckCircle, Clock, Calendar, Trash2, Plus, BookOpen, Book, GraduationCap, School, BookMarked, BookText, Library, BookOpenCheck, BookOpenText, Bookmark, BookmarkCheck, BookmarkPlus, BookmarkX, User, CreditCard } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/utils/supabase/client"
 import { redirect } from "next/navigation"
@@ -52,8 +52,11 @@ interface Course {
   icon: string
 }
 
+type UserRole = 'admin' | 'student' | 'teacher'
+
 export default function SettingsPage() {
   const [userType, setUserType] = useState<"basic" | "revision" | "revisionAI" | null>(null)
+  const [userRole, setUserRole] = useState<UserRole | null>(null)
   const [userActivity, setUserActivity] = useState<UserActivity[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [uniqueUsers, setUniqueUsers] = useState<number>(0)
@@ -253,21 +256,27 @@ export default function SettingsPage() {
       if (profileError) {
         console.error('Error fetching profile:', profileError)
       } else {
+        console.log('Profile data:', profile) // Debug log
         setUserType(profile?.user_type)
+        setUserRole(profile?.role || 'student')
         setUserCourses(profile?.courses || [])
       }
 
-      // Only fetch students if user is admin
-      if (userEmail === "stevensl@centralfoundationboys.co.uk") {
+      // Fetch students if user is admin or teacher
+      if (profile?.role === 'admin' || profile?.role === 'teacher') {
+        console.log('Fetching students for role:', profile?.role) // Debug log
         // Fetch students
         const { data: studentsData, error: studentsError } = await supabase
           .from("profiles")
           .select("userid, email")
+          .neq("role", "admin")  // Exclude admins
+          .neq("role", "teacher")  // Exclude teachers
           .order('email')
 
         if (studentsError) {
           console.error('Error fetching students:', studentsError)
         } else {
+          console.log('Fetched students:', studentsData) // Debug log
           setStudents(studentsData || [])
           if (studentsData && studentsData.length > 0) {
             setSelectedStudent(studentsData[0].userid)
@@ -379,7 +388,7 @@ export default function SettingsPage() {
         <Tabs defaultValue="account" className="space-y-6">
           <TabsList>
             <TabsTrigger value="account">Account</TabsTrigger>
-            {userEmail === "stevensl@centralfoundationboys.co.uk" && (
+            {(userRole === 'admin' || userRole === 'teacher') && (
               <>
                 <TabsTrigger value="activity">Activity</TabsTrigger>
                 <TabsTrigger value="sessions">Sessions</TabsTrigger>
@@ -396,97 +405,85 @@ export default function SettingsPage() {
                 <CardDescription>Manage your account details and subscription</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
-                  <div className="text-sm text-muted-foreground">{userEmail}</div>
-                </div>
-
-                <div className="grid gap-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="courses">Courses</Label>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setAddCourseDialogOpen(true)}
-                      className="gap-2"
-                    >
-                      <Plus className="h-4 w-4" />
-                      Add Course
-                    </Button>
+                <div className="border rounded-lg p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <Label className="text-base">Account Details</Label>
                   </div>
-                  {userCourses && userCourses.length > 0 ? (
-                    <div className="space-y-2">
-                      {userCourses.map((course, index) => (
-                        <div key={index} className="flex items-center justify-between text-sm text-muted-foreground">
-                          <span>{course}</span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className={`text-red-600 hover:text-red-700 hover:bg-red-50 ${userCourses.length === 1 ? 'opacity-50 cursor-not-allowed' : ''
-                              }`}
-                            onClick={() => {
-                              if (userCourses.length > 1) {
-                                setCourseToDelete(course)
-                                setDeleteDialogOpen(true)
-                              }
-                            }}
-                            disabled={userCourses.length === 1}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
+                  <div className="grid gap-3">
+                    <div className="flex items-center justify-between py-2 border-b">
+                      <span className="text-sm text-muted-foreground">Email</span>
+                      <span className="font-medium text-foreground">{userEmail}</span>
                     </div>
-                  ) : (
-                    <div className="text-sm text-muted-foreground">No courses enrolled</div>
-                  )}
-                </div>
-
-                <div className="border-t pt-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-medium flex items-center">
-                        <Sparkles className="h-4 w-4 mr-2 text-amber-500" />
-                        AI Feedback Mode
-                      </h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        <p className="text-sm text-muted-foreground">
-                          {userType === "revisionAI" ? "You have access to AI-powered feedback" : "Upgrade to get AI-powered feedback"}
-                        </p>
-                        <Badge variant="secondary" className="bg-amber-100 text-amber-700">
-                          Coming Soon
-                        </Badge>
+                    <div className="flex items-center justify-between py-2 border-b">
+                      <span className="text-sm text-muted-foreground">Role</span>
+                      <span className="font-medium text-foreground capitalize">{userRole}</span>
+                    </div>
+                    <div className="flex items-center justify-between py-2 border-b">
+                      <span className="text-sm text-muted-foreground">Plan</span>
+                      <span className="font-medium text-foreground capitalize">{userType === 'revisionAI' ? 'AI Revision' : userType === 'revision' ? 'Revision' : 'Basic'}</span>
+                    </div>
+                    <div className="flex items-center justify-between py-2 border-b">
+                      <span className="text-sm text-muted-foreground">School</span>
+                      <span className="font-medium text-foreground">Central Foundation Boys' School</span>
+                    </div>
+                    <div className="py-2">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-muted-foreground">Courses</span>
+                      </div>
+                      {userCourses && userCourses.length > 0 ? (
+                        <div className="space-y-2 mb-3">
+                          {userCourses.map((course, index) => (
+                            <div key={index} className="flex items-center justify-between text-sm text-muted-foreground">
+                              <span>{course}</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className={`text-red-600 hover:text-red-700 hover:bg-red-50 ${userCourses.length === 1 ? 'opacity-50 cursor-not-allowed' : ''
+                                  }`}
+                                onClick={() => {
+                                  if (userCourses.length > 1) {
+                                    setCourseToDelete(course)
+                                    setDeleteDialogOpen(true)
+                                  }
+                                }}
+                                disabled={userCourses.length === 1}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-muted-foreground mb-3">No courses enrolled</div>
+                      )}
+                      <div className="flex justify-end">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setAddCourseDialogOpen(true)}
+                          className="gap-2"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Add Course
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Link href="/coming-soon">
-                        <Button variant="outline" size="sm" className="text-amber-700 border-amber-200 hover:bg-amber-50">
-                          Register Interest
-                        </Button>
-                      </Link>
-                      <Switch checked={userType === "revisionAI"} id="paid-mode" />
-                    </div>
                   </div>
                 </div>
-              </CardContent>
-              <CardFooter className="flex justify-between border-t pt-6">
-                <Button variant="outline">Cancel</Button>
-                <Button className="bg-emerald-600 hover:bg-emerald-700">Save Changes</Button>
-              </CardFooter>
-            </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Subscription</CardTitle>
-                <CardDescription>Manage your subscription plan</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <SubscriptionManager />
+                <div className="border rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <CreditCard className="h-4 w-4 text-muted-foreground" />
+                    <Label className="text-base">Subscription</Label>
+                  </div>
+                  <SubscriptionManager />
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {userEmail === "stevensl@centralfoundationboys.co.uk" && (
+          {(userRole === 'admin' || userRole === 'teacher') && (
             <>
               <TabsContent value="activity">
                 <Card>
@@ -672,11 +669,15 @@ export default function SettingsPage() {
                             value={selectedStudent || ''}
                             onChange={(e) => setSelectedStudent(e.target.value)}
                           >
-                            {students.map((student) => (
-                              <option key={student.userid} value={student.userid}>
-                                {student.email}
-                              </option>
-                            ))}
+                            {students.length === 0 ? (
+                              <option value="">No students available</option>
+                            ) : (
+                              students.map((student) => (
+                                <option key={student.userid} value={student.userid}>
+                                  {student.email}
+                                </option>
+                              ))
+                            )}
                           </select>
                         </div>
 
