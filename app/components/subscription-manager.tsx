@@ -19,7 +19,7 @@ export function SubscriptionManager() {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('No user found')
-
+  
       // Create checkout session
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
@@ -32,9 +32,18 @@ export function SubscriptionManager() {
           email: user.email,
         }),
       })
-
+  
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Failed to create checkout session')
+      }
+  
       const { sessionId } = await response.json()
       
+      if (!sessionId) {
+        throw new Error('No session ID returned')
+      }
+  
       // Redirect to Stripe Checkout
       const stripe = await stripePromise
       const { error } = await stripe!.redirectToCheckout({ sessionId })

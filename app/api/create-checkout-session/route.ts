@@ -1,10 +1,18 @@
 import { NextResponse } from 'next/server'
 import { stripe } from '@/utils/stripe/stripe'
+import { createClient } from '@/utils/supabase/server'
 
 export async function POST(req: Request) {
   try {
     const { priceId, userId, email } = await req.json()
     
+    if (!priceId) {
+      return NextResponse.json(
+        { error: 'Price ID is required' },
+        { status: 400 }
+      )
+    }
+
     // Create Stripe customer
     const customer = await stripe.customers.create({
       email,
@@ -30,9 +38,13 @@ export async function POST(req: Request) {
       },
     })
 
+    if (!session.id) {
+      throw new Error('No session ID returned from Stripe')
+    }
+
     return NextResponse.json({ sessionId: session.id })
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error creating checkout session:', error)
     return NextResponse.json(
       { error: 'Error creating checkout session' },
       { status: 500 }
