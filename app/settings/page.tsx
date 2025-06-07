@@ -2,37 +2,120 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowLeft, Activity, Users, Eye, Navigation, CheckCircle } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { ArrowLeft, BookOpen, Book, GraduationCap, School, BookMarked, BookText, Library, BookOpenCheck, BookOpenText, Bookmark, BookmarkCheck, BookmarkPlus, BookmarkX, User, CreditCard } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/utils/supabase/client"
 import { redirect } from "next/navigation"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { UserSessions } from "@/components/user-sessions"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 
-interface UserActivity {
-  id: string
-  user_id: string
-  event: string
-  path: string
-  created_at: string
-  user_email?: string
-  score?: 'correct' | 'incorrect'
-  question_type?: string
-  question_text?: string
-  topic?: string
+interface Course {
+  name: string
+  slug: string
+  description: string
+  icon: string
 }
 
 type UserRole = 'admin' | 'student' | 'teacher'
+type UserType = 'basic' | 'revision' | 'revisionAI'
 
 export default function SettingsPage() {
+  const [userType, setUserType] = useState<UserType | null>(null)
   const [userRole, setUserRole] = useState<UserRole | null>(null)
+  const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [userCourses, setUserCourses] = useState<string[]>([])
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [courseToDelete, setCourseToDelete] = useState<string | null>(null)
+  const [deleteConfirmation, setDeleteConfirmation] = useState("")
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [addCourseDialogOpen, setAddCourseDialogOpen] = useState(false)
+  const [availableCourses, setAvailableCourses] = useState<Course[]>([])
+  const [isAddingCourse, setIsAddingCourse] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const [userActivity, setUserActivity] = useState<UserActivity[]>([])
-  const [filteredActivity, setFilteredActivity] = useState<UserActivity[]>([])
-  const [selectedFilter, setSelectedFilter] = useState<string>("all")
 
   const supabase = createClient()
+
+  const handleDeleteCourse = async () => {
+    if (!courseToDelete || !userEmail || deleteConfirmation !== "delete") return
+
+    setIsDeleting(true)
+    const supabase = createClient()
+
+    try {
+      // Get current courses
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("courses")
+        .eq("email", userEmail)
+        .single()
+
+      if (!profile) throw new Error("Profile not found")
+
+      // Remove the course from the array
+      const updatedCourses = profile.courses.filter((course: string) => course !== courseToDelete)
+
+      // Update the profile
+      const { error } = await supabase
+        .from("profiles")
+        .update({ courses: updatedCourses })
+        .eq("email", userEmail)
+
+      if (error) throw error
+
+      // Update local state
+      setUserCourses(updatedCourses)
+      setDeleteDialogOpen(false)
+      setCourseToDelete(null)
+      setDeleteConfirmation("")
+    } catch (error) {
+      console.error("Error deleting course:", error)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const handleAddCourse = async (courseSlug: string) => {
+    if (!userEmail) return
+
+    setIsAddingCourse(true)
+    const supabase = createClient()
+
+    try {
+      // Get current courses
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("courses")
+        .eq("email", userEmail)
+        .single()
+
+      if (!profile) throw new Error("Profile not found")
+
+      // Add the course if it's not already in the array
+      if (!profile.courses.includes(courseSlug)) {
+        const updatedCourses = [...profile.courses, courseSlug]
+
+        // Update the profile
+        const { error } = await supabase
+          .from("profiles")
+          .update({ courses: updatedCourses })
+          .eq("email", userEmail)
+
+        if (error) throw error
+
+        // Update local state
+        setUserCourses(updatedCourses)
+      }
+
+      setAddCourseDialogOpen(false)
+    } catch (error) {
+      console.error("Error adding course:", error)
+    } finally {
+      setIsAddingCourse(false)
+    }
+  }
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -40,6 +123,7 @@ export default function SettingsPage() {
       if (error || !user) {
         redirect('/')
       }
+      setUserEmail(user.email || null)
 
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
@@ -50,39 +134,29 @@ export default function SettingsPage() {
       if (profileError) {
         console.error('Error fetching profile:', profileError)
       } else {
+        setUserType(profile?.user_type)
         setUserRole(profile?.role || 'student')
+        setUserCourses(profile?.courses || [])
+      }
+    }
+
+    const fetchCourses = async () => {
+      const { data: courses, error } = await supabase
+        .from("courses")
+        .select("*")
+        .order('name')
+
+      if (error) {
+        console.error("Error fetching courses:", error)
+      } else {
+        setAvailableCourses(courses || [])
       }
     }
 
     fetchUser()
+    fetchCourses()
+    setIsLoading(false)
   }, [supabase])
-
-  // useEffect(() => {
-  //   const fetchUserActivity = async () => {
-  //     const supabase = createClient()
-  //     const { data: { user } } = await supabase.auth.getUser()
-
-  //     if (!user) return
-
-  //     const { data: activityData } = await supabase
-  //       .from("user_activity")
-  //       .select("*")
-  //       .eq("user_id", user.id)
-  //       .order("created_at", { ascending: false })
-
-  //     if (activityData) {
-  //       setUserActivity(activityData)
-  //       setFilteredActivity(activityData)
-  //     }
-  //   }
-
-  //   fetchUserActivity()
-  // }, [])
-
-  const handleUserClick = (email: string) => {
-    // Handle user click in settings page
-    console.log("User clicked:", email)
-  }
 
   if (isLoading) {
     return (
@@ -101,40 +175,6 @@ export default function SettingsPage() {
     )
   }
 
-  if (userRole !== "admin" && userRole !== "teacher") {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center mb-8">
-          <Link href="/" className="mr-4">
-            <ArrowLeft className="h-6 w-6" />
-          </Link>
-          <h1 className="text-2xl font-bold">Settings</h1>
-        </div>
-        <Card>
-          <CardHeader>
-            <CardTitle>Premium Features</CardTitle>
-            <CardDescription>
-              Upgrade to access advanced analytics and features
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-4">
-                <CheckCircle className="h-6 w-6 text-green-500" />
-                <div>
-                  <h3 className="font-medium">Self-Assessment</h3>
-                  <p className="text-sm text-muted-foreground">
-                    You&apos;re using the premium version with self-assessment. Coming soon get AI-powered feedback.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center mb-8">
@@ -144,129 +184,240 @@ export default function SettingsPage() {
         <h1 className="text-2xl font-bold">Settings</h1>
       </div>
 
-      <Tabs defaultValue="analytics" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="activity">User Activity</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="analytics" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Analytics Overview</CardTitle>
-              <CardDescription>
-                View detailed analytics and user insights
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Total Users
-                    </CardTitle>
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">0</div>
-                    <p className="text-xs text-muted-foreground">
-                      +0% from last month
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Active Sessions
-                    </CardTitle>
-                    <Activity className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">0</div>
-                    <p className="text-xs text-muted-foreground">
-                      +0% from last month
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Page Views
-                    </CardTitle>
-                    <Eye className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">0</div>
-                    <p className="text-xs text-muted-foreground">
-                      +0% from last month
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Navigation Events
-                    </CardTitle>
-                    <Navigation className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">0</div>
-                    <p className="text-xs text-muted-foreground">
-                      +0% from last month
-                    </p>
-                  </CardContent>
-                </Card>
+      {/* User Details */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>User Details</CardTitle>
+          <CardDescription>Your account information and subscription status</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex items-center space-x-4">
+              <User className="h-6 w-6 text-muted-foreground" />
+              <div>
+                <h3 className="font-medium">Email</h3>
+                <p className="text-sm text-muted-foreground">{userEmail}</p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+            <div className="flex items-center space-x-4">
+              <GraduationCap className="h-6 w-6 text-muted-foreground" />
+              <div>
+                <h3 className="font-medium">Role</h3>
+                <p className="text-sm text-muted-foreground capitalize">{userRole}</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <CreditCard className="h-6 w-6 text-muted-foreground" />
+              <div>
+                <h3 className="font-medium">Subscription</h3>
+                <p className="text-sm text-muted-foreground capitalize">{userType || 'Basic'}</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>User Sessions</CardTitle>
-              <CardDescription>
-                View detailed user session data
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <UserSessions onUserClick={handleUserClick} />
-            </CardContent>
-          </Card>
-        </TabsContent>
+      {/* Subscription Plans */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Subscription Plans</CardTitle>
+          <CardDescription>Choose a plan that best fits your needs</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-6 md:grid-cols-3">
+            {/* Basic Plan */}
+            <Card className={userType === 'basic' ? 'border-primary' : ''}>
+              <CardHeader>
+                <CardTitle>Basic</CardTitle>
+                <CardDescription>Essential features for self-study</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <BookOpen className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">Access to all questions</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Book className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">Basic progress tracking</span>
+                  </div>
+                  <Button className="w-full" variant={userType === 'basic' ? 'default' : 'outline'}>
+                    {userType === 'basic' ? 'Current Plan' : 'Select Plan'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
 
-        <TabsContent value="activity" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>User Activity</CardTitle>
-              <CardDescription>
-                Track and analyze user interactions
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="mt-4 space-y-4">
-                {filteredActivity.map((activity) => (
-                  <Card key={activity.id}>
+            {/* Revision Plan */}
+            <Card className={userType === 'revision' ? 'border-primary' : ''}>
+              <CardHeader>
+                <CardTitle>Revision</CardTitle>
+                <CardDescription>Enhanced learning experience</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <BookOpenCheck className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">Everything in Basic</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <BookmarkCheck className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">Detailed progress analytics</span>
+                  </div>
+                  <Button className="w-full" variant={userType === 'revision' ? 'default' : 'outline'}>
+                    {userType === 'revision' ? 'Current Plan' : 'Select Plan'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Revision AI Plan */}
+            <Card className={userType === 'revisionAI' ? 'border-primary' : ''}>
+              <CardHeader>
+                <CardTitle>Revision AI</CardTitle>
+                <CardDescription>AI-powered learning experience</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <BookOpenText className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">Everything in Revision</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <School className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">AI-powered feedback</span>
+                  </div>
+                  <Button className="w-full" variant={userType === 'revisionAI' ? 'default' : 'outline'}>
+                    {userType === 'revisionAI' ? 'Current Plan' : 'Select Plan'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Course Management */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Your Courses</CardTitle>
+              <CardDescription>Manage your enrolled courses</CardDescription>
+            </div>
+            <Button onClick={() => setAddCourseDialogOpen(true)}>
+              <BookmarkPlus className="h-4 w-4 mr-2" />
+              Add Course
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {userCourses.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No courses enrolled yet</p>
+            ) : (
+              userCourses.map((courseSlug) => {
+                const course = availableCourses.find(c => c.slug === courseSlug)
+                if (!course) return null
+
+                return (
+                  <Card key={courseSlug}>
                     <CardContent className="pt-6">
                       <div className="flex items-center justify-between">
-                        <div className="space-y-1">
-                          <p className="text-sm font-medium">
-                            {activity.event}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {activity.path}
-                          </p>
+                        <div className="flex items-center space-x-4">
+                          {course.icon === 'book' && <Book className="h-6 w-6 text-muted-foreground" />}
+                          {course.icon === 'library' && <Library className="h-6 w-6 text-muted-foreground" />}
+                          {course.icon === 'bookmarked' && <BookMarked className="h-6 w-6 text-muted-foreground" />}
+                          <div>
+                            <h3 className="font-medium">{course.name}</h3>
+                            <p className="text-sm text-muted-foreground">{course.description}</p>
+                          </div>
                         </div>
-                        <div className="text-sm text-muted-foreground">
-                          {new Date(activity.created_at).toLocaleString()}
-                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setCourseToDelete(courseSlug)
+                            setDeleteDialogOpen(true)
+                          }}
+                        >
+                          <BookmarkX className="h-4 w-4" />
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                )
+              })
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Add Course Dialog */}
+      <Dialog open={addCourseDialogOpen} onOpenChange={setAddCourseDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Course</DialogTitle>
+            <DialogDescription>
+              Select a course to add to your profile
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {availableCourses
+              .filter(course => !userCourses.includes(course.slug))
+              .map(course => (
+                <Card key={course.slug} className="cursor-pointer hover:bg-muted/50" onClick={() => handleAddCourse(course.slug)}>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center space-x-4">
+                      {course.icon === 'book' && <Book className="h-6 w-6 text-muted-foreground" />}
+                      {course.icon === 'library' && <Library className="h-6 w-6 text-muted-foreground" />}
+                      {course.icon === 'bookmarked' && <BookMarked className="h-6 w-6 text-muted-foreground" />}
+                      <div>
+                        <h3 className="font-medium">{course.name}</h3>
+                        <p className="text-sm text-muted-foreground">{course.description}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Course Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Course</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to remove this course? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="confirmation">Type "delete" to confirm</Label>
+              <Input
+                id="confirmation"
+                value={deleteConfirmation}
+                onChange={(e) => setDeleteConfirmation(e.target.value)}
+                placeholder="delete"
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteCourse}
+                disabled={deleteConfirmation !== "delete" || isDeleting}
+              >
+                {isDeleting ? "Deleting..." : "Delete Course"}
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
