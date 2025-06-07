@@ -6,6 +6,7 @@ import { MobileNav } from "@/components/mobile-nav"
 import { Toaster } from "@/components/ui/sonner"
 import { Footer } from "@/components/footer"
 import { Analytics } from "@vercel/analytics/react"
+import { Header } from "@/components/header"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -31,6 +32,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
+        <Header />
         <MobileNav />
         <main className="min-h-screen bg-gray-50">{children}</main>
         <Footer />
