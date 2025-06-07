@@ -54,12 +54,10 @@ interface Course {
 
 export default function SettingsPage() {
   const [userType, setUserType] = useState<"basic" | "revision" | "revisionAI" | null>(null)
-  const [planEndDate, setPlanEndDate] = useState<string | null>(null)
   const [userActivity, setUserActivity] = useState<UserActivity[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [uniqueUsers, setUniqueUsers] = useState<number>(0)
   const [pageViews, setPageViews] = useState<Record<string, number>>({})
-  // const [navigationPaths, setNavigationPaths] = useState<string[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
   const [selectedUser, setSelectedUser] = useState<string | null>(null)
@@ -258,7 +256,6 @@ export default function SettingsPage() {
       } else {
         setUserType(profile?.user_type)
         setUserCourses(profile?.courses || [])
-        setPlanEndDate(profile?.plan_end_date)
       }
 
       // Only fetch students if user is admin
