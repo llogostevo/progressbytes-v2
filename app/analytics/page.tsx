@@ -1,9 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowLeft, Activity, Users, Eye, Navigation, Home, FileText, BarChart, RefreshCw, CheckCircle } from "lucide-react"
-import Link from "next/link"
+import { Activity, Users, Eye, Navigation, Home, FileText, BarChart, RefreshCw, CheckCircle } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import { redirect } from "next/navigation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -28,10 +27,51 @@ interface UserActivity {
   path: string
   created_at: string
   user_email?: string
-  score?: 'correct' | 'incorrect'
+  student_score?: 'red' | 'amber' | 'green'
   question_type?: string
   question_text?: string
   topic?: string
+}
+
+interface StudentAnswerData {
+  id: string;
+  student_id: string;
+  question_id: string;
+  student_score: 'red' | 'amber' | 'green';
+  submitted_at: string;
+  questions: {
+    id: string;
+    question_text: string;
+    subtopic_question_link: Array<{
+      subtopics: {
+        id: string;
+        topic_id: string;
+        topics: {
+          id: string;
+          name: string;
+          slug: string;
+          topicnumber: string;
+        };
+      };
+    }>;
+  } | null;
+}
+
+interface ProcessedStudentAnswer {
+  id: string;
+  student_id: string;
+  question_id: string;
+  student_score: 'red' | 'amber' | 'green';
+  submitted_at: string;
+  question: {
+    topic_id: string;
+    topic: {
+      id: string;
+      slug: string;
+      topicnumber: string;
+      name: string;
+    };
+  };
 }
 
 interface UserSession {
@@ -161,23 +201,45 @@ function ActivitySkeleton() {
   )
 }
 
-function PerformanceGraph({ userActivity, selectedStudent, topics }: { userActivity: UserActivity[], selectedStudent: string | null, topics: Array<{ id: string; name: string; slug: string }> }) {
+// Helper to compare topicnumber strings like 1.1.1, 1.1.2, etc.
+function compareTopicNumbers(a?: string, b?: string) {
+  if (!a && !b) return 0
+  if (!a) return -1
+  if (!b) return 1
+  const aParts = a.split(".").map(Number)
+  const bParts = b.split(".").map(Number)
+  for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+    const aVal = aParts[i] ?? 0
+    const bVal = bParts[i] ?? 0
+    if (aVal !== bVal) return aVal - bVal
+  }
+  return 0
+}
+
+function PerformanceGraph({ studentAnswers, selectedStudent, topics }: {
+  studentAnswers: ProcessedStudentAnswer[],
+  selectedStudent: string | null,
+  topics: Array<{ id: string; name: string; slug: string; topicnumber: string }>
+}) {
   // Prepare data for the stacked bar chart
   const barChartData = topics.map((topic) => {
-    const topicAnswers = userActivity.filter(
-      a => a.user_id === selectedStudent &&
-        a.event === 'submitted_question' &&
-        a.path.includes(topic.slug)
+    const topicAnswers = studentAnswers.filter(
+      a => a.student_id === selectedStudent &&
+        a.question?.topic_id === topic.id
     );
+
     return {
       name: topic.name,
-      topicNumber: topic.slug,
-      Strong: topicAnswers.filter(a => a.score === 'correct').length,
-      Developing: topicAnswers.filter(a => a.score === 'incorrect').length,
-      "Needs Work": 0, // Adding this to match progress page structure
+      topicNumber: topic.topicnumber,
+      Strong: topicAnswers.filter(a => a.student_score === 'green').length,
+      Developing: topicAnswers.filter(a => a.student_score === 'amber').length,
+      "Needs Work": topicAnswers.filter(a => a.student_score === 'red').length,
       total: topicAnswers.length,
     }
-  }).filter(data => data.total > 0) // Only show topics with activity
+  }).sort((a, b) => compareTopicNumbers(a.topicNumber, b.topicNumber))
+
+
+  console.log('Bar Chart Data:', barChartData); // Debug log
 
   return (
     <Card>
@@ -402,25 +464,186 @@ export default function AnalyticsPage() {
   const [pageViews, setPageViews] = useState<Record<string, number>>({})
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
-  const [userSessions, setUserSessions] = useState<UserSession[]>([])
-  const [topics, setTopics] = useState<Array<{ id: string; name: string; slug: string }>>([])
+  const [allUserSessions, setAllUserSessions] = useState<UserSession[]>([])
+  const [topics, setTopics] = useState<Array<{ id: string; name: string; slug: string; topicnumber: string }>>([])
   const [students, setStudents] = useState<Array<{ userid: string; email: string }>>([])
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null)
+  const [studentAnswers, setStudentAnswers] = useState<ProcessedStudentAnswer[]>([])
 
   const supabase = createClient()
 
-  const handleUserClick = (email: string) => {
-    setSelectedStudent(email)
+  const handleUserClick = (userid: string) => {
+    setSelectedStudent(userid)
+  }
 
-    // Group activities by session for the selected user
-    const userActivities = userActivity.filter(a => a.user_email === email)
+  const fetchStudentAnswers = useCallback(async () => {
+    if (!selectedStudent) {
+      console.log('No student selected, skipping fetch')
+      return
+    }
+
+    try {
+      // Fetch student answers with topic information
+      const { data: studentAnswers, error: studentAnswersError } = await supabase
+        .from('student_answers')
+        .select(`
+    id,
+    student_id,
+    question_id,
+    student_score,
+    submitted_at,
+    questions (
+      id,
+      question_text,
+      subtopic_question_link (
+        subtopics (
+          id,
+          topic_id,
+          topics (
+            id,
+            name,
+            slug,
+            topicnumber
+          )
+        )
+      )
+    )
+  `)
+        .order('submitted_at', { ascending: false })
+        .eq('student_id', selectedStudent)
+
+      console.log('Student answers:', studentAnswers)
+      if (studentAnswersError) {
+        console.error('Error fetching student answers:', studentAnswersError.message)
+        return
+      }
+
+      if (!studentAnswers) {
+        console.log('No student answers found for student:', selectedStudent)
+        return
+      }
+
+      // Set the state with the fetched answers, mapping to match ProcessedStudentAnswer type
+      setStudentAnswers(
+        studentAnswers.map((answer) => {
+          const question = (answer.questions as unknown) as StudentAnswerData['questions'];
+          const subtopicLink = question?.subtopic_question_link?.[0];
+          const subtopic = subtopicLink?.subtopics;
+          const topic = subtopic?.topics;
+          return {
+            ...answer,
+            question: {
+              topic_id: subtopic?.topic_id || '',
+              topic: topic
+                ? { id: topic.id, slug: topic.slug, topicnumber: topic.topicnumber, name: topic.name }
+                : { id: '', slug: '', topicnumber: '', name: '' },
+            },
+          };
+        })
+      );
+      console.log('Fetched student answers:', studentAnswers)
+    } catch (error) {
+      console.error('Unexpected error fetching student answers:', error)
+    }
+  }, [selectedStudent, supabase]);
+
+  useEffect(() => {
+    if (selectedStudent) {
+      fetchStudentAnswers()
+    }
+  }, [selectedStudent, fetchStudentAnswers])
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { user }, error } = await supabase.auth.getUser()
+      if (error || !user) {
+        redirect('/')
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("userid", user.id)
+        .single()
+
+      if (profileError) {
+        console.error('Error fetching profile:', profileError)
+      } else {
+        setUserRole(profile?.role || 'student')
+      }
+
+      // Fetch students if user is admin or teacher
+      if (profile?.role === 'admin' || profile?.role === 'teacher') {
+        // Fetch all users
+        const { data: usersData, error: usersError } = await supabase
+          .from("profiles")
+          .select("userid, email")
+          .order('email')
+
+        if (usersError) {
+          console.error('Error fetching users:', usersError)
+        } else {
+          setStudents(usersData || [])
+          if (usersData && usersData.length > 0) {
+            setSelectedStudent(usersData[0].userid)
+          }
+        }
+      }
+
+      // Fetch topics
+      const { data: topicsData, error: topicsError } = await supabase
+        .from("topics")
+        .select("id, name, slug, topicnumber")
+        .order('topicnumber')
+
+      if (topicsError) {
+        console.error('Error fetching topics:', topicsError)
+      } else {
+        console.log('Fetched topics:', topicsData); // Debug log
+        setTopics(topicsData || [])
+      }
+
+      // Fetch all user activity
+      const { data: activity } = await supabase
+        .from("user_activity")
+        .select("*")
+        .order('created_at', { ascending: false })
+
+      if (activity) {
+        console.log("Fetched user activity:", activity); // Debug log
+        setUserActivity(activity)
+      } else {
+        setUserActivity([])
+      }
+
+      // Calculate unique users
+      const uniqueUserIds = new Set(activity?.map(a => a.user_id) || [])
+      setUniqueUsers(uniqueUserIds.size)
+
+      // Calculate page views
+      const views = activity?.reduce((acc, curr) => {
+        acc[curr.path] = (acc[curr.path] || 0) + 1
+        return acc
+      }, {} as Record<string, number>) || {}
+      setPageViews(views)
+
+      setIsLoading(false)
+    }
+
+    fetchUser()
+  }, [supabase])
+
+  useEffect(() => {
+    // Group activities by session for all users
     const sessions = new Map<string, UserSession>()
 
-    userActivities.forEach(activity => {
+    userActivity.forEach(activity => {
       const date = new Date(activity.created_at).toDateString()
-      if (!sessions.has(date)) {
-        sessions.set(date, {
-          id: `${activity.user_id}_${date}`,
+      const sessionKey = `${activity.user_id}_${date}`
+      
+      if (!sessions.has(sessionKey)) {
+        sessions.set(sessionKey, {
+          id: sessionKey,
           user_id: activity.user_id,
           user_email: activity.user_email || 'Unknown',
           login_time: activity.created_at,
@@ -432,7 +655,7 @@ export default function AnalyticsPage() {
         })
       }
 
-      const session = sessions.get(date)!
+      const session = sessions.get(sessionKey)!
       session.events.push(activity)
 
       // Update last activity time
@@ -469,88 +692,8 @@ export default function AnalyticsPage() {
       new Date(b.login_time).getTime() - new Date(a.login_time).getTime()
     )
 
-    setUserSessions(sessionsArray)
-  }
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      const { data: { user }, error } = await supabase.auth.getUser()
-      if (error || !user) {
-        redirect('/')
-      }
-
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("userid", user.id)
-        .single()
-
-      if (profileError) {
-        console.error('Error fetching profile:', profileError)
-      } else {
-        setUserRole(profile?.role || 'student')
-      }
-
-      // Fetch students if user is admin or teacher
-      if (profile?.role === 'admin' || profile?.role === 'teacher') {
-        // Fetch students
-        const { data: studentsData, error: studentsError } = await supabase
-          .from("profiles")
-          .select("userid, email")
-          .neq("role", "admin")  // Exclude admins
-          .neq("role", "teacher")  // Exclude teachers
-          .order('email')
-
-        if (studentsError) {
-          console.error('Error fetching students:', studentsError)
-        } else {
-          setStudents(studentsData || [])
-          if (studentsData && studentsData.length > 0) {
-            setSelectedStudent(studentsData[0].userid)
-          }
-        }
-      }
-
-      // Fetch topics
-      const { data: topicsData, error: topicsError } = await supabase
-        .from("topics")
-        .select("id, name, slug")
-        .order('name')
-
-      if (topicsError) {
-        console.error('Error fetching topics:', topicsError)
-      } else {
-        setTopics(topicsData || [])
-      }
-
-      // Fetch all user activity
-      const { data: activity } = await supabase
-        .from("user_activity")
-        .select("*")
-        .order('created_at', { ascending: false })
-
-      if (activity) {
-        setUserActivity(activity)
-      } else {
-        setUserActivity([])
-      }
-
-      // Calculate unique users
-      const uniqueUserIds = new Set(activity?.map(a => a.user_id) || [])
-      setUniqueUsers(uniqueUserIds.size)
-
-      // Calculate page views
-      const views = activity?.reduce((acc, curr) => {
-        acc[curr.path] = (acc[curr.path] || 0) + 1
-        return acc
-      }, {} as Record<string, number>) || {}
-      setPageViews(views)
-
-      setIsLoading(false)
-    }
-
-    fetchUser()
-  }, [supabase])
+    setAllUserSessions(sessionsArray)
+  }, [userActivity])
 
   // Group activity by event type
   const activityStats = userActivity.reduce((acc, activity) => {
@@ -568,9 +711,6 @@ export default function AnalyticsPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           <div className="mb-8">
-            <Link href="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
-              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Home
-            </Link>
             <h1 className="text-3xl font-bold mt-4 mb-2">Analytics</h1>
             <p className="text-muted-foreground">Access denied. This page is only available to administrators and teachers.</p>
           </div>
@@ -583,9 +723,6 @@ export default function AnalyticsPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
-          <Link href="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Home
-          </Link>
           <h1 className="text-3xl font-bold mt-4 mb-2">Analytics</h1>
           <p className="text-muted-foreground">Track student progress and site usage</p>
         </div>
@@ -710,7 +847,7 @@ export default function AnalyticsPage() {
                               </div>
                               <div
                                 className="truncate cursor-pointer hover:text-primary"
-                                onClick={() => handleUserClick(activity.user_email || '')}
+                                onClick={() => handleUserClick(activity.user_id)}
                               >
                                 {activity.user_email}
                               </div>
@@ -727,14 +864,14 @@ export default function AnalyticsPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <button
-                            className="px-3 py-1 text-sm border rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-3 py-1 text-sm border rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                             onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                             disabled={currentPage === 1}
                           >
                             Previous
                           </button>
                           <button
-                            className="px-3 py-1 text-sm border rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-3 py-1 text-sm border rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                             onClick={() => setCurrentPage(prev => Math.min(Math.ceil(userActivity.length / itemsPerPage), prev + 1))}
                             disabled={currentPage >= Math.ceil(userActivity.length / itemsPerPage)}
                           >
@@ -750,7 +887,7 @@ export default function AnalyticsPage() {
           </TabsContent>
 
           <TabsContent value="sessions">
-            <UserSessions onUserClick={handleUserClick} sessions={userSessions} />
+            <UserSessions onUserClick={handleUserClick} sessions={allUserSessions} />
           </TabsContent>
 
           <TabsContent value="homework">
@@ -776,7 +913,7 @@ export default function AnalyticsPage() {
                   <div className="space-y-8">
                     {/* Student Selector */}
                     <div className="flex items-center gap-4">
-                      <label htmlFor="student" className="text-sm font-medium">Select Student</label>
+                      <label htmlFor="student" className="text-sm font-medium">Select User</label>
                       <select
                         id="student"
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
@@ -784,7 +921,7 @@ export default function AnalyticsPage() {
                         onChange={(e) => setSelectedStudent(e.target.value)}
                       >
                         {students.length === 0 ? (
-                          <option value="">No students available</option>
+                          <option value="">No users available</option>
                         ) : (
                           students.map((student) => (
                             <option key={student.userid} value={student.userid}>
@@ -796,8 +933,8 @@ export default function AnalyticsPage() {
                     </div>
 
                     {/* Performance Graph */}
-                    <PerformanceGraph 
-                      userActivity={userActivity}
+                    <PerformanceGraph
+                      studentAnswers={studentAnswers || []}
                       selectedStudent={selectedStudent}
                       topics={topics}
                     />

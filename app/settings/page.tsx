@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, BookOpen, Book, GraduationCap, School, BookMarked, Library, BookOpenCheck, BookOpenText, BookmarkCheck, BookmarkPlus, BookmarkX, User, CreditCard } from "lucide-react"
-import Link from "next/link"
+import { BookOpen, Book, GraduationCap, School, BookMarked, Library, BookOpenCheck, BookOpenText, BookmarkCheck, BookmarkPlus, BookmarkX, User, CreditCard } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import { redirect } from "next/navigation"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
@@ -223,9 +222,6 @@ export default function SettingsPage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center mb-8">
-          <Link href="/" className="mr-4">
-            <ArrowLeft className="h-6 w-6" />
-          </Link>
           <h1 className="text-2xl font-bold">Settings</h1>
         </div>
         <div className="grid gap-6">
@@ -239,9 +235,6 @@ export default function SettingsPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center mb-8">
-        <Link href="/" className="mr-4">
-          <ArrowLeft className="h-6 w-6" />
-        </Link>
         <h1 className="text-2xl font-bold">Settings</h1>
       </div>
 
