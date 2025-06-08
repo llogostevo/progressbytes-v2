@@ -712,9 +712,6 @@ export default function AnalyticsPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           <div className="mb-8">
-            <Link href="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
-              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Home
-            </Link>
             <h1 className="text-3xl font-bold mt-4 mb-2">Analytics</h1>
             <p className="text-muted-foreground">Access denied. This page is only available to administrators and teachers.</p>
           </div>
@@ -727,9 +724,6 @@ export default function AnalyticsPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
-          <Link href="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-          </Link>
           <h1 className="text-3xl font-bold mt-4 mb-2">Analytics</h1>
           <p className="text-muted-foreground">Track student progress and site usage</p>
         </div>
