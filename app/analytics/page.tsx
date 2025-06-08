@@ -28,10 +28,25 @@ interface UserActivity {
   path: string
   created_at: string
   user_email?: string
-  score?: 'correct' | 'incorrect'
+  student_score?: 'red' | 'amber' | 'green'
   question_type?: string
   question_text?: string
   topic?: string
+}
+
+interface StudentAnswers {
+  id: string
+  student_id: string
+  question_id: string
+  student_score: 'red' | 'amber' | 'green'
+  submitted_at: string
+  question: {
+    topic_id: string
+    topic: {
+      id: string
+      slug: string
+    }
+  }
 }
 
 interface UserSession {
@@ -176,35 +191,28 @@ function compareTopicNumbers(a?: string, b?: string) {
   return 0
 }
 
-function PerformanceGraph({ userActivity, selectedStudent, topics }: { userActivity: UserActivity[], selectedStudent: string | null, topics: Array<{ id: string; name: string; slug: string; topicnumber: string }> }) {
+function PerformanceGraph({ studentAnswers, selectedStudent, topics }: {
+  studentAnswers: StudentAnswers[],
+  selectedStudent: string | null,
+  topics: Array<{ id: string; name: string; slug: string; topicnumber: string }>
+}) {
   // Prepare data for the stacked bar chart
   const barChartData = topics.map((topic) => {
-    const topicAnswers = userActivity.filter(
-      a => a.user_id === selectedStudent &&
-        a.event === 'submitted_question' &&
-        (a.path.includes(topic.slug) || a.topic === topic.id)
+    const topicAnswers = studentAnswers.filter(
+      a => a.student_id === selectedStudent &&
+        a.question?.topic_id === topic.id
     );
-
-    // Calculate scores
-    const correctAnswers = topicAnswers.filter(a => a.score === 'correct').length;
-    const incorrectAnswers = topicAnswers.filter(a => a.score === 'incorrect').length;
-
-    // Format topic number as string with proper decimal places
-    // let topicNumber = "";
-    // if (topic.topicnumber) {
-    //   const numStr = topic.topicnumber.toString().padStart(3, '0');
-    //   topicNumber = `${numStr[0]}.${numStr[1]}.${numStr[2]}`;
-    // }
 
     return {
       name: topic.name,
       topicNumber: topic.topicnumber,
-      Strong: correctAnswers,
-      Developing: incorrectAnswers,
-      "Needs Work": 0,
+      Strong: topicAnswers.filter(a => a.student_score === 'green').length,
+      Developing: topicAnswers.filter(a => a.student_score === 'amber').length,
+      "Needs Work": topicAnswers.filter(a => a.student_score === 'red').length,
       total: topicAnswers.length,
     }
   }).sort((a, b) => compareTopicNumbers(a.topicNumber, b.topicNumber))
+
 
   console.log('Bar Chart Data:', barChartData); // Debug log
 
@@ -435,6 +443,7 @@ export default function AnalyticsPage() {
   const [topics, setTopics] = useState<Array<{ id: string; name: string; slug: string; topicnumber: string }>>([])
   const [students, setStudents] = useState<Array<{ userid: string; email: string }>>([])
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null)
+  const [studentAnswers, setStudentAnswers] = useState<StudentAnswers[]>([])
 
   const supabase = createClient()
 
@@ -587,38 +596,81 @@ export default function AnalyticsPage() {
   }, [supabase])
 
   useEffect(() => {
-    const fetchStudentAnswers = async () => {
-      if (!selectedStudent) {
-        console.log('No student selected, skipping fetch')
+    if (selectedStudent) {
+      fetchStudentAnswers()
+    }
+  }, [selectedStudent])
+
+  const fetchStudentAnswers = async () => {
+    if (!selectedStudent) {
+      console.log('No student selected, skipping fetch')
+      return
+    }
+
+    try {
+      // Fetch student answers with topic information
+      const { data: studentAnswers, error: studentAnswersError } = await supabase
+        .from('student_answers')
+        .select(`
+    id,
+    student_id,
+    question_id,
+    student_score,
+    submitted_at,
+    questions (
+      id,
+      question_text,
+      subtopic_question_link (
+        subtopics (
+          id,
+          topic_id,
+          topics (
+            id,
+            name,
+            slug,
+            topicnumber
+          )
+        )
+      )
+    )
+  `)
+        .order('submitted_at', { ascending: false })
+        .eq('student_id', selectedStudent)
+
+      console.log('Student answers:', studentAnswers)
+      if (studentAnswersError) {
+        console.error('Error fetching student answers:', studentAnswersError.message)
         return
       }
 
-      try {
-        // Fetch student answers
-        const { data: studentAnswers, error: studentAnswersError } = await supabase
-          .from("student_answers")
-          .select("id, student_id, question_id, student_score, submitted_at")
-          .order('submitted_at', { ascending: false })
-          .eq('student_id', selectedStudent)
-
-        if (studentAnswersError) {
-          console.error('Error fetching student answers:', studentAnswersError.message)
-          return
-        }
-
-        if (!studentAnswers) {
-          console.log('No student answers found for student:', selectedStudent)
-          return
-        }
-
-        console.log('Fetched student answers:', studentAnswers)
-      } catch (error) {
-        console.error('Unexpected error fetching student answers:', error)
+      if (!studentAnswers) {
+        console.log('No student answers found for student:', selectedStudent)
+        return
       }
-    }
 
-    fetchStudentAnswers()
-  }, [supabase, selectedStudent])
+      // Set the state with the fetched answers, mapping to match StudentAnswers type
+      setStudentAnswers(
+        studentAnswers.map((answer: any) => {
+          const question = answer.questions || {};
+          const subtopicLink = question.subtopic_question_link?.[0];
+          const subtopic = subtopicLink?.subtopics;
+          const topic = subtopic?.topics;
+          return {
+            ...answer,
+            question: {
+              topic_id: subtopic?.topic_id || '',
+              topic: topic
+                ? { id: topic.id, slug: topic.slug, topicnumber: topic.topicnumber, name: topic.name }
+                : { id: '', slug: '', topicnumber: '', name: '' },
+            },
+          };
+        })
+      );
+      console.log('Fetched student answers:', studentAnswers)
+    } catch (error) {
+      console.error('Unexpected error fetching student answers:', error)
+    }
+  }
 
   // Group activity by event type
   const activityStats = userActivity.reduce((acc, activity) => {
@@ -865,7 +917,7 @@ export default function AnalyticsPage() {
 
                     {/* Performance Graph */}
                     <PerformanceGraph
-                      userActivity={userActivity}
+                      studentAnswers={studentAnswers || []}
                       selectedStudent={selectedStudent}
                       topics={topics}
                     />
