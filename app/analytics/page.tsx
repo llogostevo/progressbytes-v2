@@ -465,7 +465,7 @@ export default function AnalyticsPage() {
   const [pageViews, setPageViews] = useState<Record<string, number>>({})
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
-  const [userSessions, setUserSessions] = useState<UserSession[]>([])
+  const [allUserSessions, setAllUserSessions] = useState<UserSession[]>([])
   const [topics, setTopics] = useState<Array<{ id: string; name: string; slug: string; topicnumber: string }>>([])
   const [students, setStudents] = useState<Array<{ userid: string; email: string }>>([])
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null)
@@ -635,67 +635,66 @@ export default function AnalyticsPage() {
   }, [supabase])
 
   useEffect(() => {
-    if (selectedStudent) {
-      // Group activities by session for the selected user
-      const userActivities = userActivity.filter(a => a.user_id === selectedStudent)
-      const sessions = new Map<string, UserSession>()
+    // Group activities by session for all users
+    const sessions = new Map<string, UserSession>()
 
-      userActivities.forEach(activity => {
-        const date = new Date(activity.created_at).toDateString()
-        if (!sessions.has(date)) {
-          sessions.set(date, {
-            id: `${activity.user_id}_${date}`,
-            user_id: activity.user_id,
-            user_email: activity.user_email || 'Unknown',
-            login_time: activity.created_at,
-            last_activity: activity.created_at,
-            duration_minutes: 0,
-            questions_submitted: 0,
-            pages_visited: [],
-            events: []
-          })
-        }
+    userActivity.forEach(activity => {
+      const date = new Date(activity.created_at).toDateString()
+      const sessionKey = `${activity.user_id}_${date}`
+      
+      if (!sessions.has(sessionKey)) {
+        sessions.set(sessionKey, {
+          id: sessionKey,
+          user_id: activity.user_id,
+          user_email: activity.user_email || 'Unknown',
+          login_time: activity.created_at,
+          last_activity: activity.created_at,
+          duration_minutes: 0,
+          questions_submitted: 0,
+          pages_visited: [],
+          events: []
+        })
+      }
 
-        const session = sessions.get(date)!
-        session.events.push(activity)
+      const session = sessions.get(sessionKey)!
+      session.events.push(activity)
 
-        // Update last activity time
-        if (new Date(activity.created_at) > new Date(session.last_activity)) {
-          session.last_activity = activity.created_at
-        }
+      // Update last activity time
+      if (new Date(activity.created_at) > new Date(session.last_activity)) {
+        session.last_activity = activity.created_at
+      }
 
-        // Update login time if this is earlier
-        if (new Date(activity.created_at) < new Date(session.login_time)) {
-          session.login_time = activity.created_at
-        }
+      // Update login time if this is earlier
+      if (new Date(activity.created_at) < new Date(session.login_time)) {
+        session.login_time = activity.created_at
+      }
 
-        // Count questions submitted
-        if (activity.event === 'submitted_question') {
-          session.questions_submitted++
-        }
+      // Count questions submitted
+      if (activity.event === 'submitted_question') {
+        session.questions_submitted++
+      }
 
-        // Track unique pages visited
-        if (!session.pages_visited.includes(activity.path)) {
-          session.pages_visited.push(activity.path)
-        }
-      })
+      // Track unique pages visited
+      if (!session.pages_visited.includes(activity.path)) {
+        session.pages_visited.push(activity.path)
+      }
+    })
 
-      // Calculate duration for each session
-      const sessionsArray = Array.from(sessions.values()).map(session => ({
-        ...session,
-        duration_minutes: Math.round(
-          (new Date(session.last_activity).getTime() - new Date(session.login_time).getTime()) / (1000 * 60)
-        )
-      }))
-
-      // Sort by most recent
-      sessionsArray.sort((a, b) =>
-        new Date(b.login_time).getTime() - new Date(a.login_time).getTime()
+    // Calculate duration for each session
+    const sessionsArray = Array.from(sessions.values()).map(session => ({
+      ...session,
+      duration_minutes: Math.round(
+        (new Date(session.last_activity).getTime() - new Date(session.login_time).getTime()) / (1000 * 60)
       )
+    }))
 
-      setUserSessions(sessionsArray)
-    }
-  }, [selectedStudent, userActivity])
+    // Sort by most recent
+    sessionsArray.sort((a, b) =>
+      new Date(b.login_time).getTime() - new Date(a.login_time).getTime()
+    )
+
+    setAllUserSessions(sessionsArray)
+  }, [userActivity])
 
   // Group activity by event type
   const activityStats = userActivity.reduce((acc, activity) => {
@@ -872,14 +871,14 @@ export default function AnalyticsPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <button
-                            className="px-3 py-1 text-sm border rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-3 py-1 text-sm border rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                             onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                             disabled={currentPage === 1}
                           >
                             Previous
                           </button>
                           <button
-                            className="px-3 py-1 text-sm border rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-3 py-1 text-sm border rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                             onClick={() => setCurrentPage(prev => Math.min(Math.ceil(userActivity.length / itemsPerPage), prev + 1))}
                             disabled={currentPage >= Math.ceil(userActivity.length / itemsPerPage)}
                           >
@@ -895,7 +894,7 @@ export default function AnalyticsPage() {
           </TabsContent>
 
           <TabsContent value="sessions">
-            <UserSessions onUserClick={handleUserClick} sessions={userSessions} />
+            <UserSessions onUserClick={handleUserClick} sessions={allUserSessions} />
           </TabsContent>
 
           <TabsContent value="homework">
