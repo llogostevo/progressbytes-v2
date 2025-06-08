@@ -634,6 +634,69 @@ export default function AnalyticsPage() {
     fetchUser()
   }, [supabase])
 
+  useEffect(() => {
+    if (selectedStudent) {
+      // Group activities by session for the selected user
+      const userActivities = userActivity.filter(a => a.user_id === selectedStudent)
+      const sessions = new Map<string, UserSession>()
+
+      userActivities.forEach(activity => {
+        const date = new Date(activity.created_at).toDateString()
+        if (!sessions.has(date)) {
+          sessions.set(date, {
+            id: `${activity.user_id}_${date}`,
+            user_id: activity.user_id,
+            user_email: activity.user_email || 'Unknown',
+            login_time: activity.created_at,
+            last_activity: activity.created_at,
+            duration_minutes: 0,
+            questions_submitted: 0,
+            pages_visited: [],
+            events: []
+          })
+        }
+
+        const session = sessions.get(date)!
+        session.events.push(activity)
+
+        // Update last activity time
+        if (new Date(activity.created_at) > new Date(session.last_activity)) {
+          session.last_activity = activity.created_at
+        }
+
+        // Update login time if this is earlier
+        if (new Date(activity.created_at) < new Date(session.login_time)) {
+          session.login_time = activity.created_at
+        }
+
+        // Count questions submitted
+        if (activity.event === 'submitted_question') {
+          session.questions_submitted++
+        }
+
+        // Track unique pages visited
+        if (!session.pages_visited.includes(activity.path)) {
+          session.pages_visited.push(activity.path)
+        }
+      })
+
+      // Calculate duration for each session
+      const sessionsArray = Array.from(sessions.values()).map(session => ({
+        ...session,
+        duration_minutes: Math.round(
+          (new Date(session.last_activity).getTime() - new Date(session.login_time).getTime()) / (1000 * 60)
+        )
+      }))
+
+      // Sort by most recent
+      sessionsArray.sort((a, b) =>
+        new Date(b.login_time).getTime() - new Date(a.login_time).getTime()
+      )
+
+      setUserSessions(sessionsArray)
+    }
+  }, [selectedStudent, userActivity])
+
   // Group activity by event type
   const activityStats = userActivity.reduce((acc, activity) => {
     acc[activity.event] = (acc[activity.event] || 0) + 1
