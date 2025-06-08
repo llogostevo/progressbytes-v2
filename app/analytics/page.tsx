@@ -184,18 +184,18 @@ function PerformanceGraph({ userActivity, selectedStudent, topics }: { userActiv
         a.event === 'submitted_question' &&
         (a.path.includes(topic.slug) || a.topic === topic.id)
     );
-    
+
     // Calculate scores
     const correctAnswers = topicAnswers.filter(a => a.score === 'correct').length;
     const incorrectAnswers = topicAnswers.filter(a => a.score === 'incorrect').length;
-    
+
     // Format topic number as string with proper decimal places
     // let topicNumber = "";
     // if (topic.topicnumber) {
     //   const numStr = topic.topicnumber.toString().padStart(3, '0');
     //   topicNumber = `${numStr[0]}.${numStr[1]}.${numStr[2]}`;
     // }
-    
+
     return {
       name: topic.name,
       topicNumber: topic.topicnumber,
@@ -586,6 +586,40 @@ export default function AnalyticsPage() {
     fetchUser()
   }, [supabase])
 
+  useEffect(() => {
+    const fetchStudentAnswers = async () => {
+      if (!selectedStudent) {
+        console.log('No student selected, skipping fetch')
+        return
+      }
+
+      try {
+        // Fetch student answers
+        const { data: studentAnswers, error: studentAnswersError } = await supabase
+          .from("student_answers")
+          .select("id, student_id, question_id, student_score, submitted_at")
+          .order('submitted_at', { ascending: false })
+          .eq('student_id', selectedStudent)
+
+        if (studentAnswersError) {
+          console.error('Error fetching student answers:', studentAnswersError.message)
+          return
+        }
+
+        if (!studentAnswers) {
+          console.log('No student answers found for student:', selectedStudent)
+          return
+        }
+
+        console.log('Fetched student answers:', studentAnswers)
+      } catch (error) {
+        console.error('Unexpected error fetching student answers:', error)
+      }
+    }
+
+    fetchStudentAnswers()
+  }, [supabase, selectedStudent])
+
   // Group activity by event type
   const activityStats = userActivity.reduce((acc, activity) => {
     acc[activity.event] = (acc[activity.event] || 0) + 1
@@ -618,7 +652,7 @@ export default function AnalyticsPage() {
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
           <Link href="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Home
+            <ArrowLeft className="mr-2 h-4 w-4" />
           </Link>
           <h1 className="text-3xl font-bold mt-4 mb-2">Analytics</h1>
           <p className="text-muted-foreground">Track student progress and site usage</p>
@@ -830,7 +864,7 @@ export default function AnalyticsPage() {
                     </div>
 
                     {/* Performance Graph */}
-                    <PerformanceGraph 
+                    <PerformanceGraph
                       userActivity={userActivity}
                       selectedStudent={selectedStudent}
                       topics={topics}
