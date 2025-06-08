@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Users, Clock, FileText, Calendar, Navigation, Activity } from "lucide-react"
+import { Users, Clock, FileText, Calendar, Navigation, Activity, Download } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -324,6 +324,33 @@ export function UserActivityFilter() {
     }
   }
 
+  const exportToCSV = (users: UserActivity[], filename: string) => {
+    // Create CSV content
+    const headers = ['Email', 'Total Duration (minutes)', 'Questions Submitted', 'Last Activity']
+    const rows = users.map(user => [
+      user.user_email,
+      user.total_duration,
+      user.questions_submitted,
+      new Date(user.last_activity).toLocaleString()
+    ])
+    
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n')
+
+    // Create and trigger download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', filename)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -341,7 +368,7 @@ export function UserActivityFilter() {
           <CardTitle>Filter Criteria</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label>Email Domain</Label>
               <Input
@@ -350,6 +377,7 @@ export function UserActivityFilter() {
                 onChange={(e) => setEmailFilter(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="@centralfoundationboys.co.uk"
+                className="h-10"
               />
             </div>
             
@@ -359,7 +387,7 @@ export function UserActivityFilter() {
                 setTimeRange(value)
                 handleFilterChange()
               }}>
-                <SelectTrigger>
+                <SelectTrigger className="h-10">
                   <SelectValue placeholder="Select time range" />
                 </SelectTrigger>
                 <SelectContent>
@@ -378,6 +406,7 @@ export function UserActivityFilter() {
                 onChange={(e) => setMinDuration(e.target.value)}
                 onKeyDown={handleKeyDown}
                 min="0"
+                className="h-10"
               />
             </div>
             
@@ -389,6 +418,7 @@ export function UserActivityFilter() {
                 onChange={(e) => setMinQuestions(e.target.value)}
                 onKeyDown={handleKeyDown}
                 min="0"
+                className="h-10"
               />
             </div>
           </div>
@@ -407,10 +437,21 @@ export function UserActivityFilter() {
         {/* Users who meet criteria */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Met Criteria ({filteredUsers.length})
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Met Criteria ({filteredUsers.length})
+              </CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportToCSV(filteredUsers, 'met-criteria.csv')}
+                className="flex items-center gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Export CSV
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
@@ -441,10 +482,21 @@ export function UserActivityFilter() {
         {/* Users who don't meet criteria */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Did Not Meet Criteria ({nonFilteredUsers.length})
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Did Not Meet Criteria ({nonFilteredUsers.length})
+              </CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportToCSV(nonFilteredUsers, 'not-met-criteria.csv')}
+                className="flex items-center gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Export CSV
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
