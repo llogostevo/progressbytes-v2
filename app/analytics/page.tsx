@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, Activity, Users, Eye, Navigation, Home, FileText, BarChart, RefreshCw, CheckCircle } from "lucide-react"
 import Link from "next/link"
@@ -477,7 +477,7 @@ export default function AnalyticsPage() {
     setSelectedStudent(userid)
   }
 
-  const fetchStudentAnswers = async () => {
+  const fetchStudentAnswers = useCallback(async () => {
     if (!selectedStudent) {
       console.log('No student selected, skipping fetch')
       return
@@ -546,9 +546,8 @@ export default function AnalyticsPage() {
     } catch (error) {
       console.error('Unexpected error fetching student answers:', error)
     }
-  }
+  }, [selectedStudent, supabase]);
 
-  // Add new useEffect to load sessions when selectedStudent changes
   useEffect(() => {
     if (selectedStudent) {
       fetchStudentAnswers()
