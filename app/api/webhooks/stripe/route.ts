@@ -46,7 +46,7 @@ export async function POST(req: Request) {
           break;
         }
 
-        // Update subscription in database
+        // Update subscription in database using new fields from stripe
         await supabase
           .from('subscriptions')
           .upsert({
