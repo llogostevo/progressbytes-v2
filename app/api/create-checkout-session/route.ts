@@ -31,6 +31,17 @@ export async function POST(req: Request) {
     }
 
     // Create checkout session
+    console.log('Site URL:', process.env.NEXT_PUBLIC_SITE_URL)
+    
+    if (!process.env.NEXT_PUBLIC_SITE_URL) {
+      throw new Error('NEXT_PUBLIC_SITE_URL is not defined')
+    }
+
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL.trim()
+    if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
+      throw new Error('NEXT_PUBLIC_SITE_URL must start with http:// or https://')
+    }
+
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],
@@ -40,8 +51,8 @@ export async function POST(req: Request) {
           quantity: 1,
         },
       ],
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/settings?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/settings?canceled=true`,
+      success_url: `${baseUrl}/settings?success=true`,
+      cancel_url: `${baseUrl}/settings?canceled=true`,
       metadata: {
         userId: user.id,
       },
