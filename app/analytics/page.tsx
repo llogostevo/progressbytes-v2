@@ -161,23 +161,52 @@ function ActivitySkeleton() {
   )
 }
 
-function PerformanceGraph({ userActivity, selectedStudent, topics }: { userActivity: UserActivity[], selectedStudent: string | null, topics: Array<{ id: string; name: string; slug: string }> }) {
+// Helper to compare topicnumber strings like 1.1.1, 1.1.2, etc.
+function compareTopicNumbers(a?: string, b?: string) {
+  if (!a && !b) return 0
+  if (!a) return -1
+  if (!b) return 1
+  const aParts = a.split(".").map(Number)
+  const bParts = b.split(".").map(Number)
+  for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+    const aVal = aParts[i] ?? 0
+    const bVal = bParts[i] ?? 0
+    if (aVal !== bVal) return aVal - bVal
+  }
+  return 0
+}
+
+function PerformanceGraph({ userActivity, selectedStudent, topics }: { userActivity: UserActivity[], selectedStudent: string | null, topics: Array<{ id: string; name: string; slug: string; topicnumber: string }> }) {
   // Prepare data for the stacked bar chart
   const barChartData = topics.map((topic) => {
     const topicAnswers = userActivity.filter(
       a => a.user_id === selectedStudent &&
         a.event === 'submitted_question' &&
-        a.path.includes(topic.slug)
+        (a.path.includes(topic.slug) || a.topic === topic.id)
     );
+    
+    // Calculate scores
+    const correctAnswers = topicAnswers.filter(a => a.score === 'correct').length;
+    const incorrectAnswers = topicAnswers.filter(a => a.score === 'incorrect').length;
+    
+    // Format topic number as string with proper decimal places
+    // let topicNumber = "";
+    // if (topic.topicnumber) {
+    //   const numStr = topic.topicnumber.toString().padStart(3, '0');
+    //   topicNumber = `${numStr[0]}.${numStr[1]}.${numStr[2]}`;
+    // }
+    
     return {
       name: topic.name,
-      topicNumber: topic.slug,
-      Strong: topicAnswers.filter(a => a.score === 'correct').length,
-      Developing: topicAnswers.filter(a => a.score === 'incorrect').length,
-      "Needs Work": 0, // Adding this to match progress page structure
+      topicNumber: topic.topicnumber,
+      Strong: correctAnswers,
+      Developing: incorrectAnswers,
+      "Needs Work": 0,
       total: topicAnswers.length,
     }
-  }).filter(data => data.total > 0) // Only show topics with activity
+  }).sort((a, b) => compareTopicNumbers(a.topicNumber, b.topicNumber))
+
+  console.log('Bar Chart Data:', barChartData); // Debug log
 
   return (
     <Card>
@@ -403,7 +432,7 @@ export default function AnalyticsPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
   const [userSessions, setUserSessions] = useState<UserSession[]>([])
-  const [topics, setTopics] = useState<Array<{ id: string; name: string; slug: string }>>([])
+  const [topics, setTopics] = useState<Array<{ id: string; name: string; slug: string; topicnumber: string }>>([])
   const [students, setStudents] = useState<Array<{ userid: string; email: string }>>([])
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null)
 
@@ -498,20 +527,18 @@ export default function AnalyticsPage() {
 
       // Fetch students if user is admin or teacher
       if (profile?.role === 'admin' || profile?.role === 'teacher') {
-        // Fetch students
-        const { data: studentsData, error: studentsError } = await supabase
+        // Fetch all users
+        const { data: usersData, error: usersError } = await supabase
           .from("profiles")
           .select("userid, email")
-          .neq("role", "admin")  // Exclude admins
-          .neq("role", "teacher")  // Exclude teachers
           .order('email')
 
-        if (studentsError) {
-          console.error('Error fetching students:', studentsError)
+        if (usersError) {
+          console.error('Error fetching users:', usersError)
         } else {
-          setStudents(studentsData || [])
-          if (studentsData && studentsData.length > 0) {
-            setSelectedStudent(studentsData[0].userid)
+          setStudents(usersData || [])
+          if (usersData && usersData.length > 0) {
+            setSelectedStudent(usersData[0].userid)
           }
         }
       }
@@ -519,12 +546,13 @@ export default function AnalyticsPage() {
       // Fetch topics
       const { data: topicsData, error: topicsError } = await supabase
         .from("topics")
-        .select("id, name, slug")
-        .order('name')
+        .select("id, name, slug, topicnumber")
+        .order('topicnumber')
 
       if (topicsError) {
         console.error('Error fetching topics:', topicsError)
       } else {
+        console.log('Fetched topics:', topicsData); // Debug log
         setTopics(topicsData || [])
       }
 
@@ -535,13 +563,11 @@ export default function AnalyticsPage() {
         .order('created_at', { ascending: false })
 
       if (activity) {
+        console.log("Fetched user activity:", activity); // Debug log
         setUserActivity(activity)
-        console.log("Fetched user activity:", activity);
       } else {
         setUserActivity([])
       }
-
-      
 
       // Calculate unique users
       const uniqueUserIds = new Set(activity?.map(a => a.user_id) || [])
@@ -784,7 +810,7 @@ export default function AnalyticsPage() {
                   <div className="space-y-8">
                     {/* Student Selector */}
                     <div className="flex items-center gap-4">
-                      <label htmlFor="student" className="text-sm font-medium">Select Student</label>
+                      <label htmlFor="student" className="text-sm font-medium">Select User</label>
                       <select
                         id="student"
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
@@ -792,7 +818,7 @@ export default function AnalyticsPage() {
                         onChange={(e) => setSelectedStudent(e.target.value)}
                       >
                         {students.length === 0 ? (
-                          <option value="">No students available</option>
+                          <option value="">No users available</option>
                         ) : (
                           students.map((student) => (
                             <option key={student.userid} value={student.userid}>
