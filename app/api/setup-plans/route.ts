@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server'
 import { createStripeProducts } from '@/utils/stripe/stripe'
 
-export async function POST(req: Request) {
+export async function POST() {
   try {
     await createStripeProducts()
     return NextResponse.json({ success: true })
