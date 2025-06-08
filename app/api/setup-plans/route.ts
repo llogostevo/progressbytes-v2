@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server'
 import { createStripeProducts } from '@/utils/stripe/stripe'
 
+// This is a test route to setup the plans in stripe
 export async function POST() {
   try {
     await createStripeProducts()
