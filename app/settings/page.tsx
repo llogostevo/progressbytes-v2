@@ -117,6 +117,9 @@ export default function SettingsPage() {
   const [leaveClassDialogOpen, setLeaveClassDialogOpen] = useState(false)
   const [leaveClassConfirmation, setLeaveClassConfirmation] = useState("")
   const [isLeavingClass, setIsLeavingClass] = useState(false)
+  const [deleteMemberDialogOpen, setDeleteMemberDialogOpen] = useState(false)
+  const [memberToDelete, setMemberToDelete] = useState<SupabaseMember | null>(null)
+  const [isDeletingMember, setIsDeletingMember] = useState(false)
 
   const supabase = createClient()
 
@@ -428,6 +431,41 @@ export default function SettingsPage() {
       toast.error('Failed to leave class')
     } finally {
       setIsLeavingClass(false)
+    }
+  }
+
+  const handleDeleteClassMember = async () => {
+    if (!memberToDelete || !selectedMembership) return
+
+    setIsDeletingMember(true)
+    try {
+      const { error } = await supabase
+        .from('class_members')
+        .delete()
+        .eq('class_id', selectedMembership.class_id)
+        .eq('student_id', memberToDelete.student_id)
+
+      if (error) throw error
+
+      // Update the local state to remove the deleted member
+      if (selectedMembership.members) {
+        const updatedMembers = selectedMembership.members.filter(
+          member => member.student_id !== memberToDelete.student_id
+        )
+        setSelectedMembership({
+          ...selectedMembership,
+          members: updatedMembers
+        })
+      }
+
+      setDeleteMemberDialogOpen(false)
+      setMemberToDelete(null)
+      toast.success('Student removed from class')
+    } catch (error) {
+      console.error('Error removing student:', error)
+      toast.error('Failed to remove student from class')
+    } finally {
+      setIsDeletingMember(false)
     }
   }
 
@@ -843,6 +881,83 @@ export default function SettingsPage() {
         </Card>
       )}
 
+      {/* Show Join Code Dialog */}
+      <Dialog open={showJoinCodeDialogOpen} onOpenChange={setShowJoinCodeDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>{selectedClass?.name}</DialogTitle>
+            <DialogDescription>
+              Class details and management
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6">
+            {/* Join Code Display */}
+            <div className="bg-muted p-6 rounded-lg text-center">
+              <p className="text-sm text-muted-foreground mb-2">Class Join Code</p>
+              <div className="text-4xl font-mono font-bold tracking-wider mb-4">
+                {selectedClass?.join_code}
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => selectedClass && handleCopyJoinCode(selectedClass.join_code)}
+                className="w-full"
+              >
+                <Copy className="h-4 w-4 mr-2" />
+                Copy Code
+              </Button>
+            </div>
+
+            {/* Class Members */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="font-medium">Class Members</h4>
+                <Badge variant="secondary">
+                  {studentClasses
+                    .filter(m => m.class_id === selectedClass?.id)
+                    .length} Students
+                </Badge>
+              </div>
+              <div className="space-y-2">
+                {studentClasses
+                  .filter(membership => membership.class_id === selectedClass?.id)
+                  .map(membership => (
+                    membership.members?.map(member => (
+                      <div 
+                        key={member.student_id} 
+                        className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-sm font-medium">
+                              {member.student.full_name || member.student.email}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Joined {new Date(member.joined_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setMemberToDelete(member)
+                            setSelectedMembership(membership)
+                            setDeleteMemberDialogOpen(true)
+                          }}
+                          title="Remove Student"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))
+                  ))}
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Student Class Membership */}
       {(userRole === 'student' || userRole === 'teacher') && (
         <Card>
@@ -897,17 +1012,19 @@ export default function SettingsPage() {
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              setSelectedMembership(membership)
-                              setLeaveClassDialogOpen(true)
-                            }}
-                            title="Leave Class"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          {userRole === 'student' && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setSelectedMembership(membership)
+                                setLeaveClassDialogOpen(true)
+                              }}
+                              title="Leave Class"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </CardContent>
@@ -1023,38 +1140,6 @@ export default function SettingsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Show Join Code Dialog */}
-      <Dialog open={showJoinCodeDialogOpen} onOpenChange={setShowJoinCodeDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Class Join Code</DialogTitle>
-            <DialogDescription>
-              Share this code with your students so they can join your class
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="flex flex-col items-center justify-center py-6">
-              <div className="text-4xl font-mono font-bold tracking-wider mb-4">
-                {selectedClass?.join_code}
-              </div>
-              <Button
-                variant="outline"
-                onClick={() => selectedClass && handleCopyJoinCode(selectedClass.join_code)}
-                className="w-full"
-              >
-                <Copy className="h-4 w-4 mr-2" />
-                Copy Code
-              </Button>
-            </div>
-            <DialogFooter>
-              <Button onClick={() => setShowJoinCodeDialogOpen(false)}>
-                Close
-              </Button>
-            </DialogFooter>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       {/* Delete Class Dialog */}
       <Dialog open={deleteClassDialogOpen} onOpenChange={setDeleteClassDialogOpen}>
         <DialogContent>
@@ -1131,12 +1216,12 @@ export default function SettingsPage() {
           <DialogHeader>
             <DialogTitle>Class Details</DialogTitle>
             <DialogDescription>
-              Information about the class and its members
+              Information about the class
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             {selectedMembership && (
-              <>
+              <div className="space-y-4">
                 <div className="space-y-2">
                   <h3 className="font-medium">Class Information</h3>
                   <p className="text-sm text-muted-foreground">
@@ -1149,20 +1234,7 @@ export default function SettingsPage() {
                     <span className="font-medium">Joined:</span> {new Date(selectedMembership.joined_at).toLocaleDateString()}
                   </p>
                 </div>
-                <div className="space-y-2">
-                  <h3 className="font-medium">Class Members</h3>
-                  <div className="space-y-2">
-                    {selectedMembership.members?.map((member) => (
-                      <div key={member.student_id} className="flex items-center justify-between text-sm">
-                        <span>{member.student.full_name || member.student.email}</span>
-                        <Badge variant="secondary" className="text-xs">
-                          Joined {new Date(member.joined_at).toLocaleDateString()}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </>
+              </div>
             )}
           </div>
         </DialogContent>
@@ -1197,6 +1269,32 @@ export default function SettingsPage() {
                 disabled={leaveClassConfirmation !== "delete" || isLeavingClass}
               >
                 {isLeavingClass ? "Leaving..." : "Leave Class"}
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Member Dialog */}
+      <Dialog open={deleteMemberDialogOpen} onOpenChange={setDeleteMemberDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remove Student</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to remove this student from the class? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteMemberDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteClassMember}
+                disabled={isDeletingMember}
+              >
+                {isDeletingMember ? "Removing..." : "Remove Student"}
               </Button>
             </DialogFooter>
           </div>
