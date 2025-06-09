@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { BookOpen, Book, GraduationCap, School, BookMarked, Library, BookOpenCheck, BookOpenText, BookmarkCheck, BookmarkPlus, BookmarkX, User, CreditCard, Plus, Copy, Eye, Trash2 } from "lucide-react"
+import { BookOpen, Book, GraduationCap, School, BookMarked, Library, BookOpenCheck, BookOpenText, BookmarkCheck, BookmarkPlus, User, CreditCard, Plus, Copy, Eye, Trash2 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import { redirect } from "next/navigation"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
@@ -69,6 +69,7 @@ interface SupabaseMembership {
       full_name: string
     }
   }
+  members?: SupabaseMember[]
 }
 
 interface SupabaseMember {
@@ -358,7 +359,7 @@ export default function SettingsPage() {
       }
 
       // Check if student is already a member
-      const { data: existingMember, error: checkError } = await supabase
+      const { data: existingMember } = await supabase
         .from('class_members')
         .select('*')
         .eq('class_id', classData.id)
@@ -432,8 +433,8 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const { data: { user }, error } = await supabase.auth.getUser()
-      if (error || !user) {
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError || !user) {
         redirect('/')
       }
       setUserEmail(user.email || null)
@@ -530,7 +531,7 @@ export default function SettingsPage() {
             created_at: membership.class.created_at,
             teacher: membership.class.teacher
           },
-          members: (membership as any).members?.map((member: SupabaseMember) => ({
+          members: membership.members?.map((member: SupabaseMember) => ({
             student_id: member.student_id,
             joined_at: member.joined_at,
             student: member.student
@@ -614,99 +615,101 @@ export default function SettingsPage() {
       </Card>
 
       {/* Subscription Plans */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Subscription Plans</CardTitle>
-          <CardDescription>Choose a plan that best fits your needs</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-6 md:grid-cols-3">
-            {/* Basic Plan */}
-            <Card className={userType === 'basic' ? 'border-primary' : ''}>
-              <CardHeader>
-                <CardTitle>Basic</CardTitle>
-                <CardDescription>Essential features for self-study</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <BookOpen className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">Access to all questions</span>
+      {userRole !== 'student' && (
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Subscription Plans</CardTitle>
+            <CardDescription>Choose a plan that best fits your needs</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-6 md:grid-cols-3">
+              {/* Basic Plan */}
+              <Card className={userType === 'basic' ? 'border-primary' : ''}>
+                <CardHeader>
+                  <CardTitle>Basic</CardTitle>
+                  <CardDescription>Essential features for self-study</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <BookOpen className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">Access to all questions</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Book className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">Basic progress tracking</span>
+                    </div>
+                    <Button 
+                      className="w-full" 
+                      variant={userType === 'basic' ? 'default' : 'outline'}
+                      onClick={() => handlePlanSelect('basic')}
+                      disabled={isLoadingCheckout}
+                    >
+                      {userType === 'basic' ? 'Current Plan' : isLoadingCheckout ? 'Loading...' : 'Select Plan'}
+                    </Button>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Book className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">Basic progress tracking</span>
-                  </div>
-                  <Button 
-                    className="w-full" 
-                    variant={userType === 'basic' ? 'default' : 'outline'}
-                    onClick={() => handlePlanSelect('basic')}
-                    disabled={isLoadingCheckout}
-                  >
-                    {userType === 'basic' ? 'Current Plan' : isLoadingCheckout ? 'Loading...' : 'Select Plan'}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            {/* Revision Plan */}
-            <Card className={userType === 'revision' ? 'border-primary' : ''}>
-              <CardHeader>
-                <CardTitle>Revision</CardTitle>
-                <CardDescription>Enhanced learning experience</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <BookOpenCheck className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">Everything in Basic</span>
+              {/* Revision Plan */}
+              <Card className={userType === 'revision' ? 'border-primary' : ''}>
+                <CardHeader>
+                  <CardTitle>Revision</CardTitle>
+                  <CardDescription>Enhanced learning experience</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <BookOpenCheck className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">Everything in Basic</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <BookmarkCheck className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">Detailed progress analytics</span>
+                    </div>
+                    <Button 
+                      className="w-full" 
+                      variant={userType === 'revision' ? 'default' : 'outline'}
+                      onClick={() => handlePlanSelect('revision')}
+                      disabled={isLoadingCheckout}
+                    >
+                      {userType === 'revision' ? 'Current Plan' : isLoadingCheckout ? 'Loading...' : 'Select Plan'}
+                    </Button>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <BookmarkCheck className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">Detailed progress analytics</span>
-                  </div>
-                  <Button 
-                    className="w-full" 
-                    variant={userType === 'revision' ? 'default' : 'outline'}
-                    onClick={() => handlePlanSelect('revision')}
-                    disabled={isLoadingCheckout}
-                  >
-                    {userType === 'revision' ? 'Current Plan' : isLoadingCheckout ? 'Loading...' : 'Select Plan'}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            {/* Revision AI Plan */}
-            <Card className={userType === 'revisionAI' ? 'border-primary' : ''}>
-              <CardHeader>
-                <CardTitle>Revision AI</CardTitle>
-                <CardDescription>AI-powered learning experience</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <BookOpenText className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">Everything in Revision</span>
+              {/* Revision AI Plan */}
+              <Card className={userType === 'revisionAI' ? 'border-primary' : ''}>
+                <CardHeader>
+                  <CardTitle>Revision AI</CardTitle>
+                  <CardDescription>AI-powered learning experience</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <BookOpenText className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">Everything in Revision</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <School className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">AI-powered feedback</span>
+                    </div>
+                    <Button 
+                      className="w-full" 
+                      variant={userType === 'revisionAI' ? 'default' : 'outline'}
+                      onClick={() => handlePlanSelect('revisionAI')}
+                      disabled={isLoadingCheckout}
+                    >
+                      {userType === 'revisionAI' ? 'Current Plan' : isLoadingCheckout ? 'Loading...' : 'Select Plan'}
+                    </Button>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <School className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">AI-powered feedback</span>
-                  </div>
-                  <Button 
-                    className="w-full" 
-                    variant={userType === 'revisionAI' ? 'default' : 'outline'}
-                    onClick={() => handlePlanSelect('revisionAI')}
-                    disabled={isLoadingCheckout}
-                  >
-                    {userType === 'revisionAI' ? 'Current Plan' : isLoadingCheckout ? 'Loading...' : 'Select Plan'}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </CardContent>
-      </Card>
+                </CardContent>
+              </Card>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Course Management */}
       <Card className="mb-8">
