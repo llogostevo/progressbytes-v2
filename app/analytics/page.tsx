@@ -497,6 +497,7 @@ export default function AnalyticsPage() {
   const [studentAnswers, setStudentAnswers] = useState<ProcessedStudentAnswer[]>([])
   const [classes, setClasses] = useState<Class[]>([])
   const [selectedClass, setSelectedClass] = useState<string>("all")
+  const [classMembers, setClassMembers] = useState<Array<{ student_id: string; email: string }>>([])
 
   const supabase = createClient()
 
@@ -766,6 +767,39 @@ export default function AnalyticsPage() {
     setAllUserSessions(sessionsArray)
   }, [userActivity])
 
+  useEffect(() => {
+    const fetchClassMembers = async () => {
+      if (selectedClass === "all") {
+        setClassMembers([])
+        return
+      }
+
+      const { data: members, error: membersError } = await supabase
+        .from('class_members')
+        .select(`
+          student_id,
+          student:profiles!class_members_student_id_fkey (
+            email
+          )
+        `)
+        .eq('class_id', selectedClass)
+
+      if (membersError) {
+        console.error('Error fetching class members:', membersError)
+        return
+      }
+
+      const mappedMembers = members.map(member => ({
+        student_id: member.student_id,
+        email: member.student.email
+      }))
+
+      setClassMembers(mappedMembers)
+    }
+
+    fetchClassMembers()
+  }, [selectedClass, supabase])
+
   // Group activity by event type
   const activityStats = userActivity.reduce((acc, activity) => {
     acc[activity.event] = (acc[activity.event] || 0) + 1
@@ -1007,7 +1041,7 @@ export default function AnalyticsPage() {
           </TabsContent>
 
           <TabsContent value="homework">
-            <UserActivityFilter />
+            <UserActivityFilter selectedClass={selectedClass} classMembers={classMembers} />
           </TabsContent>
 
           <TabsContent value="performance">

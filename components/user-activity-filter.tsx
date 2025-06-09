@@ -9,12 +9,24 @@ import { Users, Clock, FileText, Calendar, Navigation, Activity, Download } from
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 
+interface Class {
+  id: string
+  name: string
+  teacher_id: string
+  created_at: string
+  teacher?: {
+    email: string
+    full_name: string
+  }
+}
+
 interface UserActivity {
   user_id: string
   user_email: string
   total_duration: number
   questions_submitted: number
   last_activity: string
+  class_id?: string
 }
 
 interface UserEvent {
@@ -33,6 +45,11 @@ interface UserSession {
   pages_visited: string[]
   events: UserEvent[]
   submitted_questions: { path: string; count: number }[]
+}
+
+interface UserActivityFilterProps {
+  selectedClass: string;
+  classMembers: Array<{ student_id: string; email: string }>;
 }
 
 function FilterSkeleton() {
@@ -86,7 +103,7 @@ function ResultsSkeleton() {
   )
 }
 
-export function UserActivityFilter() {
+export function UserActivityFilter({ selectedClass, classMembers }: UserActivityFilterProps) {
   const [users, setUsers] = useState<UserActivity[]>([])
   const [filteredUsers, setFilteredUsers] = useState<UserActivity[]>([])
   const [nonFilteredUsers, setNonFilteredUsers] = useState<UserActivity[]>([])
@@ -95,12 +112,12 @@ export function UserActivityFilter() {
   const [userSessions, setUserSessions] = useState<UserSession[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [currentSessionIndex, setCurrentSessionIndex] = useState(0)
+  const [classes, setClasses] = useState<Class[]>([])
   
   // Filter states
   const [timeRange, setTimeRange] = useState("7") // days
   const [minDuration, setMinDuration] = useState("30") // minutes
   const [minQuestions, setMinQuestions] = useState("5") // questions
-  const [emailFilter, setEmailFilter] = useState("@centralfoundationboys.co.uk")
 
   const formatDuration = (minutes: number) => {
     if (minutes < 60) {
@@ -219,14 +236,26 @@ export function UserActivityFilter() {
     return usersToFilter.filter(user => {
       const durationMatch = user.total_duration >= parseInt(minDuration)
       const questionsMatch = user.questions_submitted >= parseInt(minQuestions)
-      const emailMatch = user.user_email.includes(emailFilter)
-      return durationMatch && questionsMatch && emailMatch
+      const classMatch = selectedClass === "all" || classMembers.some(member => member.email === user.user_email)
+      return durationMatch && questionsMatch && classMatch
     })
-  }, [minDuration, minQuestions, emailFilter])
+  }, [minDuration, minQuestions, selectedClass, classMembers])
 
   useEffect(() => {
     const fetchUserActivity = async () => {
       const supabase = createClient()
+      
+      // Fetch classes first
+      const { data: classesData, error: classesError } = await supabase
+        .from('classes')
+        .select('*')
+        .order('name')
+
+      if (classesError) {
+        console.error('Error fetching classes:', classesError)
+      } else {
+        setClasses(classesData || [])
+      }
       
       // Calculate the date range
       const endDate = new Date()
@@ -252,7 +281,8 @@ export function UserActivityFilter() {
               user_email: record.user_email || 'Unknown',
               total_duration: 0,
               questions_submitted: 0,
-              last_activity: record.created_at
+              last_activity: record.created_at,
+              class_id: record.class_id
             })
           }
         })
@@ -312,7 +342,7 @@ export function UserActivityFilter() {
     }
 
     fetchUserActivity()
-  }, [timeRange, applyFilters])
+  }, [timeRange, selectedClass, classMembers])
 
   const handleFilterChange = () => {
     applyFilters(users)
@@ -368,19 +398,7 @@ export function UserActivityFilter() {
           <CardTitle>Filter Criteria</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <Label>Email Domain</Label>
-              <Input
-                type="text"
-                value={emailFilter}
-                onChange={(e) => setEmailFilter(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="@centralfoundationboys.co.uk"
-                className="h-10"
-              />
-            </div>
-            
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>Time Range (days)</Label>
               <Select value={timeRange} onValueChange={(value) => {
