@@ -451,23 +451,25 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
       </Card>
 
       {/* Results */}
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Users who meet criteria */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="space-y-4">
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
-                Met Criteria ({filteredUsers.length})
+                <span className="hidden md:inline">Met Criteria</span>
+                <span className="md:hidden">Met</span>
+                ({filteredUsers.length})
               </CardTitle>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => exportToCSV(filteredUsers, 'met-criteria.csv')}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 shrink-0"
               >
                 <Download className="h-4 w-4" />
-                Export CSV
+                <span className="hidden md:inline">Export CSV</span>
               </Button>
             </div>
           </CardHeader>
@@ -500,19 +502,21 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
         {/* Users who don't meet criteria */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="space-y-4">
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
-                Did Not Meet Criteria ({nonFilteredUsers.length})
+                <span className="hidden md:inline">Did Not Meet Criteria</span>
+                <span className="md:hidden">Not Met</span>
+                ({nonFilteredUsers.length})
               </CardTitle>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => exportToCSV(nonFilteredUsers, 'not-met-criteria.csv')}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 shrink-0"
               >
                 <Download className="h-4 w-4" />
-                Export CSV
+                <span className="hidden md:inline">Export CSV</span>
               </Button>
             </div>
           </CardHeader>

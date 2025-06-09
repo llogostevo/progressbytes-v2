@@ -886,12 +886,14 @@ export default function AnalyticsPage() {
         </div>
 
         <Tabs defaultValue="activity" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="activity">Activity</TabsTrigger>
-            <TabsTrigger value="sessions">Sessions</TabsTrigger>
-            <TabsTrigger value="homework">Homework</TabsTrigger>
-            <TabsTrigger value="performance">Performance</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto">
+            <TabsList className="w-full md:w-auto justify-start md:justify-center">
+              <TabsTrigger value="activity">Activity</TabsTrigger>
+              <TabsTrigger value="sessions">Sessions</TabsTrigger>
+              <TabsTrigger value="homework">Homework</TabsTrigger>
+              <TabsTrigger value="performance">Performance</TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="activity">
             <Card>
