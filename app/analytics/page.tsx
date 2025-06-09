@@ -629,11 +629,12 @@ export default function AnalyticsPage() {
             )
           `)
           .eq('student_id', user.id)
+          .returns<StudentClassMember[]>()
 
         if (studentClassesError) {
           console.error('Error fetching student classes:', studentClassesError)
         } else {
-          const mappedClasses = (studentClasses || []).map((m: any) => ({
+          const mappedClasses = (studentClasses || []).map((m: StudentClassMember) => ({
             id: m.class.id,
             name: m.class.name,
             teacher_id: m.class.teacher_id,

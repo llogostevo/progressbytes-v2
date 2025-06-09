@@ -9,16 +9,16 @@ import { Users, Clock, FileText, Calendar, Navigation, Activity, Download } from
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 
-interface Class {
-  id: string
-  name: string
-  teacher_id: string
-  created_at: string
-  teacher?: {
-    email: string
-    full_name: string
-  }
-}
+// interface Class {
+//   id: string
+//   name: string
+//   teacher_id: string
+//   created_at: string
+//   teacher?: {
+//     email: string
+//     full_name: string
+//   }
+// }
 
 interface UserActivity {
   user_id: string

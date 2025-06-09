@@ -309,8 +309,8 @@ export default function SettingsPage() {
     try {
       await navigator.clipboard.writeText(code)
       toast.success('Join code copied to clipboard')
-    } catch (error) {
-      toast.error('Failed to copy join code')
+    } catch (err) {
+      toast.error('Failed to copy join code: ' + (err as Error).message)
     }
   }
 
