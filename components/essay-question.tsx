@@ -8,6 +8,7 @@ import {
   Dialog,
   DialogContent,
   DialogTrigger,
+  DialogTitle,
 } from "@/components/ui/dialog"
 import { HelpCircle } from "lucide-react"
 import EssayGuide from "./EssayGuide"
@@ -53,6 +54,7 @@ export function EssayQuestion({
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
+            <DialogTitle className="sr-only">Essay Writing Guide</DialogTitle>
             <EssayGuide />
           </DialogContent>
         </Dialog>
