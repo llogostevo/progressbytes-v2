@@ -404,14 +404,20 @@ export default function SettingsPage() {
 
     setIsLeavingClass(true)
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('User not found')
+
       const { error } = await supabase
         .from('class_members')
         .delete()
-        .eq('id', selectedMembership.id)
+        .eq('class_id', selectedMembership.class_id)
+        .eq('student_id', user.id)
 
       if (error) throw error
 
-      setStudentClasses(prev => prev.filter(m => m.id !== selectedMembership.id))
+      setStudentClasses(prev => prev.filter(m => 
+        m.class_id !== selectedMembership.class_id || m.student_id !== user.id
+      ))
       setLeaveClassDialogOpen(false)
       setSelectedMembership(null)
       setLeaveClassConfirmation("")
@@ -865,7 +871,7 @@ export default function SettingsPage() {
                 </div>
               ) : (
                 studentClasses.map((membership) => (
-                  <Card key={`enrolled-class-${membership.id}`}>
+                  <Card key={`enrolled-class-${membership.class_id}-${membership.student_id}`}>
                     <CardContent className="pt-6">
                       <div className="flex items-center justify-between">
                         <div>
