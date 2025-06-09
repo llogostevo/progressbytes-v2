@@ -774,6 +774,13 @@ export default function AnalyticsPage() {
         return
       }
 
+      type DbMember = {
+        student_id: string;
+        student: {
+          email: string;
+        };
+      }
+
       const { data: members, error: membersError } = await supabase
         .from('class_members')
         .select(`
@@ -783,13 +790,14 @@ export default function AnalyticsPage() {
           )
         `)
         .eq('class_id', selectedClass)
+        .returns<DbMember[]>()
 
       if (membersError) {
         console.error('Error fetching class members:', membersError)
         return
       }
 
-      const mappedMembers = members.map(member => ({
+      const mappedMembers = (members || []).map(member => ({
         student_id: member.student_id,
         email: member.student.email
       }))
