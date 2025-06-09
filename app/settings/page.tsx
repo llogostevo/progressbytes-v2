@@ -297,8 +297,8 @@ export default function SettingsPage() {
       setCreateClassDialogOpen(false)
       setNewClassName("")
       toast.success('Class created successfully')
-    } catch (error) {
-      console.error('Error creating class:', error)
+    } catch (err) {
+      console.error('Error creating class:', err)
       toast.error('Failed to create class')
     } finally {
       setIsCreatingClass(false)

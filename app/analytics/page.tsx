@@ -486,8 +486,6 @@ export default function AnalyticsPage() {
   const [userRole, setUserRole] = useState<UserRole | null>(null)
   const [userActivity, setUserActivity] = useState<UserActivity[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [uniqueUsers, setUniqueUsers] = useState<number>(0)
-  const [pageViews, setPageViews] = useState<Record<string, number>>({})
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
   const [allUserSessions, setAllUserSessions] = useState<UserSession[]>([])
@@ -688,17 +686,6 @@ export default function AnalyticsPage() {
         setUserActivity([])
       }
 
-      // Calculate unique users
-      const uniqueUserIds = new Set(activity?.map(a => a.user_id) || [])
-      setUniqueUsers(uniqueUserIds.size)
-
-      // Calculate page views
-      const views = activity?.reduce((acc, curr) => {
-        acc[curr.path] = (acc[curr.path] || 0) + 1
-        return acc
-      }, {} as Record<string, number>) || {}
-      setPageViews(views)
-
       setIsLoading(false)
     }
 
@@ -807,12 +794,6 @@ export default function AnalyticsPage() {
 
     fetchClassMembers()
   }, [selectedClass, supabase])
-
-  // Group activity by event type
-  const activityStats = userActivity.reduce((acc, activity) => {
-    acc[activity.event] = (acc[activity.event] || 0) + 1
-    return acc
-  }, {} as Record<string, number>)
 
   // Filter activity based on selected class
   const filteredActivity = selectedClass === "all" 

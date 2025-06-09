@@ -112,7 +112,6 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
   const [userSessions, setUserSessions] = useState<UserSession[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [currentSessionIndex, setCurrentSessionIndex] = useState(0)
-  const [classes, setClasses] = useState<Class[]>([])
   
   // Filter states
   const [timeRange, setTimeRange] = useState("7") // days
@@ -245,18 +244,6 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
     const fetchUserActivity = async () => {
       const supabase = createClient()
       
-      // Fetch classes first
-      const { data: classesData, error: classesError } = await supabase
-        .from('classes')
-        .select('*')
-        .order('name')
-
-      if (classesError) {
-        console.error('Error fetching classes:', classesError)
-      } else {
-        setClasses(classesData || [])
-      }
-      
       // Calculate the date range
       const endDate = new Date()
       const startDate = new Date()
@@ -302,47 +289,17 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
           }
         })
 
-        // Calculate session durations
-        const usersArray = Array.from(userMap.values()).map(user => {
-          // Get all activities for this user
-          const userActivities = activity.filter(a => a.user_id === user.user_id)
-          
-          // Sort activities by time
-          userActivities.sort((a, b) => 
-            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-          )
-          
-          // Calculate total duration
-          let totalDuration = 0
-          for (let i = 0; i < userActivities.length - 1; i++) {
-            const currentTime = new Date(userActivities[i].created_at).getTime()
-            const nextTime = new Date(userActivities[i + 1].created_at).getTime()
-            const timeDiff = nextTime - currentTime
-            
-            // Only count if activities are within 30 minutes of each other
-            if (timeDiff <= 30 * 60 * 1000) {
-              totalDuration += timeDiff
-            }
-          }
-          
-          return {
-            ...user,
-            total_duration: Math.round(totalDuration / (1000 * 60)) // Convert to minutes
-          }
-        })
-
+        const usersArray = Array.from(userMap.values())
+        setNonFilteredUsers(usersArray)
+        setFilteredUsers(applyFilters(usersArray))
         setUsers(usersArray)
-        const filtered = applyFilters(usersArray)
-        const nonFiltered = usersArray.filter(user => !filtered.includes(user))
-        setFilteredUsers(filtered)
-        setNonFilteredUsers(nonFiltered)
       }
-
+      
       setIsLoading(false)
     }
 
     fetchUserActivity()
-  }, [timeRange, selectedClass, classMembers])
+  }, [timeRange, applyFilters])
 
   const handleFilterChange = () => {
     applyFilters(users)
