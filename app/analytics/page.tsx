@@ -822,19 +822,25 @@ export default function AnalyticsPage() {
 
         {/* Class Selector */}
         <div className="mb-6">
-          <Select value={selectedClass} onValueChange={setSelectedClass}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Select a class" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Classes</SelectItem>
-              {classes.map((classItem) => (
-                <SelectItem key={classItem.id} value={classItem.id}>
-                  {classItem.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {classes.length > 0 ? (
+            <Select value={selectedClass} onValueChange={setSelectedClass}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Select a class" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Classes</SelectItem>
+                {classes.map((classItem) => (
+                  <SelectItem key={classItem.id} value={classItem.id}>
+                    {classItem.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <div className="text-sm text-muted-foreground">
+              No classes assigned to you yet.
+            </div>
+          )}
         </div>
 
         <Tabs defaultValue="activity" className="space-y-6">
