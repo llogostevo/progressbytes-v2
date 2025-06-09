@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { UserSessions } from "@/components/user-sessions"
 import { UserActivityFilter } from "@/components/user-activity-filter"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   BarChart as RechartsBarChart,
   Bar,
@@ -19,6 +20,17 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts"
+
+interface Class {
+  id: string
+  name: string
+  teacher_id: string
+  created_at: string
+  teacher?: {
+    email: string
+    full_name: string
+  }
+}
 
 interface UserActivity {
   id: string
@@ -31,6 +43,7 @@ interface UserActivity {
   question_type?: string
   question_text?: string
   topic?: string
+  class_id?: string
 }
 
 interface StudentAnswerData {
@@ -84,6 +97,19 @@ interface UserSession {
   questions_submitted: number
   pages_visited: string[]
   events: UserActivity[]
+}
+
+interface StudentClassMember {
+  class: {
+    id: string
+    name: string
+    teacher_id: string
+    created_at: string
+    teacher: {
+      email: string
+      full_name: string
+    }
+  }
 }
 
 type UserRole = 'admin' | 'student' | 'teacher'
@@ -460,8 +486,6 @@ export default function AnalyticsPage() {
   const [userRole, setUserRole] = useState<UserRole | null>(null)
   const [userActivity, setUserActivity] = useState<UserActivity[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [uniqueUsers, setUniqueUsers] = useState<number>(0)
-  const [pageViews, setPageViews] = useState<Record<string, number>>({})
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
   const [allUserSessions, setAllUserSessions] = useState<UserSession[]>([])
@@ -469,6 +493,9 @@ export default function AnalyticsPage() {
   const [students, setStudents] = useState<Array<{ userid: string; email: string }>>([])
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null)
   const [studentAnswers, setStudentAnswers] = useState<ProcessedStudentAnswer[]>([])
+  const [classes, setClasses] = useState<Class[]>([])
+  const [selectedClass, setSelectedClass] = useState<string>("all")
+  const [classMembers, setClassMembers] = useState<Array<{ student_id: string; email: string }>>([])
 
   const supabase = createClient()
 
@@ -572,6 +599,52 @@ export default function AnalyticsPage() {
         setUserRole(profile?.role || 'student')
       }
 
+      // Fetch classes based on user role
+      if (profile?.role === 'teacher') {
+        // Fetch classes where user is the teacher
+        const { data: teacherClasses, error: teacherClassesError } = await supabase
+          .from('classes')
+          .select('*')
+          .eq('teacher_id', user.id)
+
+        if (teacherClassesError) {
+          console.error('Error fetching teaching classes:', teacherClassesError)
+        } else {
+          setClasses(teacherClasses || [])
+        }
+      } else if (profile?.role === 'student') {
+        // Fetch classes where user is a student
+        const { data: studentClasses, error: studentClassesError } = await supabase
+          .from('class_members')
+          .select(`
+            class:classes (
+              id,
+              name,
+              teacher_id,
+              created_at,
+              teacher:profiles!classes_teacher_id_fkey (
+                email,
+                full_name
+              )
+            )
+          `)
+          .eq('student_id', user.id)
+          .returns<StudentClassMember[]>()
+
+        if (studentClassesError) {
+          console.error('Error fetching student classes:', studentClassesError)
+        } else {
+          const mappedClasses = (studentClasses || []).map((m: StudentClassMember) => ({
+            id: m.class.id,
+            name: m.class.name,
+            teacher_id: m.class.teacher_id,
+            created_at: m.class.created_at,
+            teacher: m.class.teacher
+          }))
+          setClasses(mappedClasses)
+        }
+      }
+
       // Fetch students if user is admin or teacher
       if (profile?.role === 'admin' || profile?.role === 'teacher') {
         // Fetch all users
@@ -599,7 +672,6 @@ export default function AnalyticsPage() {
       if (topicsError) {
         console.error('Error fetching topics:', topicsError)
       } else {
-        console.log('Fetched topics:', topicsData); // Debug log
         setTopics(topicsData || [])
       }
 
@@ -610,22 +682,10 @@ export default function AnalyticsPage() {
         .order('created_at', { ascending: false })
 
       if (activity) {
-        console.log("Fetched user activity:", activity); // Debug log
         setUserActivity(activity)
       } else {
         setUserActivity([])
       }
-
-      // Calculate unique users
-      const uniqueUserIds = new Set(activity?.map(a => a.user_id) || [])
-      setUniqueUsers(uniqueUserIds.size)
-
-      // Calculate page views
-      const views = activity?.reduce((acc, curr) => {
-        acc[curr.path] = (acc[curr.path] || 0) + 1
-        return acc
-      }, {} as Record<string, number>) || {}
-      setPageViews(views)
 
       setIsLoading(false)
     }
@@ -695,14 +755,71 @@ export default function AnalyticsPage() {
     setAllUserSessions(sessionsArray)
   }, [userActivity])
 
-  // Group activity by event type
-  const activityStats = userActivity.reduce((acc, activity) => {
-    acc[activity.event] = (acc[activity.event] || 0) + 1
+  useEffect(() => {
+    const fetchClassMembers = async () => {
+      if (selectedClass === "all") {
+        setClassMembers([])
+        return
+      }
+
+      type DbMember = {
+        student_id: string;
+        student: {
+          email: string;
+        };
+      }
+
+      const { data: members, error: membersError } = await supabase
+        .from('class_members')
+        .select(`
+          student_id,
+          student:profiles!class_members_student_id_fkey (
+            email
+          )
+        `)
+        .eq('class_id', selectedClass)
+        .returns<DbMember[]>()
+
+      if (membersError) {
+        console.error('Error fetching class members:', membersError)
+        return
+      }
+
+      const mappedMembers = (members || []).map(member => ({
+        student_id: member.student_id,
+        email: member.student.email
+      }))
+
+      setClassMembers(mappedMembers)
+    }
+
+    fetchClassMembers()
+  }, [selectedClass, supabase])
+
+  // Filter activity based on selected class
+  const filteredActivity = selectedClass === "all" 
+    ? userActivity 
+    : userActivity.filter(activity => {
+        // For students, only show their own activity
+        if (userRole === 'student') {
+          return activity.user_id === selectedStudent
+        }
+        // For teachers, show activity of students in their class
+        const studentInClass = students.find(s => s.userid === activity.user_id)
+        return studentInClass && activity.class_id === selectedClass
+      })
+
+  // Update unique users count based on filtered activity
+  const filteredUniqueUsers = new Set(filteredActivity.map(a => a.user_id)).size
+
+  // Update page views based on filtered activity
+  const filteredPageViews = filteredActivity.reduce((acc, curr) => {
+    acc[curr.path] = (acc[curr.path] || 0) + 1
     return acc
   }, {} as Record<string, number>)
 
-  // Get top 5 most visited pages
-  const topPages = Object.entries(pageViews)
+  // Get top 5 most visited pages from filtered data
+  const topPages = Object.entries(filteredPageViews)
     .sort(([, a], [, b]) => b - a)
     .slice(0, 5)
 
@@ -727,13 +844,38 @@ export default function AnalyticsPage() {
           <p className="text-muted-foreground">Track student progress and site usage</p>
         </div>
 
+        {/* Class Selector */}
+        <div className="mb-6">
+          {classes.length > 0 ? (
+            <Select value={selectedClass} onValueChange={setSelectedClass}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Select a class" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Classes</SelectItem>
+                {classes.map((classItem) => (
+                  <SelectItem key={classItem.id} value={classItem.id}>
+                    {classItem.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <div className="text-sm text-muted-foreground">
+              No classes assigned to you yet.
+            </div>
+          )}
+        </div>
+
         <Tabs defaultValue="activity" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="activity">Activity</TabsTrigger>
-            <TabsTrigger value="sessions">Sessions</TabsTrigger>
-            <TabsTrigger value="homework">Homework</TabsTrigger>
-            <TabsTrigger value="performance">Performance</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto">
+            <TabsList className="w-full md:w-auto justify-start md:justify-center">
+              <TabsTrigger value="activity">Activity</TabsTrigger>
+              <TabsTrigger value="sessions">Sessions</TabsTrigger>
+              <TabsTrigger value="homework">Homework</TabsTrigger>
+              <TabsTrigger value="performance">Performance</TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="activity">
             <Card>
@@ -755,7 +897,7 @@ export default function AnalyticsPage() {
                         <CardContent className="pt-6">
                           <div className="flex items-center justify-between">
                             <div>
-                              <div className="text-2xl font-bold">{uniqueUsers}</div>
+                              <div className="text-2xl font-bold">{filteredUniqueUsers}</div>
                               <p className="text-sm text-muted-foreground">Unique Users</p>
                             </div>
                             <Users className="h-8 w-8 text-muted-foreground" />
@@ -766,7 +908,7 @@ export default function AnalyticsPage() {
                         <CardContent className="pt-6">
                           <div className="flex items-center justify-between">
                             <div>
-                              <div className="text-2xl font-bold">{activityStats['visited_question'] || 0}</div>
+                              <div className="text-2xl font-bold">{filteredActivity.filter(a => a.event === 'visited_question').length}</div>
                               <p className="text-sm text-muted-foreground">Questions Viewed</p>
                             </div>
                             <Eye className="h-8 w-8 text-muted-foreground" />
@@ -777,7 +919,7 @@ export default function AnalyticsPage() {
                         <CardContent className="pt-6">
                           <div className="flex items-center justify-between">
                             <div>
-                              <div className="text-2xl font-bold">{userActivity.length}</div>
+                              <div className="text-2xl font-bold">{filteredActivity.length}</div>
                               <p className="text-sm text-muted-foreground">Total Page Views</p>
                             </div>
                             <Navigation className="h-8 w-8 text-muted-foreground" />
@@ -808,13 +950,13 @@ export default function AnalyticsPage() {
                       <div className="grid grid-cols-2 gap-4">
                         <Card>
                           <CardContent className="pt-6">
-                            <div className="text-2xl font-bold">{activityStats['visited_revisit'] || 0}</div>
+                            <div className="text-2xl font-bold">{filteredActivity.filter(a => a.event === 'visited_revisit').length}</div>
                             <p className="text-sm text-muted-foreground">Revisit Sessions</p>
                           </CardContent>
                         </Card>
                         <Card>
                           <CardContent className="pt-6">
-                            <div className="text-2xl font-bold">{activityStats['visited_progress'] || 0}</div>
+                            <div className="text-2xl font-bold">{filteredActivity.filter(a => a.event === 'visited_progress').length}</div>
                             <p className="text-sm text-muted-foreground">Progress Checks</p>
                           </CardContent>
                         </Card>
@@ -833,7 +975,7 @@ export default function AnalyticsPage() {
                           <div>Time</div>
                         </div>
                         {/* Activity Items */}
-                        {userActivity
+                        {filteredActivity
                           .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
                           .map((activity) => (
                             <div key={activity.id} className="grid grid-cols-4 gap-4 text-sm py-2">
@@ -860,7 +1002,7 @@ export default function AnalyticsPage() {
                       {/* Pagination */}
                       <div className="flex items-center justify-between mt-4">
                         <div className="text-sm text-muted-foreground">
-                          Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, userActivity.length)} of {userActivity.length} activities
+                          Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredActivity.length)} of {filteredActivity.length} activities
                         </div>
                         <div className="flex items-center gap-2">
                           <button
@@ -872,8 +1014,8 @@ export default function AnalyticsPage() {
                           </button>
                           <button
                             className="px-3 py-1 text-sm border rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                            onClick={() => setCurrentPage(prev => Math.min(Math.ceil(userActivity.length / itemsPerPage), prev + 1))}
-                            disabled={currentPage >= Math.ceil(userActivity.length / itemsPerPage)}
+                            onClick={() => setCurrentPage(prev => Math.min(Math.ceil(filteredActivity.length / itemsPerPage), prev + 1))}
+                            disabled={currentPage >= Math.ceil(filteredActivity.length / itemsPerPage)}
                           >
                             Next
                           </button>
@@ -891,7 +1033,7 @@ export default function AnalyticsPage() {
           </TabsContent>
 
           <TabsContent value="homework">
-            <UserActivityFilter />
+            <UserActivityFilter selectedClass={selectedClass} classMembers={classMembers} />
           </TabsContent>
 
           <TabsContent value="performance">
