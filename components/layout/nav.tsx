@@ -2,7 +2,6 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
 import { createClient } from "@/utils/supabase/client"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -10,84 +9,39 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/s
 import { Menu, LogIn, LogOut, BookOpen, BarChart2, Settings } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { LucideIcon } from "lucide-react"
+import { useAuth } from "@/app/providers/AuthProvider"
 
 interface NavItem {
-    title: string
-    href: string
-    icon: LucideIcon
+  title: string
+  href: string
+  icon: LucideIcon
 }
 
 export function Nav() {
-    const pathname = usePathname()
-    const router = useRouter()
-    const supabase = createClient()
-    const [isLoggedIn, setIsLoggedIn] = useState(false)
-    const [userRole, setUserRole] = useState<string | null>(null)
+  const pathname = usePathname()
+  const router = useRouter()
+  const supabase = createClient()
+  const { isLoggedIn, userRole, refreshUser } = useAuth() // ✅ global context
 
-    //   useEffect(() => {
-    //     const fetchUser = async () => {
-    //       const { data: { user } } = await supabase.auth.getUser()
-    //       setIsLoggedIn(!!user)
-    //       if (user) {
-    //         const { data: profile } = await supabase
-    //           .from('profiles')
-    //           .select('role')
-    //           .eq('userid', user.id)
-    //           .single()
-    //         setUserRole(profile?.role || null)
-    //       }
-    //     }
-    //     fetchUser()
-    //   }, [])
-
-    useEffect(() => {
-        const fetchUser = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
-            setIsLoggedIn(!!user)
-
-            if (user) {
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('role')
-                    .eq('userid', user.id)
-                    .single()
-                setUserRole(profile?.role || null)
-            }
-        }
-
-        fetchUser()
-
-        // 👇 Listen to login/logout events
-        const { data: authListener } = supabase.auth.onAuthStateChange((_event, _session) => {
-            fetchUser()
-        })
-
-        return () => {
-            authListener.subscription.unsubscribe()
-        }
-    }, [])
-
-
-
-    const handleAuth = async () => {
-        if (isLoggedIn) {
-            await supabase.auth.signOut()
-            setIsLoggedIn(false)
-            router.push('/')
-        } else {
-            router.push('/login')
-        }
+  const handleAuth = async () => {
+    if (isLoggedIn) {
+      await supabase.auth.signOut()
+      refreshUser()
+      router.push('/')
+    } else {
+      router.push('/login')
     }
+  }
 
-    const navigationItems: NavItem[] = [
-        { title: "Quizzes", href: "/", icon: BookOpen },
-        { title: "Progress", href: "/progress", icon: BarChart2 },
-        { title: "Revisit", href: "/revisit", icon: BookOpen },
-        ...(userRole === "admin" || userRole === "teacher"
-            ? [{ title: "Analytics", href: "/analytics", icon: BarChart2 }]
-            : []),
-        { title: "Settings", href: "/settings", icon: Settings },
-    ]
+  const navigationItems: NavItem[] = [
+    { title: "Quizzes", href: "/", icon: BookOpen },
+    { title: "Progress", href: "/progress", icon: BarChart2 },
+    { title: "Revisit", href: "/revisit", icon: BookOpen },
+    ...(userRole === "admin" || userRole === "teacher"
+      ? [{ title: "Analytics", href: "/analytics", icon: BarChart2 }]
+      : []),
+    { title: "Settings", href: "/settings", icon: Settings },
+  ]
 
     return (
         <>

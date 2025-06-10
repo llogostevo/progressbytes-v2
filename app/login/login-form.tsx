@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { login, signup } from './actions'
+import { toast } from "sonner"
 import { useSearchParams } from 'next/navigation'
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -10,16 +10,9 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Suspense } from 'react'
 import { Loader2 } from "lucide-react"
+import { createClient } from "@/utils/supabase/client"
+import { useRouter } from "next/navigation"
 
-/**
- * LoginForm Component
- * 
- * This component renders a tabbed interface with login and registration forms.
- * It uses the Tabs component from the UI library to switch between login and register views.
- * The forms submit to server actions defined in actions.ts.
- */
-
-/* TODO: https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout */
 
 export function LoginForm() {
   return (
@@ -34,23 +27,94 @@ function LoginFormContent() {
   const tab = searchParams.get('tab') || 'login'
   const [isLoading, setIsLoading] = useState(false)
 
+  // const handleLogin = async (formData: FormData) => {
+  //   setIsLoading(true)
+  //   try {
+  //     await login(formData)
+  //   } catch {
+  //     setIsLoading(false)
+  //   }
+  // }
+  const supabase = createClient()
+  const router = useRouter()
+
+  // Login handler
   const handleLogin = async (formData: FormData) => {
     setIsLoading(true)
-    try {
-      await login(formData)
-    } catch {
+    const email = formData.get("login-email") as string
+    const password = formData.get("login-password") as string
+
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+
+    if (error) {
+      console.error(error.message)
       setIsLoading(false)
+      return
     }
+
+    router.push("/")      // soft navigation
+    router.refresh()      // refresh client state (important!)
   }
+
+
+
+  // const handleSignup = async (formData: FormData) => {
+  //   setIsLoading(true)
+  //   try {
+  //     await signup(formData)
+  //   } catch {
+  //     setIsLoading(false)
+  //   }
+  // }
+
 
   const handleSignup = async (formData: FormData) => {
     setIsLoading(true)
-    try {
-      await signup(formData)
-    } catch {
+
+    const email = formData.get("register-email") as string
+    const password = formData.get("register-password") as string
+    const confirmPassword = formData.get("register-confirm-password") as string
+    const school = formData.get("register-school") as string
+    const user_type = "student" // or "teacher", depending on your logic
+
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match")
       setIsLoading(false)
+      return
     }
+
+    const { data: authData, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    })
+
+    if (error) {
+      toast.error(`Signup failed: ${error.message}`)
+      setIsLoading(false)
+      return
+    }
+
+    if (authData.user) {
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ school, user_type })
+        .eq("userid", authData.user.id)
+
+      if (profileError) {
+        toast.error(`Profile update failed: ${profileError.message}`)
+      } else {
+        toast.success("Account created successfully!")
+      }
+    }
+
+    router.push("/")
+    router.refresh()
   }
+
+
 
   return (
     <div className="space-y-4">
@@ -101,7 +165,10 @@ function LoginFormContent() {
 
             {/* Login Button - Calls the login server action */}
             <Button
-              formAction={handleLogin}
+              onClick={(e) => {
+                e.preventDefault()
+                handleLogin(new FormData(e.currentTarget.form!))
+              }}
               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
               type="submit"
               disabled={isLoading}
@@ -169,7 +236,7 @@ function LoginFormContent() {
             </div>
 
             {/* Register Button - Calls the signup server action */}
-            <Button
+            {/* <Button
               formAction={handleSignup}
               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
               type="submit"
@@ -183,7 +250,27 @@ function LoginFormContent() {
               ) : (
                 'Create Account'
               )}
+            </Button> */}
+
+            <Button
+              onClick={(e) => {
+                e.preventDefault()
+                handleSignup(new FormData(e.currentTarget.form!))
+              }}
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+              type="submit"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating account...
+                </>
+              ) : (
+                'Create Account'
+              )}
             </Button>
+
           </form>
         </TabsContent>
       </Tabs>
