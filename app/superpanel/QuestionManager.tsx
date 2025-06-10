@@ -26,6 +26,7 @@ import {
   PenTool,
   BookOpen,
 } from "lucide-react"
+import { toast } from "sonner"
 
 const questionTypeIcons = {
   "multiple-choice": List,
@@ -276,8 +277,10 @@ export default function QuestionManager() {
 
       await fetchQuestions()
       setEditingQuestion(null)
+      toast.success("Question updated successfully")
     } catch (error) {
       console.error("Error updating question:", error)
+      toast.error("Failed to update question")
     }
   }
 
@@ -371,8 +374,10 @@ export default function QuestionManager() {
 
       await fetchQuestions()
       setAddingQuestion(null)
+      toast.success("Question created successfully")
     } catch (error) {
       console.error("Error creating question:", error)
+      toast.error("Failed to create question")
     }
   }
 
