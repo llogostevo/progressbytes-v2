@@ -18,7 +18,6 @@ import {
   Filter,
   Plus,
   Trash2,
-  Eye,
   Code,
   FileText,
   CheckSquare,

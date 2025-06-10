@@ -20,6 +20,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts"
+import { PostgrestError } from '@supabase/supabase-js'
 
 interface Class {
   id: string
@@ -778,7 +779,7 @@ export default function AnalyticsPage() {
             email
           )
         `)
-        .eq('class_id', selectedClass) as { data: DbMember[] | null, error: any }
+        .eq('class_id', selectedClass) as { data: DbMember[] | null, error: PostgrestError | null }
 
       if (membersError) {
         console.error('Error fetching class members:', membersError)
