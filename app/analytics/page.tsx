@@ -114,6 +114,13 @@ interface StudentClassMember {
 
 type UserRole = 'admin' | 'student' | 'teacher'
 
+type DbMember = {
+  student_id: string;
+  student: {
+    email: string;
+  };
+}
+
 function ActivitySkeleton() {
   return (
     <div className="space-y-6">
@@ -482,8 +489,10 @@ function StudentSelectorSkeleton() {
   )
 }
 
+// MAIN PAGE
 export default function AnalyticsPage() {
   const [userRole, setUserRole] = useState<UserRole | null>(null)
+  const [currentUserRole, setCurrentUserRole] = useState<UserRole | null>(null)
   const [userActivity, setUserActivity] = useState<UserActivity[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
@@ -596,7 +605,7 @@ export default function AnalyticsPage() {
       if (profileError) {
         console.error('Error fetching profile:', profileError)
       } else {
-        setUserRole(profile?.role || 'student')
+        setCurrentUserRole(profile?.role || 'student')
       }
 
       // Fetch classes based on user role
@@ -762,13 +771,6 @@ export default function AnalyticsPage() {
         return
       }
 
-      type DbMember = {
-        student_id: string;
-        student: {
-          email: string;
-        };
-      }
-
       const { data: members, error: membersError } = await supabase
         .from('class_members')
         .select(`
@@ -777,8 +779,7 @@ export default function AnalyticsPage() {
             email
           )
         `)
-        .eq('class_id', selectedClass)
-        .returns<DbMember[]>()
+        .eq('class_id', selectedClass) as { data: DbMember[] | null, error: any }
 
       if (membersError) {
         console.error('Error fetching class members:', membersError)
@@ -823,7 +824,7 @@ export default function AnalyticsPage() {
     .sort(([, a], [, b]) => b - a)
     .slice(0, 5)
 
-  if (!userRole || (userRole !== 'admin' && userRole !== 'teacher')) {
+  if (!currentUserRole || (currentUserRole !== 'admin' && currentUserRole !== 'teacher')) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
