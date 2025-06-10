@@ -1,11 +1,10 @@
-import type React from "react"
 import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { Toaster } from "@/components/ui/sonner"
 import { Footer } from "@/components/footer"
 import { Analytics } from "@vercel/analytics/react"
-import { Header } from "@/components/header"
+import { Header } from "@/components/layout/Header"
 
 const inter = Inter({ subsets: ["latin"] })
 
