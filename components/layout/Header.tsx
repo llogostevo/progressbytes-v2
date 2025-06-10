@@ -1,9 +1,6 @@
-"use client"
-
 import Link from "next/link"
 import { Brain } from "lucide-react"
-import { NavBar } from "./nav-bar"
-import { MobileNav } from "./mobile-nav"
+import { Nav } from "@/components/layout/nav"
 
 export function Header() {
   return (
@@ -15,11 +12,8 @@ export function Header() {
             Quiz - ProgressBytes
           </Link>
         </div>
-        <div className="flex items-center gap-6">
-          <NavBar />
-          <MobileNav />
-        </div>
+        <Nav />
       </div>
     </header>
   )
-} 
+}
