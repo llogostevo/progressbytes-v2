@@ -135,8 +135,7 @@ export default function QuestionManager() {
 
       if (error) throw error
 
-      // Transform the questions to match our Question type
-      const transformedQuestions = data.map((q: any) => ({
+      const transformedQuestions: Question[] = data.map((q) => ({
         id: q.id,
         type: q.type,
         topic: q.subtopic_question_link?.[0]?.subtopic?.topic?.slug || "",
@@ -154,7 +153,7 @@ export default function QuestionManager() {
           model_answer: q.fill_in_the_blank_questions?.correct_answers || [],
         }),
         ...(q.type === "matching" && {
-          pairs: q.matching_questions?.map((mq: any) => ({
+          pairs: q.matching_questions?.map((mq: { statement: string; match: string }) => ({
             statement: mq.statement,
             match: mq.match,
           })),
@@ -251,7 +250,7 @@ export default function QuestionManager() {
           await supabase
             .from("true_false_questions")
             .update({
-              correct_answer: updatedQuestion.correct_answer,
+              correct_answer: updatedQuestion.model_answer,
               model_answer: updatedQuestion.model_answer,
             })
             .eq("question_id", updatedQuestion.id)
@@ -269,7 +268,7 @@ export default function QuestionManager() {
             .from("essay_questions")
             .update({
               model_answer: updatedQuestion.model_answer,
-              rubric: (updatedQuestion as any).rubric,
+              rubric: (updatedQuestion as Question & { rubric?: string }).rubric,
             })
             .eq("question_id", updatedQuestion.id)
           break
@@ -398,13 +397,6 @@ export default function QuestionManager() {
                         className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
                       >
                         <Edit3 className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
-                      >
-                        <Eye className="w-4 h-4" />
                       </Button>
                       <Button
                         variant="ghost"
@@ -810,8 +802,8 @@ export default function QuestionManager() {
                     <div className="space-y-2">
                       <Label>Rubric</Label>
                       <Textarea
-                        value={(editingQuestion as any).rubric || ""}
-                        onChange={(e) => setEditingQuestion({ ...editingQuestion, rubric: e.target.value } as any)}
+                        value={(editingQuestion as Question & { rubric?: string }).rubric || ""}
+                        onChange={(e) => setEditingQuestion({ ...editingQuestion, rubric: e.target.value } as Question & { rubric?: string })}
                         rows={6}
                       />
                     </div>

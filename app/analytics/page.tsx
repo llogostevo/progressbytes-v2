@@ -491,7 +491,6 @@ function StudentSelectorSkeleton() {
 
 // MAIN PAGE
 export default function AnalyticsPage() {
-  const [userRole, setUserRole] = useState<UserRole | null>(null)
   const [currentUserRole, setCurrentUserRole] = useState<UserRole | null>(null)
   const [userActivity, setUserActivity] = useState<UserActivity[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -802,7 +801,7 @@ export default function AnalyticsPage() {
     ? userActivity 
     : userActivity.filter(activity => {
         // For students, only show their own activity
-        if (userRole === 'student') {
+        if (currentUserRole === 'student') {
           return activity.user_id === selectedStudent
         }
         // For teachers, show activity of students in their class
