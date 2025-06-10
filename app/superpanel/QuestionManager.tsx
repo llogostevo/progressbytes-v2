@@ -60,6 +60,7 @@ export default function QuestionManager() {
   const [filteredQuestions, setFilteredQuestions] = useState<Question[]>([])
   const [loading, setLoading] = useState(true)
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null)
+  const [addingQuestion, setAddingQuestion] = useState<Question | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterType, setFilterType] = useState<string>("all")
   const [filterTopic, setFilterTopic] = useState<string>("all")
@@ -280,6 +281,101 @@ export default function QuestionManager() {
     }
   }
 
+  const handleAdd = () => {
+    setAddingQuestion({
+      id: '', // Temporary ID, will be replaced by database
+      type: "multiple-choice", // Default type
+      topic: "",
+      question_text: "",
+      explanation: "",
+      created_at: new Date().toISOString(),
+      model_answer: "",
+      options: [],
+      correctAnswerIndex: 0,
+    })
+  }
+
+  const handleSaveNew = async (newQuestion: Question) => {
+    try {
+      // Insert the base question
+      const { data: questionData, error: questionError } = await supabase
+        .from("questions")
+        .insert({
+          question_text: newQuestion.question_text,
+          explanation: newQuestion.explanation,
+          type: newQuestion.type,
+        })
+        .select()
+        .single()
+
+      if (questionError) throw questionError
+
+      // Insert type-specific data
+      switch (newQuestion.type) {
+        case "multiple-choice":
+          await supabase.from("multiple_choice_questions").insert({
+            question_id: questionData.id,
+            options: newQuestion.options,
+            correct_answer_index: newQuestion.correctAnswerIndex,
+            model_answer: newQuestion.model_answer,
+          })
+          break
+        case "fill-in-the-blank":
+          await supabase.from("fill_in_the_blank_questions").insert({
+            question_id: questionData.id,
+            options: newQuestion.options,
+            correct_answers: newQuestion.model_answer,
+            order_important: newQuestion.order_important,
+          })
+          break
+        case "matching":
+          if (newQuestion.pairs) {
+            await supabase.from("matching_questions").insert(
+              newQuestion.pairs.map((pair) => ({
+                question_id: questionData.id,
+                statement: pair.statement,
+                match: pair.match,
+              })),
+            )
+          }
+          break
+        case "code":
+          await supabase.from("code_questions").insert({
+            question_id: questionData.id,
+            model_answer_code: newQuestion.model_answer_python,
+            language: newQuestion.language,
+            model_answer: newQuestion.model_answer,
+          })
+          break
+        case "true-false":
+          await supabase.from("true_false_questions").insert({
+            question_id: questionData.id,
+            correct_answer: newQuestion.model_answer,
+            model_answer: newQuestion.model_answer,
+          })
+          break
+        case "short-answer":
+          await supabase.from("short_answer_questions").insert({
+            question_id: questionData.id,
+            model_answer: newQuestion.model_answer,
+          })
+          break
+        case "essay":
+          await supabase.from("essay_questions").insert({
+            question_id: questionData.id,
+            model_answer: newQuestion.model_answer,
+            rubric: (newQuestion as Question & { rubric?: string }).rubric,
+          })
+          break
+      }
+
+      await fetchQuestions()
+      setAddingQuestion(null)
+    } catch (error) {
+      console.error("Error creating question:", error)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -333,7 +429,7 @@ export default function QuestionManager() {
               ))}
             </SelectContent>
           </Select>
-          <Button className="bg-blue-600 hover:bg-blue-700">
+          <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleAdd}>
             <Plus className="w-4 h-4 mr-2" />
             Add Question
           </Button>
@@ -816,6 +912,466 @@ export default function QuestionManager() {
                 </Button>
                 <Button onClick={() => handleSave(editingQuestion)} className="bg-blue-600 hover:bg-blue-700 px-6">
                   Save Changes
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Question Dialog */}
+      <Dialog open={!!addingQuestion} onOpenChange={() => setAddingQuestion(null)}>
+        <DialogContent className="w-[90%] max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="pb-6 border-b">
+            <DialogTitle className="flex items-center gap-2 text-2xl font-semibold">
+              <Plus className="w-6 h-6" />
+              Add New Question
+            </DialogTitle>
+          </DialogHeader>
+          {addingQuestion && (
+            <div className="space-y-10 py-6">
+              {/* Basic Information Section */}
+              <div className="space-y-8">
+                <div className="space-y-6">
+                  <div className="space-y-4">
+                    <Label htmlFor="question-type" className="text-base font-medium">Question Type</Label>
+                    <Select
+                      value={addingQuestion.type}
+                      onValueChange={(value) => setAddingQuestion({ ...addingQuestion, type: value as Question["type"] })}
+                    >
+                      <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Select question type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="multiple-choice">Multiple Choice</SelectItem>
+                        <SelectItem value="fill-in-the-blank">Fill in the Blank</SelectItem>
+                        <SelectItem value="matching">Matching</SelectItem>
+                        <SelectItem value="code">Code</SelectItem>
+                        <SelectItem value="true-false">True/False</SelectItem>
+                        <SelectItem value="short-answer">Short Answer</SelectItem>
+                        <SelectItem value="essay">Essay</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-4">
+                    <Label htmlFor="question-text" className="text-base font-medium">Question Text</Label>
+                    <Textarea
+                      id="question-text"
+                      value={addingQuestion.question_text}
+                      onChange={(e) => setAddingQuestion({ ...addingQuestion, question_text: e.target.value })}
+                      rows={4}
+                      className="resize-none text-base w-full min-h-[120px]"
+                    />
+                  </div>
+
+                  <div className="space-y-4">
+                    <Label htmlFor="explanation" className="text-base font-medium">Explanation</Label>
+                    <Textarea
+                      id="explanation"
+                      value={addingQuestion.explanation || ""}
+                      onChange={(e) => setAddingQuestion({ ...addingQuestion, explanation: e.target.value })}
+                      rows={4}
+                      className="resize-none text-base w-full min-h-[120px]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Type-specific Configuration Section */}
+              <div className="border-t pt-8">
+                <h3 className="text-xl font-semibold mb-8 flex items-center gap-3">
+                  {(() => {
+                    const IconComponent = questionTypeIcons[addingQuestion.type as keyof typeof questionTypeIcons]
+                    return <IconComponent className="w-6 h-6" />
+                  })()}
+                  {addingQuestion.type.replace("-", " ")} Configuration
+                </h3>
+
+                <div className="space-y-8">
+                  {addingQuestion.type === "multiple-choice" && (
+                    <div className="space-y-6">
+                      <div className="space-y-4">
+                        <Label className="text-base font-medium">Options</Label>
+                        <div className="space-y-3">
+                          {addingQuestion.options?.map((option, index) => (
+                            <div key={index} className="flex gap-3">
+                              <Input
+                                value={option}
+                                onChange={(e) => {
+                                  const newOptions = [...(addingQuestion.options || [])]
+                                  newOptions[index] = e.target.value
+                                  setAddingQuestion({ ...addingQuestion, options: newOptions })
+                                }}
+                                placeholder={`Option ${index + 1}`}
+                                className="h-12"
+                              />
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => {
+                                  const newOptions = [...(addingQuestion.options || [])]
+                                  newOptions.splice(index, 1)
+                                  setAddingQuestion({ ...addingQuestion, options: newOptions })
+                                }}
+                                className="h-12 w-12"
+                              >
+                                <Trash2 className="w-5 h-5" />
+                              </Button>
+                            </div>
+                          ))}
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setAddingQuestion({
+                                ...addingQuestion,
+                                options: [...(addingQuestion.options || []), ""],
+                              })
+                            }}
+                            className="h-12"
+                          >
+                            <Plus className="w-5 h-5 mr-2" />
+                            Add Option
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <Label className="text-base font-medium">Correct Answer</Label>
+                        <Select
+                          value={addingQuestion.correctAnswerIndex?.toString()}
+                          onValueChange={(value) =>
+                            setAddingQuestion({ ...addingQuestion, correctAnswerIndex: Number.parseInt(value) })
+                          }
+                        >
+                          <SelectTrigger className="h-12">
+                            <SelectValue placeholder="Select correct answer" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {addingQuestion.options?.map((option, index) => (
+                              <SelectItem key={index} value={index.toString()}>
+                                Option {index + 1}: {option.substring(0, 50)}
+                                {option.length > 50 ? "..." : ""}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+
+                  {addingQuestion.type === "fill-in-the-blank" && (
+                    <div className="space-y-6">
+                      <div className="space-y-4">
+                        <Label className="text-base font-medium">Options</Label>
+                        <div className="space-y-3">
+                          {addingQuestion.options?.map((option, index) => (
+                            <div key={index} className="flex gap-3">
+                              <Input
+                                value={option}
+                                onChange={(e) => {
+                                  const newOptions = [...(addingQuestion.options || [])]
+                                  newOptions[index] = e.target.value
+                                  setAddingQuestion({ ...addingQuestion, options: newOptions })
+                                }}
+                                placeholder={`Option ${index + 1}`}
+                                className="h-12"
+                              />
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => {
+                                  const newOptions = [...(addingQuestion.options || [])]
+                                  newOptions.splice(index, 1)
+                                  setAddingQuestion({ ...addingQuestion, options: newOptions })
+                                }}
+                                className="h-12 w-12"
+                              >
+                                <Trash2 className="w-5 h-5" />
+                              </Button>
+                            </div>
+                          ))}
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setAddingQuestion({
+                                ...addingQuestion,
+                                options: [...(addingQuestion.options || []), ""],
+                              })
+                            }}
+                            className="h-12"
+                          >
+                            <Plus className="w-5 h-5 mr-2" />
+                            Add Option
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        <Label className="text-base font-medium">Correct Answers</Label>
+                        <div className="space-y-3">
+                          {Array.isArray(addingQuestion.model_answer) &&
+                            addingQuestion.model_answer.map((answer, index) => (
+                              <div key={index} className="flex gap-3">
+                                <Input
+                                  value={answer}
+                                  onChange={(e) => {
+                                    const newAnswers = [...(addingQuestion.model_answer as string[])]
+                                    newAnswers[index] = e.target.value
+                                    setAddingQuestion({ ...addingQuestion, model_answer: newAnswers })
+                                  }}
+                                  placeholder={`Answer ${index + 1}`}
+                                  className="h-12"
+                                />
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  onClick={() => {
+                                    const newAnswers = [...(addingQuestion.model_answer as string[])]
+                                    newAnswers.splice(index, 1)
+                                    setAddingQuestion({ ...addingQuestion, model_answer: newAnswers })
+                                  }}
+                                  className="h-12 w-12"
+                                >
+                                  <Trash2 className="w-5 h-5" />
+                                </Button>
+                              </div>
+                            ))}
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setAddingQuestion({
+                                ...addingQuestion,
+                                model_answer: [...((addingQuestion.model_answer as string[]) || []), ""],
+                              })
+                            }}
+                            className="h-12"
+                          >
+                            <Plus className="w-5 h-5 mr-2" />
+                            Add Answer
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <Switch
+                          id="order-important"
+                          checked={addingQuestion.order_important}
+                          onCheckedChange={(checked) =>
+                            setAddingQuestion({ ...addingQuestion, order_important: checked })
+                          }
+                        />
+                        <Label htmlFor="order-important" className="text-base font-medium">Order Important</Label>
+                      </div>
+                    </div>
+                  )}
+
+                  {addingQuestion.type === "matching" && (
+                    <div className="space-y-6">
+                      <Label className="text-base font-medium">Matching Pairs</Label>
+                      <div className="space-y-3">
+                        {addingQuestion.pairs?.map((pair, index) => (
+                          <div key={index} className="grid grid-cols-2 gap-3">
+                            <Input
+                              value={pair.statement}
+                              onChange={(e) => {
+                                const newPairs = [...(addingQuestion.pairs || [])]
+                                newPairs[index] = { ...pair, statement: e.target.value }
+                                setAddingQuestion({ ...addingQuestion, pairs: newPairs })
+                              }}
+                              placeholder="Statement"
+                              className="h-12"
+                            />
+                            <div className="flex gap-3">
+                              <Input
+                                value={pair.match}
+                                onChange={(e) => {
+                                  const newPairs = [...(addingQuestion.pairs || [])]
+                                  newPairs[index] = { ...pair, match: e.target.value }
+                                  setAddingQuestion({ ...addingQuestion, pairs: newPairs })
+                                }}
+                                placeholder="Match"
+                                className="h-12"
+                              />
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => {
+                                  const newPairs = [...(addingQuestion.pairs || [])]
+                                  newPairs.splice(index, 1)
+                                  setAddingQuestion({ ...addingQuestion, pairs: newPairs })
+                                }}
+                                className="h-12 w-12"
+                              >
+                                <Trash2 className="w-5 h-5" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setAddingQuestion({
+                              ...addingQuestion,
+                              pairs: [...(addingQuestion.pairs || []), { statement: "", match: "" }],
+                            })
+                          }}
+                          className="h-12"
+                        >
+                          <Plus className="w-5 h-5 mr-2" />
+                          Add Pair
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {addingQuestion.type === "code" && (
+                    <div className="space-y-6">
+                      <div className="space-y-4">
+                        <Label className="text-base font-medium">Model Answer (Pseudocode)</Label>
+                        <Textarea
+                          value={
+                            Array.isArray(addingQuestion.model_answer)
+                              ? addingQuestion.model_answer.join(", ")
+                              : typeof addingQuestion.model_answer === "boolean"
+                                ? addingQuestion.model_answer
+                                  ? "true"
+                                  : "false"
+                                : addingQuestion.model_answer || ""
+                          }
+                          onChange={(e) => setAddingQuestion({ ...addingQuestion, model_answer: e.target.value })}
+                          rows={5}
+                          className="font-mono text-sm min-h-[120px]"
+                        />
+                      </div>
+                      <div className="space-y-4">
+                        <Label className="text-base font-medium">Model Answer (Python)</Label>
+                        <Textarea
+                          value={addingQuestion.model_answer_python}
+                          onChange={(e) =>
+                            setAddingQuestion({ ...addingQuestion, model_answer_python: e.target.value })
+                          }
+                          rows={8}
+                          className="font-mono text-sm min-h-[200px]"
+                        />
+                      </div>
+                      <div className="space-y-4">
+                        <Label className="text-base font-medium">Language</Label>
+                        <Select
+                          value={addingQuestion.language}
+                          onValueChange={(value) => setAddingQuestion({ ...addingQuestion, language: value })}
+                        >
+                          <SelectTrigger className="h-12">
+                            <SelectValue placeholder="Select language" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="python">Python</SelectItem>
+                            <SelectItem value="javascript">JavaScript</SelectItem>
+                            <SelectItem value="java">Java</SelectItem>
+                            <SelectItem value="cpp">C++</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+
+                  {addingQuestion.type === "true-false" && (
+                    <div className="space-y-4">
+                      <Label className="text-base font-medium">Correct Answer</Label>
+                      <Select
+                        value={
+                          typeof addingQuestion.model_answer === "boolean"
+                            ? addingQuestion.model_answer
+                              ? "true"
+                              : "false"
+                            : "false"
+                        }
+                        onValueChange={(value) => {
+                          const boolValue = value === "true"
+                          setAddingQuestion({
+                            ...addingQuestion,
+                            model_answer: boolValue,
+                            correct_answer: boolValue,
+                          })
+                        }}
+                      >
+                        <SelectTrigger className="h-12">
+                          <SelectValue placeholder="Select correct answer" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="true">True</SelectItem>
+                          <SelectItem value="false">False</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {addingQuestion.type === "short-answer" && (
+                    <div className="space-y-4">
+                      <Label className="text-base font-medium">Model Answer</Label>
+                      <Textarea
+                        value={
+                          Array.isArray(addingQuestion.model_answer)
+                            ? addingQuestion.model_answer.join(", ")
+                            : typeof addingQuestion.model_answer === "boolean"
+                              ? addingQuestion.model_answer
+                                ? "true"
+                                : "false"
+                              : addingQuestion.model_answer || ""
+                        }
+                        onChange={(e) =>
+                          setAddingQuestion({
+                            ...addingQuestion,
+                            model_answer: e.target.value,
+                          })
+                        }
+                        rows={6}
+                        className="min-h-[150px]"
+                      />
+                    </div>
+                  )}
+
+                  {addingQuestion.type === "essay" && (
+                    <div className="space-y-6">
+                      <div className="space-y-4">
+                        <Label className="text-base font-medium">Model Answer</Label>
+                        <Textarea
+                          value={
+                            Array.isArray(addingQuestion.model_answer)
+                              ? addingQuestion.model_answer.join(", ")
+                              : typeof addingQuestion.model_answer === "boolean"
+                                ? addingQuestion.model_answer
+                                  ? "true"
+                                  : "false"
+                                : addingQuestion.model_answer || ""
+                          }
+                          onChange={(e) =>
+                            setAddingQuestion({
+                              ...addingQuestion,
+                              model_answer: e.target.value,
+                            })
+                          }
+                          rows={8}
+                          className="min-h-[200px]"
+                        />
+                      </div>
+                      <div className="space-y-4">
+                        <Label className="text-base font-medium">Rubric</Label>
+                        <Textarea
+                          value={(addingQuestion as Question & { rubric?: string }).rubric || ""}
+                          onChange={(e) => setAddingQuestion({ ...addingQuestion, rubric: e.target.value } as Question & { rubric?: string })}
+                          rows={8}
+                          className="min-h-[200px]"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <DialogFooter className="gap-3 pt-6 border-t mt-8">
+                <Button variant="outline" onClick={() => setAddingQuestion(null)} className="h-12 px-8">
+                  Cancel
+                </Button>
+                <Button onClick={() => handleSaveNew(addingQuestion)} className="bg-blue-600 hover:bg-blue-700 h-12 px-8">
+                  Create Question
                 </Button>
               </DialogFooter>
             </div>
