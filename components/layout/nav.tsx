@@ -21,7 +21,7 @@ export function Nav() {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
-  const { isLoggedIn, userRole, refreshUser } = useAuth() // ✅ global context
+  const { isLoggedIn, userRole, refreshUser } = useAuth() // global context
 
   const handleAuth = async () => {
     if (isLoggedIn) {
