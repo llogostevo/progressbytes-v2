@@ -11,6 +11,7 @@ export interface Question {
   order_important?: boolean
   correct_answer?: boolean // true-false question - need to check if this is correct
   model_answer_python?: string
+  language?: string
   explanation?: string
   created_at: string
   pairs?: {
