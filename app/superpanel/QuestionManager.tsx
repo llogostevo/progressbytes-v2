@@ -63,11 +63,28 @@ export default function QuestionManager() {
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterType, setFilterType] = useState<string>("all")
+  const [filterTopic, setFilterTopic] = useState<string>("all")
+  const [topics, setTopics] = useState<Array<{ id: number; name: string; slug: string; topicnumber: string }>>([])
   const supabase = createClient()
 
   useEffect(() => {
     fetchQuestions()
+    fetchTopics()
   }, [])
+
+  const fetchTopics = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("topics")
+        .select("id, name, slug, topicnumber")
+        .order("topicnumber", { ascending: true })
+
+      if (error) throw error
+      setTopics(data || [])
+    } catch (error) {
+      console.error("Error fetching topics:", error)
+    }
+  }
 
   useEffect(() => {
     let filtered = questions
@@ -84,8 +101,12 @@ export default function QuestionManager() {
       filtered = filtered.filter((q) => q.type === filterType)
     }
 
+    if (filterTopic !== "all") {
+      filtered = filtered.filter((q) => q.topic === filterTopic)
+    }
+
     setFilteredQuestions(filtered)
-  }, [questions, searchTerm, filterType])
+  }, [questions, searchTerm, filterType, filterTopic])
 
   const fetchQuestions = async () => {
     try {
@@ -300,6 +321,20 @@ export default function QuestionManager() {
               <SelectItem value="essay">Essay</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={filterTopic} onValueChange={setFilterTopic}>
+            <SelectTrigger className="w-48">
+              <BookOpen className="w-4 h-4 mr-2" />
+              <SelectValue placeholder="Filter by topic" />
+            </SelectTrigger>
+            <SelectContent className="max-h-[300px] overflow-y-auto">
+              <SelectItem value="all">All Topics</SelectItem>
+              {topics.map((topic) => (
+                <SelectItem key={topic.id} value={topic.slug}>
+                  {topic.topicnumber} - {topic.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Button className="bg-blue-600 hover:bg-blue-700">
             <Plus className="w-4 h-4 mr-2" />
             Add Question
@@ -389,42 +424,42 @@ export default function QuestionManager() {
 
       {/* Edit Dialog */}
       <Dialog open={!!editingQuestion} onOpenChange={() => setEditingQuestion(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+        <DialogContent className="w-[80%] max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="pb-4 border-b">
+            <DialogTitle className="flex items-center gap-2 text-xl">
               <Edit3 className="w-5 h-5" />
               Edit Question
             </DialogTitle>
           </DialogHeader>
           {editingQuestion && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="question-text">Question Text</Label>
+            <div className="space-y-8 py-4">
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <Label htmlFor="question-text" className="text-base font-medium">Question Text</Label>
                   <Textarea
                     id="question-text"
                     value={editingQuestion.question_text}
                     onChange={(e) => setEditingQuestion({ ...editingQuestion, question_text: e.target.value })}
                     rows={4}
-                    className="resize-none"
+                    className="resize-none text-base w-full"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="explanation">Explanation</Label>
+                <div className="space-y-4">
+                  <Label htmlFor="explanation" className="text-base font-medium">Explanation</Label>
                   <Textarea
                     id="explanation"
                     value={editingQuestion.explanation || ""}
                     onChange={(e) => setEditingQuestion({ ...editingQuestion, explanation: e.target.value })}
                     rows={4}
-                    className="resize-none"
+                    className="resize-none text-base w-full"
                   />
                 </div>
               </div>
 
               {/* Type-specific fields */}
               <div className="border-t pt-6">
-                <h3 className="text-lg font-medium mb-4 flex items-center gap-2">
+                <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
                   {(() => {
                     const IconComponent = questionTypeIcons[editingQuestion.type as keyof typeof questionTypeIcons]
                     return <IconComponent className="w-5 h-5" />
@@ -784,11 +819,11 @@ export default function QuestionManager() {
                 )}
               </div>
 
-              <DialogFooter className="gap-2">
-                <Button variant="outline" onClick={() => setEditingQuestion(null)}>
+              <DialogFooter className="gap-3 pt-6 border-t mt-6">
+                <Button variant="outline" onClick={() => setEditingQuestion(null)} className="px-6">
                   Cancel
                 </Button>
-                <Button onClick={() => handleSave(editingQuestion)} className="bg-blue-600 hover:bg-blue-700">
+                <Button onClick={() => handleSave(editingQuestion)} className="bg-blue-600 hover:bg-blue-700 px-6">
                   Save Changes
                 </Button>
               </DialogFooter>
