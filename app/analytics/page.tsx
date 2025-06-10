@@ -20,6 +20,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts"
+import { PostgrestError } from '@supabase/supabase-js'
 
 interface Class {
   id: string
@@ -491,7 +492,6 @@ function StudentSelectorSkeleton() {
 
 // MAIN PAGE
 export default function AnalyticsPage() {
-  const [userRole, setUserRole] = useState<UserRole | null>(null)
   const [currentUserRole, setCurrentUserRole] = useState<UserRole | null>(null)
   const [userActivity, setUserActivity] = useState<UserActivity[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -779,7 +779,7 @@ export default function AnalyticsPage() {
             email
           )
         `)
-        .eq('class_id', selectedClass) as { data: DbMember[] | null, error: any }
+        .eq('class_id', selectedClass) as { data: DbMember[] | null, error: PostgrestError | null }
 
       if (membersError) {
         console.error('Error fetching class members:', membersError)
@@ -802,7 +802,7 @@ export default function AnalyticsPage() {
     ? userActivity 
     : userActivity.filter(activity => {
         // For students, only show their own activity
-        if (userRole === 'student') {
+        if (currentUserRole === 'student') {
           return activity.user_id === selectedStudent
         }
         // For teachers, show activity of students in their class
