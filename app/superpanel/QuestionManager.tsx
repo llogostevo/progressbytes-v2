@@ -1,33 +1,96 @@
-'use client'
+"use client"
 
-import { useState, useEffect } from 'react'
-import { createClient } from '@/utils/supabase/client'
-import { Question } from '@/lib/types'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Badge } from '@/components/ui/badge'
-import { Switch } from '@/components/ui/switch'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useState, useEffect } from "react"
+import { createClient } from "@/utils/supabase/client"
+import type { Question } from "@/lib/types"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Badge } from "@/components/ui/badge"
+import { Switch } from "@/components/ui/switch"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Search,
+  Edit3,
+  Filter,
+  Plus,
+  Trash2,
+  Eye,
+  Code,
+  FileText,
+  CheckSquare,
+  ToggleLeft,
+  List,
+  PenTool,
+  BookOpen,
+} from "lucide-react"
+
+const questionTypeIcons = {
+  "multiple-choice": List,
+  "fill-in-the-blank": FileText,
+  "matching": ToggleLeft,
+  "code": Code,
+  "true-false": CheckSquare,
+  "short-answer": PenTool,
+  "essay": BookOpen,
+  "text": FileText,
+} as const
+
+const questionTypeColors = {
+  "multiple-choice":
+    "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800",
+  "fill-in-the-blank":
+    "bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800",
+  "matching":
+    "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-300 dark:border-purple-800",
+  "code": "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-800",
+  "true-false": "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800",
+  "short-answer":
+    "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-300 dark:border-yellow-800",
+  "essay":
+    "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/20 dark:text-indigo-300 dark:border-indigo-800",
+  "text":
+    "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-900/20 dark:text-gray-300 dark:border-gray-800",
+}
 
 export default function QuestionManager() {
   const [questions, setQuestions] = useState<Question[]>([])
+  const [filteredQuestions, setFilteredQuestions] = useState<Question[]>([])
   const [loading, setLoading] = useState(true)
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [filterType, setFilterType] = useState<string>("all")
   const supabase = createClient()
 
   useEffect(() => {
     fetchQuestions()
   }, [])
 
+  useEffect(() => {
+    let filtered = questions
+
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (q) =>
+          q.question_text.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          q.topic.toLowerCase().includes(searchTerm.toLowerCase()),
+      )
+    }
+
+    if (filterType !== "all") {
+      filtered = filtered.filter((q) => q.type === filterType)
+    }
+
+    setFilteredQuestions(filtered)
+  }, [questions, searchTerm, filterType])
+
   const fetchQuestions = async () => {
     try {
       const { data, error } = await supabase
-        .from('questions')
+        .from("questions")
         .select(`
           *,
           short_answer_questions(*),
@@ -47,7 +110,7 @@ export default function QuestionManager() {
             )
           )
         `)
-        .order('created_at', { ascending: false })
+        .order("created_at", { ascending: false })
 
       if (error) throw error
 
@@ -55,45 +118,45 @@ export default function QuestionManager() {
       const transformedQuestions = data.map((q: any) => ({
         id: q.id,
         type: q.type,
-        topic: q.subtopic_question_link?.[0]?.subtopic?.topic?.slug || '',
+        topic: q.subtopic_question_link?.[0]?.subtopic?.topic?.slug || "",
         question_text: q.question_text,
         explanation: q.explanation,
         created_at: q.created_at,
-        model_answer: q.model_answer || '',
-        ...(q.type === 'multiple-choice' && {
+        model_answer: q.model_answer || "",
+        ...(q.type === "multiple-choice" && {
           options: q.multiple_choice_questions?.options,
-          correctAnswerIndex: q.multiple_choice_questions?.correct_answer_index
+          correctAnswerIndex: q.multiple_choice_questions?.correct_answer_index,
         }),
-        ...(q.type === 'fill-in-the-blank' && {
+        ...(q.type === "fill-in-the-blank" && {
           options: q.fill_in_the_blank_questions?.options,
           order_important: q.fill_in_the_blank_questions?.order_important,
-          model_answer: q.fill_in_the_blank_questions?.correct_answers || []
+          model_answer: q.fill_in_the_blank_questions?.correct_answers || [],
         }),
-        ...(q.type === 'matching' && {
+        ...(q.type === "matching" && {
           pairs: q.matching_questions?.map((mq: any) => ({
             statement: mq.statement,
-            match: mq.match
-          }))
+            match: mq.match,
+          })),
         }),
-        ...(q.type === 'code' && {
+        ...(q.type === "code" && {
           model_answer_python: q.code_questions?.model_answer_code,
-          language: q.code_questions?.language
+          language: q.code_questions?.language,
         }),
-        ...(q.type === 'true-false' && {
-          model_answer: q.true_false_questions?.correct_answer
+        ...(q.type === "true-false" && {
+          model_answer: q.true_false_questions?.correct_answer,
         }),
-        ...(q.type === 'short-answer' && {
-          model_answer: q.short_answer_questions?.model_answer
+        ...(q.type === "short-answer" && {
+          model_answer: q.short_answer_questions?.model_answer,
         }),
-        ...(q.type === 'essay' && {
+        ...(q.type === "essay" && {
           model_answer: q.essay_questions?.model_answer,
-          rubric: q.essay_questions?.rubric
-        })
+          rubric: q.essay_questions?.rubric,
+        }),
       }))
 
       setQuestions(transformedQuestions)
     } catch (error) {
-      console.error('Error fetching questions:', error)
+      console.error("Error fetching questions:", error)
     } finally {
       setLoading(false)
     }
@@ -107,294 +170,463 @@ export default function QuestionManager() {
     try {
       // Update the base question
       const { error: questionError } = await supabase
-        .from('questions')
+        .from("questions")
         .update({
           question_text: updatedQuestion.question_text,
           explanation: updatedQuestion.explanation,
-          type: updatedQuestion.type
+          type: updatedQuestion.type,
         })
-        .eq('id', updatedQuestion.id)
+        .eq("id", updatedQuestion.id)
 
       if (questionError) throw questionError
 
       // Update type-specific data
       switch (updatedQuestion.type) {
-        case 'multiple-choice':
+        case "multiple-choice":
           await supabase
-            .from('multiple_choice_questions')
+            .from("multiple_choice_questions")
             .update({
               options: updatedQuestion.options,
               correct_answer_index: updatedQuestion.correctAnswerIndex,
-              model_answer: updatedQuestion.model_answer
+              model_answer: updatedQuestion.model_answer,
             })
-            .eq('question_id', updatedQuestion.id)
+            .eq("question_id", updatedQuestion.id)
           break
-        case 'fill-in-the-blank':
+        case "fill-in-the-blank":
           await supabase
-            .from('fill_in_the_blank_questions')
+            .from("fill_in_the_blank_questions")
             .update({
               options: updatedQuestion.options,
               correct_answers: updatedQuestion.model_answer,
-              order_important: updatedQuestion.order_important
+              order_important: updatedQuestion.order_important,
             })
-            .eq('question_id', updatedQuestion.id)
+            .eq("question_id", updatedQuestion.id)
           break
-        case 'matching':
+        case "matching":
           // Delete existing pairs and insert new ones
-          await supabase
-            .from('matching_questions')
-            .delete()
-            .eq('question_id', updatedQuestion.id)
-          
+          await supabase.from("matching_questions").delete().eq("question_id", updatedQuestion.id)
+
           if (updatedQuestion.pairs) {
-            await supabase
-              .from('matching_questions')
-              .insert(
-                updatedQuestion.pairs.map(pair => ({
-                  question_id: updatedQuestion.id,
-                  statement: pair.statement,
-                  match: pair.match
-                }))
-              )
+            await supabase.from("matching_questions").insert(
+              updatedQuestion.pairs.map((pair) => ({
+                question_id: updatedQuestion.id,
+                statement: pair.statement,
+                match: pair.match,
+              })),
+            )
           }
           break
-        case 'code':
+        case "code":
           await supabase
-            .from('code_questions')
+            .from("code_questions")
             .update({
               model_answer_code: updatedQuestion.model_answer_python,
               language: updatedQuestion.language,
-              model_answer: updatedQuestion.model_answer
+              model_answer: updatedQuestion.model_answer,
             })
-            .eq('question_id', updatedQuestion.id)
+            .eq("question_id", updatedQuestion.id)
           break
-        case 'true-false':
+        case "true-false":
           await supabase
-            .from('true_false_questions')
+            .from("true_false_questions")
             .update({
               correct_answer: updatedQuestion.correct_answer,
-              model_answer: updatedQuestion.model_answer
+              model_answer: updatedQuestion.model_answer,
             })
-            .eq('question_id', updatedQuestion.id)
+            .eq("question_id", updatedQuestion.id)
           break
-        case 'short-answer':
+        case "short-answer":
           await supabase
-            .from('short_answer_questions')
-            .update({
-              model_answer: updatedQuestion.model_answer
-            })
-            .eq('question_id', updatedQuestion.id)
-          break
-        case 'essay':
-          await supabase
-            .from('essay_questions')
+            .from("short_answer_questions")
             .update({
               model_answer: updatedQuestion.model_answer,
-              rubric: (updatedQuestion as any).rubric
             })
-            .eq('question_id', updatedQuestion.id)
+            .eq("question_id", updatedQuestion.id)
+          break
+        case "essay":
+          await supabase
+            .from("essay_questions")
+            .update({
+              model_answer: updatedQuestion.model_answer,
+              rubric: (updatedQuestion as any).rubric,
+            })
+            .eq("question_id", updatedQuestion.id)
           break
       }
 
       await fetchQuestions()
       setEditingQuestion(null)
     } catch (error) {
-      console.error('Error updating question:', error)
+      console.error("Error updating question:", error)
     }
   }
 
   if (loading) {
-    return <div>Loading questions...</div>
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-3 text-slate-600 dark:text-slate-400">Loading questions...</span>
+      </div>
+    )
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Questions</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-[600px]">
-          <div className="rounded-md border">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">ID</th>
-                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Type</th>
-                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Question</th>
-                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Topic</th>
-                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {questions.map((question) => (
-                  <tr key={question.id} className="border-b">
-                    <td className="p-4 align-middle">{question.id}</td>
-                    <td className="p-4 align-middle">
-                      <Badge variant="secondary">{question.type}</Badge>
-                    </td>
-                    <td className="p-4 align-middle">{question.question_text}</td>
-                    <td className="p-4 align-middle">{question.topic}</td>
-                    <td className="p-4 align-middle">
+    <div className="space-y-6">
+      {/* Search and Filter Bar */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+          <Input
+            placeholder="Search questions or topics..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <div className="flex gap-2">
+          <Select value={filterType} onValueChange={setFilterType}>
+            <SelectTrigger className="w-48">
+              <Filter className="w-4 h-4 mr-2" />
+              <SelectValue placeholder="Filter by type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="multiple-choice">Multiple Choice</SelectItem>
+              <SelectItem value="fill-in-the-blank">Fill in the Blank</SelectItem>
+              <SelectItem value="matching">Matching</SelectItem>
+              <SelectItem value="code">Code</SelectItem>
+              <SelectItem value="true-false">True/False</SelectItem>
+              <SelectItem value="short-answer">Short Answer</SelectItem>
+              <SelectItem value="essay">Essay</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button className="bg-blue-600 hover:bg-blue-700">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Question
+          </Button>
+        </div>
+      </div>
+
+      {/* Questions Grid */}
+      <div className="grid gap-4">
+        {filteredQuestions.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 mx-auto mb-4 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center">
+              <Search className="w-8 h-8 text-slate-400" />
+            </div>
+            <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">No questions found</h3>
+            <p className="text-slate-600 dark:text-slate-400">Try adjusting your search or filter criteria</p>
+          </div>
+        ) : (
+          filteredQuestions.map((question) => {
+            const IconComponent = questionTypeIcons[question.type as keyof typeof questionTypeIcons]
+            const colorClass = questionTypeColors[question.type as keyof typeof questionTypeColors]
+
+            return (
+              <Card key={question.id} className="hover:shadow-md transition-shadow duration-200">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-3">
+                        <Badge variant="outline" className={`${colorClass} flex items-center gap-1.5 px-2.5 py-1`}>
+                          <IconComponent className="w-3.5 h-3.5" />
+                          {question.type.replace("-", " ")}
+                        </Badge>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">ID: {question.id}</span>
+                        {question.topic && (
+                          <Badge variant="secondary" className="text-xs">
+                            {question.topic}
+                          </Badge>
+                        )}
+                      </div>
+
+                      <h3 className="font-medium text-slate-900 dark:text-slate-100 mb-2 line-clamp-2">
+                        {question.question_text}
+                      </h3>
+
+                      {question.explanation && (
+                        <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 mb-3">
+                          {question.explanation}
+                        </p>
+                      )}
+
+                      <div className="text-xs text-slate-500 dark:text-slate-400">
+                        Created: {new Date(question.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 ml-4">
                       <Button
                         variant="ghost"
+                        size="sm"
                         onClick={() => handleEdit(question)}
+                        className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
                       >
-                        Edit
+                        <Edit3 className="w-4 h-4" />
                       </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </ScrollArea>
-      </CardContent>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })
+        )}
+      </div>
 
+      {/* Edit Dialog */}
       <Dialog open={!!editingQuestion} onOpenChange={() => setEditingQuestion(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Question</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit3 className="w-5 h-5" />
+              Edit Question
+            </DialogTitle>
           </DialogHeader>
           {editingQuestion && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="question-text">Question Text</Label>
-                <Textarea
-                  id="question-text"
-                  value={editingQuestion.question_text}
-                  onChange={(e) => setEditingQuestion({ ...editingQuestion, question_text: e.target.value })}
-                  rows={3}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="explanation">Explanation</Label>
-                <Textarea
-                  id="explanation"
-                  value={editingQuestion.explanation || ''}
-                  onChange={(e) => setEditingQuestion({ ...editingQuestion, explanation: e.target.value })}
-                  rows={3}
-                />
-              </div>
-
-              {editingQuestion.type === 'multiple-choice' && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label>Options</Label>
-                  {editingQuestion.options?.map((option, index) => (
-                    <div key={index} className="flex gap-2">
-                      <Input
-                        value={option}
-                        onChange={(e) => {
-                          const newOptions = [...(editingQuestion.options || [])]
-                          newOptions[index] = e.target.value
-                          setEditingQuestion({ ...editingQuestion, options: newOptions })
-                        }}
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          const newOptions = [...(editingQuestion.options || [])]
-                          newOptions.splice(index, 1)
-                          setEditingQuestion({ ...editingQuestion, options: newOptions })
-                        }}
-                      >
-                        ×
-                      </Button>
-                    </div>
-                  ))}
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setEditingQuestion({
-                        ...editingQuestion,
-                        options: [...(editingQuestion.options || []), '']
-                      })
-                    }}
-                  >
-                    Add Option
-                  </Button>
-                  <div className="space-y-2">
-                    <Label>Correct Answer Index</Label>
-                    <Select
-                      value={editingQuestion.correctAnswerIndex?.toString()}
-                      onValueChange={(value) => setEditingQuestion({ ...editingQuestion, correctAnswerIndex: parseInt(value) })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select correct answer" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {editingQuestion.options?.map((_, index) => (
-                          <SelectItem key={index} value={index.toString()}>
-                            Option {index + 1}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Label htmlFor="question-text">Question Text</Label>
+                  <Textarea
+                    id="question-text"
+                    value={editingQuestion.question_text}
+                    onChange={(e) => setEditingQuestion({ ...editingQuestion, question_text: e.target.value })}
+                    rows={4}
+                    className="resize-none"
+                  />
                 </div>
-              )}
 
-              {editingQuestion.type === 'fill-in-the-blank' && (
                 <div className="space-y-2">
-                  <Label>Options</Label>
-                  {editingQuestion.options?.map((option, index) => (
-                    <div key={index} className="flex gap-2">
-                      <Input
-                        value={option}
-                        onChange={(e) => {
-                          const newOptions = [...(editingQuestion.options || [])]
-                          newOptions[index] = e.target.value
-                          setEditingQuestion({ ...editingQuestion, options: newOptions })
-                        }}
-                      />
+                  <Label htmlFor="explanation">Explanation</Label>
+                  <Textarea
+                    id="explanation"
+                    value={editingQuestion.explanation || ""}
+                    onChange={(e) => setEditingQuestion({ ...editingQuestion, explanation: e.target.value })}
+                    rows={4}
+                    className="resize-none"
+                  />
+                </div>
+              </div>
+
+              {/* Type-specific fields */}
+              <div className="border-t pt-6">
+                <h3 className="text-lg font-medium mb-4 flex items-center gap-2">
+                  {(() => {
+                    const IconComponent = questionTypeIcons[editingQuestion.type as keyof typeof questionTypeIcons]
+                    return <IconComponent className="w-5 h-5" />
+                  })()}
+                  {editingQuestion.type.replace("-", " ")} Configuration
+                </h3>
+
+                {editingQuestion.type === "multiple-choice" && (
+                  <div className="space-y-4">
+                    <div className="space-y-3">
+                      <Label>Options</Label>
+                      {editingQuestion.options?.map((option, index) => (
+                        <div key={index} className="flex gap-2">
+                          <Input
+                            value={option}
+                            onChange={(e) => {
+                              const newOptions = [...(editingQuestion.options || [])]
+                              newOptions[index] = e.target.value
+                              setEditingQuestion({ ...editingQuestion, options: newOptions })
+                            }}
+                            placeholder={`Option ${index + 1}`}
+                          />
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => {
+                              const newOptions = [...(editingQuestion.options || [])]
+                              newOptions.splice(index, 1)
+                              setEditingQuestion({ ...editingQuestion, options: newOptions })
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
                       <Button
-                        variant="ghost"
-                        size="icon"
+                        variant="outline"
                         onClick={() => {
-                          const newOptions = [...(editingQuestion.options || [])]
-                          newOptions.splice(index, 1)
-                          setEditingQuestion({ ...editingQuestion, options: newOptions })
+                          setEditingQuestion({
+                            ...editingQuestion,
+                            options: [...(editingQuestion.options || []), ""],
+                          })
                         }}
                       >
-                        ×
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Option
                       </Button>
                     </div>
-                  ))}
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setEditingQuestion({
-                        ...editingQuestion,
-                        options: [...(editingQuestion.options || []), '']
-                      })
-                    }}
-                  >
-                    Add Option
-                  </Button>
-                  <div className="space-y-2">
-                    <Label>Correct Answers</Label>
-                    {Array.isArray(editingQuestion.model_answer) && editingQuestion.model_answer.map((answer, index) => (
-                      <div key={index} className="flex gap-2">
+                    <div className="space-y-2">
+                      <Label>Correct Answer</Label>
+                      <Select
+                        value={editingQuestion.correctAnswerIndex?.toString()}
+                        onValueChange={(value) =>
+                          setEditingQuestion({ ...editingQuestion, correctAnswerIndex: Number.parseInt(value) })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select correct answer" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {editingQuestion.options?.map((option, index) => (
+                            <SelectItem key={index} value={index.toString()}>
+                              Option {index + 1}: {option.substring(0, 50)}
+                              {option.length > 50 ? "..." : ""}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+
+                {editingQuestion.type === "fill-in-the-blank" && (
+                  <div className="space-y-4">
+                    <div className="space-y-3">
+                      <Label>Options</Label>
+                      {editingQuestion.options?.map((option, index) => (
+                        <div key={index} className="flex gap-2">
+                          <Input
+                            value={option}
+                            onChange={(e) => {
+                              const newOptions = [...(editingQuestion.options || [])]
+                              newOptions[index] = e.target.value
+                              setEditingQuestion({ ...editingQuestion, options: newOptions })
+                            }}
+                            placeholder={`Option ${index + 1}`}
+                          />
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => {
+                              const newOptions = [...(editingQuestion.options || [])]
+                              newOptions.splice(index, 1)
+                              setEditingQuestion({ ...editingQuestion, options: newOptions })
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setEditingQuestion({
+                            ...editingQuestion,
+                            options: [...(editingQuestion.options || []), ""],
+                          })
+                        }}
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Option
+                      </Button>
+                    </div>
+                    <div className="space-y-3">
+                      <Label>Correct Answers</Label>
+                      {Array.isArray(editingQuestion.model_answer) &&
+                        editingQuestion.model_answer.map((answer, index) => (
+                          <div key={index} className="flex gap-2">
+                            <Input
+                              value={answer}
+                              onChange={(e) => {
+                                const newAnswers = [...(editingQuestion.model_answer as string[])]
+                                newAnswers[index] = e.target.value
+                                setEditingQuestion({ ...editingQuestion, model_answer: newAnswers })
+                              }}
+                              placeholder={`Answer ${index + 1}`}
+                            />
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => {
+                                const newAnswers = [...(editingQuestion.model_answer as string[])]
+                                newAnswers.splice(index, 1)
+                                setEditingQuestion({ ...editingQuestion, model_answer: newAnswers })
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setEditingQuestion({
+                            ...editingQuestion,
+                            model_answer: [...((editingQuestion.model_answer as string[]) || []), ""],
+                          })
+                        }}
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Answer
+                      </Button>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="order-important"
+                        checked={editingQuestion.order_important}
+                        onCheckedChange={(checked) =>
+                          setEditingQuestion({ ...editingQuestion, order_important: checked })
+                        }
+                      />
+                      <Label htmlFor="order-important">Order Important</Label>
+                    </div>
+                  </div>
+                )}
+
+                {editingQuestion.type === "matching" && (
+                  <div className="space-y-3">
+                    <Label>Matching Pairs</Label>
+                    {editingQuestion.pairs?.map((pair, index) => (
+                      <div key={index} className="grid grid-cols-2 gap-2">
                         <Input
-                          value={answer}
+                          value={pair.statement}
                           onChange={(e) => {
-                            const newAnswers = [...(editingQuestion.model_answer as string[])]
-                            newAnswers[index] = e.target.value
-                            setEditingQuestion({ ...editingQuestion, model_answer: newAnswers })
+                            const newPairs = [...(editingQuestion.pairs || [])]
+                            newPairs[index] = { ...pair, statement: e.target.value }
+                            setEditingQuestion({ ...editingQuestion, pairs: newPairs })
                           }}
+                          placeholder="Statement"
                         />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            const newAnswers = [...(editingQuestion.model_answer as string[])]
-                            newAnswers.splice(index, 1)
-                            setEditingQuestion({ ...editingQuestion, model_answer: newAnswers })
-                          }}
-                        >
-                          ×
-                        </Button>
+                        <div className="flex gap-2">
+                          <Input
+                            value={pair.match}
+                            onChange={(e) => {
+                              const newPairs = [...(editingQuestion.pairs || [])]
+                              newPairs[index] = { ...pair, match: e.target.value }
+                              setEditingQuestion({ ...editingQuestion, pairs: newPairs })
+                            }}
+                            placeholder="Match"
+                          />
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => {
+                              const newPairs = [...(editingQuestion.pairs || [])]
+                              newPairs.splice(index, 1)
+                              setEditingQuestion({ ...editingQuestion, pairs: newPairs })
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
                     ))}
                     <Button
@@ -402,119 +634,67 @@ export default function QuestionManager() {
                       onClick={() => {
                         setEditingQuestion({
                           ...editingQuestion,
-                          model_answer: [...(editingQuestion.model_answer as string[] || []), '']
+                          pairs: [...(editingQuestion.pairs || []), { statement: "", match: "" }],
                         })
                       }}
                     >
-                      Add Answer
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Pair
                     </Button>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="order-important"
-                      checked={editingQuestion.order_important}
-                      onCheckedChange={(checked) => setEditingQuestion({ ...editingQuestion, order_important: checked })}
-                    />
-                    <Label htmlFor="order-important">Order Important</Label>
-                  </div>
-                </div>
-              )}
+                )}
 
-              {editingQuestion.type === 'matching' && (
-                <div className="space-y-2">
-                  <Label>Matching Pairs</Label>
-                  {editingQuestion.pairs?.map((pair, index) => (
-                    <div key={index} className="grid grid-cols-2 gap-2">
-                      <Input
-                        value={pair.statement}
-                        onChange={(e) => {
-                          const newPairs = [...(editingQuestion.pairs || [])]
-                          newPairs[index] = { ...pair, statement: e.target.value }
-                          setEditingQuestion({ ...editingQuestion, pairs: newPairs })
-                        }}
-                        placeholder="Statement"
+                {editingQuestion.type === "code" && (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Model Answer (Pseudocode)</Label>
+                      <Textarea
+                        value={
+                          Array.isArray(editingQuestion.model_answer)
+                            ? editingQuestion.model_answer.join(", ")
+                            : typeof editingQuestion.model_answer === "boolean"
+                              ? editingQuestion.model_answer
+                                ? "true"
+                                : "false"
+                              : editingQuestion.model_answer || ""
+                        }
+                        onChange={(e) => setEditingQuestion({ ...editingQuestion, model_answer: e.target.value })}
+                        rows={5}
+                        className="font-mono text-sm"
                       />
-                      <div className="flex gap-2">
-                        <Input
-                          value={pair.match}
-                          onChange={(e) => {
-                            const newPairs = [...(editingQuestion.pairs || [])]
-                            newPairs[index] = { ...pair, match: e.target.value }
-                            setEditingQuestion({ ...editingQuestion, pairs: newPairs })
-                          }}
-                          placeholder="Match"
-                        />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            const newPairs = [...(editingQuestion.pairs || [])]
-                            newPairs.splice(index, 1)
-                            setEditingQuestion({ ...editingQuestion, pairs: newPairs })
-                          }}
-                        >
-                          ×
-                        </Button>
-                      </div>
                     </div>
-                  ))}
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setEditingQuestion({
-                        ...editingQuestion,
-                        pairs: [...(editingQuestion.pairs || []), { statement: '', match: '' }]
-                      })
-                    }}
-                  >
-                    Add Pair
-                  </Button>
-                </div>
-              )}
-
-              {editingQuestion.type === 'code' && (
-                <div className="space-y-2">
-                  <Label>Model Answer (Pseudocode)</Label>
-                  <Textarea
-                    value={
-                      Array.isArray(editingQuestion.model_answer)
-                        ? editingQuestion.model_answer.join(', ')
-                        : typeof editingQuestion.model_answer === 'boolean'
-                          ? editingQuestion.model_answer ? 'true' : 'false'
-                          : editingQuestion.model_answer || ''
-                    }
-                    onChange={(e) => setEditingQuestion({ ...editingQuestion, model_answer: e.target.value })}
-                    rows={5}
-                  />
-                  <Label>Model Answer (Python)</Label>
-                  <Textarea
-                    value={editingQuestion.model_answer_python}
-                    onChange={(e) => setEditingQuestion({ ...editingQuestion, model_answer_python: e.target.value })}
-                    rows={5}
-                    className="font-mono"
-                  />
-                  <div className="space-y-2">
-                    <Label>Language</Label>
-                    <Select
-                      value={editingQuestion.language}
-                      onValueChange={(value) => setEditingQuestion({ ...editingQuestion, language: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select language" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="python">Python</SelectItem>
-                        <SelectItem value="javascript">JavaScript</SelectItem>
-                        <SelectItem value="java">Java</SelectItem>
-                        <SelectItem value="cpp">C++</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="space-y-2">
+                      <Label>Model Answer (Python)</Label>
+                      <Textarea
+                        value={editingQuestion.model_answer_python}
+                        onChange={(e) =>
+                          setEditingQuestion({ ...editingQuestion, model_answer_python: e.target.value })
+                        }
+                        rows={8}
+                        className="font-mono text-sm"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Language</Label>
+                      <Select
+                        value={editingQuestion.language}
+                        onValueChange={(value) => setEditingQuestion({ ...editingQuestion, language: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select language" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="python">Python</SelectItem>
+                          <SelectItem value="javascript">JavaScript</SelectItem>
+                          <SelectItem value="java">Java</SelectItem>
+                          <SelectItem value="cpp">C++</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {editingQuestion.type === 'true-false' && (
-                <div className="space-y-4">
+                {editingQuestion.type === "true-false" && (
                   <div className="space-y-2">
                     <Label>Correct Answer</Label>
                     <Select
@@ -526,12 +706,12 @@ export default function QuestionManager() {
                           : "false"
                       }
                       onValueChange={(value) => {
-                        const boolValue = value === "true";
+                        const boolValue = value === "true"
                         setEditingQuestion({
                           ...editingQuestion,
                           model_answer: boolValue,
-                          correct_answer: boolValue
-                        });
+                          correct_answer: boolValue,
+                        })
                       }}
                     >
                       <SelectTrigger>
@@ -543,60 +723,72 @@ export default function QuestionManager() {
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
-              )}
+                )}
 
-              {editingQuestion.type === 'short-answer' && (
-                <div className="space-y-2">
-                  <Label>Model Answer</Label>
-                  <Textarea
-                    value={
-                      Array.isArray(editingQuestion.model_answer)
-                        ? editingQuestion.model_answer.join(', ')
-                        : typeof editingQuestion.model_answer === 'boolean'
-                          ? editingQuestion.model_answer ? 'true' : 'false'
-                          : editingQuestion.model_answer || ''
-                    }
-                    onChange={(e) => setEditingQuestion({
-                      ...editingQuestion,
-                      model_answer: e.target.value
-                    })}
-                    rows={5}
-                  />
-                </div>
-              )}
+                {editingQuestion.type === "short-answer" && (
+                  <div className="space-y-2">
+                    <Label>Model Answer</Label>
+                    <Textarea
+                      value={
+                        Array.isArray(editingQuestion.model_answer)
+                          ? editingQuestion.model_answer.join(", ")
+                          : typeof editingQuestion.model_answer === "boolean"
+                            ? editingQuestion.model_answer
+                              ? "true"
+                              : "false"
+                            : editingQuestion.model_answer || ""
+                      }
+                      onChange={(e) =>
+                        setEditingQuestion({
+                          ...editingQuestion,
+                          model_answer: e.target.value,
+                        })
+                      }
+                      rows={4}
+                    />
+                  </div>
+                )}
 
-              {editingQuestion.type === 'essay' && (
-                <div className="space-y-2">
-                  <Label>Model Answer</Label>
-                  <Textarea
-                    value={
-                      Array.isArray(editingQuestion.model_answer)
-                        ? editingQuestion.model_answer.join(', ')
-                        : typeof editingQuestion.model_answer === 'boolean'
-                          ? editingQuestion.model_answer ? 'true' : 'false'
-                          : editingQuestion.model_answer || ''
-                    }
-                    onChange={(e) => setEditingQuestion({
-                      ...editingQuestion,
-                      model_answer: e.target.value
-                    })}
-                    rows={5}
-                  />
-                  <Label>Rubric</Label>
-                  <Textarea
-                    value={(editingQuestion as any).rubric || ''}
-                    onChange={(e) => setEditingQuestion({ ...editingQuestion, rubric: e.target.value } as any)}
-                    rows={5}
-                  />
-                </div>
-              )}
+                {editingQuestion.type === "essay" && (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Model Answer</Label>
+                      <Textarea
+                        value={
+                          Array.isArray(editingQuestion.model_answer)
+                            ? editingQuestion.model_answer.join(", ")
+                            : typeof editingQuestion.model_answer === "boolean"
+                              ? editingQuestion.model_answer
+                                ? "true"
+                                : "false"
+                              : editingQuestion.model_answer || ""
+                        }
+                        onChange={(e) =>
+                          setEditingQuestion({
+                            ...editingQuestion,
+                            model_answer: e.target.value,
+                          })
+                        }
+                        rows={6}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Rubric</Label>
+                      <Textarea
+                        value={(editingQuestion as any).rubric || ""}
+                        onChange={(e) => setEditingQuestion({ ...editingQuestion, rubric: e.target.value } as any)}
+                        rows={6}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
 
-              <DialogFooter>
+              <DialogFooter className="gap-2">
                 <Button variant="outline" onClick={() => setEditingQuestion(null)}>
                   Cancel
                 </Button>
-                <Button onClick={() => handleSave(editingQuestion)}>
+                <Button onClick={() => handleSave(editingQuestion)} className="bg-blue-600 hover:bg-blue-700">
                   Save Changes
                 </Button>
               </DialogFooter>
@@ -604,6 +796,6 @@ export default function QuestionManager() {
           )}
         </DialogContent>
       </Dialog>
-    </Card>
+    </div>
   )
-} 
+}
