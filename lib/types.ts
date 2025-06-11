@@ -9,7 +9,7 @@ export interface Question {
   options?: string[]
   correctAnswerIndex?: number
   order_important?: boolean
-  correct_answer?: boolean // true-false question - need to check if this is correct
+  correct_answer?: boolean // TODO: true-false question - need to check if this is correct
   model_answer_python?: string
   language?: string
   explanation?: string
@@ -18,6 +18,7 @@ export interface Question {
     statement: string
     match: string
   }[]
+  subtopic_question_link?: { subtopic_id: string }[]
 }
 
 export interface Answer {
