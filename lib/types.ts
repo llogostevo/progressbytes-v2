@@ -18,6 +18,7 @@ export interface Question {
     statement: string
     match: string
   }[]
+  subtopic_question_link?: { subtopic_id: string }[]
 }
 
 export interface Answer {

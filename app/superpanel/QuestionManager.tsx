@@ -57,6 +57,9 @@ const questionTypeColors = {
     "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-900/20 dark:text-gray-300 dark:border-gray-800",
 }
 
+// Define a type for subtopic_question_link
+interface SubtopicLink { subtopic_id: string }
+
 export default function QuestionManager() {
   const [questions, setQuestions] = useState<Question[]>([])
   const [filteredQuestions, setFilteredQuestions] = useState<Question[]>([])
@@ -90,10 +93,11 @@ export default function QuestionManager() {
 
   useEffect(() => {
     if (editingQuestion) {
-      const ids = Array.isArray((editingQuestion as any).subtopic_question_link)
-        ? (editingQuestion as any).subtopic_question_link.map((link: any) => link.subtopic_id).filter(Boolean)
+      const links = (editingQuestion.subtopic_question_link ?? []) as SubtopicLink[]
+      const ids = Array.isArray(links)
+        ? links.map((link) => link.subtopic_id).filter(Boolean)
         : []
-      console.log('DEBUG: subtopic_question_link:', (editingQuestion as any).subtopic_question_link)
+      console.log('DEBUG: subtopic_question_link:', links)
       console.log('DEBUG: editingSubtopicIds:', ids)
       console.log('DEBUG: available subtopic ids:', subtopics.map(s => s.id))
       setEditingSubtopicIds(ids)
