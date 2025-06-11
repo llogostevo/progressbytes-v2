@@ -27,6 +27,7 @@ import {
   BookOpen,
 } from "lucide-react"
 import { toast } from "sonner"
+import { Checkbox as ShadcnCheckbox } from "@/components/ui/checkbox"
 
 const questionTypeIcons = {
   "multiple-choice": List,
@@ -66,12 +67,42 @@ export default function QuestionManager() {
   const [filterType, setFilterType] = useState<string>("all")
   const [filterTopic, setFilterTopic] = useState<string>("all")
   const [topics, setTopics] = useState<Array<{ id: number; name: string; slug: string; topicnumber: string }>>([])
+  const [subtopics, setSubtopics] = useState<Array<{ id: string; subtopictitle: string; topic_id: string; topic?: { name: string; slug: string; topicnumber: string } }>>([])
+  const [editingSubtopicIds, setEditingSubtopicIds] = useState<string[]>([])
+  const [addingSubtopicIds, setAddingSubtopicIds] = useState<string[]>([])
   const supabase = createClient()
+
+  // Helper to group and order subtopics by topic (move inside component for access to state)
+  const groupedSubtopics = topics
+    .sort((a, b) => a.topicnumber.localeCompare(b.topicnumber, undefined, { numeric: true }))
+    .map((topic) => ({
+      ...topic,
+      subtopics: subtopics
+        .filter((s) => String(s.topic_id) === String(topic.id))
+        .sort((a, b) => a.subtopictitle.localeCompare(b.subtopictitle)),
+    }))
 
   useEffect(() => {
     fetchQuestions()
     fetchTopics()
+    fetchSubtopics()
   }, [])
+
+  useEffect(() => {
+    if (editingQuestion) {
+      const ids = Array.isArray((editingQuestion as any).subtopic_question_link)
+        ? (editingQuestion as any).subtopic_question_link.map((link: any) => link.subtopic_id).filter(Boolean)
+        : []
+      console.log('DEBUG: subtopic_question_link:', (editingQuestion as any).subtopic_question_link)
+      console.log('DEBUG: editingSubtopicIds:', ids)
+      console.log('DEBUG: available subtopic ids:', subtopics.map(s => s.id))
+      setEditingSubtopicIds(ids)
+    }
+  }, [editingQuestion, subtopics])
+
+  useEffect(() => {
+    if (addingQuestion) setAddingSubtopicIds([])
+  }, [addingQuestion])
 
   const fetchTopics = async () => {
     try {
@@ -84,6 +115,19 @@ export default function QuestionManager() {
       setTopics(data || [])
     } catch (error) {
       console.error("Error fetching topics:", error)
+    }
+  }
+
+  const fetchSubtopics = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("subtopics")
+        .select("id, subtopictitle, topic_id, topics(id, name, slug, topicnumber)")
+        .order("subtopictitle", { ascending: true })
+      if (error) throw error
+      setSubtopics(data || [])
+    } catch (error) {
+      console.error("Error fetching subtopics:", error)
     }
   }
 
@@ -127,9 +171,7 @@ export default function QuestionManager() {
           multiple_choice_questions(*),
           essay_questions(*),
           subtopic_question_link(
-            subtopic:subtopics(
-              topic:topics(*)
-            )
+            subtopic_id
           )
         `)
         .order("created_at", { ascending: false })
@@ -144,6 +186,7 @@ export default function QuestionManager() {
         explanation: q.explanation,
         created_at: q.created_at,
         model_answer: q.model_answer || "",
+        subtopic_question_link: q.subtopic_question_link,
         ...(q.type === "multiple-choice" && {
           options: q.multiple_choice_questions?.options,
           correctAnswerIndex: q.multiple_choice_questions?.correct_answer_index,
@@ -275,6 +318,17 @@ export default function QuestionManager() {
           break
       }
 
+      // Update subtopic links
+      await supabase.from("subtopic_question_link").delete().eq("question_id", updatedQuestion.id)
+      if (editingSubtopicIds.length > 0) {
+        await supabase.from("subtopic_question_link").insert(
+          editingSubtopicIds.map((subtopic_id) => ({
+            question_id: updatedQuestion.id,
+            subtopic_id,
+          }))
+        )
+      }
+
       await fetchQuestions()
       setEditingQuestion(null)
       toast.success("Question updated successfully")
@@ -370,6 +424,16 @@ export default function QuestionManager() {
             rubric: (newQuestion as Question & { rubric?: string }).rubric,
           })
           break
+      }
+
+      // Insert subtopic links
+      if (addingSubtopicIds.length > 0) {
+        await supabase.from("subtopic_question_link").insert(
+          addingSubtopicIds.map((subtopic_id) => ({
+            question_id: questionData.id,
+            subtopic_id,
+          }))
+        )
       }
 
       await fetchQuestions()
@@ -546,6 +610,36 @@ export default function QuestionManager() {
                     rows={4}
                     className="resize-none text-base w-full"
                   />
+                </div>
+
+                <Label className="text-base font-medium">Subtopics</Label>
+                <div className="mb-4 max-h-64 overflow-y-auto border rounded-md p-3 bg-muted/20">
+                  {groupedSubtopics.map((topic) => (
+                    <div key={topic.id} className="mb-2">
+                      <div className="font-semibold text-sm mb-1 text-muted-foreground">
+                        {topic.topicnumber} - {topic.name}
+                      </div>
+                      {topic.subtopics.length === 0 ? (
+                        <div className="text-xs text-muted-foreground italic mb-2">No subtopics</div>
+                      ) : (
+                        topic.subtopics.map((sub) => (
+                          <label key={sub.id} className="flex items-center gap-2 mb-1 cursor-pointer">
+                            <ShadcnCheckbox
+                              checked={editingSubtopicIds.includes(sub.id)}
+                              onCheckedChange={(checked: boolean) => {
+                                setEditingSubtopicIds((ids) =>
+                                  checked
+                                    ? [...ids, sub.id]
+                                    : ids.filter((sid) => sid !== sub.id)
+                                )
+                              }}
+                            />
+                            <span className="text-sm">{sub.subtopictitle}</span>
+                          </label>
+                        ))
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -881,21 +975,8 @@ export default function QuestionManager() {
                     <div className="space-y-2">
                       <Label>Model Answer</Label>
                       <Textarea
-                        value={
-                          Array.isArray(editingQuestion.model_answer)
-                            ? editingQuestion.model_answer.join(", ")
-                            : typeof editingQuestion.model_answer === "boolean"
-                              ? editingQuestion.model_answer
-                                ? "true"
-                                : "false"
-                              : editingQuestion.model_answer || ""
-                        }
-                        onChange={(e) =>
-                          setEditingQuestion({
-                            ...editingQuestion,
-                            model_answer: e.target.value,
-                          })
-                        }
+                        value={(editingQuestion as Question & { rubric?: string }).rubric || ""}
+                        onChange={(e) => setEditingQuestion({ ...editingQuestion, rubric: e.target.value } as Question & { rubric?: string })}
                         rows={6}
                       />
                     </div>
@@ -979,6 +1060,36 @@ export default function QuestionManager() {
                       rows={4}
                       className="resize-none text-base w-full min-h-[120px]"
                     />
+                  </div>
+
+                  <Label className="text-base font-medium">Subtopics</Label>
+                  <div className="mb-4 max-h-64 overflow-y-auto border rounded-md p-3 bg-muted/20">
+                    {groupedSubtopics.map((topic) => (
+                      <div key={topic.id} className="mb-2">
+                        <div className="font-semibold text-sm mb-1 text-muted-foreground">
+                          {topic.topicnumber} - {topic.name}
+                        </div>
+                        {topic.subtopics.length === 0 ? (
+                          <div className="text-xs text-muted-foreground italic mb-2">No subtopics</div>
+                        ) : (
+                          topic.subtopics.map((sub) => (
+                            <label key={sub.id} className="flex items-center gap-2 mb-1 cursor-pointer">
+                              <ShadcnCheckbox
+                                checked={addingSubtopicIds.includes(sub.id)}
+                                onCheckedChange={(checked: boolean) => {
+                                  setAddingSubtopicIds((ids) =>
+                                    checked
+                                      ? [...ids, sub.id]
+                                      : ids.filter((sid) => sid !== sub.id)
+                                  )
+                                }}
+                              />
+                              <span className="text-sm">{sub.subtopictitle}</span>
+                            </label>
+                          ))
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
