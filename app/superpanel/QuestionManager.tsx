@@ -75,6 +75,9 @@ export default function QuestionManager() {
   const [addingSubtopicIds, setAddingSubtopicIds] = useState<string[]>([])
   const supabase = createClient()
 
+  // Add state for validation errors
+  const [addErrors, setAddErrors] = useState<{ id?: string; question_text?: string; subtopics?: string }>({})
+
   // Helper to group and order subtopics by topic (move inside component for access to state)
   const groupedSubtopics = topics
     .sort((a, b) => a.topicnumber.localeCompare(b.topicnumber, undefined, { numeric: true }))
@@ -357,11 +360,20 @@ export default function QuestionManager() {
   }
 
   const handleSaveNew = async (newQuestion: Question) => {
+    // Validation
+    const errors: { id?: string; question_text?: string; subtopics?: string } = {}
+    if (!newQuestion.id || newQuestion.id.trim() === "") errors.id = "Question ID is required."
+    if (!newQuestion.question_text || newQuestion.question_text.trim() === "") errors.question_text = "Question text is required."
+    if (!addingSubtopicIds.length) errors.subtopics = "At least one subtopic must be selected."
+    setAddErrors(errors)
+    if (Object.keys(errors).length > 0) return
+
     try {
       // Insert the base question
       const { data: questionData, error: questionError } = await supabase
         .from("questions")
         .insert({
+          id: newQuestion.id,
           question_text: newQuestion.question_text,
           explanation: newQuestion.explanation,
           type: newQuestion.type,
@@ -584,7 +596,7 @@ export default function QuestionManager() {
 
       {/* Edit Dialog */}
       <Dialog open={!!editingQuestion} onOpenChange={() => setEditingQuestion(null)}>
-        <DialogContent className="w-[80%] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="min-w-[60%] max-h-[90vh] overflow-y-auto">
           <DialogHeader className="pb-4 border-b">
             <DialogTitle className="flex items-center gap-2 text-xl">
               <Edit3 className="w-5 h-5" />
@@ -1011,7 +1023,7 @@ export default function QuestionManager() {
 
       {/* Add Question Dialog */}
       <Dialog open={!!addingQuestion} onOpenChange={() => setAddingQuestion(null)}>
-        <DialogContent className="w-[90%] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="min-w-[60%] max-h-[90vh] overflow-y-auto">
           <DialogHeader className="pb-6 border-b">
             <DialogTitle className="flex items-center gap-2 text-2xl font-semibold">
               <Plus className="w-6 h-6" />
@@ -1022,79 +1034,93 @@ export default function QuestionManager() {
             <div className="space-y-10 py-6">
               {/* Basic Information Section */}
               <div className="space-y-8">
-                <div className="space-y-6">
-                  <div className="space-y-4">
-                    <Label htmlFor="question-type" className="text-base font-medium">Question Type</Label>
-                    <Select
-                      value={addingQuestion.type}
-                      onValueChange={(value) => setAddingQuestion({ ...addingQuestion, type: value as Question["type"] })}
-                    >
-                      <SelectTrigger className="h-12">
-                        <SelectValue placeholder="Select question type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="multiple-choice">Multiple Choice</SelectItem>
-                        <SelectItem value="fill-in-the-blank">Fill in the Blank</SelectItem>
-                        <SelectItem value="matching">Matching</SelectItem>
-                        <SelectItem value="code">Code</SelectItem>
-                        <SelectItem value="true-false">True/False</SelectItem>
-                        <SelectItem value="short-answer">Short Answer</SelectItem>
-                        <SelectItem value="essay">Essay</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="space-y-4">
+                  <Label htmlFor="question-id" className="text-base font-medium">Question ID <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="question-id"
+                    value={addingQuestion.id}
+                    onChange={(e) => setAddingQuestion({ ...addingQuestion, id: e.target.value })}
+                    placeholder="Enter unique question ID"
+                    className="text-base w-full"
+                    required
+                  />
+                  {addErrors.id && <div className="text-red-500 text-sm mt-1">{addErrors.id}</div>}
+                </div>
 
-                  <div className="space-y-4">
-                    <Label htmlFor="question-text" className="text-base font-medium">Question Text</Label>
-                    <Textarea
-                      id="question-text"
-                      value={addingQuestion.question_text}
-                      onChange={(e) => setAddingQuestion({ ...addingQuestion, question_text: e.target.value })}
-                      rows={4}
-                      className="resize-none text-base w-full min-h-[120px]"
-                    />
-                  </div>
+                <div className="space-y-4">
+                  <Label htmlFor="question-type" className="text-base font-medium">Question Type</Label>
+                  <Select
+                    value={addingQuestion.type}
+                    onValueChange={(value) => setAddingQuestion({ ...addingQuestion, type: value as Question["type"] })}
+                  >
+                    <SelectTrigger className="h-12">
+                      <SelectValue placeholder="Select question type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="multiple-choice">Multiple Choice</SelectItem>
+                      <SelectItem value="fill-in-the-blank">Fill in the Blank</SelectItem>
+                      <SelectItem value="matching">Matching</SelectItem>
+                      <SelectItem value="code">Code</SelectItem>
+                      <SelectItem value="true-false">True/False</SelectItem>
+                      <SelectItem value="short-answer">Short Answer</SelectItem>
+                      <SelectItem value="essay">Essay</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                  <div className="space-y-4">
-                    <Label htmlFor="explanation" className="text-base font-medium">Explanation</Label>
-                    <Textarea
-                      id="explanation"
-                      value={addingQuestion.explanation || ""}
-                      onChange={(e) => setAddingQuestion({ ...addingQuestion, explanation: e.target.value })}
-                      rows={4}
-                      className="resize-none text-base w-full min-h-[120px]"
-                    />
-                  </div>
+                <div className="space-y-4">
+                  <Label htmlFor="question-text" className="text-base font-medium">Question Text <span className="text-red-500">*</span></Label>
+                  <Textarea
+                    id="question-text"
+                    value={addingQuestion.question_text}
+                    onChange={(e) => setAddingQuestion({ ...addingQuestion, question_text: e.target.value })}
+                    rows={4}
+                    className="resize-none text-base w-full min-h-[120px]"
+                    required
+                  />
+                  {addErrors.question_text && <div className="text-red-500 text-sm mt-1">{addErrors.question_text}</div>}
+                </div>
 
-                  <Label className="text-base font-medium">Subtopics</Label>
-                  <div className="mb-4 max-h-64 overflow-y-auto border rounded-md p-3 bg-muted/20">
-                    {groupedSubtopics.map((topic) => (
-                      <div key={topic.id} className="mb-2">
-                        <div className="font-semibold text-sm mb-1 text-muted-foreground">
-                          {topic.topicnumber} - {topic.name}
-                        </div>
-                        {topic.subtopics.length === 0 ? (
-                          <div className="text-xs text-muted-foreground italic mb-2">No subtopics</div>
-                        ) : (
-                          topic.subtopics.map((sub) => (
-                            <label key={sub.id} className="flex items-center gap-2 mb-1 cursor-pointer">
-                              <ShadcnCheckbox
-                                checked={addingSubtopicIds.includes(sub.id)}
-                                onCheckedChange={(checked: boolean) => {
-                                  setAddingSubtopicIds((ids) =>
-                                    checked
-                                      ? [...ids, sub.id]
-                                      : ids.filter((sid) => sid !== sub.id)
-                                  )
-                                }}
-                              />
-                              <span className="text-sm">{sub.subtopictitle}</span>
-                            </label>
-                          ))
-                        )}
+                <div className="space-y-4">
+                  <Label htmlFor="explanation" className="text-base font-medium">Explanation</Label>
+                  <Textarea
+                    id="explanation"
+                    value={addingQuestion.explanation || ""}
+                    onChange={(e) => setAddingQuestion({ ...addingQuestion, explanation: e.target.value })}
+                    rows={4}
+                    className="resize-none text-base w-full min-h-[120px]"
+                  />
+                </div>
+
+                <Label className="text-base font-medium">Subtopics</Label>
+                <div className="mb-4 max-h-64 overflow-y-auto border rounded-md p-3 bg-muted/20">
+                  {groupedSubtopics.map((topic) => (
+                    <div key={topic.id} className="mb-2">
+                      <div className="font-semibold text-sm mb-1 text-muted-foreground">
+                        {topic.topicnumber} - {topic.name}
                       </div>
-                    ))}
-                  </div>
+                      {topic.subtopics.length === 0 ? (
+                        <div className="text-xs text-muted-foreground italic mb-2">No subtopics</div>
+                      ) : (
+                        topic.subtopics.map((sub) => (
+                          <label key={sub.id} className="flex items-center gap-2 mb-1 cursor-pointer">
+                            <ShadcnCheckbox
+                              checked={addingSubtopicIds.includes(sub.id)}
+                              onCheckedChange={(checked: boolean) => {
+                                setAddingSubtopicIds((ids) =>
+                                  checked
+                                    ? [...ids, sub.id]
+                                    : ids.filter((sid) => sid !== sub.id)
+                                )
+                              }}
+                            />
+                            <span className="text-sm">{sub.subtopictitle}</span>
+                          </label>
+                        ))
+                      )}
+                    </div>
+                  ))}
+                  {addErrors.subtopics && <div className="text-red-500 text-sm mt-1">{addErrors.subtopics}</div>}
                 </div>
               </div>
 
