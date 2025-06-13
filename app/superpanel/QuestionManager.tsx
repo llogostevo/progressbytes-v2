@@ -119,6 +119,7 @@ export default function QuestionManager() {
         .order("topicnumber", { ascending: true })
 
       if (error) throw error
+      console.log('DEBUG: Topics loaded:', data)
       setTopics(data || [])
     } catch (error) {
       console.error("Error fetching topics:", error)
@@ -141,6 +142,9 @@ export default function QuestionManager() {
   useEffect(() => {
     let filtered = questions
 
+    console.log('DEBUG: Current filterTopic:', filterTopic)
+    console.log('DEBUG: Questions before filtering:', questions.map(q => ({ id: q.id, topic: q.topic })))
+
     if (searchTerm) {
       filtered = filtered.filter(
         (q) =>
@@ -154,9 +158,14 @@ export default function QuestionManager() {
     }
 
     if (filterTopic !== "all") {
-      filtered = filtered.filter((q) => q.topic === filterTopic)
+      console.log('DEBUG: Filtering by topic:', filterTopic)
+      filtered = filtered.filter((q) => {
+        console.log('DEBUG: Question topic:', q.topic, 'Matches?', q.topic === filterTopic)
+        return q.topic === filterTopic
+      })
     }
 
+    console.log('DEBUG: Filtered questions:', filtered.map(q => ({ id: q.id, topic: q.topic })))
     setFilteredQuestions(filtered)
   }, [questions, searchTerm, filterType, filterTopic])
 
@@ -178,52 +187,76 @@ export default function QuestionManager() {
           multiple_choice_questions(*),
           essay_questions(*),
           subtopic_question_link(
-            subtopic_id
+            subtopic_id,
+            subtopics(
+              id,
+              subtopictitle,
+              topic_id,
+              topics(
+                id,
+                name,
+                slug,
+                topicnumber
+              )
+            )
           )
         `)
         .order("created_at", { ascending: false })
 
       if (error) throw error
 
-      const transformedQuestions: Question[] = data.map((q) => ({
-        id: q.id,
-        type: q.type,
-        topic: q.subtopic_question_link?.[0]?.subtopic?.topic?.slug || "",
-        question_text: q.question_text,
-        explanation: q.explanation,
-        created_at: q.created_at,
-        model_answer: q.model_answer || "",
-        subtopic_question_link: q.subtopic_question_link,
-        ...(q.type === "multiple-choice" && {
-          options: q.multiple_choice_questions?.options,
-          correctAnswerIndex: q.multiple_choice_questions?.correct_answer_index,
-        }),
-        ...(q.type === "fill-in-the-blank" && {
-          options: q.fill_in_the_blank_questions?.options,
-          order_important: q.fill_in_the_blank_questions?.order_important,
-          model_answer: q.fill_in_the_blank_questions?.correct_answers || [],
-        }),
-        ...(q.type === "matching" && {
-          pairs: q.matching_questions?.map((mq: { statement: string; match: string }) => ({
-            statement: mq.statement,
-            match: mq.match,
-          })),
-        }),
-        ...(q.type === "code" && {
-          model_answer_python: q.code_questions?.model_answer_code,
-          language: q.code_questions?.language,
-        }),
-        ...(q.type === "true-false" && {
-          model_answer: q.true_false_questions?.correct_answer,
-        }),
-        ...(q.type === "short-answer" && {
-          model_answer: q.short_answer_questions?.model_answer,
-        }),
-        ...(q.type === "essay" && {
-          model_answer: q.essay_questions?.model_answer,
-          rubric: q.essay_questions?.rubric,
-        }),
-      }))
+      const transformedQuestions: Question[] = data.map((q) => {
+        console.log('DEBUG: Raw question data:', {
+          id: q.id,
+          subtopic_question_link: JSON.stringify(q.subtopic_question_link, null, 2)
+        })
+        if (q.subtopic_question_link && q.subtopic_question_link.length > 0) {
+          console.log('DEBUG: First subtopic_question_link:', JSON.stringify(q.subtopic_question_link[0], null, 2))
+          console.log('DEBUG: subtopic_question_link[0].subtopics:', q.subtopic_question_link[0].subtopics)
+          if (q.subtopic_question_link[0].subtopics) {
+            console.log('DEBUG: subtopic_question_link[0].subtopics.topics:', q.subtopic_question_link[0].subtopics.topics)
+          }
+        }
+        return {
+          id: q.id,
+          type: q.type,
+          topic: q.subtopic_question_link?.[0]?.subtopics?.topics?.slug || "",
+          question_text: q.question_text,
+          explanation: q.explanation,
+          created_at: q.created_at,
+          model_answer: q.model_answer || "",
+          subtopic_question_link: q.subtopic_question_link,
+          ...(q.type === "multiple-choice" && {
+            options: q.multiple_choice_questions?.options,
+            correctAnswerIndex: q.multiple_choice_questions?.correct_answer_index,
+          }),
+          ...(q.type === "fill-in-the-blank" && {
+            options: q.fill_in_the_blank_questions?.options,
+            order_important: q.fill_in_the_blank_questions?.order_important,
+            model_answer: q.fill_in_the_blank_questions?.correct_answers || [],
+          }),
+          ...(q.type === "matching" && {
+            pairs: q.matching_questions?.map((mq: { statement: string; match: string }) => ({
+              statement: mq.statement,
+              match: mq.match,
+            })),
+          }),
+          ...(q.type === "code" && {
+            model_answer_python: q.code_questions?.model_answer_code,
+            language: q.code_questions?.language,
+          }),
+          ...(q.type === "true-false" && {
+            model_answer: q.true_false_questions?.correct_answer,
+          }),
+          ...(q.type === "short-answer" && {
+            model_answer: q.short_answer_questions?.model_answer,
+          }),
+          ...(q.type === "essay" && {
+            model_answer: q.essay_questions?.model_answer,
+            rubric: q.essay_questions?.rubric,
+          }),
+        }
+      })
 
       setQuestions(transformedQuestions)
     } catch (error) {
@@ -539,53 +572,69 @@ export default function QuestionManager() {
             return (
               <Card key={question.id} className="hover:shadow-md transition-shadow duration-200">
                 <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-3">
-                        <Badge variant="outline" className={`${colorClass} flex items-center gap-1.5 px-2.5 py-1`}>
-                          <IconComponent className="w-3.5 h-3.5" />
-                          {question.type.replace("-", " ")}
-                        </Badge>
-                        <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">ID: {question.id}</span>
-                        {question.topic && (
-                          <Badge variant="secondary" className="text-xs">
-                            {question.topic}
-                          </Badge>
+                  {/* Top: Question Heading (full width) */}
+                  <div className="flex items-center gap-3 mb-3">
+                    <Badge variant="outline" className={`${colorClass} flex items-center gap-1.5 px-2.5 py-1`}>
+                      <IconComponent className="w-3.5 h-3.5" />
+                      {question.type.replace("-", " ")}
+                    </Badge>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">ID: {question.id}</span>
+                    {question.topic && (
+                      <Badge variant="secondary" className="text-xs">
+                        {question.topic}
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="mb-2">
+                    <h3 className="font-medium text-slate-900 dark:text-slate-100 text-lg">
+                      {question.question_text}
+                    </h3>
+                  </div>
+                  {/* Second row: Model Answer (left), Explanation (right) */}
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <strong>Model Answer:</strong>
+                      <div>
+                        {question.type === "code" ? (
+                          <pre className="bg-slate-100 p-2 rounded overflow-x-auto">
+                            {question.model_answer_python || question.model_answer}
+                          </pre>
+                        ) : Array.isArray(question.model_answer) ? (
+                          <span>{question.model_answer.join(", ")}</span>
+                        ) : (
+                          <span>{String(question.model_answer)}</span>
                         )}
                       </div>
-
-                      <h3 className="font-medium text-slate-900 dark:text-slate-100 mb-2 line-clamp-2">
-                        {question.question_text}
-                      </h3>
-
+                    </div>
+                    <div>
                       {question.explanation && (
-                        <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 mb-3">
-                          {question.explanation}
-                        </p>
+                        <>
+                          <strong>Explanation:</strong>
+                          <div>{question.explanation}</div>
+                        </>
                       )}
-
-                      <div className="text-xs text-slate-500 dark:text-slate-400">
-                        Created: {new Date(question.created_at).toLocaleDateString()}
-                      </div>
                     </div>
-
-                    <div className="flex items-center gap-2 ml-4">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(question)}
-                        className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+                  </div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                    Created: {new Date(question.created_at).toLocaleDateString()}
+                  </div>
+                  {/* Edit/Delete Buttons */}
+                  <div className="flex items-center gap-2 mt-4">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEdit(question)}
+                      className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
