@@ -572,53 +572,69 @@ export default function QuestionManager() {
             return (
               <Card key={question.id} className="hover:shadow-md transition-shadow duration-200">
                 <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-3">
-                        <Badge variant="outline" className={`${colorClass} flex items-center gap-1.5 px-2.5 py-1`}>
-                          <IconComponent className="w-3.5 h-3.5" />
-                          {question.type.replace("-", " ")}
-                        </Badge>
-                        <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">ID: {question.id}</span>
-                        {question.topic && (
-                          <Badge variant="secondary" className="text-xs">
-                            {question.topic}
-                          </Badge>
+                  {/* Top: Question Heading (full width) */}
+                  <div className="flex items-center gap-3 mb-3">
+                    <Badge variant="outline" className={`${colorClass} flex items-center gap-1.5 px-2.5 py-1`}>
+                      <IconComponent className="w-3.5 h-3.5" />
+                      {question.type.replace("-", " ")}
+                    </Badge>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">ID: {question.id}</span>
+                    {question.topic && (
+                      <Badge variant="secondary" className="text-xs">
+                        {question.topic}
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="mb-2">
+                    <h3 className="font-medium text-slate-900 dark:text-slate-100 text-lg">
+                      {question.question_text}
+                    </h3>
+                  </div>
+                  {/* Second row: Model Answer (left), Explanation (right) */}
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <strong>Model Answer:</strong>
+                      <div>
+                        {question.type === "code" ? (
+                          <pre className="bg-slate-100 p-2 rounded overflow-x-auto">
+                            {question.model_answer_python || question.model_answer}
+                          </pre>
+                        ) : Array.isArray(question.model_answer) ? (
+                          <span>{question.model_answer.join(", ")}</span>
+                        ) : (
+                          <span>{String(question.model_answer)}</span>
                         )}
                       </div>
-
-                      <h3 className="font-medium text-slate-900 dark:text-slate-100 mb-2 line-clamp-2">
-                        {question.question_text}
-                      </h3>
-
+                    </div>
+                    <div>
                       {question.explanation && (
-                        <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 mb-3">
-                          {question.explanation}
-                        </p>
+                        <>
+                          <strong>Explanation:</strong>
+                          <div>{question.explanation}</div>
+                        </>
                       )}
-
-                      <div className="text-xs text-slate-500 dark:text-slate-400">
-                        Created: {new Date(question.created_at).toLocaleDateString()}
-                      </div>
                     </div>
-
-                    <div className="flex items-center gap-2 ml-4">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(question)}
-                        className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+                  </div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                    Created: {new Date(question.created_at).toLocaleDateString()}
+                  </div>
+                  {/* Edit/Delete Buttons */}
+                  <div className="flex items-center gap-2 mt-4">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEdit(question)}
+                      className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
