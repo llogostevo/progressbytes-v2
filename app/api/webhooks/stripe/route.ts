@@ -4,6 +4,7 @@ import { stripe } from '@/utils/stripe/stripe';
 import { createClient } from '@/utils/supabase/server';
 import Stripe from 'stripe';
 
+// Interface to extend Stripe's Subscription type with custom billing cycle fields
 interface ExtendedSubscription extends Stripe.Subscription {
   billing_cycle?: {
     anchor: number;
@@ -11,30 +12,42 @@ interface ExtendedSubscription extends Stripe.Subscription {
   };
 }
 
+/**
+ * Stripe webhook handler for processing subscription-related events
+ * This endpoint handles subscription creation, updates, and deletion events from Stripe
+ */
 export async function POST(req: Request) {
+  // Get the raw request body and signature from headers
   const body = await req.text();
   const headersList = await headers();
   const signature = headersList.get('stripe-signature');
+  
+  // Verify webhook signature is present
   if (!signature) {
     return new NextResponse('No signature', { status: 400 });
   }
 
   try {
+    // Verify the webhook signature using Stripe's secret
     const event = stripe.webhooks.constructEvent(
       body,
       signature,
       process.env.STRIPE_WEBHOOK_SECRET!
     );
 
+    // Initialize Supabase client for database operations
     const supabase = await createClient();
+
+    // Handle different types of subscription events
     switch (event.type) {
       case 'customer.subscription.created':
       case 'customer.subscription.updated': {
         const subscription = event.data.object as ExtendedSubscription;
 
+        // Extract the price ID from the subscription
         const priceId = subscription.items.data[0].price.id;
 
-        // Get the plan details from the price ID
+        // Query the database to get the plan details associated with this price ID
         const { data: plan } = await supabase
           .from('plans')
           .select('slug')
@@ -46,7 +59,7 @@ export async function POST(req: Request) {
           break;
         }
 
-        // Update subscription in database using new fields from stripe
+        // Update the subscription record in the database with latest Stripe data
         await supabase
           .from('subscriptions')
           .upsert({
@@ -59,6 +72,7 @@ export async function POST(req: Request) {
             cancel_at_period_end: subscription.cancel_at_period_end
           });
 
+        // Update the user's profile with their new subscription plan
         await supabase
           .from('profiles')
           .update({ user_type: plan.slug })
@@ -70,24 +84,26 @@ export async function POST(req: Request) {
       case 'customer.subscription.deleted': {
         const subscription = event.data.object;
 
-        // Mark subscription as canceled
+        // Mark the subscription as canceled in the database
         await supabase
           .from('subscriptions')
           .update({ status: 'canceled' })
           .eq('stripe_subscription_id', subscription.id);
 
-          // Reset user's profile to basic plan
+        // Reset the user's profile to the basic plan when subscription is canceled
         await supabase
-        .from('profiles')
-        .update({ user_type: 'basic' })
-        .eq('userid', subscription.metadata.userId);
+          .from('profiles')
+          .update({ user_type: 'basic' })
+          .eq('userid', subscription.metadata.userId);
 
         break;
       }
     }
 
+    // Return success response if all operations completed successfully
     return new NextResponse(null, { status: 200 });
   } catch (err) {
+    // Log and return error response if any operation fails
     console.error('Error processing webhook:', err);
     return new NextResponse('Webhook error', { status: 400 });
   }
