@@ -26,6 +26,7 @@ function LoginFormContent() {
   const searchParams = useSearchParams()
   const tab = searchParams.get('tab') || 'login'
   const [isLoading, setIsLoading] = useState(false)
+  const [userType, setUserType] = useState<string>("basic")
 
   // const handleLogin = async (formData: FormData) => {
   //   setIsLoading(true)
@@ -75,12 +76,16 @@ function LoginFormContent() {
     const password = formData.get("register-password") as string
     const confirmPassword = formData.get("register-confirm-password") as string
     const school = formData.get("register-school") as string
-    const user_type = "student" // or "teacher", depending on your logic
 
     if (password !== confirmPassword) {
       toast.error("Passwords do not match")
       setIsLoading(false)
       return
+    }
+
+    // Determine user type based on email domain
+    if (email.endsWith("@centralfoundationboys.co.uk")) {
+      setUserType("revision")
     }
 
     const { data: authData, error } = await supabase.auth.signUp({
@@ -100,7 +105,10 @@ function LoginFormContent() {
     if (authData.user) {
       const { error: profileError } = await supabase
         .from("profiles")
-        .update({ school, user_type })
+        .update({ 
+          school, 
+          user_type: userType, 
+          role: "student" })
         .eq("userid", authData.user.id)
 
       if (profileError) {
