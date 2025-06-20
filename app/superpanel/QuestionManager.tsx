@@ -393,15 +393,21 @@ export default function QuestionManager() {
   }
 
   const handleSaveNew = async (newQuestion: Question) => {
+    console.log('DEBUG: Starting handleSaveNew with question:', newQuestion)
+    
     // Validation
     const errors: { id?: string; question_text?: string; subtopics?: string } = {}
     if (!newQuestion.id || newQuestion.id.trim() === "") errors.id = "Question ID is required."
     if (!newQuestion.question_text || newQuestion.question_text.trim() === "") errors.question_text = "Question text is required."
     if (!addingSubtopicIds.length) errors.subtopics = "At least one subtopic must be selected."
     setAddErrors(errors)
-    if (Object.keys(errors).length > 0) return
+    if (Object.keys(errors).length > 0) {
+      console.log('DEBUG: Validation errors:', errors)
+      return
+    }
 
     try {
+      console.log('DEBUG: Attempting to insert base question')
       // Insert the base question
       const { data: questionData, error: questionError } = await supabase
         .from("questions")
@@ -414,9 +420,14 @@ export default function QuestionManager() {
         .select()
         .single()
 
-      if (questionError) throw questionError
+      if (questionError) {
+        console.error('DEBUG: Error inserting base question:', questionError)
+        throw questionError
+      }
+      console.log('DEBUG: Successfully inserted base question:', questionData)
 
       // Insert type-specific data
+      console.log('DEBUG: Inserting type-specific data for type:', newQuestion.type)
       switch (newQuestion.type) {
         case "multiple-choice":
           await supabase.from("multiple_choice_questions").insert({
