@@ -496,11 +496,129 @@ function StudentSelectorSkeleton() {
   )
 }
 
+// Add new skeleton components
+function SessionsSkeleton() {
+  return (
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-6 w-48 mb-2" />
+        <Skeleton className="h-4 w-64" />
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="border rounded-lg p-4">
+              <div className="flex items-center justify-between mb-3">
+                <Skeleton className="h-5 w-48" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-4 w-4" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-4 w-4" />
+                  <Skeleton className="h-4 w-40" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-4 w-4" />
+                  <Skeleton className="h-4 w-36" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function HomeworkSkeleton() {
+  return (
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-6 w-48 mb-2" />
+        <Skeleton className="h-4 w-64" />
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-6">
+          {/* Filters */}
+          <div className="flex flex-wrap gap-4">
+            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-10 w-40" />
+            <Skeleton className="h-10 w-36" />
+          </div>
+          {/* Content */}
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="border rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <Skeleton className="h-5 w-48" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function PerformanceTabSkeleton() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center">
+          <BarChart className="h-5 w-5 mr-2" />
+          Student Performance
+        </CardTitle>
+        <CardDescription>Track student progress across topics and question types</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {/* Time Filter Tabs */}
+        <div className="flex items-center justify-end mb-4">
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-20" />
+            <Skeleton className="h-10 w-24" />
+            <Skeleton className="h-10 w-24" />
+          </div>
+        </div>
+        
+        {/* Student Selector */}
+        <div className="mb-6">
+          <StudentSelectorSkeleton />
+          <div className="mt-4 max-h-72 overflow-y-auto border rounded-md divide-y divide-gray-100 bg-white">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="flex items-center gap-3 px-4 py-2">
+                <Skeleton className="w-7 h-7 rounded-full" />
+                <Skeleton className="h-4 flex-1" />
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        {/* Performance Graph */}
+        <PerformanceGraphSkeleton />
+      </CardContent>
+    </Card>
+  )
+}
+
 // MAIN PAGE
 export default function AnalyticsPage() {
   const [currentUserRole, setCurrentUserRole] = useState<UserRole | null>(null)
   const [userActivity, setUserActivity] = useState<UserActivity[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingSessions, setIsLoadingSessions] = useState(true)
+  const [isLoadingHomework, setIsLoadingHomework] = useState(true)
+  const [isLoadingPerformance, setIsLoadingPerformance] = useState(false)
+  const [isLoadingClasses, setIsLoadingClasses] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
   const [allUserSessions, setAllUserSessions] = useState<UserSession[]>([])
@@ -526,6 +644,7 @@ export default function AnalyticsPage() {
       return
     }
 
+    setIsLoadingPerformance(true)
     try {
       // Fetch student answers with topic information
       const { data: studentAnswers, error: studentAnswersError } = await supabase
@@ -588,6 +707,8 @@ export default function AnalyticsPage() {
       console.log('Fetched student answers:', studentAnswers)
     } catch (error) {
       console.error('Unexpected error fetching student answers:', error)
+    } finally {
+      setIsLoadingPerformance(false)
     }
   }, [selectedStudent, supabase]);
 
@@ -629,6 +750,7 @@ export default function AnalyticsPage() {
         } else {
           setClasses(teacherClasses || [])
         }
+        setIsLoadingClasses(false)
       } else if (profile?.role === 'student') {
         // Fetch classes where user is a student
         const { data: studentClasses, error: studentClassesError } = await supabase
@@ -660,6 +782,9 @@ export default function AnalyticsPage() {
           }))
           setClasses(mappedClasses)
         }
+        setIsLoadingClasses(false)
+      } else {
+        setIsLoadingClasses(false)
       }
 
       // Fetch students if user is admin or teacher
@@ -705,6 +830,8 @@ export default function AnalyticsPage() {
       }
 
       setIsLoading(false)
+      setIsLoadingSessions(false)
+      setIsLoadingHomework(false)
     }
 
     fetchUser()
@@ -893,7 +1020,9 @@ export default function AnalyticsPage() {
 
         {/* Class Selector */}
         <div className="mb-6">
-          {classes.length > 0 ? (
+          {isLoadingClasses ? (
+            <Skeleton className="h-10 w-[200px]" />
+          ) : classes.length > 0 ? (
             <Select value={selectedClass} onValueChange={setSelectedClass}>
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Select a class" />
@@ -1076,11 +1205,19 @@ export default function AnalyticsPage() {
           </TabsContent>
 
           <TabsContent value="sessions">
-            <UserSessions onUserClick={handleUserClick} sessions={allUserSessions} />
+            {isLoadingSessions ? (
+              <SessionsSkeleton />
+            ) : (
+              <UserSessions onUserClick={handleUserClick} sessions={allUserSessions} />
+            )}
           </TabsContent>
 
           <TabsContent value="homework">
-            <UserActivityFilter selectedClass={selectedClass} classMembers={classMembers} />
+            {isLoadingHomework ? (
+              <HomeworkSkeleton />
+            ) : (
+              <UserActivityFilter selectedClass={selectedClass} classMembers={classMembers} />
+            )}
           </TabsContent>
 
           <TabsContent value="performance">
@@ -1157,11 +1294,15 @@ export default function AnalyticsPage() {
                 )}
                 {/* Performance Graph */}
                 {selectedStudent && (
-                  <PerformanceGraph
-                    studentAnswers={filteredStudentAnswers || []}
-                    selectedStudent={selectedStudent}
-                    topics={topics}
-                  />
+                  isLoadingPerformance ? (
+                    <PerformanceGraphSkeleton />
+                  ) : (
+                    <PerformanceGraph
+                      studentAnswers={filteredStudentAnswers || []}
+                      selectedStudent={selectedStudent}
+                      topics={topics}
+                    />
+                  )
                 )}
               </CardContent>
             </Card>
