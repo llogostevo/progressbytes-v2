@@ -120,8 +120,13 @@ type DbMember = {
   student_id: string;
   student: {
     email: string;
+    forename?: string;
+    lastname?: string;
   };
 }
+
+// Define a type for student list items
+type StudentListItem = { id: string; email: string; forename?: string; lastname?: string };
 
 function ActivitySkeleton() {
   return (
@@ -500,12 +505,12 @@ export default function AnalyticsPage() {
   const itemsPerPage = 10
   const [allUserSessions, setAllUserSessions] = useState<UserSession[]>([])
   const [topics, setTopics] = useState<Array<{ id: string; name: string; slug: string; topicnumber: string }>>([])
-  const [students, setStudents] = useState<Array<{ userid: string; email: string }>>([])
+  const [students, setStudents] = useState<Array<{ userid: string; email: string; forename: string; lastname: string }>>([])
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null)
   const [studentAnswers, setStudentAnswers] = useState<ProcessedStudentAnswer[]>([])
   const [classes, setClasses] = useState<Class[]>([])
   const [selectedClass, setSelectedClass] = useState<string>("all")
-  const [classMembers, setClassMembers] = useState<Array<{ student_id: string; email: string }>>([])
+  const [classMembers, setClassMembers] = useState<Array<{ student_id: string; email: string; forename: string; lastname: string }>>([])
   const [timeFilter, setTimeFilter] = useState<"today" | "week" | "all">("all")
   const [studentSearch, setStudentSearch] = useState("");
 
@@ -662,7 +667,7 @@ export default function AnalyticsPage() {
         // Fetch all users
         const { data: usersData, error: usersError } = await supabase
           .from("profiles")
-          .select("userid, email")
+          .select("userid, email, forename, lastname")
           .order('email')
 
         if (usersError) {
@@ -779,7 +784,9 @@ export default function AnalyticsPage() {
         .select(`
           student_id,
           student:profiles!class_members_student_id_fkey (
-            email
+            email,
+            forename,
+            lastname
           )
         `)
         .eq('class_id', selectedClass) as { data: DbMember[] | null, error: PostgrestError | null }
@@ -789,10 +796,15 @@ export default function AnalyticsPage() {
         return
       }
 
-      const mappedMembers = (members || []).map(member => ({
-        student_id: member.student_id,
-        email: member.student.email
-      }))
+      const mappedMembers = (members || []).map(member => {
+        const { forename = '', lastname = '', email = '' } = member.student || {};
+        return {
+          student_id: member.student_id,
+          email,
+          forename,
+          lastname
+        };
+      })
 
       setClassMembers(mappedMembers)
     }
@@ -848,13 +860,13 @@ export default function AnalyticsPage() {
   });
 
   // Filter students for selected class
-  const studentsInClass = selectedClass === "all"
-    ? students.map(s => ({ id: s.userid, email: s.email }))
+  const studentsInClass: StudentListItem[] = selectedClass === "all"
+    ? students.map(s => ({ id: s.userid, email: s.email, forename: s.forename, lastname: s.lastname }))
     : classMembers.length > 0
-      ? classMembers.map(s => ({ id: s.student_id, email: s.email }))
+      ? classMembers.map(s => ({ id: s.student_id, email: s.email, forename: s.forename, lastname: s.lastname }))
       : [];
 
-  const filteredStudents = studentsInClass.filter(student =>
+  const filteredStudents: StudentListItem[] = studentsInClass.filter(student =>
     student.email.toLowerCase().includes(studentSearch.toLowerCase())
   );
 
@@ -1122,18 +1134,23 @@ export default function AnalyticsPage() {
                       {filteredStudents.length === 0 ? (
                         <div className="py-4 text-center text-muted-foreground">No students found.</div>
                       ) : (
-                        filteredStudents.map(student => (
-                          <button
-                            key={student.id}
-                            className={`w-full flex items-center gap-3 px-4 py-2 text-left transition-colors focus:outline-none ${selectedStudent === student.id ? 'bg-emerald-50 border-l-4 border-emerald-500' : 'hover:bg-gray-50'}`}
-                            onClick={() => setSelectedStudent(student.id)}
-                          >
-                            <span className="flex items-center justify-center w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 font-bold text-base">
-                              {student.email?.[0]?.toUpperCase() || '?'}
-                            </span>
-                            <span className="truncate font-medium">{student.email}</span>
-                          </button>
-                        ))
+                        filteredStudents.map(student => {
+                          const initials = student?.forename?.[0] && student?.lastname?.[0]
+                            ? `${student.forename[0]}${student.lastname[0]}`.toUpperCase()
+                            : (student.email?.[0]?.toUpperCase() || '?');
+                          return (
+                            <button
+                              key={student.id}
+                              className={`w-full flex items-center gap-3 px-4 py-2 text-left transition-colors focus:outline-none ${selectedStudent === student.id ? 'bg-emerald-50 border-l-4 border-emerald-500' : 'hover:bg-gray-50'}`}
+                              onClick={() => setSelectedStudent(student.id)}
+                            >
+                              <span className="flex items-center justify-center w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 font-bold text-base">
+                                {initials}
+                              </span>
+                              <span className="truncate font-medium">{student.email}</span>
+                            </button>
+                          );
+                        })
                       )}
                     </div>
                   </div>
