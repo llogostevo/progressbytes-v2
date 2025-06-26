@@ -456,36 +456,36 @@ function PerformanceGraph({ studentAnswers, selectedStudent, topics }: {
   )
 }
 
-function PerformanceGraphSkeleton() {
-  return (
-    <Card>
-      <CardHeader>
-        <Skeleton className="h-6 w-48 mb-2" />
-        <Skeleton className="h-4 w-64" />
-      </CardHeader>
-      <CardContent>
-        <div className="h-[500px] min-w-0 min-h-0">
-          <div className="w-full h-full flex items-center justify-center">
-            <div className="w-full space-y-4">
-              <div className="flex justify-between items-center">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-4 w-24" />
-              </div>
-              <div className="space-y-2">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="flex items-center gap-4">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-4 flex-1" />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
+// function PerformanceGraphSkeleton() {
+//   return (
+//     <Card>
+//       <CardHeader>
+//         <Skeleton className="h-6 w-48 mb-2" />
+//         <Skeleton className="h-4 w-64" />
+//       </CardHeader>
+//       <CardContent>
+//         <div className="h-[500px] min-w-0 min-h-0">
+//           <div className="w-full h-full flex items-center justify-center">
+//             <div className="w-full space-y-4">
+//               <div className="flex justify-between items-center">
+//                 <Skeleton className="h-4 w-24" />
+//                 <Skeleton className="h-4 w-24" />
+//               </div>
+//               <div className="space-y-2">
+//                 {[...Array(5)].map((_, i) => (
+//                   <div key={i} className="flex items-center gap-4">
+//                     <Skeleton className="h-4 w-32" />
+//                     <Skeleton className="h-4 flex-1" />
+//                   </div>
+//                 ))}
+//               </div>
+//             </div>
+//           </div>
+//         </div>
+//       </CardContent>
+//     </Card>
+//   )
+// }
 
 function StudentSelectorSkeleton() {
   return (
