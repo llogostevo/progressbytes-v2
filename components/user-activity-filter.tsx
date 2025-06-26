@@ -106,7 +106,6 @@ function ResultsSkeleton() {
 export function UserActivityFilter({ selectedClass, classMembers }: UserActivityFilterProps) {
   const [users, setUsers] = useState<UserActivity[]>([])
   const [filteredUsers, setFilteredUsers] = useState<UserActivity[]>([])
-  const [nonFilteredUsers, setNonFilteredUsers] = useState<UserActivity[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [selectedUser, setSelectedUser] = useState<string | null>(null)
   const [userSessions, setUserSessions] = useState<UserSession[]>([])
@@ -235,10 +234,9 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
     return usersToFilter.filter(user => {
       const durationMatch = user.total_duration >= parseInt(minDuration)
       const questionsMatch = user.questions_submitted >= parseInt(minQuestions)
-      const classMatch = selectedClass === "all" || classMembers.some(member => member.email === user.user_email)
-      return durationMatch && questionsMatch && classMatch
+      return durationMatch && questionsMatch
     })
-  }, [minDuration, minQuestions, selectedClass, classMembers])
+  }, [minDuration, minQuestions])
 
   useEffect(() => {
     const fetchUserActivity = async () => {
@@ -249,12 +247,21 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
       const startDate = new Date()
       startDate.setDate(startDate.getDate() - parseInt(timeRange))
 
-      // Fetch all user activity within the date range
-      const { data: activity } = await supabase
+      // If "all" is selected, fetch activity for all class members
+      // Otherwise, fetch activity only for students in the selected class
+      let activityQuery = supabase
         .from("user_activity")
         .select("*")
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())
+
+      // Filter by class members if a specific class is selected
+      if (selectedClass !== "all" && classMembers.length > 0) {
+        const classMemberEmails = classMembers.map(member => member.email)
+        activityQuery = activityQuery.in('user_email', classMemberEmails)
+      }
+
+      const { data: activity } = await activityQuery
 
       if (activity) {
         // Group and process user activity
@@ -289,20 +296,61 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
           }
         })
 
+        // Third pass: Calculate total duration for each user
+        const userActivityMap = new Map<string, typeof activity>()
+        activity.forEach(record => {
+          if (!userActivityMap.has(record.user_id)) {
+            userActivityMap.set(record.user_id, [])
+          }
+          userActivityMap.get(record.user_id)!.push(record)
+        })
+
+        userActivityMap.forEach((userActivity, userId) => {
+          const user = userMap.get(userId)!
+          
+          // Group activities by date
+          const dailyActivities = new Map<string, typeof userActivity>()
+          userActivity.forEach(record => {
+            const date = new Date(record.created_at).toDateString()
+            if (!dailyActivities.has(date)) {
+              dailyActivities.set(date, [])
+            }
+            dailyActivities.get(date)!.push(record)
+          })
+
+          // Calculate total duration across all days
+          let totalDuration = 0
+          dailyActivities.forEach((dayActivity) => {
+            if (dayActivity.length > 1) {
+              // Sort by timestamp
+              dayActivity.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+              
+              // Calculate duration from first to last activity of the day
+              const firstActivity = dayActivity[0]
+              const lastActivity = dayActivity[dayActivity.length - 1]
+              const durationMinutes = Math.round(
+                (new Date(lastActivity.created_at).getTime() - new Date(firstActivity.created_at).getTime()) / (1000 * 60)
+              )
+              totalDuration += durationMinutes
+            }
+          })
+
+          user.total_duration = totalDuration
+        })
+
         const usersArray = Array.from(userMap.values())
-        setNonFilteredUsers(usersArray)
-        setFilteredUsers(applyFilters(usersArray))
         setUsers(usersArray)
+        setFilteredUsers(applyFilters(usersArray))
       }
       
       setIsLoading(false)
     }
 
     fetchUserActivity()
-  }, [timeRange, applyFilters])
+  }, [timeRange, applyFilters, selectedClass, classMembers])
 
   const handleFilterChange = () => {
-    applyFilters(users)
+    setFilteredUsers(applyFilters(users))
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -360,7 +408,6 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
               <Label>Time Range (days)</Label>
               <Select value={timeRange} onValueChange={(value) => {
                 setTimeRange(value)
-                handleFilterChange()
               }}>
                 <SelectTrigger className="h-10">
                   <SelectValue placeholder="Select time range" />
@@ -464,12 +511,12 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
                 <Users className="h-5 w-5" />
                 <span className="hidden md:inline">Did Not Meet Criteria</span>
                 <span className="md:hidden">Not Met</span>
-                ({nonFilteredUsers.length})
+                ({users.filter(user => !filteredUsers.some(filtered => filtered.user_id === user.user_id)).length})
               </CardTitle>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => exportToCSV(nonFilteredUsers, 'not-met-criteria.csv')}
+                onClick={() => exportToCSV(users.filter(user => !filteredUsers.some(filtered => filtered.user_id === user.user_id)), 'not-met-criteria.csv')}
                 className="flex items-center gap-2 shrink-0"
               >
                 <Download className="h-4 w-4" />
@@ -479,7 +526,7 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {nonFilteredUsers.map(user => (
+              {users.filter(user => !filteredUsers.some(filtered => filtered.user_id === user.user_id)).map(user => (
                 <div key={user.user_id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
                   <div 
                     className="truncate cursor-pointer hover:text-primary"

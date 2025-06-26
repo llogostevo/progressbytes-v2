@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Activity, Users, Eye, Navigation, Home, FileText, BarChart, RefreshCw, CheckCircle } from "lucide-react"
+import { Activity, Users, Eye, Navigation, Home, FileText, BarChart, RefreshCw, CheckCircle, Calendar } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import { redirect } from "next/navigation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -21,6 +21,7 @@ import {
   ResponsiveContainer,
 } from "recharts"
 import { PostgrestError } from '@supabase/supabase-js'
+import React from "react"
 
 interface Class {
   id: string
@@ -505,6 +506,8 @@ export default function AnalyticsPage() {
   const [classes, setClasses] = useState<Class[]>([])
   const [selectedClass, setSelectedClass] = useState<string>("all")
   const [classMembers, setClassMembers] = useState<Array<{ student_id: string; email: string }>>([])
+  const [timeFilter, setTimeFilter] = useState<"today" | "week" | "all">("all")
+  const [studentSearch, setStudentSearch] = useState("");
 
   const supabase = createClient()
 
@@ -824,6 +827,37 @@ export default function AnalyticsPage() {
     .sort(([, a], [, b]) => b - a)
     .slice(0, 5)
 
+  // Filter studentAnswers by timeFilter for Performance tab
+  const filteredStudentAnswers = studentAnswers.filter((answer) => {
+    if (timeFilter === "all") return true;
+    const submitted = new Date(answer.submitted_at);
+    const now = new Date();
+    if (timeFilter === "today") {
+      return (
+        submitted.getFullYear() === now.getFullYear() &&
+        submitted.getMonth() === now.getMonth() &&
+        submitted.getDate() === now.getDate()
+      );
+    }
+    if (timeFilter === "week") {
+      const weekAgo = new Date();
+      weekAgo.setDate(now.getDate() - 7);
+      return submitted >= weekAgo && submitted <= now;
+    }
+    return true;
+  });
+
+  // Filter students for selected class
+  const studentsInClass = selectedClass === "all"
+    ? students.map(s => ({ id: s.userid, email: s.email }))
+    : classMembers.length > 0
+      ? classMembers.map(s => ({ id: s.student_id, email: s.email }))
+      : [];
+
+  const filteredStudents = studentsInClass.filter(student =>
+    student.email.toLowerCase().includes(studentSearch.toLowerCase())
+  );
+
   if (!currentUserRole || (currentUserRole !== 'admin' && currentUserRole !== 'teacher')) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -1047,41 +1081,70 @@ export default function AnalyticsPage() {
                 <CardDescription>Track student progress across topics and question types</CardDescription>
               </CardHeader>
               <CardContent>
-                {isLoading ? (
-                  <div className="space-y-8">
-                    <StudentSelectorSkeleton />
-                    <PerformanceGraphSkeleton />
+                {/* Time Filter Tabs - always visible */}
+                <div className="flex items-center justify-end mb-4">
+                  <Tabs value={timeFilter} onValueChange={(value) => setTimeFilter(value as "today" | "week" | "all")}> 
+                    <TabsList>
+                      <TabsTrigger value="today" className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        Today
+                      </TabsTrigger>
+                      <TabsTrigger value="week" className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        7 Days
+                      </TabsTrigger>
+                      <TabsTrigger value="all" className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        All Time
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
+                {/* Class-based student selection UI */}
+                {selectedClass === "all" ? (
+                  <div className="text-center text-muted-foreground my-8">
+                    <p>Please select a class to view and select students.</p>
                   </div>
                 ) : (
-                  <div className="space-y-8">
-                    {/* Student Selector */}
-                    <div className="flex items-center gap-4">
-                      <label htmlFor="student" className="text-sm font-medium">Select User</label>
-                      <select
-                        id="student"
+                  <div className="mb-6">
+                    <div className="flex items-center gap-4 mb-4">
+                      <label htmlFor="student-search" className="text-sm font-medium">Search Student</label>
+                      <input
+                        id="student-search"
+                        type="text"
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        value={selectedStudent || ''}
-                        onChange={(e) => setSelectedStudent(e.target.value)}
-                      >
-                        {students.length === 0 ? (
-                          <option value="">No users available</option>
-                        ) : (
-                          students.map((student) => (
-                            <option key={student.userid} value={student.userid}>
-                              {student.email}
-                            </option>
-                          ))
-                        )}
-                      </select>
+                        placeholder="Type name or email..."
+                        value={studentSearch}
+                        onChange={e => setStudentSearch(e.target.value)}
+                      />
                     </div>
-
-                    {/* Performance Graph */}
-                    <PerformanceGraph
-                      studentAnswers={studentAnswers || []}
-                      selectedStudent={selectedStudent}
-                      topics={topics}
-                    />
+                    <div className="max-h-72 overflow-y-auto border rounded-md divide-y divide-gray-100 bg-white">
+                      {filteredStudents.length === 0 ? (
+                        <div className="py-4 text-center text-muted-foreground">No students found.</div>
+                      ) : (
+                        filteredStudents.map(student => (
+                          <button
+                            key={student.id}
+                            className={`w-full flex items-center gap-3 px-4 py-2 text-left transition-colors focus:outline-none ${selectedStudent === student.id ? 'bg-emerald-50 border-l-4 border-emerald-500' : 'hover:bg-gray-50'}`}
+                            onClick={() => setSelectedStudent(student.id)}
+                          >
+                            <span className="flex items-center justify-center w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 font-bold text-base">
+                              {student.email?.[0]?.toUpperCase() || '?'}
+                            </span>
+                            <span className="truncate font-medium">{student.email}</span>
+                          </button>
+                        ))
+                      )}
+                    </div>
                   </div>
+                )}
+                {/* Performance Graph */}
+                {selectedStudent && (
+                  <PerformanceGraph
+                    studentAnswers={filteredStudentAnswers || []}
+                    selectedStudent={selectedStudent}
+                    topics={topics}
+                  />
                 )}
               </CardContent>
             </Card>
