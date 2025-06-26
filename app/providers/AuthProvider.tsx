@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useContext, useEffect, useState, useCallback } from "react"
 import { createClient } from "@/utils/supabase/client"
 
 const AuthContext = createContext({
@@ -14,7 +14,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [userRole, setUserRole] = useState<string | null>(null)
 
-  const fetchUser = async () => {
+  const fetchUser = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
     setIsLoggedIn(!!user)
 
@@ -29,7 +29,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } else {
       setUserRole(null)
     }
-  }
+  }, [supabase])
 
   useEffect(() => {
     fetchUser()
@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       authListener.subscription.unsubscribe()
     }
-  }, [])
+  }, [fetchUser])
 
   return (
     <AuthContext.Provider value={{ isLoggedIn, userRole, refreshUser: fetchUser }}>

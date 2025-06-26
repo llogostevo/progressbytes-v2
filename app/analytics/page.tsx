@@ -570,46 +570,6 @@ function HomeworkSkeleton() {
   )
 }
 
-function PerformanceTabSkeleton() {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center">
-          <BarChart className="h-5 w-5 mr-2" />
-          Student Performance
-        </CardTitle>
-        <CardDescription>Track student progress across topics and question types</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {/* Time Filter Tabs */}
-        <div className="flex items-center justify-end mb-4">
-          <div className="flex gap-2">
-            <Skeleton className="h-10 w-20" />
-            <Skeleton className="h-10 w-24" />
-            <Skeleton className="h-10 w-24" />
-          </div>
-        </div>
-        
-        {/* Student Selector */}
-        <div className="mb-6">
-          <StudentSelectorSkeleton />
-          <div className="mt-4 max-h-72 overflow-y-auto border rounded-md divide-y divide-gray-100 bg-white">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="flex items-center gap-3 px-4 py-2">
-                <Skeleton className="w-7 h-7 rounded-full" />
-                <Skeleton className="h-4 flex-1" />
-              </div>
-            ))}
-          </div>
-        </div>
-        
-        {/* Performance Graph */}
-        <PerformanceGraphSkeleton />
-      </CardContent>
-    </Card>
-  )
-}
-
 // MAIN PAGE
 export default function AnalyticsPage() {
   const [currentUserRole, setCurrentUserRole] = useState<UserRole | null>(null)

@@ -88,87 +88,6 @@ export default function QuestionManager() {
         .sort((a, b) => a.subtopictitle.localeCompare(b.subtopictitle)),
     }))
 
-  useEffect(() => {
-    fetchQuestions()
-    fetchTopics()
-    fetchSubtopics()
-  }, [])
-
-  useEffect(() => {
-    if (editingQuestion) {
-      const links = (editingQuestion.subtopic_question_link ?? []) as SubtopicLink[]
-      const ids = Array.isArray(links)
-        ? links.map((link) => link.subtopic_id).filter(Boolean)
-        : []
-      console.log('DEBUG: subtopic_question_link:', links)
-      console.log('DEBUG: editingSubtopicIds:', ids)
-      console.log('DEBUG: available subtopic ids:', subtopics.map(s => s.id))
-      setEditingSubtopicIds(ids)
-    }
-  }, [editingQuestion, subtopics])
-
-  useEffect(() => {
-    if (addingQuestion) setAddingSubtopicIds([])
-  }, [addingQuestion])
-
-  const fetchTopics = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("topics")
-        .select("id, name, slug, topicnumber")
-        .order("topicnumber", { ascending: true })
-
-      if (error) throw error
-      console.log('DEBUG: Topics loaded:', data)
-      setTopics(data || [])
-    } catch (error) {
-      console.error("Error fetching topics:", error)
-    }
-  }
-
-  const fetchSubtopics = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("subtopics")
-        .select("id, subtopictitle, topic_id, topics(id, name, slug, topicnumber)")
-        .order("subtopictitle", { ascending: true })
-      if (error) throw error
-      setSubtopics(data || [])
-    } catch (error) {
-      console.error("Error fetching subtopics:", error)
-    }
-  }
-
-  useEffect(() => {
-    let filtered = questions
-
-    console.log('DEBUG: Current filterTopic:', filterTopic)
-    console.log('DEBUG: Questions before filtering:', questions.map(q => ({ id: q.id, topic: q.topic })))
-
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (q) =>
-          q.question_text.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          q.topic.toLowerCase().includes(searchTerm.toLowerCase()),
-      )
-    }
-
-    if (filterType !== "all") {
-      filtered = filtered.filter((q) => q.type === filterType)
-    }
-
-    if (filterTopic !== "all") {
-      console.log('DEBUG: Filtering by topic:', filterTopic)
-      filtered = filtered.filter((q) => {
-        console.log('DEBUG: Question topic:', q.topic, 'Matches?', q.topic === filterTopic)
-        return q.topic === filterTopic
-      })
-    }
-
-    console.log('DEBUG: Filtered questions:', filtered.map(q => ({ id: q.id, topic: q.topic })))
-    setFilteredQuestions(filtered)
-  }, [questions, searchTerm, filterType, filterTopic])
-
   const fetchQuestions = async () => {
     try {
       const { data, error } = await supabase
@@ -265,6 +184,87 @@ export default function QuestionManager() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    fetchQuestions()
+    fetchTopics()
+    fetchSubtopics()
+  }, [])
+
+  useEffect(() => {
+    if (editingQuestion) {
+      const links = (editingQuestion.subtopic_question_link ?? []) as SubtopicLink[]
+      const ids = Array.isArray(links)
+        ? links.map((link) => link.subtopic_id).filter(Boolean)
+        : []
+      console.log('DEBUG: subtopic_question_link:', links)
+      console.log('DEBUG: editingSubtopicIds:', ids)
+      console.log('DEBUG: available subtopic ids:', subtopics.map(s => s.id))
+      setEditingSubtopicIds(ids)
+    }
+  }, [editingQuestion, subtopics])
+
+  useEffect(() => {
+    if (addingQuestion) setAddingSubtopicIds([])
+  }, [addingQuestion])
+
+  const fetchTopics = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("topics")
+        .select("id, name, slug, topicnumber")
+        .order("topicnumber", { ascending: true })
+
+      if (error) throw error
+      console.log('DEBUG: Topics loaded:', data)
+      setTopics(data || [])
+    } catch (error) {
+      console.error("Error fetching topics:", error)
+    }
+  }
+
+  const fetchSubtopics = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("subtopics")
+        .select("id, subtopictitle, topic_id, topics(id, name, slug, topicnumber)")
+        .order("subtopictitle", { ascending: true })
+      if (error) throw error
+      setSubtopics(data || [])
+    } catch (error) {
+      console.error("Error fetching subtopics:", error)
+    }
+  }
+
+  useEffect(() => {
+    let filtered = questions
+
+    console.log('DEBUG: Current filterTopic:', filterTopic)
+    console.log('DEBUG: Questions before filtering:', questions.map(q => ({ id: q.id, topic: q.topic })))
+
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (q) =>
+          q.question_text.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          q.topic.toLowerCase().includes(searchTerm.toLowerCase()),
+      )
+    }
+
+    if (filterType !== "all") {
+      filtered = filtered.filter((q) => q.type === filterType)
+    }
+
+    if (filterTopic !== "all") {
+      console.log('DEBUG: Filtering by topic:', filterTopic)
+      filtered = filtered.filter((q) => {
+        console.log('DEBUG: Question topic:', q.topic, 'Matches?', q.topic === filterTopic)
+        return q.topic === filterTopic
+      })
+    }
+
+    console.log('DEBUG: Filtered questions:', filtered.map(q => ({ id: q.id, topic: q.topic })))
+    setFilteredQuestions(filtered)
+  }, [questions, searchTerm, filterType, filterTopic])
 
   const handleEdit = (question: Question) => {
     setEditingQuestion(question)
