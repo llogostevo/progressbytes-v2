@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Activity, Users, Eye, Navigation, Home, FileText, BarChart, RefreshCw, CheckCircle, Calendar } from "lucide-react"
+import { Activity, Users, Eye, Navigation, Home, FileText, BarChart, RefreshCw, CheckCircle, Calendar, Filter } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import { redirect } from "next/navigation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -10,6 +10,8 @@ import { UserSessions } from "@/components/user-sessions"
 import { UserActivityFilter } from "@/components/user-activity-filter"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Button } from "@/components/ui/button"
 import {
   BarChart as RechartsBarChart,
   Bar,
@@ -605,6 +607,7 @@ export default function AnalyticsPage() {
   const [classMembers, setClassMembers] = useState<Array<{ student_id: string; email: string; forename: string; lastname: string }>>([])
   const [timeFilter, setTimeFilter] = useState<"today" | "week" | "all">("all")
   const [studentSearch, setStudentSearch] = useState("");
+  const [sortBy, setSortBy] = useState<"forename" | "lastname" | "email">("forename");
 
   const supabase = createClient()
 
@@ -970,9 +973,17 @@ export default function AnalyticsPage() {
       ? classMembers.map(s => ({ id: s.student_id, email: s.email, forename: s.forename, lastname: s.lastname }))
       : [];
 
-  const filteredStudents: StudentListItem[] = studentsInClass.filter(student =>
-    student.email.toLowerCase().includes(studentSearch.toLowerCase())
-  );
+  const filteredStudents: StudentListItem[] = studentsInClass
+    .filter(student =>
+      student.email.toLowerCase().includes(studentSearch.toLowerCase()) ||
+      (student.forename && student.forename.toLowerCase().includes(studentSearch.toLowerCase())) ||
+      (student.lastname && student.lastname.toLowerCase().includes(studentSearch.toLowerCase()))
+    )
+    .sort((a, b) => {
+      const aValue = a[sortBy] || '';
+      const bValue = b[sortBy] || '';
+      return aValue.localeCompare(bValue, undefined, { sensitivity: 'base' });
+    });
 
   if (!currentUserRole || (currentUserRole !== 'admin' && currentUserRole !== 'teacher')) {
     return (
@@ -1245,6 +1256,44 @@ export default function AnalyticsPage() {
                         value={studentSearch}
                         onChange={e => setStudentSearch(e.target.value)}
                       />
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="icon" className="h-10 w-10">
+                            <Filter className="h-4 w-4" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-48" align="end">
+                          <div className="space-y-2">
+                            <h4 className="font-medium leading-none">Sort by</h4>
+                            <div className="space-y-1">
+                              <button
+                                className={`w-full text-left px-2 py-1 rounded text-sm transition-colors ${
+                                  sortBy === 'forename' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+                                }`}
+                                onClick={() => setSortBy('forename')}
+                              >
+                                Forename
+                              </button>
+                              <button
+                                className={`w-full text-left px-2 py-1 rounded text-sm transition-colors ${
+                                  sortBy === 'lastname' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+                                }`}
+                                onClick={() => setSortBy('lastname')}
+                              >
+                                Surname
+                              </button>
+                              <button
+                                className={`w-full text-left px-2 py-1 rounded text-sm transition-colors ${
+                                  sortBy === 'email' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+                                }`}
+                                onClick={() => setSortBy('email')}
+                              >
+                                Email
+                              </button>
+                            </div>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                     </div>
                     <div className="max-h-72 overflow-y-auto border rounded-md divide-y divide-gray-100 bg-white">
                       {filteredStudents.length === 0 ? (
