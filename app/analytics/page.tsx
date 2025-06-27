@@ -489,9 +489,22 @@ function PerformanceGraphSkeleton() {
 
 function StudentSelectorSkeleton() {
   return (
-    <div className="flex items-center gap-4">
-      <Skeleton className="h-4 w-24" />
-      <Skeleton className="h-10 flex-1" />
+    <div className="mb-6">
+      {/* Search input skeleton */}
+      <div className="flex items-center gap-4 mb-4">
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-10 flex-1" />
+      </div>
+      
+      {/* Student list skeleton */}
+      <div className="max-h-72 overflow-y-auto border rounded-md divide-y divide-gray-100 bg-white">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="flex items-center gap-3 px-4 py-2">
+            <Skeleton className="w-7 h-7 rounded-full" />
+            <Skeleton className="h-4 flex-1" />
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -579,6 +592,7 @@ export default function AnalyticsPage() {
   const [isLoadingHomework, setIsLoadingHomework] = useState(true)
   const [isLoadingPerformance, setIsLoadingPerformance] = useState(false)
   const [isLoadingClasses, setIsLoadingClasses] = useState(true)
+  const [isLoadingStudents, setIsLoadingStudents] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
   const [allUserSessions, setAllUserSessions] = useState<UserSession[]>([])
@@ -763,6 +777,9 @@ export default function AnalyticsPage() {
             setSelectedStudent(usersData[0].userid)
           }
         }
+        setIsLoadingStudents(false)
+      } else {
+        setIsLoadingStudents(false)
       }
 
       // Fetch topics
@@ -1210,7 +1227,9 @@ export default function AnalyticsPage() {
                   </Tabs>
                 </div>
                 {/* Class-based student selection UI */}
-                {studentsInClass.length === 0 ? (
+                {isLoadingStudents ? (
+                  <StudentSelectorSkeleton />
+                ) : studentsInClass.length === 0 ? (
                   <div className="text-center text-muted-foreground my-8">
                     <p>No students available to select.</p>
                   </div>

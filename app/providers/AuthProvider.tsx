@@ -1,5 +1,5 @@
 "use client"
-
+// TODO: Check if this is needed, check it is secure
 import { createContext, useContext, useEffect, useState, useCallback } from "react"
 import { createClient } from "@/utils/supabase/client"
 
