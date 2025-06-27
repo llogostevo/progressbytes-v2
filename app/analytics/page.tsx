@@ -1254,16 +1254,24 @@ export default function AnalyticsPage() {
                           const initials = student?.forename?.[0] && student?.lastname?.[0]
                             ? `${student.forename[0]}${student.lastname[0]}`.toUpperCase()
                             : (student.email?.[0]?.toUpperCase() || '?');
+                          const fullName = student?.forename && student?.lastname 
+                            ? `${student.forename} ${student.lastname}`
+                            : student?.forename || student?.lastname || '';
                           return (
                             <button
                               key={student.id}
-                              className={`w-full flex items-center gap-3 px-4 py-2 text-left transition-colors focus:outline-none ${selectedStudent === student.id ? 'bg-emerald-50 border-l-4 border-emerald-500' : 'hover:bg-gray-50'}`}
+                              className={`w-full flex items-center gap-3 px-4 py-2 text-left transition-colors focus:outline-none cursor-pointer ${selectedStudent === student.id ? 'bg-emerald-50 border-l-4 border-emerald-500' : 'hover:bg-gray-50'}`}
                               onClick={() => setSelectedStudent(student.id)}
                             >
                               <span className="flex items-center justify-center w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 font-bold text-base">
                                 {initials}
                               </span>
-                              <span className="truncate font-medium">{student.email}</span>
+                              <div className="flex-1 min-w-0">
+                                {fullName && (
+                                  <div className="font-medium text-sm truncate">{fullName}</div>
+                                )}
+                                <div className="text-xs text-muted-foreground truncate">{student.email}</div>
+                              </div>
                             </button>
                           );
                         })
