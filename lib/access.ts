@@ -23,6 +23,7 @@ interface AccessLimits {
   maxStudentsPerClass?: number;
   canViewAnswers: boolean;
   canUseAI: boolean;
+  canAccessFilters: boolean; 
   maxQuestionsPerDay: number;
   maxQuestionsPerTopic: number;
 }
@@ -35,6 +36,7 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     canUseAI: false,
     maxQuestionsPerDay: 0, // 0 enforced, but you manually allow 1 per topic
     maxQuestionsPerTopic: 1,
+    canAccessFilters: false,
   },
   basic: {
     canCreateClass: false,
@@ -42,6 +44,7 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     canUseAI: false,
     maxQuestionsPerDay: 5,
     maxQuestionsPerTopic: 5,
+    canAccessFilters: false,
   },
   revision: {
     canCreateClass: false,
@@ -49,6 +52,7 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     canUseAI: false,
     maxQuestionsPerDay: Infinity,
     maxQuestionsPerTopic: Infinity,
+    canAccessFilters: true,
   },
   revisionAI: {
     canCreateClass: false,
@@ -56,6 +60,7 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     canUseAI: true,
     maxQuestionsPerDay: Infinity,
     maxQuestionsPerTopic: Infinity,
+    canAccessFilters: true,
   },
 
   teacherBasic: {
@@ -66,6 +71,7 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     canUseAI: false,
     maxQuestionsPerDay: 5,
     maxQuestionsPerTopic: 5,
+    canAccessFilters: false,
   },
 
   teacherPremium: {
@@ -76,6 +82,7 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     canUseAI: false,
     maxQuestionsPerDay: Infinity,
     maxQuestionsPerTopic: Infinity,
+    canAccessFilters: true,
   },
   admin: {
     canCreateClass: true,
@@ -85,6 +92,7 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     canUseAI: true,
     maxQuestionsPerDay: Infinity,
     maxQuestionsPerTopic: Infinity,
+    canAccessFilters: true,
   },
 };
 
@@ -93,6 +101,9 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
 // Access checks
 export const canCreateClass = (user: User): boolean =>
   userAccessLimits[user.user_type]?.canCreateClass ?? false;
+
+export const canAccessFilters = (user: User): boolean =>
+  userAccessLimits[user.user_type]?.canAccessFilters ?? false;
 
 export const canViewAnswers = (user: User): boolean =>
   userAccessLimits[user.user_type]?.canViewAnswers ?? false;
