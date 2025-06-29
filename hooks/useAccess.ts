@@ -8,6 +8,8 @@ import {
   getMaxClasses,
   getMaxStudentsPerClass,
   getMaxQuestionsPerDay,
+  getMaxQuestionsPerTopic,
+  getAvailableQuestionsForTopic,
   User,
 } from '@/lib/access';
 
@@ -18,6 +20,8 @@ interface AccessControl {
   maxClasses: number;
   maxStudentsPerClass: number;
   maxQuestionsPerDay: number;
+  maxQuestionsPerTopic: number;
+  getAvailableQuestionsForTopic: (topicQuestionCount: number) => number;
 }
 
 export function useAccess(): AccessControl {
@@ -32,5 +36,8 @@ export function useAccess(): AccessControl {
     maxClasses: getMaxClasses(safeUser),
     maxStudentsPerClass: getMaxStudentsPerClass(safeUser),
     maxQuestionsPerDay: getMaxQuestionsPerDay(safeUser),
+    maxQuestionsPerTopic: getMaxQuestionsPerTopic(safeUser),
+    getAvailableQuestionsForTopic: (topicQuestionCount: number) => 
+      getAvailableQuestionsForTopic(safeUser, topicQuestionCount),
   };
 }

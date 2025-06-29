@@ -22,13 +22,13 @@ export function useUser() {
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
-        .single(); // RLS ensures they only get their own row
+        .eq('userid', authUser.user.id); // RLS ensures they only get their own row
 
       if (profileError) {
         console.error(profileError);
         setUser(null);
       } else {
-        setUser(profile);
+        setUser(profile[0] as User);
       }
 
       setLoading(false);

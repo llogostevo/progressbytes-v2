@@ -5,27 +5,22 @@ import type { Topic } from "@/lib/types"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { DynamicIcon } from "@/components/ui/dynamicicon"
+import { useAccess } from "@/hooks/useAccess"
+import { getAvailableQuestionsForTopic } from "@/lib/access"
+import type { User } from "@/lib/access"
 
 interface TopicCardProps {
   topic: Topic
   userType?: string
+  userEmail?: string
 }
 
-export function TopicCard({ topic, userType }: TopicCardProps) {
+export function TopicCard({ topic, userType, userEmail }: TopicCardProps) {
   const isDisabled = topic.disabled
 
-  // Determine the number of questions based on access level
-  let numberOfQuestions: number
-  if (userType === "revision" || userType === "revisionAI") {
-    numberOfQuestions = topic.questionCount
-  } else if (userType === "basic") {
-    numberOfQuestions = 10
-  } else {
-    numberOfQuestions = 5
-  }
-
-  // Calculate the actual number of available questions
-  const availableQuestions = Math.min(numberOfQuestions, topic.questionCount)
+  // Calculate server-side or use fallback
+  const user: User = userType ? { user_type: userType as any } : { user_type: 'anonymous' }
+  const availableQuestions = getAvailableQuestionsForTopic(user, topic.questionCount)
 
   return (
     <Card
