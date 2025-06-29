@@ -13,9 +13,15 @@ export default async function Home() {
   // Get user profile server-side
   const { data: profile } = await supabase
     .from('profiles')
-    .select('user_type, ai_interest_banner')
+    .select('user_type, ai_interest_banner, role')
     .eq('email', user?.email)
     .single()
+
+    const accessUser = {
+      user_type: profile?.user_type || 'anonymous',
+      role: profile?.role || undefined
+    }
+      
 
   // Server-side data fetching (more secure)
   let topics: Topic[] = []
@@ -244,16 +250,12 @@ export default async function Home() {
 
         {/* Client component for access control */}
         <HomeAccessControl 
-          user={user}
+          user={accessUser}
           userType={profile?.user_type}
           showAIInterestBanner={profile?.ai_interest_banner !== false}
           topics={topics}
         />
 
-        <TopicGrid 
-          topics={topics} 
-          userType={profile?.user_type}
-        />
       </div>
     </div>
   )

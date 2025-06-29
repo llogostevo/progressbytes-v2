@@ -12,6 +12,7 @@
 // User object passed into access functions
 export interface User {
   user_type: UserType;
+  email?: string;
   role?: 'student' | 'teacher' | 'admin';
 }
 

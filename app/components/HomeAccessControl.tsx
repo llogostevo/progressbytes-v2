@@ -3,9 +3,10 @@
 import { CTABanner } from "@/components/cta-banner"
 import { TopicGrid } from "@/components/topic-grid"
 import type { Topic } from "@/lib/types"
+import type { User } from "@/lib/access"
 
 interface HomeAccessControlProps {
-  user: any
+  user: User | null
   userType?: string
   showAIInterestBanner: boolean
   topics: Topic[]
