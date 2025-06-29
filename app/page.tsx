@@ -4,7 +4,6 @@ import { createClient } from "@/utils/supabase/server"
 import { UserLogin } from "@/components/user-login"
 import { HomeAccessControl } from "./components/HomeAccessControl"
 import type { Topic, Question } from "@/lib/types"
-import { TopicGrid } from "@/components/topic-grid"
 
 export default async function Home() {
   const supabase = await createClient()
