@@ -883,7 +883,7 @@ export default function SettingsPage() {
 
       {/* Show Join Code Dialog */}
       <Dialog open={showJoinCodeDialogOpen} onOpenChange={setShowJoinCodeDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{selectedClass?.name}</DialogTitle>
             <DialogDescription>
@@ -1177,7 +1177,7 @@ export default function SettingsPage() {
 
       {/* Join Class Dialog */}
       <Dialog open={joinClassDialogOpen} onOpenChange={setJoinClassDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Join Class</DialogTitle>
             <DialogDescription>
@@ -1212,7 +1212,7 @@ export default function SettingsPage() {
 
       {/* View Class Dialog */}
       <Dialog open={viewClassDialogOpen} onOpenChange={setViewClassDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Class Details</DialogTitle>
             <DialogDescription>
