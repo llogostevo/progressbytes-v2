@@ -4,7 +4,6 @@ import type { Topic } from "@/lib/types"
 interface TopicGridProps {
   topics: Topic[]
   userType?: string
-  userEmail?: string
 }
 
 // Helper to compare topicnumber strings like 1.1.1, 1.1.2, etc.
@@ -22,7 +21,7 @@ function compareTopicNumbers(a?: string, b?: string) {
   return 0;
 }
 
-export function TopicGrid({ topics, userType, userEmail }: TopicGridProps) {
+export function TopicGrid({ topics, userType }: TopicGridProps) {
 
   // Group topics by unit and sort by topic number
   const groupedTopics = topics.reduce((acc, topic) => {
@@ -58,7 +57,6 @@ export function TopicGrid({ topics, userType, userEmail }: TopicGridProps) {
                 key={topic.id} 
                 topic={topic} 
                 userType={userType}
-                userEmail={userEmail}
               />
             ))}
           </div>

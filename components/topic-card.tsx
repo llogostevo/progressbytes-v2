@@ -5,17 +5,16 @@ import type { Topic } from "@/lib/types"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { DynamicIcon } from "@/components/ui/dynamicicon"
-import { useAccess } from "@/hooks/useAccess"
+
 import { getAvailableQuestionsForTopic } from "@/lib/access"
 import type { User } from "@/lib/access"
 
 interface TopicCardProps {
   topic: Topic
   userType?: string
-  userEmail?: string
 }
 
-export function TopicCard({ topic, userType, userEmail }: TopicCardProps) {
+export function TopicCard({ topic, userType }: TopicCardProps) {
   const isDisabled = topic.disabled
 
   // Calculate server-side or use fallback

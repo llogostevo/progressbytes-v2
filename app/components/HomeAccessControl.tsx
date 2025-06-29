@@ -2,7 +2,6 @@
 
 import { CTABanner } from "@/components/cta-banner"
 import { TopicGrid } from "@/components/topic-grid"
-import { useAccess } from "@/hooks/useAccess"
 import type { Topic } from "@/lib/types"
 
 interface HomeAccessControlProps {
@@ -13,7 +12,6 @@ interface HomeAccessControlProps {
 }
 
 export function HomeAccessControl({ user, userType, showAIInterestBanner, topics }: HomeAccessControlProps) {
-  const access = useAccess()
   const freeUser = !user
 
   return (

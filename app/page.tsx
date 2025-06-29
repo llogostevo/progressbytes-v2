@@ -253,7 +253,6 @@ export default async function Home() {
         <TopicGrid 
           topics={topics} 
           userType={profile?.user_type}
-          userEmail={user?.email}
         />
       </div>
     </div>
