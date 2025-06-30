@@ -1,39 +1,28 @@
-import { TopicGrid } from "@/components/topic-grid"
-
+'use server';
 import { createClient } from "@/utils/supabase/server"
-import { CTABanner } from "@/components/cta-banner"
+
 import { UserLogin } from "@/components/user-login"
+import { HomeAccessControl } from "./components/HomeAccessControl"
 import type { Topic, Question } from "@/lib/types"
 
 export default async function Home() {
   const supabase = await createClient()
-
-  // Get the current user
   const { data: { user } } = await supabase.auth.getUser()
 
-
-
-  // Get the user's profile data including user_type
+  // Get user profile server-side
   const { data: profile } = await supabase
     .from('profiles')
-    .select('user_type, ai_interest_banner')
+    .select('user_type, ai_interest_banner, role')
     .eq('email', user?.email)
     .single()
 
-  const userType = profile?.user_type
-  const showAIInterestBanner = profile?.ai_interest_banner !== false
-  const freeUser = !user
+    const accessUser = {
+      user_type: profile?.user_type || 'anonymous',
+      role: profile?.role || undefined
+    }
+      
 
-  // Track page visit
-  if (user) {
-    await supabase.from('user_activity').insert({
-      user_id: user.id,
-      event: 'visited_home',
-      path: '/',
-      user_email: user.email
-    })
-  }
-
+  // Server-side data fetching (more secure)
   let topics: Topic[] = []
   if (user) {
     /**
@@ -240,8 +229,15 @@ export default async function Home() {
     console.log('Final transformed topics:', topics)
   }
 
-  // const courseTopics = 
-  // const courseTopicsCount = courseTopics?.length
+  // Track page visit
+  if (user) {
+    await supabase.from('user_activity').insert({
+      user_id: user.id,
+      event: 'visited_home',
+      path: '/',
+      user_email: user.email
+    })
+  }
 
   return (
     <div className="container mx-auto px-4 py-6 md:py-8">
@@ -249,18 +245,16 @@ export default async function Home() {
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
           <h1 className="text-2xl md:text-4xl font-bold tracking-tight">GCSE Computer Science Quiz</h1>
           <UserLogin email={user?.email} />
-
         </div>
 
-        {/* CTA Banner */}
-        <div className="mb-6 md:mb-8">
-          {freeUser && <CTABanner variant="free" />}
-          {userType === 'basic' && <CTABanner variant="basic" />}
-          {userType === 'revision' && showAIInterestBanner && <CTABanner variant="premium" userEmail={user?.email} />}
-        </div>
+        {/* Client component for access control */}
+        <HomeAccessControl 
+          user={accessUser}
+          userType={profile?.user_type}
+          showAIInterestBanner={profile?.ai_interest_banner !== false}
+          topics={topics}
+        />
 
-
-        <TopicGrid topics={topics} userType={userType} />
       </div>
     </div>
   )

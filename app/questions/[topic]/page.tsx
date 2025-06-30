@@ -23,6 +23,7 @@ import { User } from "@supabase/supabase-js"
 import { QuestionTypeFilter } from "@/components/question-type-filter"
 import { SubtopicFilter } from "@/components/subtopic-filter"
 import { Skeleton } from "@/components/ui/skeleton"
+import { canAccessFilters, getMaxQuestionsPerTopic, UserType } from "@/lib/access"
 
 // Define types for the database responses
 interface DBQuestion {
@@ -278,14 +279,9 @@ async function getRandomQuestionForTopic(
   }
 
   // Determine the number of questions based on access level
-  let length: number
-  if (userType === "revision" || userType === "revisionAI") {
-    length = filteredQuestions.length
-  } else if (userType === "basic") {
-    length = filteredQuestions.length // full access
-  } else {
-    length = filteredQuestions.length // full access
-  }
+  const accessUser: { user_type: UserType } = userType ? { user_type: userType as UserType } : { user_type: 'anonymous' }
+  const maxQuestions = getMaxQuestionsPerTopic(accessUser)
+  const length = Math.min(maxQuestions, filteredQuestions.length)
 
   const randomIndex = Math.floor(Math.random() * length)
   return filteredQuestions[randomIndex]
@@ -972,6 +968,7 @@ export default function QuestionPage() {
         </div>
 
         {/* Filters Container */}
+        {canAccessFilters({ user_type: userType || 'anonymous' }) && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
           {/* Subtopic Filter Card */}
           <Card>
@@ -1003,6 +1000,7 @@ export default function QuestionPage() {
             </CardContent>
           </Card>
         </div>
+        )}
 
         {/* CTA Banner */}
         <div className="mb-6 md:mb-8">
