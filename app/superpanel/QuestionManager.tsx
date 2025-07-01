@@ -125,17 +125,7 @@ export default function QuestionManager() {
       if (error) throw error
 
       const transformedQuestions: Question[] = data.map((q) => {
-        console.log('DEBUG: Raw question data:', {
-          id: q.id,
-          subtopic_question_link: JSON.stringify(q.subtopic_question_link, null, 2)
-        })
-        if (q.subtopic_question_link && q.subtopic_question_link.length > 0) {
-          console.log('DEBUG: First subtopic_question_link:', JSON.stringify(q.subtopic_question_link[0], null, 2))
-          console.log('DEBUG: subtopic_question_link[0].subtopics:', q.subtopic_question_link[0].subtopics)
-          if (q.subtopic_question_link[0].subtopics) {
-            console.log('DEBUG: subtopic_question_link[0].subtopics.topics:', q.subtopic_question_link[0].subtopics.topics)
-          }
-        }
+     
         return {
           id: q.id,
           type: q.type,
@@ -197,9 +187,6 @@ export default function QuestionManager() {
       const ids = Array.isArray(links)
         ? links.map((link) => link.subtopic_id).filter(Boolean)
         : []
-      console.log('DEBUG: subtopic_question_link:', links)
-      console.log('DEBUG: editingSubtopicIds:', ids)
-      console.log('DEBUG: available subtopic ids:', subtopics.map(s => s.id))
       setEditingSubtopicIds(ids)
     }
   }, [editingQuestion, subtopics])
@@ -394,6 +381,8 @@ export default function QuestionManager() {
 
   const handleSaveNew = async (newQuestion: Question) => {
     console.log('DEBUG: Starting handleSaveNew with question:', newQuestion)
+
+    
     
     // Validation
     const errors: { id?: string; question_text?: string; subtopics?: string } = {}
@@ -467,8 +456,8 @@ export default function QuestionManager() {
         case "true-false":
           await supabase.from("true_false_questions").insert({
             question_id: questionData.id,
-            correct_answer: newQuestion.model_answer,
-            model_answer: newQuestion.model_answer,
+            correct_answer: !!newQuestion.model_answer,
+            model_answer: !!newQuestion.model_answer,
           })
           break
         case "short-answer":
@@ -487,13 +476,25 @@ export default function QuestionManager() {
       }
 
       // Insert subtopic links
+      // if (addingSubtopicIds.length > 0) {
+      //   await supabase.from("subtopic_question_link").insert(
+      //     addingSubtopicIds.map((subtopic_id) => ({
+      //       question_id: questionData.id,
+      //       subtopic_id,
+      //     }))
+      //   )
+      // }
+// TODO: check if this is correct
       if (addingSubtopicIds.length > 0) {
-        await supabase.from("subtopic_question_link").insert(
+        const { error: linkError } = await supabase.from("subtopic_question_link").insert(
           addingSubtopicIds.map((subtopic_id) => ({
             question_id: questionData.id,
             subtopic_id,
           }))
-        )
+        );
+        if (linkError) {
+          console.error("Error inserting subtopic_question_link:", linkError);
+        }
       }
 
       await fetchQuestions()
