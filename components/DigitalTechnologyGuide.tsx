@@ -53,8 +53,8 @@ const DigitalTechnologyGuide = () => {
           <div className="bg-green-50 p-6 rounded-lg border border-green-200">
             <h3 className="font-semibold text-green-800 mb-3 text-lg">Protections</h3>
             <ul className="space-y-2 text-green-700">
-              <li>• Laws protect people's personal data (Data Protection Act, GDPR)</li>
-              <li>• Copyright law protects creators' work</li>
+              <li>• Laws protect people&apos;s personal data (Data Protection Act, GDPR)</li>
+              <li>• Copyright law protects creators&apos; work</li>
               <li>• Computer Misuse Act stops hacking and viruses</li>
             </ul>
           </div>
@@ -73,7 +73,7 @@ const DigitalTechnologyGuide = () => {
             <ul className="space-y-2 text-red-700">
               <li>• People spend less time together in person</li>
               <li>• Some cultures or languages may be less visible online</li>
-              <li>• People can copy or share things that don't belong to them</li>
+              <li>• People can copy or share things that don&apos;t belong to them</li>
             </ul>
           </div>
           <div className="bg-green-50 p-6 rounded-lg border border-green-200">
@@ -126,7 +126,7 @@ const DigitalTechnologyGuide = () => {
             <h3 className="font-semibold text-green-800 mb-3 text-lg">How to Stay Safe</h3>
             <ul className="space-y-2 text-green-700">
               <li>• Use strong passwords</li>
-              <li>• Don't share personal info online</li>
+              <li>• Don&apos;t share personal info online</li>
               <li>• Check privacy settings on apps</li>
             </ul>
           </div>

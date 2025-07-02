@@ -67,7 +67,7 @@ const ComputerScienceLawsGuide = () => {
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
               <h3 className="font-semibold text-blue-800 mb-2">🎯 Purpose</h3>
               <p className="text-blue-700 text-sm leading-relaxed">
-                To protect people's privacy and stop misuse of personal information.
+                To protect people&apos;s privacy and stop misuse of personal information.
               </p>
             </div>
           </div>
@@ -142,7 +142,7 @@ const ComputerScienceLawsGuide = () => {
                 <div className="flex items-start gap-3">
                   <div className="bg-purple-100 text-purple-700 rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold mt-0.5">1</div>
                   <div>
-                    <span className="font-medium text-gray-900">Creators' rights</span>
+                    <span className="font-medium text-gray-900">Creators&apos; rights</span>
                     <span className="text-gray-600"> - protects creators of music, videos, software, books, etc.</span>
                   </div>
                 </div>
@@ -173,7 +173,7 @@ const ComputerScienceLawsGuide = () => {
             <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
               <h3 className="font-semibold text-purple-800 mb-2">🎯 Purpose</h3>
               <p className="text-purple-700 text-sm leading-relaxed">
-                To protect people's work and make sure creators get credit and payment.
+                To protect people&apos;s work and make sure creators get credit and payment.
               </p>
             </div>
           </div>
@@ -242,7 +242,7 @@ const ComputerScienceLawsGuide = () => {
                 </div>
                 <div className="flex items-start gap-3">
                   <span className="text-red-600 mt-1">•</span>
-                  <span className="text-red-700"><span className="font-medium">Often comes as</span> 'off-the-shelf' software</span>
+                  <span className="text-red-700"><span className="font-medium">Often comes as</span> &apos;off-the-shelf&apos; software</span>
                 </div>
               </div>
             </div>
@@ -306,8 +306,8 @@ const ComputerScienceLawsGuide = () => {
           <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200 mt-6">
             <h3 className="font-semibold text-yellow-800 mb-2">💡 Exam Tip</h3>
             <p className="text-yellow-700 text-sm leading-relaxed">
-              <strong>Always give a reason for your choice!</strong> For example: "Open source is best for students because they
-              can see and change the code to learn how it works."
+              <strong>Always give a reason for your choice!</strong> For example: &quot;Open source is best for students because they
+              can see and change the code to learn how it works.&quot;
             </p>
           </div>
         </div>

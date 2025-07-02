@@ -10,13 +10,13 @@ const EssayGuide = () => {
         <p className="text-muted-foreground text-base leading-relaxed">
           OCR 8-mark questions usually give you 2–3 bullet points to discuss (like ethical, legal, environmental
           impacts). You should aim to make <span className="font-medium text-foreground">3 well-balanced points</span>,
-          one for each bullet. Use the simple "3 x IEEP" method to get top marks.
+          one for each bullet. Use the simple &quot;3 x IEEP&quot; method to get top marks.
         </p>
       </div>
 
       <div className="space-y-4">
         <h2 className="text-2xl font-semibold text-emerald-700 flex items-center gap-2">
-          🎯 Step-by-Step: Use "3 x IEEP"
+          🎯 Step-by-Step: Use &quot;3 x IEEP&quot;
         </h2>
         <p className="text-muted-foreground text-base">
           For each bullet point in the question, write one paragraph using this format:
@@ -59,7 +59,7 @@ const EssayGuide = () => {
           </p>
           <p className="text-muted-foreground">
             <strong className="text-foreground">Legal:</strong> A legal issue is following the Data Protection Act
-            (Impact). Schools must store and use biometric data legally (Explain). For example, if they don't get proper
+            (Impact). Schools must store and use biometric data legally (Explain). For example, if they don&apos;t get proper
             consent, they could face fines (Example). On the other hand, if schools follow the law carefully, this may
             not be a problem (Point out the other side).
           </p>
