@@ -24,6 +24,7 @@ interface AccessLimits {
   canViewAnswers: boolean;
   canUseAI: boolean;
   canAccessFilters: boolean; 
+  canSkipQuestions: boolean;
   maxQuestionsPerDay: number;
   maxQuestionsPerTopic: number;
 }
@@ -37,6 +38,7 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     maxQuestionsPerDay: 0, // 0 enforced, but you manually allow 1 per topic
     maxQuestionsPerTopic: 1,
     canAccessFilters: false,
+    canSkipQuestions: false,
   },
   basic: {
     canCreateClass: false,
@@ -45,6 +47,7 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     maxQuestionsPerDay: 5,
     maxQuestionsPerTopic: 5,
     canAccessFilters: false,
+    canSkipQuestions: false,
   },
   revision: {
     canCreateClass: false,
@@ -53,6 +56,7 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     maxQuestionsPerDay: Infinity,
     maxQuestionsPerTopic: Infinity,
     canAccessFilters: true,
+    canSkipQuestions: true,
   },
   revisionAI: {
     canCreateClass: false,
@@ -61,6 +65,7 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     maxQuestionsPerDay: Infinity,
     maxQuestionsPerTopic: Infinity,
     canAccessFilters: true,
+    canSkipQuestions: true,
   },
 
   teacherBasic: {
@@ -72,6 +77,7 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     maxQuestionsPerDay: 5,
     maxQuestionsPerTopic: 5,
     canAccessFilters: false,
+    canSkipQuestions: false,
   },
 
   teacherPremium: {
@@ -83,6 +89,7 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     maxQuestionsPerDay: Infinity,
     maxQuestionsPerTopic: Infinity,
     canAccessFilters: true,
+    canSkipQuestions: true,
   },
   admin: {
     canCreateClass: true,
@@ -93,6 +100,7 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     maxQuestionsPerDay: Infinity,
     maxQuestionsPerTopic: Infinity,
     canAccessFilters: true,
+    canSkipQuestions: true,
   },
 };
 
@@ -144,3 +152,7 @@ export const getAvailableQuestionsForTopic = (
   const maxQuestions = getMaxQuestionsPerTopic(user);
   return Math.min(maxQuestions, topicQuestionCount);
 };
+
+// New helper function to check if user can skip questions
+export const canSkipQuestions = (user: User): boolean =>
+  userAccessLimits[user.user_type]?.canSkipQuestions ?? false;

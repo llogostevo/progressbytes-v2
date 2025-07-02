@@ -34,6 +34,8 @@ const questionTypeIcons = {
   "fill-in-the-blank": FileText,
   "matching": ToggleLeft,
   "code": Code,
+  "sql": Code,
+  "algorithm": Code,
   "true-false": CheckSquare,
   "short-answer": PenTool,
   "essay": BookOpen,
@@ -48,6 +50,8 @@ const questionTypeColors = {
   "matching":
     "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-300 dark:border-purple-800",
   "code": "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-800",
+  "sql": "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-800",
+  "algorithm": "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-800",
   "true-false": "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800",
   "short-answer":
     "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-300 dark:border-yellow-800",
@@ -456,8 +460,8 @@ export default function QuestionManager() {
         case "true-false":
           await supabase.from("true_false_questions").insert({
             question_id: questionData.id,
-            correct_answer: !!newQuestion.model_answer,
-            model_answer: !!newQuestion.model_answer,
+            correct_answer: !!newQuestion.model_answer, // convert to boolean
+            model_answer: !!newQuestion.model_answer, // convert to boolean
           })
           break
         case "short-answer":
@@ -540,6 +544,8 @@ export default function QuestionManager() {
               <SelectItem value="fill-in-the-blank">Fill in the Blank</SelectItem>
               <SelectItem value="matching">Matching</SelectItem>
               <SelectItem value="code">Code</SelectItem>
+              <SelectItem value="sql">SQL</SelectItem>
+              <SelectItem value="algorithm">Algorithm</SelectItem>
               <SelectItem value="true-false">True/False</SelectItem>
               <SelectItem value="short-answer">Short Answer</SelectItem>
               <SelectItem value="essay">Essay</SelectItem>

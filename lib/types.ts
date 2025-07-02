@@ -3,7 +3,7 @@ export type ScoreType = "green" | "amber" | "red"
 export interface Question {
   id: string
   topic: string
-  type: "text" | "multiple-choice" | "fill-in-the-blank" | "matching" | "code" | "short-answer" | "essay" | "true-false"
+  type: "text" | "multiple-choice" | "fill-in-the-blank" | "matching" | "code" | "algorithm" | "sql" | "short-answer" | "essay" | "true-false"
   question_text: string
   model_answer: string | string[] | boolean
   options?: string[]

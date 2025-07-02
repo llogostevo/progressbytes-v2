@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       authListener.subscription.unsubscribe()
     }
-  }, [fetchUser])
+  }, [fetchUser, supabase.auth])
 
   return (
     <AuthContext.Provider value={{ isLoggedIn, userRole, refreshUser: fetchUser }}>
