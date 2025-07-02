@@ -456,8 +456,8 @@ export default function QuestionManager() {
         case "true-false":
           await supabase.from("true_false_questions").insert({
             question_id: questionData.id,
-            correct_answer: !!newQuestion.model_answer,
-            model_answer: !!newQuestion.model_answer,
+            correct_answer: !!newQuestion.model_answer, // convert to boolean
+            model_answer: !!newQuestion.model_answer, // convert to boolean
           })
           break
         case "short-answer":
