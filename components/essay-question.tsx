@@ -48,51 +48,12 @@ export function EssayQuestion({
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium">Essay Question</h3>
-        {/* <div className="flex gap-2">
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
-                <HelpCircle className="h-4 w-4" />
-                Essay Guide
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogTitle className="sr-only">Essay Writing Guide</DialogTitle>
-              <EssayGuide />
-            </DialogContent>
-          </Dialog>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
-                <Monitor className="h-4 w-4" />
-                Digital Impacts Guide
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-6xl">
-              <DialogTitle className="sr-only">Digital Technology Impact Guide</DialogTitle>
-              <DigitalTechnologyGuide />
-            </DialogContent>
-          </Dialog>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
-                <Gavel className="h-4 w-4" />
-                Legal Guide
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-3xl">
-              <DialogTitle className="sr-only">Computer Science Laws Guide</DialogTitle>
-              <ComputerScienceLawsGuide />
-            </DialogContent>
-          </Dialog>
-        </div> */}
           <div className="flex flex-wrap gap-3">
             <Dialog>
               <DialogTrigger asChild>
                 <Button variant="outline" size="default" className="gap-2 h-11 px-6 bg-transparent">
                   <HelpCircle className="h-4 w-4" />
-                  Essay Guide
+                  <span className="hidden sm:inline">Essay Guide</span>
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-4xl max-h-[85vh] w-[95vw] sm:w-full">
@@ -107,7 +68,7 @@ export function EssayQuestion({
               <DialogTrigger asChild>
                 <Button variant="outline" size="default" className="gap-2 h-11 px-6 bg-transparent">
                   <Monitor className="h-4 w-4" />
-                  Digital Impacts Guide
+                  <span className="hidden sm:inline">Digital Impacts Guide</span>
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-5xl max-h-[85vh] w-[95vw] sm:w-full">
@@ -122,7 +83,7 @@ export function EssayQuestion({
               <DialogTrigger asChild>
                 <Button variant="outline" size="default" className="gap-2 h-11 px-6 bg-transparent">
                   <Gavel className="h-4 w-4" />
-                  Legal Guide
+                  <span className="hidden sm:inline">Legal Guide</span>
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-5xl max-h-[85vh] w-[95vw] sm:w-full">

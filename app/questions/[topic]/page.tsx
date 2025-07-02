@@ -493,6 +493,7 @@ export default function QuestionPage() {
   const [availableQuestionTypes, setAvailableQuestionTypes] = useState<string[]>([])
   const [subtopics, setSubtopics] = useState<Array<{ id: string; subtopictitle: string }>>([])
   const [selectedSubtopics, setSelectedSubtopics] = useState<string[]>([])
+  const [hasStartedAnswering, setHasStartedAnswering] = useState(false)
 
   // const freeUser = currentUser.email === "student@example.com"
 
@@ -582,6 +583,8 @@ export default function QuestionPage() {
           setQuestion(newQuestion)
           setAnswer(null)
           setSelfAssessmentScore(null)
+          setHasStartedAnswering(false)
+          setHasStartedAnswering(false)
         }
       } catch (error) {
         console.error("Error loading question:", error)
@@ -949,6 +952,11 @@ export default function QuestionPage() {
     setSelectedQuestionType(type)
     setAnswer(null)
     setSelfAssessmentScore(null)
+    setHasStartedAnswering(false)
+  }
+
+  const handleStartAnswering = () => {
+    setHasStartedAnswering(true)
   }
 
   if (isLoading) {
@@ -1057,7 +1065,7 @@ export default function QuestionPage() {
             <CardHeader>
               <div className="flex justify-between items-center">
                 <CardTitle>Question</CardTitle>
-                {canSkipQuestions({ user_type: userType || 'anonymous' }) && (
+                {canSkipQuestions({ user_type: userType || 'anonymous' }) && !hasStartedAnswering && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -1079,38 +1087,38 @@ export default function QuestionPage() {
                   <MultipleChoiceQuestion
                     options={question.options || []}
                     correctAnswerIndex={question.correctAnswerIndex || 0}
-                    onAnswerSelected={handleMultipleChoiceAnswer}
+                    onAnswerSelected={(...args) => { handleStartAnswering(); handleMultipleChoiceAnswer(...args); }}
                   />
                 ) : question.type === "fill-in-the-blank" ? (
                   <FillInTheBlankQuestion
                     question={question}
-                    onAnswerSelected={handleFillInTheBlankAnswer}
+                    onAnswerSelected={(...args) => { handleStartAnswering(); handleFillInTheBlankAnswer(...args); }}
                   />
                 ) : (question.type === "code" || question.type === "algorithm" || question.type === "sql") ? (
                   <CodeQuestion
-                    onSubmit={handleSubmitAnswer}
+                    onSubmit={(...args) => { handleStartAnswering(); handleSubmitAnswer(...args); }}
                     disabled={isSubmitting}
                   />
                 ) : question.type === "matching" ? (
                   <MatchingQuestion
                     question={question}
-                    onSubmit={handleMatchingAnswer}
+                    onSubmit={(...args) => { handleStartAnswering(); handleMatchingAnswer(...args); }}
                     disabled={isSubmitting}
                   />
                 ) : question.type === "true-false" ? (
                   <TrueFalseQuestion
                     question={question}
-                    onSubmit={handleTrueFalseAnswer}
+                    onSubmit={(...args) => { handleStartAnswering(); handleTrueFalseAnswer(...args); }}
                     disabled={isSubmitting}
                   />
                 ) : question.type === "text" || question.type === "short-answer" ? (
                   <TextQuestion
-                    onSubmit={handleSubmitAnswer}
+                    onSubmit={(...args) => { handleStartAnswering(); handleSubmitAnswer(...args); }}
                     disabled={isSubmitting}
                   />
                 ) : question.type === "essay" ? (
                   <EssayQuestion
-                    onSubmit={handleSubmitAnswer}
+                    onSubmit={(...args) => { handleStartAnswering(); handleSubmitAnswer(...args); }}
                     disabled={isSubmitting}
                     minWords={20}
                     maxWords={500}
