@@ -1051,7 +1051,7 @@ export default function QuestionPage() {
                     question={question}
                     onAnswerSelected={handleFillInTheBlankAnswer}
                   />
-                ) : question.type === "code" ? (
+                ) : (question.type === "code" || question.type === "algorithm") ? (
                   <CodeQuestion
                     onSubmit={handleSubmitAnswer}
                     disabled={isSubmitting}

@@ -45,6 +45,11 @@ const questionTypes = [
     description: "Programming and coding related questions"
   },
   { 
+    value: "algorithm", 
+    label: "Algorithm Question",
+    description: "Algorithm questions that require a step-by-step solution"
+  },
+  { 
     value: "essay", 
     label: "Essay",
     description: "Essay questions"
