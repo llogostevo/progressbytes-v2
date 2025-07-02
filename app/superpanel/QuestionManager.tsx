@@ -544,6 +544,8 @@ export default function QuestionManager() {
               <SelectItem value="fill-in-the-blank">Fill in the Blank</SelectItem>
               <SelectItem value="matching">Matching</SelectItem>
               <SelectItem value="code">Code</SelectItem>
+              <SelectItem value="sql">SQL</SelectItem>
+              <SelectItem value="algorithm">Algorithm</SelectItem>
               <SelectItem value="true-false">True/False</SelectItem>
               <SelectItem value="short-answer">Short Answer</SelectItem>
               <SelectItem value="essay">Essay</SelectItem>
