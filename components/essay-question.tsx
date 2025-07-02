@@ -10,8 +10,11 @@ import {
   DialogTrigger,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { HelpCircle } from "lucide-react"
+import { HelpCircle, Monitor, Gavel } from "lucide-react"
 import EssayGuide from "./EssayGuide"
+import DigitalTechnologyGuide from "./DigitalTechnologyGuide"
+import ComputerScienceLawsGuide from "./ComputerScienceLawsGuide"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 interface EssayQuestionProps {
   onSubmit: (responseText: string) => void
@@ -21,11 +24,11 @@ interface EssayQuestionProps {
 }
 
 
-export function EssayQuestion({ 
-  onSubmit, 
+export function EssayQuestion({
+  onSubmit,
   disabled = false,
   minWords = 100,
-  maxWords = 1000 
+  maxWords = 1000
 }: EssayQuestionProps) {
   const [answer, setAnswer] = useState("")
   const [wordCount, setWordCount] = useState(0)
@@ -46,18 +49,90 @@ export function EssayQuestion({
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">Essay Question</h3>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2">
-              <HelpCircle className="h-4 w-4" />
-              Essay Guide
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogTitle className="sr-only">Essay Writing Guide</DialogTitle>
-            <EssayGuide />
-          </DialogContent>
-        </Dialog>
+        {/* <div className="flex gap-2">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <HelpCircle className="h-4 w-4" />
+                Essay Guide
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogTitle className="sr-only">Essay Writing Guide</DialogTitle>
+              <EssayGuide />
+            </DialogContent>
+          </Dialog>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <Monitor className="h-4 w-4" />
+                Digital Impacts Guide
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-6xl">
+              <DialogTitle className="sr-only">Digital Technology Impact Guide</DialogTitle>
+              <DigitalTechnologyGuide />
+            </DialogContent>
+          </Dialog>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <Gavel className="h-4 w-4" />
+                Legal Guide
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-3xl">
+              <DialogTitle className="sr-only">Computer Science Laws Guide</DialogTitle>
+              <ComputerScienceLawsGuide />
+            </DialogContent>
+          </Dialog>
+        </div> */}
+          <div className="flex flex-wrap gap-3">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="default" className="gap-2 h-11 px-6 bg-transparent">
+                  <HelpCircle className="h-4 w-4" />
+                  Essay Guide
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl max-h-[85vh] w-[95vw] sm:w-full">
+                <DialogTitle className="sr-only">Essay Writing Guide</DialogTitle>
+                <ScrollArea className="max-h-[75vh] pr-4">
+                  <EssayGuide />
+                </ScrollArea>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="default" className="gap-2 h-11 px-6 bg-transparent">
+                  <Monitor className="h-4 w-4" />
+                  Digital Impacts Guide
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-5xl max-h-[85vh] w-[95vw] sm:w-full">
+                <DialogTitle className="sr-only">Digital Technology Impact Guide</DialogTitle>
+                <ScrollArea className="max-h-[75vh] pr-4">
+                  <DigitalTechnologyGuide />
+                </ScrollArea>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="default" className="gap-2 h-11 px-6 bg-transparent">
+                  <Gavel className="h-4 w-4" />
+                  Legal Guide
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-5xl max-h-[85vh] w-[95vw] sm:w-full">
+                <DialogTitle className="sr-only">Computer Science Laws Guide</DialogTitle>
+                <ScrollArea className="max-h-[75vh] pr-4">
+                  <ComputerScienceLawsGuide />
+                </ScrollArea>
+              </DialogContent>
+            </Dialog>
+          </div>
       </div>
       <Card className="p-4 bg-slate-50">
         {/* <div className="text-sm text-muted-foreground mb-2">
@@ -71,8 +146,8 @@ export function EssayQuestion({
           className="min-h-[300px] font-sans text-base leading-relaxed"
         />
       </Card>
-      <Button 
-        onClick={handleSubmit} 
+      <Button
+        onClick={handleSubmit}
         disabled={disabled || !answer.trim() || !isWordCountValid}
         className="w-full sm:w-auto"
       >
@@ -80,7 +155,7 @@ export function EssayQuestion({
       </Button>
       {!isWordCountValid && answer.trim() && (
         <p className="text-sm text-red-600">
-          {wordCount < minWords 
+          {wordCount < minWords
             ? `Your essay is too short. Please write at least ${minWords} words.`
             : `Your essay is too long. Please keep it under ${maxWords} words.`}
         </p>
