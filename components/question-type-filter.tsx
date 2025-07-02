@@ -44,6 +44,11 @@ const questionTypes = [
     label: "Code Question",
     description: "Programming and coding related questions"
   },
+  { 
+    value: "essay", 
+    label: "Essay",
+    description: "Essay questions"
+  },
 ]
 
 export function QuestionTypeFilter({ selectedType, onTypeChange, availableTypes }: QuestionTypeFilterProps) {
