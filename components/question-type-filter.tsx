@@ -50,6 +50,11 @@ const questionTypes = [
     description: "Algorithm questions that require a step-by-step solution"
   },
   { 
+    value: "sql", 
+    label: "SQL Question",
+    description: "SQL questions that require a SQL query"
+  },
+  { 
     value: "essay", 
     label: "Essay",
     description: "Essay questions"
