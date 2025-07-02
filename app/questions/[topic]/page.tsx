@@ -7,7 +7,7 @@ import { SelfAssessment } from "@/components/self-assessment"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import type { Question, Answer, ScoreType, Topic } from "@/lib/types"
-import { ArrowLeft, RefreshCw, CheckCircle2, XCircle } from "lucide-react"
+import { ArrowLeft, RefreshCw, CheckCircle2, XCircle, SkipForward } from "lucide-react"
 import Link from "next/link"
 import { MultipleChoiceQuestion } from "@/components/multiple-choice-question"
 import { FillInTheBlankQuestion } from "@/components/fill-in-the-blank-question"
@@ -23,7 +23,7 @@ import { User } from "@supabase/supabase-js"
 import { QuestionTypeFilter } from "@/components/question-type-filter"
 import { SubtopicFilter } from "@/components/subtopic-filter"
 import { Skeleton } from "@/components/ui/skeleton"
-import { canAccessFilters, getMaxQuestionsPerTopic, UserType } from "@/lib/access"
+import { canAccessFilters, getMaxQuestionsPerTopic, UserType, canSkipQuestions } from "@/lib/access"
 
 // Define types for the database responses
 interface DBQuestion {
@@ -723,6 +723,28 @@ export default function QuestionPage() {
     }
   }
 
+  const handleSkipQuestion = async () => {
+    try {
+      if (!topic) {
+        throw new Error("No topic found")
+      }
+      const newQuestion = await getRandomQuestionForTopic(topic.id, freeUser, userType, selectedSubtopics, selectedQuestionType)
+      
+      if (!newQuestion) {
+        setQuestion(null)
+        setAnswer(null)
+        setSelfAssessmentScore(null)
+        return
+      }
+
+      setQuestion(newQuestion)
+      setAnswer(null)
+      setSelfAssessmentScore(null)
+    } catch (error) {
+      console.error("Error skipping question:", error)
+    }
+  }
+
   const handleMultipleChoiceAnswer = async (selectedIndex: number, isCorrect: boolean) => {
     if (!question || !user) return
 
@@ -1033,7 +1055,20 @@ export default function QuestionPage() {
         ) : (
           <Card className="mb-8">
             <CardHeader>
-              <CardTitle>Question</CardTitle>
+              <div className="flex justify-between items-center">
+                <CardTitle>Question</CardTitle>
+                {canSkipQuestions({ user_type: userType || 'anonymous' }) && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSkipQuestion}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <SkipForward className="mr-2 h-4 w-4" />
+                    Skip Question
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               <div className="mb-6">
