@@ -1,6 +1,12 @@
 // TODO: restrict user access to filters
 "use client"
 
+// access control
+import { useUser } from "@/hooks/useUser"
+import { useAccess } from "@/hooks/useAccess"
+import { canViewAnswers, canAccessFilters } from "@/lib/access"
+
+// react
 import { useState, useEffect, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -141,6 +147,12 @@ function RevisitSkeleton() {
 }
 
 export default function RevisitPage() {
+
+  // access control
+  const { user: accessUser, userType } = useUser()
+  const { canViewAnswers: userCanViewAnswers, canAccessFilters: userCanAccessFilters } = useAccess()
+
+
   const router = useRouter()
   const searchParams = useSearchParams()
   const tabParam = searchParams.get("tab") as ScoreType | null
@@ -164,12 +176,12 @@ export default function RevisitPage() {
 
     return selectedTopics.length > 0
       ? allAnswers.filter((answer) => {
-          const question = questions[answer.question_id]
-          return (
-            question &&
-            selectedTopics.some((topicSlug) => topics.some((t) => t.slug === topicSlug && t.id === question.topic))
-          )
-        })
+        const question = questions[answer.question_id]
+        return (
+          question &&
+          selectedTopics.some((topicSlug) => topics.some((t) => t.slug === topicSlug && t.id === question.topic))
+        )
+      })
       : allAnswers
   }, [allAnswers, selectedTopics, topics, questions])
 
@@ -511,6 +523,31 @@ export default function RevisitPage() {
     return <RevisitSkeleton />
   }
 
+  // access control
+  if (!userCanViewAnswers) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          <Card>
+            <CardHeader>
+              <CardTitle>Access Restricted</CardTitle>
+              <CardDescription>
+                You need a paid plan to view your previous answers and revisit questions.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href="/settings">
+                <Button className="bg-emerald-600 hover:bg-emerald-700">
+                  Upgrade Plan
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
@@ -527,38 +564,40 @@ export default function RevisitPage() {
             <UserLogin email={user?.email} />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-            <Card>
-              <CardHeader>
-                <CardTitle>Filter by Topic</CardTitle>
-                <CardDescription>Select specific topics to review</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <TopicFilter selectedTopics={selectedTopics} onTopicChange={handleTopicChange} topics={topics} />
-              </CardContent>
-            </Card>
+          {userCanAccessFilters && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Filter by Topic</CardTitle>
+                  <CardDescription>Select specific topics to review</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <TopicFilter selectedTopics={selectedTopics} onTopicChange={handleTopicChange} topics={topics} />
+                </CardContent>
+              </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Filter by Type</CardTitle>
-                <CardDescription>Choose question types to review</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <QuestionTypeFilter
-                  selectedType={typeParam}
-                  onTypeChange={(type: string | null) => {
-                    const params = new URLSearchParams(searchParams.toString())
-                    if (type === null) {
-                      params.delete("type")
-                    } else {
-                      params.set("type", type)
-                    }
-                    router.push(`?${params.toString()}`)
-                  }}
-                />
-              </CardContent>
-            </Card>
-          </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Filter by Type</CardTitle>
+                  <CardDescription>Choose question types to review</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <QuestionTypeFilter
+                    selectedType={typeParam}
+                    onTypeChange={(type: string | null) => {
+                      const params = new URLSearchParams(searchParams.toString())
+                      if (type === null) {
+                        params.delete("type")
+                      } else {
+                        params.set("type", type)
+                      }
+                      router.push(`?${params.toString()}`)
+                    }}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
 
         {/* Filter Bar */}
@@ -668,15 +707,14 @@ export default function RevisitPage() {
                                       {getQuestionTypeLabel(question.type)}
                                     </Badge>
                                     <Badge
-                                      className={`flex items-center gap-1 whitespace-nowrap ${
-                                        !answer.score
-                                          ? "bg-gray-100 hover:bg-gray-200 text-gray-600"
-                                          : answer.score === "green"
-                                            ? "bg-emerald-50 hover:bg-emerald-100 text-emerald-700"
-                                            : answer.score === "amber"
-                                              ? "bg-amber-50 hover:bg-amber-100 text-amber-700"
-                                              : "bg-red-50 hover:bg-red-100 text-red-700"
-                                      }`}
+                                      className={`flex items-center gap-1 whitespace-nowrap ${!answer.score
+                                        ? "bg-gray-100 hover:bg-gray-200 text-gray-600"
+                                        : answer.score === "green"
+                                          ? "bg-emerald-50 hover:bg-emerald-100 text-emerald-700"
+                                          : answer.score === "amber"
+                                            ? "bg-amber-50 hover:bg-amber-100 text-amber-700"
+                                            : "bg-red-50 hover:bg-red-100 text-red-700"
+                                        }`}
                                     >
                                       {!answer.score ? (
                                         <HelpCircle className="h-4 w-4" />
@@ -737,7 +775,7 @@ export default function RevisitPage() {
                                             const selectedIndexes = JSON.parse(answer?.response_text || "[]") as number[];
                                             const selectedOptions = selectedIndexes.map(index => question.options?.[index]);
                                             const modelAnswer = Array.isArray(question.model_answer) ? question.model_answer : [question.model_answer];
-                                            
+
                                             return (
                                               <div className="space-y-2">
                                                 {selectedOptions.map((option, i) => {
@@ -825,11 +863,10 @@ export default function RevisitPage() {
                                         return (
                                           <div className="text-center">
                                             <span
-                                              className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                                                isCorrect
-                                                  ? "bg-emerald-100 text-emerald-800"
-                                                  : "bg-red-100 text-red-800"
-                                              }`}
+                                              className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${isCorrect
+                                                ? "bg-emerald-100 text-emerald-800"
+                                                : "bg-red-100 text-red-800"
+                                                }`}
                                             >
                                               {userAnswer === "true" ? "True" : "False"}
                                               {isCorrect ? (
@@ -1068,11 +1105,10 @@ export default function RevisitPage() {
                   placeholder="Type &quot;delete&quot; to confirm"
                   value={deleteConfirmation}
                   onChange={(e) => setDeleteConfirmation(e.target.value)}
-                  className={`w-full ${
-                    deleteConfirmation && deleteConfirmation !== "delete"
-                      ? "border-red-300 focus-visible:ring-red-500"
-                      : ""
-                  }`}
+                  className={`w-full ${deleteConfirmation && deleteConfirmation !== "delete"
+                    ? "border-red-300 focus-visible:ring-red-500"
+                    : ""
+                    }`}
                 />
                 {deleteConfirmation && deleteConfirmation !== "delete" && (
                   <p className="text-sm text-red-500 mt-1">Please type &quot;delete&quot; exactly to confirm</p>
@@ -1095,11 +1131,10 @@ export default function RevisitPage() {
                 variant="destructive"
                 onClick={handleDeleteConfirm}
                 disabled={deleteConfirmation !== "delete" || isDeleting}
-                className={`flex items-center gap-2 ${
-                  deleteConfirmation === "delete"
-                    ? "bg-red-600 hover:bg-red-700 text-white"
-                    : "bg-red-100 text-red-400 cursor-not-allowed"
-                }`}
+                className={`flex items-center gap-2 ${deleteConfirmation === "delete"
+                  ? "bg-red-600 hover:bg-red-700 text-white"
+                  : "bg-red-100 text-red-400 cursor-not-allowed"
+                  }`}
               >
                 {isDeleting ? (
                   <>

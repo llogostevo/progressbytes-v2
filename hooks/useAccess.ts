@@ -11,12 +11,14 @@ import {
   getMaxQuestionsPerTopic,
   getAvailableQuestionsForTopic,
   User,
+  canAccessFilters,
 } from '@/lib/access';
 
 interface AccessControl {
   canCreateClass: boolean;
   canViewAnswers: boolean;
   canUseAI: boolean;
+  canAccessFilters: boolean;
   maxClasses: number;
   maxStudentsPerClass: number;
   maxQuestionsPerDay: number;
@@ -33,6 +35,7 @@ export function useAccess(): AccessControl {
     canCreateClass: canCreateClass(safeUser),
     canViewAnswers: canViewAnswers(safeUser),
     canUseAI: canUseAI(safeUser),
+    canAccessFilters: canAccessFilters(safeUser),
     maxClasses: getMaxClasses(safeUser),
     maxStudentsPerClass: getMaxStudentsPerClass(safeUser),
     maxQuestionsPerDay: getMaxQuestionsPerDay(safeUser),
