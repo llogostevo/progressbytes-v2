@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { User, Star, Sparkles, X } from "lucide-react"
 import Link from "next/link"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { createClient } from "@/utils/supabase/client"
 import {
   Dialog,
@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { useUser } from "@/hooks/useUser"
 
 interface CTABannerProps {
   variant: 'free' | 'basic' | 'premium'
@@ -22,8 +23,24 @@ interface CTABannerProps {
 export function CTABanner({ variant, userEmail }: CTABannerProps) {
   const [showDialog, setShowDialog] = useState(false)
   const [isVisible, setIsVisible] = useState(true)
+  const { user, loading } = useUser()
   const supabase = createClient()
 
+  // Check if banner should be visible based on user's ai_interest_banner setting
+  useEffect(() => {
+    if (!loading && user) {
+      // For premium variant, check the ai_interest_banner field
+      if (variant === 'premium') {
+        // @ts-ignore - ai_interest_banner field exists in the database profile
+        const aiInterestBanner = user.ai_interest_banner
+        if (aiInterestBanner === false) {
+          setIsVisible(false)
+        }
+      }
+    }
+  }, [user, loading, variant])
+
+// function to remove the banner from the users profile
   const handleClose = async () => {
     if (userEmail) {
       const { error } = await supabase
@@ -43,11 +60,12 @@ export function CTABanner({ variant, userEmail }: CTABannerProps) {
 
   const handleConfirmClose = async () => {
     await handleClose()
+    console.log("handleConfirmClose")
     setShowDialog(false)
     setIsVisible(false)
   }
 
-  if (!isVisible) {
+  if (loading || !isVisible) {
     return null
   }
 
@@ -132,7 +150,7 @@ export function CTABanner({ variant, userEmail }: CTABannerProps) {
         </div>
 
         <Dialog open={showDialog} onOpenChange={setShowDialog}>
-          <DialogContent>
+          <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Are you sure?</DialogTitle>
               <DialogDescription>

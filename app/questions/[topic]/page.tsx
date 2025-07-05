@@ -1034,9 +1034,9 @@ export default function QuestionPage() {
 
         {/* CTA Banner */}
         <div className="mb-6 md:mb-8">
-          {freeUser && <CTABanner variant="free" />}
-          {userType === 'basic' && <CTABanner variant="basic" />}
-          {userType === 'revision' && <CTABanner variant="premium" />}
+          {freeUser && <CTABanner variant="free" userEmail={user?.email} />}
+          {userType === 'basic' && <CTABanner variant="basic" userEmail={user?.email} />}
+          {userType === 'revision' && <CTABanner variant="premium" userEmail={user?.email} />}
         </div>
 
         {!question ? (
