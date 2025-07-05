@@ -584,7 +584,6 @@ export default function QuestionPage() {
           setAnswer(null)
           setSelfAssessmentScore(null)
           setHasStartedAnswering(false)
-          setHasStartedAnswering(false)
         }
       } catch (error) {
         console.error("Error loading question:", error)
@@ -715,12 +714,14 @@ export default function QuestionPage() {
         setQuestion(null)
         setAnswer(null)
         setSelfAssessmentScore(null)
+        setHasStartedAnswering(false) 
         return
       }
 
       setQuestion(newQuestion)
       setAnswer(null)
       setSelfAssessmentScore(null)
+      setHasStartedAnswering(false)
     } catch (error) {
       console.error("Error loading new question:", error)
     }
@@ -737,12 +738,14 @@ export default function QuestionPage() {
         setQuestion(null)
         setAnswer(null)
         setSelfAssessmentScore(null)
+        setHasStartedAnswering(false)
         return
       }
 
       setQuestion(newQuestion)
       setAnswer(null)
       setSelfAssessmentScore(null)
+      setHasStartedAnswering(false)
     } catch (error) {
       console.error("Error skipping question:", error)
     }
