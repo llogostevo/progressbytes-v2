@@ -302,7 +302,9 @@ export default function RevisitPage() {
               correctAnswerIndex = typeSpecificData?.correct_answer_index || 0
               break
             case "essay":
-              typeSpecificData = q.essay_questions?.[0] as TypeSpecificData
+              typeSpecificData = {
+                model_answer: q.essay_questions?.model_answer || "",
+              }
               break
           }
 
