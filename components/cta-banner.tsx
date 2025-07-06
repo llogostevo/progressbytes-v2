@@ -31,7 +31,6 @@ export function CTABanner({ variant, userEmail }: CTABannerProps) {
     if (!loading && user) {
       // For premium variant, check the ai_interest_banner field
       if (variant === 'premium') {
-        // @ts-ignore - ai_interest_banner field exists in the database profile
         const aiInterestBanner = user.ai_interest_banner
         if (aiInterestBanner === false) {
           setIsVisible(false)

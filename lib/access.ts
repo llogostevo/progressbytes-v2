@@ -14,6 +14,7 @@ export interface User {
   user_type: UserType;
   email?: string;
   role?: 'student' | 'teacher' | 'admin';
+  ai_interest_banner?: boolean;
 }
 
 // What each tier can access
