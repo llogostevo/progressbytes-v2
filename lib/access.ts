@@ -14,6 +14,7 @@ export interface User {
   user_type: UserType;
   email?: string;
   role?: 'student' | 'teacher' | 'admin';
+  ai_interest_banner?: boolean;
 }
 
 // What each tier can access
@@ -27,6 +28,8 @@ interface AccessLimits {
   canSkipQuestions: boolean;
   maxQuestionsPerDay: number;
   maxQuestionsPerTopic: number;
+  canAccessAnalytics: boolean;
+
 }
 
 // Centralised access limits
@@ -39,6 +42,7 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     maxQuestionsPerTopic: 1,
     canAccessFilters: false,
     canSkipQuestions: false,
+    canAccessAnalytics: false,
   },
   basic: {
     canCreateClass: false,
@@ -48,6 +52,7 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     maxQuestionsPerTopic: 5,
     canAccessFilters: false,
     canSkipQuestions: false,
+    canAccessAnalytics: false,
   },
   revision: {
     canCreateClass: false,
@@ -57,6 +62,7 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     maxQuestionsPerTopic: Infinity,
     canAccessFilters: true,
     canSkipQuestions: true,
+    canAccessAnalytics: false,
   },
   revisionAI: {
     canCreateClass: false,
@@ -66,6 +72,7 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     maxQuestionsPerTopic: Infinity,
     canAccessFilters: true,
     canSkipQuestions: true,
+    canAccessAnalytics: false,
   },
 
   teacherBasic: {
@@ -78,6 +85,7 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     maxQuestionsPerTopic: 5,
     canAccessFilters: false,
     canSkipQuestions: false,
+    canAccessAnalytics: false,
   },
 
   teacherPremium: {
@@ -90,6 +98,7 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     maxQuestionsPerTopic: Infinity,
     canAccessFilters: true,
     canSkipQuestions: true,
+    canAccessAnalytics: true,
   },
   admin: {
     canCreateClass: true,
@@ -101,6 +110,7 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     maxQuestionsPerTopic: Infinity,
     canAccessFilters: true,
     canSkipQuestions: true,
+    canAccessAnalytics: true,
   },
 };
 
@@ -125,6 +135,9 @@ export const getMaxQuestionsPerDay = (user: User): number =>
 // Class limits
 export const getMaxClasses = (user: User): number =>
   userAccessLimits[user.user_type]?.maxClasses ?? 0;
+
+export const canAccessAnalytics = (user: User): boolean =>
+  userAccessLimits[user.user_type]?.canAccessAnalytics ?? false;
 
 export const getMaxStudentsPerClass = (user: User): number =>
   userAccessLimits[user.user_type]?.maxStudentsPerClass ?? 0;

@@ -1,4 +1,9 @@
 "use client"
+// access control
+import { useAccess } from "@/hooks/useAccess"
+// import { canViewAnswers } from "@/lib/access"
+// react
+// import { useUser } from "@/hooks/useUser"
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -270,7 +275,7 @@ function ProgressCharts({ answers, topics }: { answers: Answer[]; topics: Topic[
                             <p className="text-red-600">Needs Work: {data["Needs Work"]}</p>
                             <p className="font-medium mt-1">Total: {data.total}</p>
                           </div>
-                          <Link 
+                          <Link
                             href={`/revisit?topics=${topics.find(t => t.name === data.name)?.slug}`}
                             className="mt-2 block text-center text-sm text-emerald-600 hover:text-emerald-700 font-medium"
                           >
@@ -338,7 +343,7 @@ function ProgressCharts({ answers, topics }: { answers: Answer[]; topics: Topic[
                             <p className="text-red-600">Needs Work: {data["Needs Work"]}</p>
                             <p className="font-medium mt-1">Total: {data.total}</p>
                           </div>
-                          <Link 
+                          <Link
                             href={`/revisit?topics=${topics.find(t => t.name === data.name)?.slug}`}
                             className="mt-2 block text-center text-sm text-emerald-600 hover:text-emerald-700 font-medium"
                           >
@@ -504,6 +509,10 @@ function StreakDisplay({ streakData, scorePercentages }: { streakData: StreakDat
 }
 
 export default function ProgressPage() {
+  // access control
+  const { canViewAnswers: userCanViewAnswers } = useAccess()
+
+
   const [answers, setAnswers] = useState<Answer[]>([])
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -789,6 +798,31 @@ export default function ProgressPage() {
 
   if (isLoading) {
     return <ProgressSkeleton />
+  }
+
+  // Add this access control check before the main content
+  if (!userCanViewAnswers) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          <Card>
+            <CardHeader>
+              <CardTitle>Access Restricted</CardTitle>
+              <CardDescription>
+                You need a paid plan to view your progress and analytics.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href="/settings">
+                <Button className="bg-emerald-600 hover:bg-emerald-700">
+                  Upgrade Plan
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
   }
 
   return (

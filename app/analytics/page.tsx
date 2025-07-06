@@ -1,5 +1,11 @@
 "use client"
 
+// access control
+// import { useUser } from "@/hooks/useUser"
+import { useAccess } from "@/hooks/useAccess"
+// import { canAccessAnalytics } from "@/lib/access"
+
+// react
 import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Activity, Users, Eye, Navigation, Home, FileText, BarChart, RefreshCw, CheckCircle, Calendar, Filter } from "lucide-react"
@@ -24,6 +30,7 @@ import {
 } from "recharts"
 import { PostgrestError } from '@supabase/supabase-js'
 import React from "react"
+import Link from "next/link"
 
 interface Class {
   id: string
@@ -497,7 +504,7 @@ function StudentSelectorSkeleton() {
         <Skeleton className="h-4 w-24" />
         <Skeleton className="h-10 flex-1" />
       </div>
-      
+
       {/* Student list skeleton */}
       <div className="max-h-72 overflow-y-auto border rounded-md divide-y divide-gray-100 bg-white">
         {[...Array(6)].map((_, i) => (
@@ -587,6 +594,11 @@ function HomeworkSkeleton() {
 
 // MAIN PAGE
 export default function AnalyticsPage() {
+  // access control
+  // const { user: accessUser, userType } = useUser()
+  const { canAccessAnalytics: userCanAccessAnalytics } = useAccess()
+
+
   const [currentUserRole, setCurrentUserRole] = useState<UserRole | null>(null)
   const [userActivity, setUserActivity] = useState<UserActivity[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -824,7 +836,7 @@ export default function AnalyticsPage() {
     userActivity.forEach(activity => {
       const date = new Date(activity.created_at).toDateString()
       const sessionKey = `${activity.user_id}_${date}`
-      
+
       if (!sessions.has(sessionKey)) {
         sessions.set(sessionKey, {
           id: sessionKey,
@@ -920,17 +932,17 @@ export default function AnalyticsPage() {
   }, [selectedClass, supabase])
 
   // Filter activity based on selected class
-  const filteredActivity = selectedClass === "all" 
-    ? userActivity 
+  const filteredActivity = selectedClass === "all"
+    ? userActivity
     : userActivity.filter(activity => {
-        // For students, only show their own activity
-        if (currentUserRole === 'student') {
-          return activity.user_id === selectedStudent
-        }
-        // For teachers, show activity of students in their class
-        const studentInClass = students.find(s => s.userid === activity.user_id)
-        return studentInClass && activity.class_id === selectedClass
-      })
+      // For students, only show their own activity
+      if (currentUserRole === 'student') {
+        return activity.user_id === selectedStudent
+      }
+      // For teachers, show activity of students in their class
+      const studentInClass = students.find(s => s.userid === activity.user_id)
+      return studentInClass && activity.class_id === selectedClass
+    })
 
   // Update unique users count based on filtered activity
   const filteredUniqueUsers = new Set(filteredActivity.map(a => a.user_id)).size
@@ -993,6 +1005,30 @@ export default function AnalyticsPage() {
             <h1 className="text-3xl font-bold mt-4 mb-2">Analytics</h1>
             <p className="text-muted-foreground">Access denied. This page is only available to administrators and teachers.</p>
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!userCanAccessAnalytics) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          <Card>
+            <CardHeader>
+              <CardTitle>Access Restricted</CardTitle>
+              <CardDescription>
+                You need a paid plan to access analytics and student progress tracking.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href="/settings">
+                <Button className="bg-emerald-600 hover:bg-emerald-700">
+                  Upgrade Plan
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
         </div>
       </div>
     )
@@ -1220,7 +1256,7 @@ export default function AnalyticsPage() {
               <CardContent>
                 {/* Time Filter Tabs - always visible */}
                 <div className="flex items-center justify-end mb-4">
-                  <Tabs value={timeFilter} onValueChange={(value) => setTimeFilter(value as "today" | "week" | "all")}> 
+                  <Tabs value={timeFilter} onValueChange={(value) => setTimeFilter(value as "today" | "week" | "all")}>
                     <TabsList>
                       <TabsTrigger value="today" className="flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
@@ -1267,25 +1303,22 @@ export default function AnalyticsPage() {
                             <h4 className="font-medium leading-none">Sort by</h4>
                             <div className="space-y-1">
                               <button
-                                className={`w-full text-left px-2 py-1 rounded text-sm transition-colors ${
-                                  sortBy === 'forename' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
-                                }`}
+                                className={`w-full text-left px-2 py-1 rounded text-sm transition-colors ${sortBy === 'forename' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+                                  }`}
                                 onClick={() => setSortBy('forename')}
                               >
                                 Forename
                               </button>
                               <button
-                                className={`w-full text-left px-2 py-1 rounded text-sm transition-colors ${
-                                  sortBy === 'lastname' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
-                                }`}
+                                className={`w-full text-left px-2 py-1 rounded text-sm transition-colors ${sortBy === 'lastname' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+                                  }`}
                                 onClick={() => setSortBy('lastname')}
                               >
                                 Surname
                               </button>
                               <button
-                                className={`w-full text-left px-2 py-1 rounded text-sm transition-colors ${
-                                  sortBy === 'email' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
-                                }`}
+                                className={`w-full text-left px-2 py-1 rounded text-sm transition-colors ${sortBy === 'email' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+                                  }`}
                                 onClick={() => setSortBy('email')}
                               >
                                 Email
@@ -1303,7 +1336,7 @@ export default function AnalyticsPage() {
                           const initials = student?.forename?.[0] && student?.lastname?.[0]
                             ? `${student.forename[0]}${student.lastname[0]}`.toUpperCase()
                             : (student.email?.[0]?.toUpperCase() || '?');
-                          const fullName = student?.forename && student?.lastname 
+                          const fullName = student?.forename && student?.lastname
                             ? `${student.forename} ${student.lastname}`
                             : student?.forename || student?.lastname || '';
                           return (
