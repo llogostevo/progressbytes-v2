@@ -1,7 +1,7 @@
 "use client"
 
 // access control
-import { useUser } from "@/hooks/useUser"
+// import { useUser } from "@/hooks/useUser"
 import { useAccess } from "@/hooks/useAccess"
 // import { canAccessAnalytics } from "@/lib/access"
 
