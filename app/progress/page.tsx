@@ -1,9 +1,9 @@
 "use client"
 // access control
 import { useAccess } from "@/hooks/useAccess"
-import { canViewAnswers } from "@/lib/access"
+// import { canViewAnswers } from "@/lib/access"
 // react
-import { useUser } from "@/hooks/useUser"
+// import { useUser } from "@/hooks/useUser"
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"

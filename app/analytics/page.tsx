@@ -595,7 +595,7 @@ function HomeworkSkeleton() {
 // MAIN PAGE
 export default function AnalyticsPage() {
   // access control
-  const { user: accessUser, userType } = useUser()
+  // const { user: accessUser, userType } = useUser()
   const { canAccessAnalytics: userCanAccessAnalytics } = useAccess()
 
 

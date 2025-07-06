@@ -2,9 +2,9 @@
 "use client"
 
 // access control
-import { useUser } from "@/hooks/useUser"
+// import { useUser } from "@/hooks/useUser"
 import { useAccess } from "@/hooks/useAccess"
-import { canViewAnswers, canAccessFilters } from "@/lib/access"
+// import { canViewAnswers, canAccessFilters } from "@/lib/access"
 
 // react
 import { useState, useEffect, useMemo } from "react"
@@ -149,7 +149,7 @@ function RevisitSkeleton() {
 export default function RevisitPage() {
 
   // access control
-  const { user: accessUser, userType } = useUser()
+  // const { user: accessUser, userType } = useUser()
   const { canViewAnswers: userCanViewAnswers, canAccessFilters: userCanAccessFilters } = useAccess()
 
 
