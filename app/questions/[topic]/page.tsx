@@ -175,8 +175,8 @@ async function getSubtopicsForTopic(topicId: string): Promise<Array<{ id: string
 
 // Modify the getRandomQuestionForTopic function to return null when no questions are found
 async function getRandomQuestionForTopic(
-  topicId: string, 
-  freeUser: boolean, 
+  topicId: string,
+  freeUser: boolean,
   userType: "revision" | "revisionAI" | "basic" | null,
   selectedSubtopics: string[],
   selectedQuestionType?: string | null
@@ -441,7 +441,7 @@ function QuestionSkeleton() {
               <Skeleton className="h-6 w-full" />
               <Skeleton className="h-6 w-3/4" />
               <Skeleton className="h-6 w-1/2" />
-              
+
               {/* Answer Input Skeleton */}
               <div className="mt-6">
                 <Skeleton className="h-4 w-32 mb-2" />
@@ -595,13 +595,111 @@ export default function QuestionPage() {
     loadQuestion()
   }, [topicSlug, isLoadingUserType, userType, freeUser, questionId, selectedQuestionType, selectedSubtopics])
 
+  // const handleSubmitAnswer = async (responseText: string) => {
+  //   if (!question || !user) return
+
+  //   setIsSubmitting(true)
+
+  //   try {
+  //     // Create initial answer record
+  //     const { data: answerData, error: insertError } = await supabase
+  //       .from('student_answers')
+  //       .insert({
+  //         student_id: user.id,
+  //         question_id: question.id,
+  //         response_text: responseText,
+  //         self_assessed: false,
+  //         submitted_at: new Date().toISOString()
+  //       })
+  //       .select()
+  //       .single()
+
+  //     if (insertError) throw insertError
+
+  //     if (userType === "revisionAI") {
+  //       // Paid version - use AI feedback
+  //       /* TODO: setup supabase AI connection */
+  //       // Simulate API call delay
+  //       await new Promise((resolve) => setTimeout(resolve, 1500))
+
+  //       // Mock AI feedback generation
+  //       const mockFeedback = generateMockFeedback(responseText, question)
+
+  //       // Update the answer with AI feedback
+  //       const { error: updateError } = await supabase
+  //         .from('student_answers')
+  //         .update({
+  //           ai_feedback: mockFeedback.feedback,
+  //           ai_score: mockFeedback.score
+  //         })
+  //         .eq('id', answerData.id)
+
+  //       if (updateError) throw updateError
+
+  //       setAnswer({
+  //         id: answerData.id,
+  //         question_id: question.id,
+  //         student_id: user.id,
+  //         response_text: responseText,
+  //         ai_feedback: mockFeedback.feedback,
+  //         score: mockFeedback.score,
+  //         submitted_at: answerData.submitted_at,
+  //         self_assessed: false,
+  //       })
+  //     } else {
+  //       // Free version - just set the basic answer
+  //       setAnswer({
+  //         id: answerData.id,
+  //         question_id: question.id,
+  //         student_id: user.id,
+  //         response_text: responseText,
+  //         ai_feedback: null,
+  //         score: "amber", // Placeholder, will be updated after self-assessment
+  //         submitted_at: answerData.submitted_at,
+  //         self_assessed: false,
+  //       })
+  //     }
+
+  //     // Track question submission
+  //     await supabase.from('user_activity').insert({
+  //       user_id: user.id,
+  //       event: 'submitted_question',
+  //       path: `/questions/${topicSlug}`,
+  //       user_email: user.email
+  //     })
+
+  //   } catch (error) {
+  //     console.error("Error saving answer:", error)
+  //   } finally {
+  //     setIsSubmitting(false)
+  //   }
+  // }
+
   const handleSubmitAnswer = async (responseText: string) => {
-    if (!question || !user) return
+    if (!question) return
 
     setIsSubmitting(true)
 
+    // Mock answer object for anonymous users
+    const baseAnswer = {
+      id: "anon",
+      question_id: question.id,
+      student_id: "anon",
+      response_text: responseText,
+      ai_feedback: null,
+      score: "amber" as ScoreType,
+      submitted_at: new Date().toISOString(),
+      self_assessed: false,
+    }
+
     try {
-      // Create initial answer record
+      // If not logged in, simulate and return
+      if (!user) {
+        setAnswer(baseAnswer)
+        return
+      }
+
+      // Logged-in user: save to Supabase
       const { data: answerData, error: insertError } = await supabase
         .from('student_answers')
         .insert({
@@ -617,16 +715,12 @@ export default function QuestionPage() {
       if (insertError) throw insertError
 
       if (userType === "revisionAI") {
-        // Paid version - use AI feedback
-        /* TODO: setup supabase AI connection */
-        // Simulate API call delay
+        // Simulate delay + generate feedback
         await new Promise((resolve) => setTimeout(resolve, 1500))
-
-        // Mock AI feedback generation
         const mockFeedback = generateMockFeedback(responseText, question)
 
-        // Update the answer with AI feedback
-        const { error: updateError } = await supabase
+        // Save feedback
+        await supabase
           .from('student_answers')
           .update({
             ai_feedback: mockFeedback.feedback,
@@ -634,33 +728,25 @@ export default function QuestionPage() {
           })
           .eq('id', answerData.id)
 
-        if (updateError) throw updateError
-
         setAnswer({
+          ...baseAnswer,
           id: answerData.id,
-          question_id: question.id,
           student_id: user.id,
-          response_text: responseText,
           ai_feedback: mockFeedback.feedback,
           score: mockFeedback.score,
           submitted_at: answerData.submitted_at,
-          self_assessed: false,
         })
       } else {
-        // Free version - just set the basic answer
+        // Free logged-in user
         setAnswer({
+          ...baseAnswer,
           id: answerData.id,
-          question_id: question.id,
           student_id: user.id,
-          response_text: responseText,
-          ai_feedback: null,
-          score: "amber", // Placeholder, will be updated after self-assessment
           submitted_at: answerData.submitted_at,
-          self_assessed: false,
         })
       }
 
-      // Track question submission
+      // Log activity
       await supabase.from('user_activity').insert({
         user_id: user.id,
         event: 'submitted_question',
@@ -674,6 +760,7 @@ export default function QuestionPage() {
       setIsSubmitting(false)
     }
   }
+
 
   const handleSelfAssessment = async (score: ScoreType) => {
     if (!answer || !user) return
@@ -709,12 +796,12 @@ export default function QuestionPage() {
         throw new Error("No topic found")
       }
       const newQuestion = await getRandomQuestionForTopic(topic.id, freeUser, userType, selectedSubtopics, selectedQuestionType)
-      
+
       if (!newQuestion) {
         setQuestion(null)
         setAnswer(null)
         setSelfAssessmentScore(null)
-        setHasStartedAnswering(false) 
+        setHasStartedAnswering(false)
         return
       }
 
@@ -733,7 +820,7 @@ export default function QuestionPage() {
         throw new Error("No topic found")
       }
       const newQuestion = await getRandomQuestionForTopic(topic.id, freeUser, userType, selectedSubtopics, selectedQuestionType)
-      
+
       if (!newQuestion) {
         setQuestion(null)
         setAnswer(null)
@@ -752,7 +839,23 @@ export default function QuestionPage() {
   }
 
   const handleMultipleChoiceAnswer = async (selectedIndex: number, isCorrect: boolean) => {
-    if (!question || !user) return
+    if (!question) return
+
+    if (!user) {
+      // For anonymous users, just set a mock answer
+      setAnswer({
+        id: "anon",
+        question_id: question.id,
+        student_id: "anon",
+        response_text: selectedIndex.toString(),
+        ai_feedback: isCorrect ? "Well done! You selected the correct answer." : "Try to understand why this answer is incorrect.",
+        score: isCorrect ? "green" : "red",
+        submitted_at: new Date().toISOString(),
+        self_assessed: true,
+      })
+      setSelfAssessmentScore(isCorrect ? "green" : "red")
+      return
+    }
 
     try {
       const { data: answerData, error: insertError } = await supabase
@@ -790,7 +893,22 @@ export default function QuestionPage() {
   }
 
   const handleFillInTheBlankAnswer = async (isCorrect: boolean, selectedIndexes: number[]) => {
-    if (!question || !user) return
+    if (!question) return
+
+    if (!user) {
+      setAnswer({
+        id: "anon",
+        question_id: question.id,
+        student_id: "anon",
+        response_text: JSON.stringify(selectedIndexes),
+        ai_feedback: isCorrect ? "Well done! You selected the correct answers." : "Try to understand why these answers are incorrect.",
+        score: isCorrect ? "green" : "red",
+        submitted_at: new Date().toISOString(),
+        self_assessed: true,
+      })
+      setSelfAssessmentScore(isCorrect ? "green" : "red")
+      return
+    }
 
     try {
       const { data: answerData, error: insertError } = await supabase
@@ -828,11 +946,26 @@ export default function QuestionPage() {
   }
 
   const handleMatchingAnswer = async (selections: Record<string, string[]>) => {
-    if (!question || !user) return
+    if (!question) return
 
     const isCorrect = question.pairs?.every(pair =>
       selections[pair.statement]?.includes(pair.match)
     ) || false
+
+    if (!user) {
+      setAnswer({
+        id: "anon",
+        question_id: question.id,
+        student_id: "anon",
+        response_text: JSON.stringify(selections),
+        ai_feedback: isCorrect ? "Well done! You matched all items correctly." : "Some matches are incorrect. Try again!",
+        score: isCorrect ? "green" : "red",
+        submitted_at: new Date().toISOString(),
+        self_assessed: true,
+      })
+      setSelfAssessmentScore(isCorrect ? "green" : "red")
+      return
+    }
 
     try {
       const { data: answerData, error: insertError } = await supabase
@@ -869,10 +1002,25 @@ export default function QuestionPage() {
     }
   }
 
-  const handleTrueFalseAnswer = async (answer: boolean) => {
-    if (!question || !user) return
+  const handleTrueFalseAnswer = async (answerValue: boolean) => {
+    if (!question) return
 
-    const isCorrect = answer === question.model_answer
+    const isCorrect = answerValue === question.model_answer
+
+    if (!user) {
+      setAnswer({
+        id: "anon",
+        question_id: question.id,
+        student_id: "anon",
+        response_text: answerValue ? "true" : "false",
+        ai_feedback: isCorrect ? "Correct! Well done!" : "Incorrect. Try to understand why this is wrong.",
+        score: isCorrect ? "green" : "red",
+        submitted_at: new Date().toISOString(),
+        self_assessed: true,
+      })
+      setSelfAssessmentScore(isCorrect ? "green" : "red")
+      return
+    }
 
     try {
       const { data: answerData, error: insertError } = await supabase
@@ -880,7 +1028,7 @@ export default function QuestionPage() {
         .insert({
           student_id: user.id,
           question_id: question.id,
-          response_text: answer ? "true" : "false",
+          response_text: answerValue ? "true" : "false",
           ai_feedback: isCorrect ? "Correct! Well done!" : "Incorrect. Try to understand why this is wrong.",
           student_score: isCorrect ? "green" : "red",
           self_assessed: true,
@@ -895,7 +1043,7 @@ export default function QuestionPage() {
         id: answerData.id,
         question_id: question.id,
         student_id: user.id,
-        response_text: answer ? "true" : "false",
+        response_text: answerValue ? "true" : "false",
         ai_feedback: isCorrect ? "Correct! Well done!" : "Incorrect. Try to understand why this is wrong.",
         score: isCorrect ? "green" : "red",
         submitted_at: answerData.submitted_at,
@@ -1002,37 +1150,37 @@ export default function QuestionPage() {
 
         {/* Filters Container */}
         {canAccessFilters({ user_type: userType || 'anonymous' }) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          {/* Subtopic Filter Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Filter by Subtopic</CardTitle>
-              <CardDescription>Select one or more subtopics to focus your practice</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <SubtopicFilter
-                selectedSubtopics={selectedSubtopics}
-                onSubtopicChange={setSelectedSubtopics}
-                subtopics={subtopics}
-              />
-            </CardContent>
-          </Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            {/* Subtopic Filter Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Filter by Subtopic</CardTitle>
+                <CardDescription>Select one or more subtopics to focus your practice</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <SubtopicFilter
+                  selectedSubtopics={selectedSubtopics}
+                  onSubtopicChange={setSelectedSubtopics}
+                  subtopics={subtopics}
+                />
+              </CardContent>
+            </Card>
 
-          {/* Question Type Filter Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Filter by Type</CardTitle>
-              <CardDescription>Choose question types to practice</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <QuestionTypeFilter 
-                selectedType={selectedQuestionType} 
-                onTypeChange={handleQuestionTypeChange}
-                availableTypes={availableQuestionTypes}
-              />
-            </CardContent>
-          </Card>
-        </div>
+            {/* Question Type Filter Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Filter by Type</CardTitle>
+                <CardDescription>Choose question types to practice</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <QuestionTypeFilter
+                  selectedType={selectedQuestionType}
+                  onTypeChange={handleQuestionTypeChange}
+                  availableTypes={availableQuestionTypes}
+                />
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {/* CTA Banner */}
@@ -1047,7 +1195,7 @@ export default function QuestionPage() {
             <CardHeader>
               <CardTitle>No Questions Available</CardTitle>
               <CardDescription>
-                {selectedQuestionType 
+                {selectedQuestionType
                   ? `There are no ${selectedQuestionType} questions available for the selected subtopics.`
                   : "There are no questions available for the selected subtopics."}
               </CardDescription>
@@ -1309,7 +1457,7 @@ export default function QuestionPage() {
                                       const selectedIndexes = JSON.parse(answer?.response_text || "[]") as number[];
                                       const selectedOptions = selectedIndexes.map(index => question.options?.[index]);
                                       const modelAnswer = Array.isArray(question.model_answer) ? question.model_answer : [question.model_answer];
-                                      
+
                                       return (
                                         <div className="space-y-2">
                                           {selectedOptions.map((option, i) => {
@@ -1374,7 +1522,7 @@ export default function QuestionPage() {
                   </div>
 
                   {/* For free version, show model answer first, then self-assessment */}
-                  {userType && (
+                  {answer && (
                     <>
                       <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-md">
                         <h3 className="font-medium mb-2 text-emerald-700">Model Answer:</h3>
