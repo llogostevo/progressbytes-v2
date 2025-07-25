@@ -2509,7 +2509,7 @@ export const topics: Topic[] = [
         topic: "network-security",
         question_text: "The following SQL query is vulnerable to SQL injection:\n\n`SELECT * FROM users WHERE username = '\" + input + \"'`\n\nExplain how this could be exploited and suggest how to prevent it.",
         model_answer: "An attacker could input `' OR '1'='1` to return all records from the database. To prevent this, user input should be sanitised, or parameterised queries should be used instead.",
-        model_answer_python: "cursor.execute(\"SELECT * FROM users WHERE username = ?\", (input_value,))",
+        model_answer_code: "cursor.execute(\"SELECT * FROM users WHERE username = ?\", (input_value,))",
         created_at: "2025-05-05T00:00:00Z"
       }
     ],
@@ -3581,7 +3581,7 @@ export const topics: Topic[] = [
         type: "code",
         question_text: "A character moves along a straight path, and its current position is stored as an integer.\n\nThe character can move either left or right. Each move changes the position by 5 units:\n- Moving left subtracts 5 from the position\n- Moving right adds 5 to the position\n\nThe position must always stay between 1 and 512 inclusive.\n\nWrite a pseudocode function `moveCharacter()` that:\n• accepts `direction` (a string) and `position` (an integer) as parameters\n• adjusts the position based on the direction\n• ensures the new position stays within the range 1 to 512\n• returns the new position",
         model_answer: "function moveCharacter(direction, position)\n   if direction == \"left\" then\n      position = position - 5\n   elseif direction == \"right\" then\n      position = position + 5\n   endif\n\n   if position < 1 then\n      position = 1\n   elseif position > 512 then\n      position = 512\n   endif\n\n   return position\nendfunction",
-        model_answer_python: "def move_character(direction: str, position: int) -> int:\n    if direction == \"left\":\n        position -= 5\n    elif direction == \"right\":\n        position += 5\n\n    if position < 1:\n        position = 1\n    elif position > 512:\n        position = 512\n\n    return position",
+        model_answer_code: "def move_character(direction: str, position: int) -> int:\n    if direction == \"left\":\n        position -= 5\n    elif direction == \"right\":\n        position += 5\n\n    if position < 1:\n        position = 1\n    elif position > 512:\n        position = 512\n\n    return position",
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -3590,7 +3590,7 @@ export const topics: Topic[] = [
         type: "code",
         question_text: "A program stores a user's score as an integer. If the score is divisible by 3, a bonus of 10 is added. If the score is even, it is doubled.\n\nWrite a pseudocode function `updateScore(score)` that:\n• takes `score` as a parameter\n• adds 10 if it is divisible by 3\n• doubles the score if it is even\n• returns the updated score",
         model_answer: "function updateScore(score)\n   if score MOD 3 == 0 then\n      score = score + 10\n   endif\n\n   if score MOD 2 == 0 then\n      score = score * 2\n   endif\n\n   return score\nendfunction",
-        model_answer_python: "def update_score(score: int) -> int:\n    if score % 3 == 0:\n        score += 10\n\n    if score % 2 == 0:\n        score *= 2\n\n    return score",
+        model_answer_code: "def update_score(score: int) -> int:\n    if score % 3 == 0:\n        score += 10\n\n    if score % 2 == 0:\n        score *= 2\n\n    return score",
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -3599,7 +3599,7 @@ export const topics: Topic[] = [
         type: "code",
         question_text: "Write a pseudocode program that:\n• asks the user to input a number\n• repeats this until the user inputs a number greater than 100\n• prints 'Valid' once a number greater than 100 is entered",
         model_answer: "number = 0\nwhile number <= 100\n   number = input(\"Enter a number greater than 100: \"\nendwhile\nprint(\"Valid\")",
-        model_answer_python: "number = 0\nwhile number <= 100:\n    number = int(input(\"Enter a number greater than 100: \"))\nprint(\"Valid\")",
+        model_answer_code: "number = 0\nwhile number <= 100:\n    number = int(input(\"Enter a number greater than 100: \"))\nprint(\"Valid\")",
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -3608,7 +3608,7 @@ export const topics: Topic[] = [
         type: "code",
         question_text: "Write a pseudocode function `checkAge(age)` that:\n• takes `age` as an integer parameter\n• prints 'Child' if age is less than 13\n• prints 'Teen' if age is between 13 and 19 inclusive\n• prints 'Adult' otherwise",
         model_answer: "function checkAge(age)\n   if age < 13 then\n      print(\"Child\")\n   elseif age >= 13 AND age <= 19 then\n      print(\"Teen\")\n   else\n      print(\"Adult\")\n   endif\nendfunction",
-        model_answer_python: "def check_age(age: int) -> None:\n    if age < 13:\n        print(\"Child\")\n    elif 13 <= age <= 19:\n        print(\"Teen\")\n    else:\n        print(\"Adult\")",
+        model_answer_code: "def check_age(age: int) -> None:\n    if age < 13:\n        print(\"Child\")\n    elif 13 <= age <= 19:\n        print(\"Teen\")\n    else:\n        print(\"Adult\")",
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -3617,7 +3617,7 @@ export const topics: Topic[] = [
         type: "code",
         question_text: "Write a pseudocode function `calculatePower(base, exponent)` that:\n• takes two integer parameters\n• uses a loop to calculate and return `base` to the power of `exponent` without using ^",
         model_answer: "function calculatePower(base, exponent)\n   result = 1\n   for i = 1 to exponent\n      result = result * base\n   next i\n   return result\nendfunction",
-        model_answer_python: "def calculate_power(base: int, exponent: int) -> int:\n    result = 1\n    for i in range(exponent):\n        result *= base\n    return result",
+        model_answer_code: "def calculate_power(base: int, exponent: int) -> int:\n    result = 1\n    for i in range(exponent):\n        result *= base\n    return result",
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -3626,7 +3626,7 @@ export const topics: Topic[] = [
         type: "code",
         question_text: "Write a pseudocode procedure `greetUser(name)` that:\n• takes a name as a parameter\n• prints 'Hello' followed by the name\n• prints 'Welcome to the system'",
         model_answer: "procedure greetUser(name)\n   print(\"Hello \" + name)\n   print(\"Welcome to the system\")\nendprocedure",
-        model_answer_python: "def greet_user(name: str) -> None:\n    print(f\"Hello {name}\")\n    print(\"Welcome to the system\")",
+        model_answer_code: "def greet_user(name: str) -> None:\n    print(f\"Hello {name}\")\n    print(\"Welcome to the system\")",
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -3635,7 +3635,7 @@ export const topics: Topic[] = [
         type: "code",
         question_text: "Write a pseudocode procedure `countdown(n)` that:\n• takes an integer parameter\n• prints each number from n to 1\n• prints 'Go!' at the end",
         model_answer: "procedure countdown(n)\n   for i = n to 1 step -1\n      print(i)\n   next i\n   print(\"Go!\")\nendprocedure",
-        model_answer_python: "def countdown(n: int) -> None:\n    for i in range(n, 0, -1):\n        print(i)\n    print(\"Go!\")",
+        model_answer_code: "def countdown(n: int) -> None:\n    for i in range(n, 0, -1):\n        print(i)\n    print(\"Go!\")",
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -3644,7 +3644,7 @@ export const topics: Topic[] = [
         type: "code",
         question_text: "Write a pseudocode procedure `printMultiples(n)` that:\n• takes a number n\n• prints the first 5 multiples of n (n, 2n, 3n, 4n, 5n)",
         model_answer: "procedure printMultiples(n)\n   for i = 1 to 5\n      print(n * i)\n   next i\nendprocedure",
-        model_answer_python: "def print_multiples(n: int) -> None:\n    for i in range(1, 6):\n        print(n * i)",
+        model_answer_code: "def print_multiples(n: int) -> None:\n    for i in range(1, 6):\n        print(n * i)",
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -3653,7 +3653,7 @@ export const topics: Topic[] = [
         type: "code",
         question_text: "Write a pseudocode procedure `printRange(startNum, endNum)` that:\n• prints each integer between startNum and endNum inclusive\n• prints 'Done' when finished",
         model_answer: "procedure printRange(startNum, endNum)\n   for i = startNum to endNum\n      print(i)\n   next i\n   print(\"Done\")\nendprocedure",
-        model_answer_python: "def print_range(start_num: int, end_num: int) -> None:\n    for i in range(start_num, end_num + 1):\n        print(i)\n    print(\"Done\")",
+        model_answer_code: "def print_range(start_num: int, end_num: int) -> None:\n    for i in range(start_num, end_num + 1):\n        print(i)\n    print(\"Done\")",
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -3662,7 +3662,7 @@ export const topics: Topic[] = [
         type: "code",
         question_text: "Write a pseudocode program that:\n• asks the user to enter an integer\n• prints 'Even' if the number is divisible by 2\n• prints 'Odd' otherwise",
         model_answer: "number = input(\"Enter a number: \"\nif number MOD 2 == 0 then\n   print(\"Even\")\nelse\n   print(\"Odd\")\nendif",
-        model_answer_python: "number = int(input(\"Enter a number: \"))\nif number % 2 == 0:\n    print(\"Even\")\nelse:\n    print(\"Odd\")",
+        model_answer_code: "number = int(input(\"Enter a number: \"))\nif number % 2 == 0:\n    print(\"Even\")\nelse:\n    print(\"Odd\")",
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -3671,7 +3671,7 @@ export const topics: Topic[] = [
         type: "code",
         question_text: "Write a pseudocode program that:\n• asks the user for a test score\n• prints 'Pass' if the score is 50 or more\n• prints 'Fail' if the score is less than 50",
         model_answer: "score = input(\"Enter test score: \"\nif score >= 50 then\n   print(\"Pass\")\nelse\n   print(\"Fail\")\nendif",
-        model_answer_python: "score = int(input(\"Enter test score: \"))\nif score >= 50:\n    print(\"Pass\")\nelse:\n    print(\"Fail\")",
+        model_answer_code: "score = int(input(\"Enter test score: \"))\nif score >= 50:\n    print(\"Pass\")\nelse:\n    print(\"Fail\")",
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -3680,7 +3680,7 @@ export const topics: Topic[] = [
         type: "code",
         question_text: "Write a pseudocode program that:\n• asks the user to input two integers\n• prints the larger number",
         model_answer: "a = input(\"Enter first number: \"\nb = input(\"Enter second number: \"\nif a > b then\n   print(a)\nelse\n   print(b)\nendif",
-        model_answer_python: "a = int(input(\"Enter first number: \"))\nb = int(input(\"Enter second number: \"))\nif a > b:\n    print(a)\nelse:\n    print(b)",
+        model_answer_code: "a = int(input(\"Enter first number: \"))\nb = int(input(\"Enter second number: \"))\nif a > b:\n    print(a)\nelse:\n    print(b)",
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -3689,7 +3689,7 @@ export const topics: Topic[] = [
         type: "code",
         question_text: "Write a pseudocode program that:\n• asks the user to input a test score\n• prints 'A' if score is 80 or more\n• prints 'B' if score is 60-79\n• prints 'C' if score is 40-59\n• prints 'F' if score is less than 40",
         model_answer: "score = input(\"Enter score: \"\nif score >= 80 then\n   print(\"A\")\nelseif score >= 60 then\n   print(\"B\")\nelseif score >= 40 then\n   print(\"C\")\nelse\n   print(\"F\")\nendif",
-        model_answer_python: "score = int(input(\"Enter score: \"))\nif score >= 80:\n    print(\"A\")\nelif score >= 60:\n    print(\"B\")\nelif score >= 40:\n    print(\"C\")\nelse:\n    print(\"F\")",
+        model_answer_code: "score = int(input(\"Enter score: \"))\nif score >= 80:\n    print(\"A\")\nelif score >= 60:\n    print(\"B\")\nelif score >= 40:\n    print(\"C\")\nelse:\n    print(\"F\")",
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -3698,7 +3698,7 @@ export const topics: Topic[] = [
         type: "code",
         question_text: "Write a pseudocode program that:\n• repeatedly asks the user to enter a number\n• stops when the number entered is greater than 100\n• prints 'Done' at the end",
         model_answer: "number = 0\nwhile number <= 100\n   number = input(\"Enter a number: \"\nendwhile\nprint(\"Done\")",
-        model_answer_python: "number = 0\nwhile number <= 100:\n    number = int(input(\"Enter a number: \"))\nprint(\"Done\")",
+        model_answer_code: "number = 0\nwhile number <= 100:\n    number = int(input(\"Enter a number: \"))\nprint(\"Done\")",
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -3707,7 +3707,7 @@ export const topics: Topic[] = [
         type: "code",
         question_text: "Write a pseudocode program that:\n• repeatedly asks the user to enter a password\n• stops when the correct password 'letmein' is entered\n• prints 'Access granted'",
         model_answer: "password = \"\"\nwhile password != \"letmein\"\n   password = input(\"Enter password: \"\nendwhile\nprint(\"Access granted\")",
-        model_answer_python: "password = \"\"\nwhile password != \"letmein\":\n    password = input(\"Enter password: \")\nprint(\"Access granted\")",
+        model_answer_code: "password = \"\"\nwhile password != \"letmein\":\n    password = input(\"Enter password: \")\nprint(\"Access granted\")",
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -3716,7 +3716,7 @@ export const topics: Topic[] = [
         type: "code",
         question_text: "Write a pseudocode program that:\n• starts with a counter at 10\n• prints the counter and decreases it by 1 each time\n• stops when the counter is less than 1",
         model_answer: "counter = 10\nwhile counter >= 1\n   print(counter)\n   counter = counter - 1\nendwhile",
-        model_answer_python: "counter = 10\nwhile counter >= 1:\n    print(counter)\n    counter -= 1",
+        model_answer_code: "counter = 10\nwhile counter >= 1:\n    print(counter)\n    counter -= 1",
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -3725,7 +3725,7 @@ export const topics: Topic[] = [
         type: "code",
         question_text: "Write a pseudocode program that:\n• asks the user to enter numbers\n• keeps a running total\n• stops when the user enters 0\n• prints the total",
         model_answer: "total = 0\nnumber = -1\nwhile number != 0\n   number = input(\"Enter number (0 to stop): \"\n   total = total + number\nendwhile\nprint(total)",
-        model_answer_python: "total = 0\nnumber = -1\nwhile number != 0:\n    number = int(input(\"Enter number (0 to stop): \"))\n    total += number\nprint(total)",
+        model_answer_code: "total = 0\nnumber = -1\nwhile number != 0:\n    number = int(input(\"Enter number (0 to stop): \"))\n    total += number\nprint(total)",
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -3734,7 +3734,7 @@ export const topics: Topic[] = [
         type: "code",
         question_text: "Write a pseudocode program that:\n• prints the numbers from 1 to 10 using a for loop",
         model_answer: "for i = 1 to 10\n   print(i)\nnext i",
-        model_answer_python: "for i in range(1, 11):\n    print(i)",
+        model_answer_code: "for i in range(1, 11):\n    print(i)",
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -3743,7 +3743,7 @@ export const topics: Topic[] = [
         type: "code",
         question_text: "Write a pseudocode program that:\n• asks the user to enter a number\n• prints the 5 times table up to 12 using a for loop",
         model_answer: "number = input(\"Enter a number: \"\nfor i = 1 to 12\n   print(number * i)\nnext i",
-        model_answer_python: "number = int(input(\"Enter a number: \"))\nfor i in range(1, 13):\n    print(number * i)",
+        model_answer_code: "number = int(input(\"Enter a number: \"))\nfor i in range(1, 13):\n    print(number * i)",
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -3752,7 +3752,7 @@ export const topics: Topic[] = [
         type: "code",
         question_text: "Write a pseudocode program that:\n• calculates the sum of numbers from 1 to 100 using a for loop\n• prints the total at the end",
         model_answer: "total = 0\nfor i = 1 to 100\n   total = total + i\nnext i\nprint(total)",
-        model_answer_python: "total = 0\nfor i in range(1, 101):\n    total += i\nprint(total)",
+        model_answer_code: "total = 0\nfor i in range(1, 101):\n    total += i\nprint(total)",
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -3761,7 +3761,7 @@ export const topics: Topic[] = [
         type: "code",
         question_text: "Write a pseudocode program that:\n• prints all even numbers from 2 to 20 using a for loop",
         model_answer: "for i = 2 to 20 step 2\n   print(i)\nnext i",
-        model_answer_python: "for i in range(2, 21, 2):\n    print(i)",
+        model_answer_code: "for i in range(2, 21, 2):\n    print(i)",
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -3770,7 +3770,7 @@ export const topics: Topic[] = [
         type: "code",
         question_text: "Write a pseudocode program that:\n• asks the user to enter their age as text\n• converts it to an integer\n• adds 1 to the age and prints it",
         model_answer: "ageText = input(\"Enter your age: \"))\nage = int(ageText)\nprint(age + 1)",
-        model_answer_python: "age_text = input(\"Enter your age: \")\nage = int(age_text)\nprint(age + 1)",
+        model_answer_code: "age_text = input(\"Enter your age: \")\nage = int(age_text)\nprint(age + 1)",
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -3779,7 +3779,7 @@ export const topics: Topic[] = [
         type: "code",
         question_text: "Write a pseudocode program that:\n• asks the user to input a whole number\n• converts the number to a string\n• prints a message including the number in a sentence",
         model_answer: "num = int(input(\"Enter a number: \"))\nmessage = \"You entered \" + str(num)\nprint(message)",
-        model_answer_python: "num = int(input(\"Enter a number: \"))\nmessage = f\"You entered {num}\"\nprint(message)",
+        model_answer_code: "num = int(input(\"Enter a number: \"))\nmessage = f\"You entered {num}\"\nprint(message)",
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -3788,7 +3788,7 @@ export const topics: Topic[] = [
         type: "code",
         question_text: "Write a pseudocode program that:\n• stores a number with a decimal (e.g., 8.7)\n• casts it to an integer\n• prints both the original and the cast value",
         model_answer: "decimalNumber = 8.7\nwholeNumber = int(decimalNumber)\nprint(\"Original: \" + str(decimalNumber))\nprint(\"Whole: \" + str(wholeNumber))",
-        model_answer_python: "decimal_number = 8.7\nwhole_number = int(decimal_number)\nprint(f\"Original: {decimal_number}\")\nprint(f\"Whole: {whole_number}\")",
+        model_answer_code: "decimal_number = 8.7\nwhole_number = int(decimal_number)\nprint(f\"Original: {decimal_number}\")\nprint(f\"Whole: {whole_number}\")",
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -3797,7 +3797,7 @@ export const topics: Topic[] = [
         type: "code",
         question_text: "Write a pseudocode program that:\n• asks the user to enter two whole numbers\n• casts them to integers\n• divides the first by the second and prints the result as a real number",
         model_answer: "a = int(input(\"Enter first number: \"))\nb = int(input(\"Enter second number: \"))\nresult = a / b\nprint(result)",
-        model_answer_python: "a = int(input(\"Enter first number: \"))\nb = int(input(\"Enter second number: \"))\nresult = a / b\nprint(result)",
+        model_answer_code: "a = int(input(\"Enter first number: \"))\nb = int(input(\"Enter second number: \"))\nresult = a / b\nprint(result)",
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -3806,7 +3806,7 @@ export const topics: Topic[] = [
         type: "code",
         question_text: "Write a pseudocode program that:\n• asks the user for two numbers\n• prints 'True' if both numbers are positive\n• otherwise prints 'False'",
         model_answer: "a = int(input(\"Enter first number: \"))\nb = int(input(\"Enter second number: \"))\nif a > 0 AND b > 0 then\n   print(\"True\")\nelse\n   print(\"False\")\nendif",
-        model_answer_python: "a = int(input(\"Enter first number: \"))\nb = int(input(\"Enter second number: \"))\nif a > 0 and b > 0:\n    print(\"True\")\nelse:\n    print(\"False\")",
+        model_answer_code: "a = int(input(\"Enter first number: \"))\nb = int(input(\"Enter second number: \"))\nif a > 0 and b > 0:\n    print(\"True\")\nelse:\n    print(\"False\")",
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -3815,7 +3815,7 @@ export const topics: Topic[] = [
         type: "code",
         question_text: "Write a pseudocode program that:\n• asks the user to enter a number\n• prints 'In range' if the number is greater than 10 and less than 20",
         model_answer: "num = int(input(\"Enter a number: \"))\nif num > 10 AND num < 20 then\n   print(\"In range\")\nendif",
-        model_answer_python: "num = int(input(\"Enter a number: \"))\nif 10 < num < 20:\n    print(\"In range\")",
+        model_answer_code: "num = int(input(\"Enter a number: \"))\nif 10 < num < 20:\n    print(\"In range\")",
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -3824,7 +3824,7 @@ export const topics: Topic[] = [
         type: "code",
         question_text: "Write a pseudocode program that:\n• asks the user for a temperature\n• prints 'Warning' if the temperature is less than 0 or greater than 30",
         model_answer: "temp = int(input(\"Enter temperature: \"))\nif temp < 0 OR temp > 30 then\n   print(\"Warning\")\nendif",
-        model_answer_python: "temp = int(input(\"Enter temperature: \"))\nif temp < 0 or temp > 30:\n    print(\"Warning\")",
+        model_answer_code: "temp = int(input(\"Enter temperature: \"))\nif temp < 0 or temp > 30:\n    print(\"Warning\")",
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -3833,7 +3833,7 @@ export const topics: Topic[] = [
         type: "code",
         question_text: "Write a pseudocode program that:\n• asks the user to enter a username\n• prints 'Invalid' if the username is not 'admin'",
         model_answer: "username = input(\"Enter username: \"))\nif username != \"admin\" then\n   print(\"Invalid\")\nendif \n alternatively \n username = input(\"Enter username: \"))\nif NOT username == \"admin\" then\n   print(\"Invalid\")\nendif",
-        model_answer_python: "username = input(\"Enter username: \")\nif username != \"admin\":\n    print(\"Invalid\")",
+        model_answer_code: "username = input(\"Enter username: \")\nif username != \"admin\":\n    print(\"Invalid\")",
         created_at: "2025-05-02T00:00:00Z"
       },
       {
@@ -4114,7 +4114,7 @@ export const topics: Topic[] = [
         topic: "programming-fundamentals",
         question_text: "Create an algorithm that:\n• Prompts for a staff ID and date of joining\n• Saves the input values to a file called staff.txt",
         model_answer: "staffID = input(\"Enter staff ID: \")\ndoj = input(\"Enter date of joining: \")\nfile = open(\"staff.txt\", \"a\")\nfile.write(staffID + ',' + doj + '\\n')\nfile.close()",
-        model_answer_python: "staff_id = input(\"Enter staff ID: \")\ndoj = input(\"Enter date of joining: \")\nwith open('staff.txt', 'a') as file:\n    file.write(f\"{staff_id},{doj}\\n\")",
+        model_answer_code: "staff_id = input(\"Enter staff ID: \")\ndoj = input(\"Enter date of joining: \")\nwith open('staff.txt', 'a') as file:\n    file.write(f\"{staff_id},{doj}\\n\")",
         created_at: "2025-05-05T00:00:00Z"
       },
 
