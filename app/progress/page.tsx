@@ -686,8 +686,8 @@ export default function ProgressPage() {
                         match: mq.match,
                       })) || [],
                   }),
-                  ...(question.type === "code" && {
-                    model_answer_python: question.code_questions?.model_answer_code,
+                  ...((question.type === "code" || question.type === "algorithm" || question.type === "sql") && {
+                    model_answer_code: question.code_questions?.model_answer_code,
                     language: question.code_questions?.language,
                   }),
                 }
