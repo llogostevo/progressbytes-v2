@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { loadStripe } from '@stripe/stripe-js'
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
+import type { Plan } from '@/lib/types';
 
 // Initialize Stripe
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
@@ -120,7 +121,7 @@ export default function SettingsPage() {
   const [deleteMemberDialogOpen, setDeleteMemberDialogOpen] = useState(false)
   const [memberToDelete, setMemberToDelete] = useState<SupabaseMember | null>(null)
   const [isDeletingMember, setIsDeletingMember] = useState(false)
-  const [plans, setPlans] = useState<any[]>([]);
+  const [plans, setPlans] = useState<Plan[]>([]);
 
   const supabase = createClient()
 
@@ -203,7 +204,7 @@ export default function SettingsPage() {
     }
   }
 
-  const handlePlanSelect = async (plan: any) => {
+  const handlePlanSelect = async (plan: Plan) => {
     if (!userEmail || plan.slug === userType) return;
 
     setIsLoadingCheckout(true);
