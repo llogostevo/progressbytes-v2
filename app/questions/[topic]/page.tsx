@@ -1705,21 +1705,25 @@ export default function QuestionPage() {
                   )}
 
                   {/* For unauthenticated users, show model answer first, then self-assessment but remove try again buttons and progress link */}
-                 
-                  {userType && (
-                    <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                      <Button
-                        onClick={handleTryAnother}
-                        className="bg-emerald-600 hover:bg-emerald-700"
-                        disabled={!selfAssessmentScore}
-                      >
-                        <RefreshCw className="mr-2 h-4 w-4" /> Try Another Question
-                      </Button>
+
+                  <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                    <Button
+                      onClick={handleTryAnother}
+                      className="bg-emerald-600 hover:bg-emerald-700"
+                      disabled={!userType || !selfAssessmentScore}
+                    >
+                      <RefreshCw className="mr-2 h-4 w-4" /> Try Another Question
+                    </Button>
+
+                    {(userType && selfAssessmentScore) ? (
                       <Link href="/progress">
                         <Button variant="outline">View My Progress</Button>
                       </Link>
-                    </div>
-                  )}
+                    ) : (
+                      <Button variant="outline" disabled>View My Progress</Button>
+                    )}
+                  </div>
+
                 </div>
               )}
             </CardContent>
