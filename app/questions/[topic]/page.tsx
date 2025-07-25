@@ -125,6 +125,10 @@ function transformQuestion(dbQuestion: DBQuestion, topicName: string): Question 
           return dbQuestion.true_false_questions?.correct_answer ?? false;
         case 'code':
           return dbQuestion.code_questions?.model_answer || '';
+        case 'algorithm':
+          return dbQuestion.code_questions?.model_answer || '';
+        case 'sql':
+          return dbQuestion.code_questions?.model_answer || '';
         case 'short-answer':
           return dbQuestion.short_answer_questions?.model_answer || '';
         case 'essay':
@@ -149,8 +153,8 @@ function transformQuestion(dbQuestion: DBQuestion, topicName: string): Question 
         match: mq.match
       }))
     }),
-    ...(dbQuestion.type === 'code' && dbQuestion.code_questions && {
-      model_answer_python: dbQuestion.code_questions.model_answer_code,
+    ...((dbQuestion.type === 'code' || dbQuestion.type === 'algorithm' || dbQuestion.type === 'sql') && dbQuestion.code_questions && {
+      model_answer_code: dbQuestion.code_questions.model_answer_code,
       language: dbQuestion.code_questions.language
     })
   };
@@ -1528,7 +1532,7 @@ export default function QuestionPage() {
                         <h3 className="font-medium mb-2 text-emerald-700">Model Answer:</h3>
                         <div className="space-y-4">
                           <div>
-                            {question.type === "code" && (
+                            {(question.type === "code" || question.type === "algorithm" || question.type === "sql") && (
                               <h4 className="text-sm font-medium mb-1">Pseudocode:</h4>
                             )}
                             {question.type === "matching" ? (
@@ -1594,10 +1598,10 @@ export default function QuestionPage() {
                               <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer}</pre>
                             )}
                           </div>
-                          {question.model_answer_python && (
+                          {question.model_answer_code && (
                             <div>
                               <h4 className="text-sm font-medium mb-1">Python:</h4>
-                              <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer_python}</pre>
+                              <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer_code}</pre>
                             </div>
                           )}
                         </div>
@@ -1624,7 +1628,7 @@ export default function QuestionPage() {
                         <h3 className="font-medium mb-2 text-emerald-700">Model Answer:</h3>
                         <div className="space-y-4">
                           <div>
-                            {question.type === "code" && (
+                            {(question.type === "code" || question.type === "algorithm" || question.type === "sql") && (
                               <h4 className="text-sm font-medium mb-1">Pseudocode:</h4>
                             )}
                             {question.type === "matching" ? (
@@ -1683,10 +1687,10 @@ export default function QuestionPage() {
                               <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer}</pre>
                             )}
                           </div>
-                          {question.model_answer_python && (
+                          {question.model_answer_code && (
                             <div>
-                              <h4 className="text-sm font-medium mb-1">Python:</h4>
-                              <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer_python}</pre>
+                              <h4 className="text-sm font-medium mb-1">{question.language}:</h4>
+                              <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer_code}</pre>
                             </div>
                           )}
                         </div>
