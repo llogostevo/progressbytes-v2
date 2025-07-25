@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { CodeEditor } from "@/components/code-editor"
+import { CodeEditor } from "@/components/question-components/question-type/code-question-components/code-editor"
 import { Question } from "@/lib/types"
 
 interface QuestionFormProps {
