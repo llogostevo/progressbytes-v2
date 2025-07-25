@@ -346,7 +346,7 @@ export default function RevisitPage() {
                   return ""
               }
             })(),
-            model_answer_python: typeSpecificData?.model_answer_code,
+            model_answer_code: typeSpecificData?.model_answer_code,
             pairs: pairs,
             order_important: fibq?.order_important,
             options: options,
@@ -1017,11 +1017,11 @@ export default function RevisitPage() {
                                             {question.model_answer}
                                           </pre>
                                         )}
-                                        {question.model_answer_python && (
+                                        {question.model_answer_code && (
                                           <div className="border-t border-emerald-200 pt-3">
-                                            <h4 className="text-sm font-medium mb-2 text-emerald-800">Python:</h4>
+                                            <h4 className="text-sm font-medium mb-2 text-emerald-800">{question.language}:</h4>
                                             <pre className="whitespace-pre-wrap font-mono text-sm text-emerald-700 bg-emerald-25 p-2 rounded">
-                                              {question.model_answer_python}
+                                              {question.model_answer_code}
                                             </pre>
                                           </div>
                                         )}
