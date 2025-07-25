@@ -27,7 +27,7 @@ export const plans: Record<string, Plan> = {
   basic: {
     name: 'Basic Plan',
     slug: 'basic',
-    description: 'Limited access with self-assessment only',
+    description: 'Limited access to questions with self-assessment only',
     price: 0,
     interval: 'month',
     features: [
@@ -71,13 +71,100 @@ export const plans: Record<string, Plan> = {
     daily_question_limit: null, // unlimited
     total_question_limit: null, // unlimited
     has_ai_feedback: true
+  },
+  teacherBasic: {
+    name: 'Teacher Basic',
+    slug: 'teacherBasic',
+    description: 'Free teacher plan (1 class, 5-10 students)',
+    price: 0,
+    interval: 'month',
+    features: ['1 class', 'Up to 10 students'],
+    daily_question_limit: null,
+    total_question_limit: null,
+    has_ai_feedback: false
+  },
+  teacherPremium: {
+    name: 'Teacher Premium',
+    slug: 'teacherPremium',
+    description: 'Paid teacher plan (multiple classes, unlimited students)',
+    price: 20, 
+    interval: 'month',
+    features: ['Unlimited classes', 'Unlimited students'],
+    daily_question_limit: null,
+    total_question_limit: null,
+    has_ai_feedback: false
   }
 };
+
+// export async function createStripeProducts() {
+//   const supabase = await createClient();
+  
+//   for (const [key, plan] of Object.entries(plans)) {
+//     // Create Stripe product
+//     const product = await stripe.products.create({
+//       name: plan.name,
+//       description: plan.description,
+//       metadata: {
+//         plan_slug: plan.slug
+//       }
+//     });
+
+//     // Create Stripe price
+//     const price = await stripe.prices.create({
+//       product: product.id,
+//       unit_amount: Math.round(plan.price * 100), // Convert to cents
+//       currency: 'gbp',
+//       recurring: {
+//         interval: plan.interval
+//       }
+//     });
+
+//     // Store in Supabase
+//     const { error } = await supabase
+//       .from('plans')
+//       .upsert({
+//         name: plan.name,
+//         slug: plan.slug,
+//         description: plan.description,
+//         stripe_price_id: price.id,
+//         stripe_product_id: product.id,
+//         price: plan.price,
+//         interval: plan.interval,
+//         features: plan.features,
+//         daily_question_limit: plan.daily_question_limit,
+//         total_question_limit: plan.total_question_limit,
+//         has_ai_feedback: plan.has_ai_feedback
+//       });
+
+//     if (error) {
+//       console.error(`Error creating plan ${plan.slug}:`, error);
+//     }
+//   }
+// }
 
 export async function createStripeProducts() {
   const supabase = await createClient();
   
   for (const [key, plan] of Object.entries(plans)) {
+    // Skip free plans (no Stripe product/price needed)
+    if (plan.price === 0) {
+      // Optionally, still upsert the plan in your DB for tracking
+      await supabase
+        .from('plans')
+        .upsert({
+          name: plan.name,
+          slug: plan.slug,
+          description: plan.description,
+          price: plan.price,
+          interval: plan.interval,
+          features: plan.features,
+          daily_question_limit: plan.daily_question_limit,
+          total_question_limit: plan.total_question_limit,
+          has_ai_feedback: plan.has_ai_feedback
+        });
+      continue;
+    }
+
     // Create Stripe product
     const product = await stripe.products.create({
       name: plan.name,

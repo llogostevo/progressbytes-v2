@@ -120,6 +120,7 @@ export default function SettingsPage() {
   const [deleteMemberDialogOpen, setDeleteMemberDialogOpen] = useState(false)
   const [memberToDelete, setMemberToDelete] = useState<SupabaseMember | null>(null)
   const [isDeletingMember, setIsDeletingMember] = useState(false)
+  const [plans, setPlans] = useState<any[]>([]);
 
   const supabase = createClient()
 
@@ -202,10 +203,10 @@ export default function SettingsPage() {
     }
   }
 
-  const handlePlanSelect = async (planType: UserType) => {
-    if (!userEmail || planType === userType) return
+  const handlePlanSelect = async (plan: any) => {
+    if (!userEmail || plan.slug === userType) return;
 
-    setIsLoadingCheckout(true)
+    setIsLoadingCheckout(true);
     try {
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
@@ -213,50 +214,39 @@ export default function SettingsPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          priceId: getPriceIdForPlan(planType),
+          priceId: plan.stripe_price_id, // Use the price ID from the plan object
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create checkout session')
+        throw new Error(data.error || 'Failed to create checkout session');
       }
 
       if (!data.sessionId) {
-        throw new Error('No session ID returned')
+        throw new Error('No session ID returned');
       }
 
-      const stripe = await stripePromise
+      const stripe = await stripePromise;
       if (!stripe) {
-        throw new Error('Stripe failed to load')
+        throw new Error('Stripe failed to load');
       }
 
       const { error } = await stripe.redirectToCheckout({
-        sessionId: data.sessionId
-      })
+        sessionId: data.sessionId,
+      });
 
       if (error) {
-        throw error
+        throw error;
       }
     } catch (error) {
-      console.error('Error:', error)
-      alert(error instanceof Error ? error.message : 'An error occurred during checkout')
+      console.error('Error:', error);
+      alert(error instanceof Error ? error.message : 'An error occurred during checkout, please contact support');
     } finally {
-      setIsLoadingCheckout(false)
+      setIsLoadingCheckout(false);
     }
-  }
-
-  const getPriceIdForPlan = (planType: UserType): string => {
-    switch (planType) {
-      case 'revision':
-        return process.env.NEXT_PUBLIC_STRIPE_REVISION_PRICE_ID!
-      case 'revisionAI':
-        return process.env.NEXT_PUBLIC_STRIPE_REVISION_AI_PRICE_ID!
-      default:
-        return process.env.NEXT_PUBLIC_STRIPE_BASIC_PRICE_ID!
-    }
-  }
+  };
 
   const generateJoinCode = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -594,10 +584,22 @@ export default function SettingsPage() {
       }
     }
 
+    const fetchPlans = async () => {
+      const { data, error } = await supabase
+        .from('plans')
+        .select('*')
+        .order('price', { ascending: true });
+      if (!error) setPlans(data || []);
+    };
+
     fetchUser()
     fetchCourses()
+    fetchPlans();
     setIsLoading(false)
   }, [supabase])
+
+  const studentPlans = plans.filter(plan => plan.plan_type === 'student');
+  const teacherPlans = plans.filter(plan => plan.plan_type === 'teacher');
 
   if (isLoading) {
     return (
@@ -653,97 +655,69 @@ export default function SettingsPage() {
       </Card>
 
       {/* Subscription Plans */}
-      {userRole !== 'student' && (
+      {studentPlans.length > 0 && (
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Subscription Plans</CardTitle>
-            <CardDescription>Choose a plan that best fits your needs</CardDescription>
+            <CardTitle>Student Plans</CardTitle>
+            <CardDescription>Choose a student plan</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid gap-6 md:grid-cols-3">
-              {/* Basic Plan */}
-              <Card className={userType === 'basic' ? 'border-primary' : ''}>
-                <CardHeader>
-                  <CardTitle>Basic</CardTitle>
-                  <CardDescription>Essential features for self-study</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <BookOpen className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">Access to all questions</span>
+              {studentPlans.map(plan => (
+                <Card key={plan.slug} className={userType === plan.slug ? 'border-primary' : ''}>
+                  <CardHeader>
+                    <CardTitle>{plan.name}</CardTitle>
+                    <CardDescription>{plan.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {/* Optionally render features here */}
+                      <Button
+                        className="w-full"
+                        variant={userType === plan.slug ? 'default' : 'outline'}
+                        onClick={() => handlePlanSelect(plan)}
+                        disabled={isLoadingCheckout}
+                      >
+                        {userType === plan.slug ? 'Current Plan' : isLoadingCheckout ? 'Loading...' : 'Select Plan'}
+                      </Button>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Book className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">Basic progress tracking</span>
-                    </div>
-                    <Button 
-                      className="w-full" 
-                      variant={userType === 'basic' ? 'default' : 'outline'}
-                      onClick={() => handlePlanSelect('basic')}
-                      disabled={isLoadingCheckout}
-                    >
-                      {userType === 'basic' ? 'Current Plan' : isLoadingCheckout ? 'Loading...' : 'Select Plan'}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-              {/* Revision Plan */}
-              <Card className={userType === 'revision' ? 'border-primary' : ''}>
-                <CardHeader>
-                  <CardTitle>Revision</CardTitle>
-                  <CardDescription>Enhanced learning experience</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <BookOpenCheck className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">Everything in Basic</span>
+      {teacherPlans.length > 0 && (
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Teacher Plans</CardTitle>
+            <CardDescription>Choose a teacher plan</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-6 md:grid-cols-3">
+              {teacherPlans.map(plan => (
+                <Card key={plan.slug} className={userType === plan.slug ? 'border-primary' : ''}>
+                  <CardHeader>
+                    <CardTitle>{plan.name}</CardTitle>
+                    <CardDescription>{plan.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {/* Optionally render features here */}
+                      <Button
+                        className="w-full"
+                        variant={userType === plan.slug ? 'default' : 'outline'}
+                        onClick={() => handlePlanSelect(plan)}
+                        disabled={isLoadingCheckout}
+                      >
+                        {userType === plan.slug ? 'Current Plan' : isLoadingCheckout ? 'Loading...' : 'Select Plan'}
+                      </Button>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <BookmarkCheck className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">Detailed progress analytics</span>
-                    </div>
-                    <Button 
-                      className="w-full" 
-                      variant={userType === 'revision' ? 'default' : 'outline'}
-                      onClick={() => handlePlanSelect('revision')}
-                      disabled={isLoadingCheckout}
-                    >
-                      {userType === 'revision' ? 'Current Plan' : isLoadingCheckout ? 'Loading...' : 'Select Plan'}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Revision AI Plan */}
-              <Card className={userType === 'revisionAI' ? 'border-primary' : ''}>
-                <CardHeader>
-                  <CardTitle>Revision AI</CardTitle>
-                  <CardDescription>AI-powered learning experience</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <BookOpenText className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">Everything in Revision</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <School className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">AI-powered feedback</span>
-                    </div>
-                    <Button 
-                      className="w-full" 
-                      variant={userType === 'revisionAI' ? 'default' : 'outline'}
-                      onClick={() => handlePlanSelect('revisionAI')}
-                      disabled={isLoadingCheckout}
-                    >
-                      {userType === 'revisionAI' ? 'Current Plan' : isLoadingCheckout ? 'Loading...' : 'Select Plan'}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </CardContent>
         </Card>
