@@ -155,7 +155,7 @@ export default function QuestionManager() {
             })),
           }),
           ...(q.type === "code" && {
-            model_answer_python: q.code_questions?.model_answer_code,
+            model_answer_code: q.code_questions?.model_answer_code,
             language: q.code_questions?.language,
           }),
           ...(q.type === "true-false" && {
@@ -315,7 +315,7 @@ export default function QuestionManager() {
           await supabase
             .from("code_questions")
             .update({
-              model_answer_code: updatedQuestion.model_answer_python,
+              model_answer_code: updatedQuestion.model_answer_code,
               language: updatedQuestion.language,
               model_answer: updatedQuestion.model_answer,
             })
@@ -452,7 +452,7 @@ export default function QuestionManager() {
         case "code":
           await supabase.from("code_questions").insert({
             question_id: questionData.id,
-            model_answer_code: newQuestion.model_answer_python,
+            model_answer_code: newQuestion.model_answer_code,
             language: newQuestion.language,
             model_answer: newQuestion.model_answer,
           })
@@ -615,7 +615,7 @@ export default function QuestionManager() {
                       <div>
                         {question.type === "code" ? (
                           <pre className="bg-slate-100 p-2 rounded overflow-x-auto">
-                            {question.model_answer_python || question.model_answer}
+                            {question.model_answer_code || question.model_answer}
                           </pre>
                         ) : Array.isArray(question.model_answer) ? (
                           <span>{question.model_answer.join(", ")}</span>
@@ -968,11 +968,11 @@ export default function QuestionManager() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Model Answer (Python)</Label>
+                      <Label>Model Answer ({editingQuestion.language})</Label>
                       <Textarea
-                        value={editingQuestion.model_answer_python}
+                        value={editingQuestion.model_answer_code}
                         onChange={(e) =>
-                          setEditingQuestion({ ...editingQuestion, model_answer_python: e.target.value })
+                          setEditingQuestion({ ...editingQuestion, model_answer_code: e.target.value })
                         }
                         rows={8}
                         className="font-mono text-sm"
@@ -1455,11 +1455,11 @@ export default function QuestionManager() {
                         />
                       </div>
                       <div className="space-y-4">
-                        <Label className="text-base font-medium">Model Answer (Python)</Label>
+                        <Label className="text-base font-medium">Model Answer ({addingQuestion.language})</Label>
                         <Textarea
-                          value={addingQuestion.model_answer_python}
+                          value={addingQuestion.model_answer_code}
                           onChange={(e) =>
-                            setAddingQuestion({ ...addingQuestion, model_answer_python: e.target.value })
+                            setAddingQuestion({ ...addingQuestion, model_answer_code: e.target.value })
                           }
                           rows={8}
                           className="font-mono text-sm min-h-[200px]"

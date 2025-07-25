@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { CodeEditor } from "@/components/code-editor"
+import { CodeEditor } from "@/components/question-components/question-type/code-question-components/code-editor"
 
 interface CodeQuestionProps {
   onSubmit: (responseText: string) => void

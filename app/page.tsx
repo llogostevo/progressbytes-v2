@@ -24,7 +24,6 @@ export default async function Home() {
 
   // Server-side data fetching (more secure)
   let topics: Topic[] = []
-  if (user) {
     /**
      * Fetch topics with their associated questions
      * This query gets all questions associated with a topic's subtopics
@@ -197,8 +196,8 @@ export default async function Home() {
                 match: mq.match
               }))
             }),
-            ...(question.type === 'code' && {
-              model_answer_python: question.code_questions?.model_answer_code,
+            ...((question.type === 'code' || question.type === 'algorithm' || question.type === 'sql') && {
+              model_answer_code: question.code_questions?.model_answer_code,
               language: question.code_questions?.language
             })
           }
@@ -226,8 +225,6 @@ export default async function Home() {
       return transformedTopic
     }) || []
 
-    console.log('Final transformed topics:', topics)
-  }
 
   // Track page visit
   if (user) {

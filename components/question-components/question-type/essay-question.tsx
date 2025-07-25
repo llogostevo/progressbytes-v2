@@ -11,9 +11,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { HelpCircle, Monitor, Gavel } from "lucide-react"
-import EssayGuide from "./EssayGuide"
-import DigitalTechnologyGuide from "./DigitalTechnologyGuide"
-import ComputerScienceLawsGuide from "./ComputerScienceLawsGuide"
+import EssayGuide from "./essay-guides/EssayGuide"
+import DigitalTechnologyGuide from "./essay-guides/DigitalTechnologyGuide"
+import ComputerScienceLawsGuide from "./essay-guides/ComputerScienceLawsGuide"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
 interface EssayQuestionProps {

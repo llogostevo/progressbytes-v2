@@ -10,7 +10,7 @@ export interface Question {
   correctAnswerIndex?: number
   order_important?: boolean
   correct_answer?: boolean // TODO: true-false question - need to check if this is correct
-  model_answer_python?: string
+  model_answer_code?: string
   language?: string
   explanation?: string
   created_at: string
