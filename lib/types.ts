@@ -54,7 +54,7 @@ export interface Student {
   id: string
   email: string
   created_at: string
-  user_type: "revision" | "revisionAI" | null
+  user_type: UserType | null
 }
 
 export interface Plan {
@@ -70,4 +70,5 @@ export interface Plan {
   plan_type: string
   stripe_price_id: string
   stripe_product_id: string
+  active: boolean
 };

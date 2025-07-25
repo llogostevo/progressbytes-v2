@@ -6,6 +6,7 @@
   | 'revision'          // student, paid
   | 'revisionAI'        // student, premium
   | 'teacherBasic'      // teacher with free access (1 class, 5-10 students)
+  | 'teacherPlan'       // teacher with paid access (1 class, 10 students)
   | 'teacherPremium'    // paid teacher, multiple classes
   | 'admin';            // internal use only (site owner)
 
@@ -78,6 +79,18 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
   teacherBasic: {
     canCreateClass: true,
     maxClasses: 1,
+    maxStudentsPerClass: 2,
+    canViewAnswers: true,
+    canUseAI: false,
+    maxQuestionsPerDay: 5,
+    maxQuestionsPerTopic: 5,
+    canAccessFilters: true,
+    canSkipQuestions: true,
+    canAccessAnalytics: true,
+  },
+  teacherPlan: {
+    canCreateClass: true,
+    maxClasses: 1,
     maxStudentsPerClass: 10,
     canViewAnswers: true,
     canUseAI: false,
@@ -87,7 +100,6 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     canSkipQuestions: false,
     canAccessAnalytics: false,
   },
-
   teacherPremium: {
     canCreateClass: true,
     maxClasses: Infinity,

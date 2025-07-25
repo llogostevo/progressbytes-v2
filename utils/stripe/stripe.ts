@@ -75,8 +75,19 @@ export const plans: Record<string, Plan> = {
   teacherBasic: {
     name: 'Teacher Basic',
     slug: 'teacherBasic',
-    description: 'Free teacher plan (1 class, 5-10 students)',
+    description: 'Free teacher plan (1 class, 2 students)',
     price: 0,
+    interval: 'month',
+    features: ['1 class', 'Up to 2 students'],
+    daily_question_limit: null,
+    total_question_limit: null,
+    has_ai_feedback: false
+  },
+  teacherPlan: {
+    name: 'Teacher Plan',
+    slug: 'teacherPlan',
+    description: 'Teacher plan (1 class, 10 students)',
+    price: 5,
     interval: 'month',
     features: ['1 class', 'Up to 10 students'],
     daily_question_limit: null,

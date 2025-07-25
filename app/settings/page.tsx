@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { BookOpen, Book, GraduationCap, School, BookMarked, Library, BookOpenCheck, BookOpenText, BookmarkCheck, BookmarkPlus, User, CreditCard, Plus, Copy, Eye, Trash2 } from "lucide-react"
+import { Book, GraduationCap, School, BookMarked, Library, BookmarkPlus, User, CreditCard, Plus, Copy, Eye, Trash2, BookOpen, BookOpenCheck, BookOpenText } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import { redirect } from "next/navigation"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
@@ -14,6 +14,7 @@ import { loadStripe } from '@stripe/stripe-js'
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import type { Plan } from '@/lib/types';
+import { UserType } from "@/lib/access";
 
 // Initialize Stripe
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
@@ -83,7 +84,6 @@ interface SupabaseMember {
 }
 
 type UserRole = 'admin' | 'student' | 'teacher'
-type UserType = 'basic' | 'revision' | 'revisionAI'
 
 export default function SettingsPage() {
   const [userType, setUserType] = useState<UserType | null>(null)
@@ -410,7 +410,7 @@ export default function SettingsPage() {
 
       if (error) throw error
 
-      setStudentClasses(prev => prev.filter(m => 
+      setStudentClasses(prev => prev.filter(m =>
         m.class_id !== selectedMembership.class_id || m.student_id !== user.id
       ))
       setLeaveClassDialogOpen(false)
@@ -566,7 +566,7 @@ export default function SettingsPage() {
             student: member.student
           }))
         }))
-        
+
         console.log('Transformed memberships:', transformedMemberships) // Debug log
         setStudentClasses(transformedMemberships)
       }
@@ -665,21 +665,45 @@ export default function SettingsPage() {
           <CardContent>
             <div className="grid gap-6 md:grid-cols-3">
               {studentPlans.map(plan => (
-                <Card key={plan.slug} className={userType === plan.slug ? 'border-primary' : ''}>
+                <Card
+                  key={plan.slug}
+                  className={`relative${userType === plan.slug ? ' border-primary' : ''}${plan.active === false ? ' opacity-50 pointer-events-none' : ''}`}
+                >
                   <CardHeader>
+                    {plan.slug === 'basic' && <BookOpen className="h-6 w-6 text-muted-foreground mb-2" />}
+                    {plan.slug === 'revision' && <BookOpenCheck className="h-6 w-6 text-muted-foreground mb-2" />}
+                    {plan.slug === 'revisionAI' && <BookOpenText className="h-6 w-6 text-muted-foreground mb-2" />}
+                    {plan.active === false && (
+                      <Badge className="absolute top-2 right-2 bg-gray-400 text-white">Coming Soon</Badge>
+                    )}
                     <CardTitle>{plan.name}</CardTitle>
                     <CardDescription>{plan.description}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {/* Optionally render features here */}
+                      <div className="text-lg font-semibold">
+                        {plan.active ? `£${plan.price} /month` : 'Price: TBC'}
+                      </div>
+                      {Array.isArray(plan.features) && plan.features.length > 0 && (
+                        <ul className="list-disc list-inside text-sm text-muted-foreground">
+                          {plan.features.map((feature, idx) => (
+                            <li key={idx}>{feature}</li>
+                          ))}
+                        </ul>
+                      )}
                       <Button
                         className="w-full"
                         variant={userType === plan.slug ? 'default' : 'outline'}
                         onClick={() => handlePlanSelect(plan)}
-                        disabled={isLoadingCheckout}
+                        disabled={isLoadingCheckout || !plan.active}
                       >
-                        {userType === plan.slug ? 'Current Plan' : isLoadingCheckout ? 'Loading...' : 'Select Plan'}
+                        {userType === plan.slug
+                          ? 'Current Plan'
+                          : !plan.active
+                            ? 'Coming Soon'
+                            : isLoadingCheckout
+                              ? 'Loading...'
+                              : 'Select Plan'}
                       </Button>
                     </div>
                   </CardContent>
@@ -699,21 +723,44 @@ export default function SettingsPage() {
           <CardContent>
             <div className="grid gap-6 md:grid-cols-3">
               {teacherPlans.map(plan => (
-                <Card key={plan.slug} className={userType === plan.slug ? 'border-primary' : ''}>
+                <Card
+                  key={plan.slug}
+                  className={`relative${userType === plan.slug ? ' border-primary' : ''}${plan.active === false ? ' opacity-50 pointer-events-none' : ''}`}
+                >
                   <CardHeader>
+                    {plan.slug === 'teacherBasic' && <School className="h-6 w-6 text-muted-foreground mb-2" />}                    
+                    {plan.slug === 'teacherPremium' && <School className="h-6 w-6 text-primary mb-2" />}
+                    {plan.active === false && (
+                      <Badge className="absolute top-2 right-2 bg-gray-400 text-white">Coming Soon</Badge>
+                    )}
                     <CardTitle>{plan.name}</CardTitle>
                     <CardDescription>{plan.description}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {/* Optionally render features here */}
+                      <div className="text-lg font-semibold">
+                        {plan.active ? `£${plan.price} /month` : 'Price: TBC'}
+                      </div>
+                      {Array.isArray(plan.features) && plan.features.length > 0 && (
+                        <ul className="list-disc list-inside text-sm text-muted-foreground">
+                          {plan.features.map((feature, idx) => (
+                            <li key={idx}>{feature}</li>
+                          ))}
+                        </ul>
+                      )}
                       <Button
                         className="w-full"
                         variant={userType === plan.slug ? 'default' : 'outline'}
                         onClick={() => handlePlanSelect(plan)}
                         disabled={isLoadingCheckout}
                       >
-                        {userType === plan.slug ? 'Current Plan' : isLoadingCheckout ? 'Loading...' : 'Select Plan'}
+                        {userType === plan.slug
+                          ? 'Current Plan'
+                          : !plan.active
+                            ? 'Coming Soon'
+                            : isLoadingCheckout
+                              ? 'Loading...'
+                              : 'Select Plan'}
                       </Button>
                     </div>
                   </CardContent>
@@ -801,8 +848,8 @@ export default function SettingsPage() {
                 <div className="text-center py-8">
                   <School className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   <p className="text-sm text-muted-foreground">You are not currently teaching any classes</p>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="mt-4"
                     onClick={() => setCreateClassDialogOpen(true)}
                   >
@@ -897,8 +944,8 @@ export default function SettingsPage() {
                   .filter(membership => membership.class_id === selectedClass?.id)
                   .map(membership => (
                     membership.members?.map(member => (
-                      <div 
-                        key={member.student_id} 
+                      <div
+                        key={member.student_id}
                         className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
                       >
                         <div className="flex items-center space-x-3">
@@ -954,8 +1001,8 @@ export default function SettingsPage() {
                 <div className="text-center py-8">
                   <School className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   <p className="text-sm text-muted-foreground">You are not currently enrolled in any classes</p>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="mt-4"
                     onClick={() => setJoinClassDialogOpen(true)}
                   >
@@ -1024,9 +1071,9 @@ export default function SettingsPage() {
             {availableCourses
               .filter(course => !userCourses.includes(course.slug))
               .map(course => (
-                <Card 
+                <Card
                   key={`available-course-${course.slug}`}
-                  className={`cursor-pointer hover:bg-muted/50 ${isAddingCourse ? 'opacity-50 pointer-events-none' : ''}`} 
+                  className={`cursor-pointer hover:bg-muted/50 ${isAddingCourse ? 'opacity-50 pointer-events-none' : ''}`}
                   onClick={() => handleAddCourse(course.slug)}
                 >
                   <CardContent className="pt-6">
@@ -1104,7 +1151,7 @@ export default function SettingsPage() {
               <Button variant="outline" onClick={() => setCreateClassDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button 
+              <Button
                 onClick={handleCreateClass}
                 disabled={isCreatingClass || !newClassName.trim()}
               >
@@ -1174,7 +1221,7 @@ export default function SettingsPage() {
               <Button variant="outline" onClick={() => setJoinClassDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button 
+              <Button
                 onClick={handleJoinClass}
                 disabled={isJoiningClass || !joinCode.trim()}
               >
