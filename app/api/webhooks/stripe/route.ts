@@ -4,14 +4,6 @@ import { stripe } from '@/utils/stripe/stripe';
 import { createClient } from '@/utils/supabase/server';
 import Stripe from 'stripe';
 
-// Interface to extend Stripe's Subscription type with custom billing cycle fields
-interface ExtendedSubscription extends Stripe.Subscription {
-  billing_cycle?: {
-    anchor: number;
-    ends_at: number;
-  };
-}
-
 /**
  * Stripe webhook handler for processing subscription-related events
  * This endpoint handles subscription creation, updates, and deletion events from Stripe
@@ -21,7 +13,8 @@ export async function POST(req: Request) {
   const body = await req.text();
   const headersList = await headers();
   const signature = headersList.get('stripe-signature');
-  
+
+
   // Verify webhook signature is present
   if (!signature) {
     return new NextResponse('No signature', { status: 400 });
@@ -42,63 +35,92 @@ export async function POST(req: Request) {
     switch (event.type) {
       case 'customer.subscription.created':
       case 'customer.subscription.updated': {
-        const subscription = event.data.object as ExtendedSubscription;
+        const subscription = event.data.object as Stripe.Subscription;
+        const customerId = subscription.customer as string;
+
+        // Retrieve the customer to get the user ID
+        const customer = await stripe.customers.retrieve(customerId) as Stripe.Customer;
+
+        // Look up the user from the profiles table using the stripe_customer_id
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('userid')
+          .eq('stripe_customer_id', customerId)
+          .single();
+
+        if (profileError || !profile) {
+          console.error(`User not found for Stripe customer ID: ${customerId}`, profileError);
+          break;
+        }
+
+        const userId = profile.userid;
 
         // Extract the price ID from the subscription
         const priceId = subscription.items.data[0].price.id;
 
         // Query the database to get the plan details associated with this price ID
-        const { data: plan } = await supabase
+        const { data: plan, error: planError } = await supabase
           .from('plans')
           .select('slug')
           .eq('stripe_price_id', priceId)
           .single();
 
-        if (!plan) {
-          console.error(`Plan not found for price ID: ${priceId}`);
+        if (planError || !plan) {
+          console.error(`Plan not found for price ID: ${priceId}`, planError);
           break;
         }
 
-        // Update the subscription record in the database with latest Stripe data
-        await supabase
-          .from('subscriptions')
-          .upsert({
-            user_id: subscription.metadata.userId,
-            stripe_subscription_id: subscription.id,
-            stripe_customer_id: subscription.customer as string,
-            status: subscription.status,
-            current_period_start: new Date((subscription.billing_cycle?.anchor ?? 0) * 1000),
-            current_period_end: new Date((subscription.billing_cycle?.ends_at ?? 0) * 1000),
-            cancel_at_period_end: subscription.cancel_at_period_end
-          });
+        const item = subscription.items.data[0];
 
-        // Update the user's profile with their new subscription plan
+        if (!item) {
+          console.error(`Item not found for subscription: ${subscription.id}`);
+          break;
+        }
+
+        const periodEnd = item.current_period_end
+          ? new Date(item.current_period_end * 1000).toISOString()
+          : null;
+
         await supabase
           .from('profiles')
-          .update({ user_type: plan.slug })
-          .eq('userid', subscription.metadata.userId);
+          .update({
+            user_type: plan.slug,
+            plan_end_date: periodEnd
+          })
+          .eq('userid', userId);
 
         break;
       }
 
+
       case 'customer.subscription.deleted': {
-        const subscription = event.data.object;
+        const subscription = event.data.object as Stripe.Subscription;
+        const customerId = subscription.customer as string;
 
-        // Mark the subscription as canceled in the database
-        await supabase
-          .from('subscriptions')
-          .update({ status: 'canceled' })
-          .eq('stripe_subscription_id', subscription.id);
+        // Find the user based on stripe_customer_id
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('userid')
+          .eq('stripe_customer_id', customerId)
+          .single();
 
-        // Reset the user's profile to the basic plan when subscription is canceled
+        if (error || !profile) {
+          console.error(`User not found for Stripe customer ID on cancel: ${customerId}`, error);
+          break;
+        }
+
         await supabase
           .from('profiles')
-          .update({ user_type: 'basic' })
-          .eq('userid', subscription.metadata.userId);
+          .update({
+            user_type: 'basic',
+            plan_end_date: null
+          })
+          .eq('userid', profile.userid);
 
         break;
       }
     }
+
 
     // Return success response if all operations completed successfully
     return new NextResponse(null, { status: 200 });

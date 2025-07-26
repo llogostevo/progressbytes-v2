@@ -33,7 +33,8 @@ interface AccessLimits {
 
 }
 
-// Centralised access limits
+// Centralised access limits 
+// TODO: need to ensure these are in the DB and eventaually we can remove this section
 export const userAccessLimits: Record<UserType, AccessLimits> = {
   anonymous: {
     canCreateClass: false,
