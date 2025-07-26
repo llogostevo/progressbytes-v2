@@ -6,6 +6,7 @@
   | 'revision'          // student, paid
   | 'revisionAI'        // student, premium
   | 'teacherBasic'      // teacher with free access (1 class, 5-10 students)
+  | 'teacherPlan'       // teacher with paid access (1 class, 10 students)
   | 'teacherPremium'    // paid teacher, multiple classes
   | 'admin';            // internal use only (site owner)
 
@@ -32,13 +33,14 @@ interface AccessLimits {
 
 }
 
-// Centralised access limits
+// Centralised access limits 
+// TODO: need to ensure these are in the DB and eventaually we can remove this section
 export const userAccessLimits: Record<UserType, AccessLimits> = {
   anonymous: {
     canCreateClass: false,
     canViewAnswers: false,
     canUseAI: false,
-    maxQuestionsPerDay: 0, // 0 enforced, but you manually allow 1 per topic
+    maxQuestionsPerDay: Infinity, 
     maxQuestionsPerTopic: 1,
     canAccessFilters: false,
     canSkipQuestions: false,
@@ -77,8 +79,18 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
 
   teacherBasic: {
     canCreateClass: true,
+    canViewAnswers: true,
+    canUseAI: false,
+    maxQuestionsPerDay: 5,
+    maxQuestionsPerTopic: 5,
+    canAccessFilters: true,
+    canSkipQuestions: true,
+    canAccessAnalytics: true,
     maxClasses: 1,
-    maxStudentsPerClass: 10,
+    maxStudentsPerClass: 2,
+  },
+  teacherPlan: {
+    canCreateClass: true,
     canViewAnswers: true,
     canUseAI: false,
     maxQuestionsPerDay: 5,
@@ -86,12 +98,11 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     canAccessFilters: false,
     canSkipQuestions: false,
     canAccessAnalytics: false,
+    maxClasses: 1,
+    maxStudentsPerClass: 10,
   },
-
   teacherPremium: {
     canCreateClass: true,
-    maxClasses: Infinity,
-    maxStudentsPerClass: 30,
     canViewAnswers: true,
     canUseAI: false,
     maxQuestionsPerDay: Infinity,
@@ -99,11 +110,11 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     canAccessFilters: true,
     canSkipQuestions: true,
     canAccessAnalytics: true,
+    maxClasses: Infinity,
+    maxStudentsPerClass: 30,
   },
   admin: {
     canCreateClass: true,
-    maxClasses: Infinity,
-    maxStudentsPerClass: Infinity,
     canViewAnswers: true,
     canUseAI: true,
     maxQuestionsPerDay: Infinity,
@@ -111,6 +122,8 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     canAccessFilters: true,
     canSkipQuestions: true,
     canAccessAnalytics: true,
+    maxClasses: Infinity,
+    maxStudentsPerClass: Infinity,
   },
 };
 

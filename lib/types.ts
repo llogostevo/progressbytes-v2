@@ -1,3 +1,5 @@
+import { UserType } from "./access"
+
 export type ScoreType = "green" | "amber" | "red"
 
 export interface Question {
@@ -52,5 +54,21 @@ export interface Student {
   id: string
   email: string
   created_at: string
-  user_type: "revision" | "revisionAI" | null
+  user_type: UserType | null
 }
+
+export interface Plan {
+  name: string
+  slug: UserType
+  description: string
+  price: number
+  interval: string
+  features: string[]
+  daily_question_limit: number | null
+  total_question_limit: number | null;
+  has_ai_feedback: boolean
+  plan_type: string
+  stripe_price_id: string
+  stripe_product_id: string
+  active: boolean
+};

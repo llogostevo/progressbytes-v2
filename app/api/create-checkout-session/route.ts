@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server'
-import Stripe from 'stripe'
 import { createClient } from '@/utils/supabase/server'
+import { stripe } from '@/utils/stripe/stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-05-28.basil',
-})
+
 
 export async function POST(req: Request) {
   try {
@@ -21,7 +19,7 @@ export async function POST(req: Request) {
     // Get the current user
     const supabase = await createClient()
     const { data: { user }, error: userError } = await supabase.auth.getUser()
-    
+
     if (userError || !user) {
       console.error('Auth error:', userError)
       return NextResponse.json(
@@ -30,9 +28,56 @@ export async function POST(req: Request) {
       )
     }
 
+    // Check if user already has a Stripe customer ID
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('stripe_customer_id, email')
+      .eq('userid', user.id)
+      .single()
+
+    if (profileError) {
+      console.error('Error fetching profile:', profileError)
+      return NextResponse.json(
+        { error: 'Failed to fetch user profile' },
+        { status: 500 }
+      )
+    }
+
+    let customerId = profile?.stripe_customer_id
+
+    if (!customerId) {
+      try {
+        const customer = await stripe.customers.create({
+          email: profile?.email || user.email,
+          metadata: {
+            user_id: user.id,
+          },
+        })
+
+        customerId = customer.id
+
+        // Store the new customer ID in the profiles table
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ stripe_customer_id: customerId })
+          .eq('userid', user.id)
+
+        if (updateError) {
+          console.error('Error updating profile with customer ID:', updateError)
+          // Don't fail the request, but log the error
+        }
+      } catch (stripeError) {
+        console.error('Error creating Stripe customer:', stripeError)
+        return NextResponse.json(
+          { error: 'Failed to create customer' },
+          { status: 500 }
+        )
+      }
+    }
+
+
     // Create checkout session
-    console.log('Site URL:', process.env.NEXT_PUBLIC_SITE_URL)
-    
+
     if (!process.env.NEXT_PUBLIC_SITE_URL) {
       throw new Error('NEXT_PUBLIC_SITE_URL is not defined')
     }
@@ -45,6 +90,7 @@ export async function POST(req: Request) {
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],
+      customer: customerId, // Use the customer ID from the profiles table
       line_items: [
         {
           price: priceId,

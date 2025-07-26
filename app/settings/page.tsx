@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { BookOpen, Book, GraduationCap, School, BookMarked, Library, BookOpenCheck, BookOpenText, BookmarkCheck, BookmarkPlus, User, CreditCard, Plus, Copy, Eye, Trash2 } from "lucide-react"
+import { Book, GraduationCap, School, BookMarked, Library, BookmarkPlus, User, CreditCard, Plus, Copy, Eye, Trash2, BookOpen, BookOpenCheck, BookOpenText } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import { redirect } from "next/navigation"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
@@ -13,6 +13,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { loadStripe } from '@stripe/stripe-js'
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
+import type { Plan } from '@/lib/types';
+import { UserType } from "@/lib/access";
 
 // Initialize Stripe
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
@@ -82,7 +84,6 @@ interface SupabaseMember {
 }
 
 type UserRole = 'admin' | 'student' | 'teacher'
-type UserType = 'basic' | 'revision' | 'revisionAI'
 
 export default function SettingsPage() {
   const [userType, setUserType] = useState<UserType | null>(null)
@@ -120,6 +121,7 @@ export default function SettingsPage() {
   const [deleteMemberDialogOpen, setDeleteMemberDialogOpen] = useState(false)
   const [memberToDelete, setMemberToDelete] = useState<SupabaseMember | null>(null)
   const [isDeletingMember, setIsDeletingMember] = useState(false)
+  const [plans, setPlans] = useState<Plan[]>([]);
 
   const supabase = createClient()
 
@@ -202,10 +204,10 @@ export default function SettingsPage() {
     }
   }
 
-  const handlePlanSelect = async (planType: UserType) => {
-    if (!userEmail || planType === userType) return
+  const handlePlanSelect = async (plan: Plan) => {
+    if (!userEmail || plan.slug === userType) return;
 
-    setIsLoadingCheckout(true)
+    setIsLoadingCheckout(true);
     try {
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
@@ -213,50 +215,39 @@ export default function SettingsPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          priceId: getPriceIdForPlan(planType),
+          priceId: plan.stripe_price_id, // Use the price ID from the plan object
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create checkout session')
+        throw new Error(data.error || 'Failed to create checkout session');
       }
 
       if (!data.sessionId) {
-        throw new Error('No session ID returned')
+        throw new Error('No session ID returned');
       }
 
-      const stripe = await stripePromise
+      const stripe = await stripePromise;
       if (!stripe) {
-        throw new Error('Stripe failed to load')
+        throw new Error('Stripe failed to load');
       }
 
       const { error } = await stripe.redirectToCheckout({
-        sessionId: data.sessionId
-      })
+        sessionId: data.sessionId,
+      });
 
       if (error) {
-        throw error
+        throw error;
       }
     } catch (error) {
-      console.error('Error:', error)
-      alert(error instanceof Error ? error.message : 'An error occurred during checkout')
+      console.error('Error:', error);
+      alert(error instanceof Error ? error.message : 'An error occurred during checkout, please contact support');
     } finally {
-      setIsLoadingCheckout(false)
+      setIsLoadingCheckout(false);
     }
-  }
-
-  const getPriceIdForPlan = (planType: UserType): string => {
-    switch (planType) {
-      case 'revision':
-        return process.env.NEXT_PUBLIC_STRIPE_REVISION_PRICE_ID!
-      case 'revisionAI':
-        return process.env.NEXT_PUBLIC_STRIPE_REVISION_AI_PRICE_ID!
-      default:
-        return process.env.NEXT_PUBLIC_STRIPE_BASIC_PRICE_ID!
-    }
-  }
+  };
 
   const generateJoinCode = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -419,7 +410,7 @@ export default function SettingsPage() {
 
       if (error) throw error
 
-      setStudentClasses(prev => prev.filter(m => 
+      setStudentClasses(prev => prev.filter(m =>
         m.class_id !== selectedMembership.class_id || m.student_id !== user.id
       ))
       setLeaveClassDialogOpen(false)
@@ -575,7 +566,7 @@ export default function SettingsPage() {
             student: member.student
           }))
         }))
-        
+
         console.log('Transformed memberships:', transformedMemberships) // Debug log
         setStudentClasses(transformedMemberships)
       }
@@ -594,10 +585,22 @@ export default function SettingsPage() {
       }
     }
 
+    const fetchPlans = async () => {
+      const { data, error } = await supabase
+        .from('plans')
+        .select('*')
+        .order('price', { ascending: true });
+      if (!error) setPlans(data || []);
+    };
+
     fetchUser()
     fetchCourses()
+    fetchPlans();
     setIsLoading(false)
   }, [supabase])
+
+  const studentPlans = plans.filter(plan => plan.plan_type === 'student');
+  const teacherPlans = plans.filter(plan => plan.plan_type === 'teacher');
 
   if (isLoading) {
     return (
@@ -653,97 +656,116 @@ export default function SettingsPage() {
       </Card>
 
       {/* Subscription Plans */}
-      {userRole !== 'student' && (
+      {studentPlans.length > 0 && (
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Subscription Plans</CardTitle>
-            <CardDescription>Choose a plan that best fits your needs</CardDescription>
+            <CardTitle>Student Plans</CardTitle>
+            <CardDescription>Choose a student plan</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid gap-6 md:grid-cols-3">
-              {/* Basic Plan */}
-              <Card className={userType === 'basic' ? 'border-primary' : ''}>
-                <CardHeader>
-                  <CardTitle>Basic</CardTitle>
-                  <CardDescription>Essential features for self-study</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <BookOpen className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">Access to all questions</span>
+              {studentPlans.map(plan => (
+                <Card
+                  key={plan.slug}
+                  className={`relative${userType === plan.slug ? ' border-primary' : ''}${plan.active === false ? ' opacity-50 pointer-events-none' : ''}`}
+                >
+                  <CardHeader>
+                    {plan.slug === 'basic' && <BookOpen className="h-6 w-6 text-muted-foreground mb-2" />}
+                    {plan.slug === 'revision' && <BookOpenCheck className="h-6 w-6 text-muted-foreground mb-2" />}
+                    {plan.slug === 'revisionAI' && <BookOpenText className="h-6 w-6 text-muted-foreground mb-2" />}
+                    {plan.active === false && (
+                      <Badge className="absolute top-2 right-2 bg-gray-400 text-white">Coming Soon</Badge>
+                    )}
+                    <CardTitle>{plan.name}</CardTitle>
+                    <CardDescription>{plan.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="text-lg font-semibold">
+                        {plan.active ? `£${plan.price} /month` : 'Price: TBC'}
+                      </div>
+                      {Array.isArray(plan.features) && plan.features.length > 0 && (
+                        <ul className="list-disc list-inside text-sm text-muted-foreground">
+                          {plan.features.map((feature, idx) => (
+                            <li key={idx}>{feature}</li>
+                          ))}
+                        </ul>
+                      )}
+                      <Button
+                        className="w-full"
+                        variant={userType === plan.slug ? 'default' : 'outline'}
+                        onClick={() => handlePlanSelect(plan)}
+                        disabled={isLoadingCheckout || !plan.active}
+                      >
+                        {userType === plan.slug
+                          ? 'Current Plan'
+                          : !plan.active
+                            ? 'Coming Soon'
+                            : isLoadingCheckout
+                              ? 'Loading...'
+                              : 'Select Plan'}
+                      </Button>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Book className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">Basic progress tracking</span>
-                    </div>
-                    <Button 
-                      className="w-full" 
-                      variant={userType === 'basic' ? 'default' : 'outline'}
-                      onClick={() => handlePlanSelect('basic')}
-                      disabled={isLoadingCheckout}
-                    >
-                      {userType === 'basic' ? 'Current Plan' : isLoadingCheckout ? 'Loading...' : 'Select Plan'}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-              {/* Revision Plan */}
-              <Card className={userType === 'revision' ? 'border-primary' : ''}>
-                <CardHeader>
-                  <CardTitle>Revision</CardTitle>
-                  <CardDescription>Enhanced learning experience</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <BookOpenCheck className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">Everything in Basic</span>
+      {teacherPlans.length > 0 && (
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Teacher Plans</CardTitle>
+            <CardDescription>Choose a teacher plan</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-6 md:grid-cols-3">
+              {teacherPlans.map(plan => (
+                <Card
+                  key={plan.slug}
+                  className={`relative${userType === plan.slug ? ' border-primary' : ''}${plan.active === false ? ' opacity-50 pointer-events-none' : ''}`}
+                >
+                  <CardHeader>
+                    {plan.slug === 'teacherBasic' && <School className="h-6 w-6 text-muted-foreground mb-2" />}                    
+                    {plan.slug === 'teacherPremium' && <School className="h-6 w-6 text-primary mb-2" />}
+                    {plan.active === false && (
+                      <Badge className="absolute top-2 right-2 bg-gray-400 text-white">Coming Soon</Badge>
+                    )}
+                    <CardTitle>{plan.name}</CardTitle>
+                    <CardDescription>{plan.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="text-lg font-semibold">
+                        {plan.active ? `£${plan.price} /month` : 'Price: TBC'}
+                      </div>
+                      {Array.isArray(plan.features) && plan.features.length > 0 && (
+                        <ul className="list-disc list-inside text-sm text-muted-foreground">
+                          {plan.features.map((feature, idx) => (
+                            <li key={idx}>{feature}</li>
+                          ))}
+                        </ul>
+                      )}
+                      <Button
+                        className="w-full"
+                        variant={userType === plan.slug ? 'default' : 'outline'}
+                        onClick={() => handlePlanSelect(plan)}
+                        disabled={isLoadingCheckout}
+                      >
+                        {userType === plan.slug
+                          ? 'Current Plan'
+                          : !plan.active
+                            ? 'Coming Soon'
+                            : isLoadingCheckout
+                              ? 'Loading...'
+                              : 'Select Plan'}
+                      </Button>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <BookmarkCheck className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">Detailed progress analytics</span>
-                    </div>
-                    <Button 
-                      className="w-full" 
-                      variant={userType === 'revision' ? 'default' : 'outline'}
-                      onClick={() => handlePlanSelect('revision')}
-                      disabled={isLoadingCheckout}
-                    >
-                      {userType === 'revision' ? 'Current Plan' : isLoadingCheckout ? 'Loading...' : 'Select Plan'}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Revision AI Plan */}
-              <Card className={userType === 'revisionAI' ? 'border-primary' : ''}>
-                <CardHeader>
-                  <CardTitle>Revision AI</CardTitle>
-                  <CardDescription>AI-powered learning experience</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <BookOpenText className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">Everything in Revision</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <School className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">AI-powered feedback</span>
-                    </div>
-                    <Button 
-                      className="w-full" 
-                      variant={userType === 'revisionAI' ? 'default' : 'outline'}
-                      onClick={() => handlePlanSelect('revisionAI')}
-                      disabled={isLoadingCheckout}
-                    >
-                      {userType === 'revisionAI' ? 'Current Plan' : isLoadingCheckout ? 'Loading...' : 'Select Plan'}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -826,8 +848,8 @@ export default function SettingsPage() {
                 <div className="text-center py-8">
                   <School className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   <p className="text-sm text-muted-foreground">You are not currently teaching any classes</p>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="mt-4"
                     onClick={() => setCreateClassDialogOpen(true)}
                   >
@@ -922,8 +944,8 @@ export default function SettingsPage() {
                   .filter(membership => membership.class_id === selectedClass?.id)
                   .map(membership => (
                     membership.members?.map(member => (
-                      <div 
-                        key={member.student_id} 
+                      <div
+                        key={member.student_id}
                         className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
                       >
                         <div className="flex items-center space-x-3">
@@ -979,8 +1001,8 @@ export default function SettingsPage() {
                 <div className="text-center py-8">
                   <School className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   <p className="text-sm text-muted-foreground">You are not currently enrolled in any classes</p>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="mt-4"
                     onClick={() => setJoinClassDialogOpen(true)}
                   >
@@ -1049,9 +1071,9 @@ export default function SettingsPage() {
             {availableCourses
               .filter(course => !userCourses.includes(course.slug))
               .map(course => (
-                <Card 
+                <Card
                   key={`available-course-${course.slug}`}
-                  className={`cursor-pointer hover:bg-muted/50 ${isAddingCourse ? 'opacity-50 pointer-events-none' : ''}`} 
+                  className={`cursor-pointer hover:bg-muted/50 ${isAddingCourse ? 'opacity-50 pointer-events-none' : ''}`}
                   onClick={() => handleAddCourse(course.slug)}
                 >
                   <CardContent className="pt-6">
@@ -1129,7 +1151,7 @@ export default function SettingsPage() {
               <Button variant="outline" onClick={() => setCreateClassDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button 
+              <Button
                 onClick={handleCreateClass}
                 disabled={isCreatingClass || !newClassName.trim()}
               >
@@ -1199,7 +1221,7 @@ export default function SettingsPage() {
               <Button variant="outline" onClick={() => setJoinClassDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button 
+              <Button
                 onClick={handleJoinClass}
                 disabled={isJoiningClass || !joinCode.trim()}
               >
