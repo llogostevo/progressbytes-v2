@@ -39,7 +39,7 @@ export async function POST(req: Request) {
         const customerId = subscription.customer as string;
 
         // Retrieve the customer to get the user ID
-        const customer = await stripe.customers.retrieve(customerId) as Stripe.Customer;
+        // const customer = await stripe.customers.retrieve(customerId) as Stripe.Customer;
 
         // Look up the user from the profiles table using the stripe_customer_id
         const { data: profile, error: profileError } = await supabase
