@@ -16,7 +16,6 @@ import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import type { Plan } from '@/lib/types';
 import { UserType } from "@/lib/access";
-// import { cancelAllUserSubscriptions } from '@/utils/subscription-utils';
 
 // Initialize Stripe
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
@@ -209,7 +208,7 @@ export default function SettingsPage() {
     }
   };
 
-  
+
   const handleAddCourse = async (courseSlug: string) => {
     if (!userEmail) return
 
