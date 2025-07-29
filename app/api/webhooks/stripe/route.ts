@@ -1,7 +1,9 @@
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { stripe } from '@/utils/stripe/stripe';
-import { createClient } from '@/utils/supabase/server';
+// import { createClient } from '@/utils/supabase/server';
+import { supabaseAdmin as supabase } from '@/utils/supabase/admin';   // supabaseAdmin is the admin client and will bypass RLS and has been imported from utils/supabase/admin.ts 
+
 import Stripe from 'stripe';
 
 /**
@@ -29,7 +31,8 @@ export async function POST(req: Request) {
     );
 
     // Initialize Supabase client for database operations
-    const supabase = await createClient();
+    // const supabase = await createClient(); // This is the server component client and won't bypass RLS
+    // supabaseAdmin is the admin client and will bypass RLS and has been imported from utils/supabase/admin.ts at the top of the file
 
     // Handle different types of subscription events
     switch (event.type) {
