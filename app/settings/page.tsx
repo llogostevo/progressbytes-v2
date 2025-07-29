@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import type { Plan } from '@/lib/types';
 import { UserType } from "@/lib/access";
-import { cancelAllUserSubscriptions } from '@/utils/subscription-utils';
+// import { cancelAllUserSubscriptions } from '@/utils/subscription-utils';
 
 // Initialize Stripe
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
@@ -84,6 +84,9 @@ interface SupabaseMember {
     full_name: string
   }
 }
+
+
+
 
 type UserRole = 'admin' | 'student' | 'teacher'
 
@@ -169,6 +172,44 @@ export default function SettingsPage() {
     }
   }
 
+
+  const cancelAllUserSubscriptions = async (userId: string): Promise<void> => {
+    try {
+      // Get user's profile to check if they have a Stripe customer ID
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('stripe_customer_id')
+        .eq('userid', userId)
+        .single();
+  
+      if (profileError || !profile) {
+        console.error('Error fetching profile or no profile found:', profileError);
+        return; // No profile or customer ID, nothing to cancel
+      }
+  
+      // If user has a Stripe customer ID, cancel all their active subscriptions
+      if (profile.stripe_customer_id) {
+        // Import stripe dynamically to avoid server-side import issues
+        const { stripe } = await import('@/utils/stripe/stripe');
+        
+        const activeSubscriptions = await stripe.subscriptions.list({
+          customer: profile.stripe_customer_id,
+          status: 'active',
+        });
+  
+        // Cancel all active subscriptions
+        for (const subscription of activeSubscriptions.data) {
+          await stripe.subscriptions.cancel(subscription.id);
+          console.log(`Cancelled subscription ${subscription.id} for user ${userId}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error cancelling subscriptions for user:', userId, error);
+      // Don't throw - let the calling function handle the error
+    }
+  };
+
+  
   const handleAddCourse = async (courseSlug: string) => {
     if (!userEmail) return
 
