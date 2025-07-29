@@ -57,6 +57,7 @@ export async function POST(req: Request) {
 
         // Extract the price ID from the subscription
         const priceId = subscription.items.data[0].price.id;
+        console.log('priceId', priceId);
 
         // Query the database to get the plan details associated with this price ID
         const { data: plan, error: planError } = await supabase
