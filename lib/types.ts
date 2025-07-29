@@ -68,7 +68,7 @@ export interface Plan {
   total_question_limit: number | null;
   has_ai_feedback: boolean
   plan_type: string
-  stripe_price_id: string
-  stripe_product_id: string
+  stripe_price_id?: string
+  stripe_product_id?: string
   active: boolean
 };
