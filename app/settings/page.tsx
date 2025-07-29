@@ -209,6 +209,29 @@ export default function SettingsPage() {
 
     setIsLoadingCheckout(true);
     try {
+
+      // Check if this is a free plan
+      if (plan.price === 0) {
+        // Handle free plan - update profile directly
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not found');
+
+        // Update the user's profile to the new free plan
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            user_type: plan.slug,
+            plan_end_date: null,
+          })
+          .eq('userid', user.id);
+
+        if (error) throw error;
+
+        // Update local state
+        setUserType(plan.slug);
+        toast.success(`Successfully switched to ${plan.name}`);
+        return;
+      }
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: {
@@ -243,7 +266,7 @@ export default function SettingsPage() {
       }
     } catch (error) {
       console.error('Error:', error);
-      alert(error instanceof Error ? error.message : 'An error occurred during checkout, please contact support');
+      toast.error(error instanceof Error ? error.message : 'An error occurred during checkout, please contact support');
     } finally {
       setIsLoadingCheckout(false);
     }
@@ -728,7 +751,7 @@ export default function SettingsPage() {
                   className={`relative${userType === plan.slug ? ' border-primary' : ''}${plan.active === false ? ' opacity-50 pointer-events-none' : ''}`}
                 >
                   <CardHeader>
-                    {plan.slug === 'teacherBasic' && <School className="h-6 w-6 text-muted-foreground mb-2" />}                    
+                    {plan.slug === 'teacherBasic' && <School className="h-6 w-6 text-muted-foreground mb-2" />}
                     {plan.slug === 'teacherPremium' && <School className="h-6 w-6 text-primary mb-2" />}
                     {plan.active === false && (
                       <Badge className="absolute top-2 right-2 bg-gray-400 text-white">Coming Soon</Badge>
