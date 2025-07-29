@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import type { Plan } from '@/lib/types';
 import { UserType } from "@/lib/access";
+import { cancelAllUserSubscriptions } from '@/utils/subscription-utils';
 
 // Initialize Stripe
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
@@ -215,6 +216,9 @@ export default function SettingsPage() {
         // Handle free plan - update profile directly
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('User not found');
+
+        // Cancel all subscriptions using the utility function
+        await cancelAllUserSubscriptions(user.id);
 
         // Update the user's profile to the new free plan
         const { error } = await supabase
