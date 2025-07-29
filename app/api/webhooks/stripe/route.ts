@@ -41,6 +41,21 @@ export async function POST(req: Request) {
         const subscription = event.data.object as Stripe.Subscription;
         const customerId = subscription.customer as string;
 
+
+        // Cancel all other active subscriptions for this customer except the current one being created or updated to
+        const activeSubs = await stripe.subscriptions.list({
+          customer: customerId,
+          status: 'active',
+        });
+
+        for (const sub of activeSubs.data) {
+          if (sub.id !== subscription.id) {
+            await stripe.subscriptions.cancel(sub.id);
+            console.log(`Cancelled existing subscription ${sub.id}`);
+          }
+        }
+
+
         // Retrieve the customer to get the user ID
         // const customer = await stripe.customers.retrieve(customerId) as Stripe.Customer;
 
