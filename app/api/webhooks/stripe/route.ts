@@ -116,7 +116,6 @@ export async function POST(req: Request) {
         const subscription = event.data.object as Stripe.Subscription;
         const customerId = subscription.customer as string;
 
-        // Find the user based on stripe_customer_id
         const { data: profile, error } = await supabase
           .from('profiles')
           .select('userid')
@@ -128,16 +127,30 @@ export async function POST(req: Request) {
           break;
         }
 
-        await supabase
-          .from('profiles')
-          .update({
-            user_type: 'basic',
-            plan_end_date: null
-          })
-          .eq('userid', profile.userid);
+        // Check if the customer still has other active subscriptions
+        const activeSubs = await stripe.subscriptions.list({
+          customer: customerId,
+          status: 'active',
+        });
+
+        if (activeSubs.data.length === 0) {
+          // Only downgrade if no active subscriptions remain
+          await supabase
+            .from('profiles')
+            .update({
+              user_type: 'basic',
+              plan_end_date: null,
+            })
+            .eq('userid', profile.userid);
+
+          console.log(`Downgraded ${profile.userid} to basic due to no active subscriptions`);
+        } else {
+          console.log(`Subscription deleted, but user ${profile.userid} still has active plans`);
+        }
 
         break;
       }
+
     }
 
 
