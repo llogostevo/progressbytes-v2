@@ -156,7 +156,7 @@ export const plans: Record<string, Plan> = {
 export async function createStripeProducts() {
   const supabase = await createClient();
   
-  for (const [key, plan] of Object.entries(plans)) {
+  for (const plan of Object.values(plans)) {
     // Skip free plans (no Stripe product/price needed)
     if (plan.price === 0) {
       // Optionally, still upsert the plan in your DB for tracking
