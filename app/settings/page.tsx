@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Book, GraduationCap, School, BookMarked, Library, BookmarkPlus, User, CreditCard, Plus, Copy, Eye, Trash2, BookOpen, BookOpenCheck, BookOpenText } from "lucide-react"
@@ -125,6 +126,9 @@ export default function SettingsPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
 
   const supabase = createClient()
+  const searchParams = useSearchParams()
+  const router = useRouter()
+
 
   const handleDeleteCourse = async () => {
     if (!courseToDelete || !userEmail || deleteConfirmation !== "delete") return
@@ -488,6 +492,21 @@ export default function SettingsPage() {
   }
 
   useEffect(() => {
+    // Check for success/cancel parameters from Stripe checkout
+    const success = searchParams.get('success')
+    const canceled = searchParams.get('canceled')
+
+    if (success === 'true') {
+      toast.success('Payment successful! Your plan has been updated.')
+    } else if (canceled === 'true') {
+      toast.error('Payment was canceled. Your plan remains unchanged.')
+    }
+
+    // Remove query params from the URL
+  if (success || canceled) {
+    router.replace('/settings')  // Replaces current history entry
+  }
+
     const fetchUser = async () => {
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       if (authError || !user) {
@@ -624,7 +643,7 @@ export default function SettingsPage() {
     fetchCourses()
     fetchPlans();
     setIsLoading(false)
-  }, [supabase])
+  }, [supabase, searchParams])
 
   const studentPlans = plans.filter(plan => plan.plan_type === 'student');
   const teacherPlans = plans.filter(plan => plan.plan_type === 'teacher');
