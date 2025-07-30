@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/server';
+import { supabaseAdmin as supabase } from '@/utils/supabase/admin'
 import Stripe from 'stripe';
 
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -154,7 +154,7 @@ export const plans: Record<string, Plan> = {
 // }
 
 export async function createStripeProducts() {
-  const supabase = await createClient();
+  // const supabase = await createClient();
   
   for (const plan of Object.values(plans)) {
     // Skip free plans (no Stripe product/price needed)

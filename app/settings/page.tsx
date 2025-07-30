@@ -1,21 +1,27 @@
 "use client"
 
+import { createClient } from "@/utils/supabase/client"
+
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import { redirect } from "next/navigation"
+import { loadStripe } from '@stripe/stripe-js'
+
+import type { Plan } from '@/lib/types';
+import { UserType } from "@/lib/access";
+
+
+// UI Components
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Book, GraduationCap, School, BookMarked, Library, BookmarkPlus, User, CreditCard, Plus, Copy, Eye, Trash2, BookOpen, BookOpenCheck, BookOpenText } from "lucide-react"
-import { createClient } from "@/utils/supabase/client"
-import { redirect } from "next/navigation"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
-import { loadStripe } from '@stripe/stripe-js'
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
-import type { Plan } from '@/lib/types';
-import { UserType } from "@/lib/access";
+
 
 // Initialize Stripe
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
