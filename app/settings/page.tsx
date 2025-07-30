@@ -2,7 +2,7 @@
 
 import { createClient } from "@/utils/supabase/client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { redirect } from "next/navigation"
 import { loadStripe } from '@stripe/stripe-js'
@@ -96,6 +96,28 @@ interface SupabaseMember {
 type UserRole = 'admin' | 'student' | 'teacher'
 
 export default function SettingsPage() {
+  return (
+    <Suspense fallback={<SettingsSkeleton />}>
+      <SettingsPageContent />
+    </Suspense>
+  )
+}
+
+function SettingsSkeleton() {
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex items-center mb-8">
+        <h1 className="text-2xl font-bold">Settings</h1>
+      </div>
+      <div className="grid gap-6">
+        <Skeleton className="h-[200px]" />
+        <Skeleton className="h-[400px]" />
+      </div>
+    </div>
+  )
+}
+
+function SettingsPageContent() {
   const [userType, setUserType] = useState<UserType | null>(null)
   const [userRole, setUserRole] = useState<UserRole | null>(null)
   const [userEmail, setUserEmail] = useState<string | null>(null)
