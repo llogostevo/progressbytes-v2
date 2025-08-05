@@ -193,88 +193,127 @@ export async function POST(req: Request) {
       }
     }
 
-    // Check for existing active subscriptions
-    const existingSubscriptions = await stripe.subscriptions.list({
-      customer: customerId,
-      status: 'active',
-      limit: 1,
-    })
+  //   // Check for existing active subscriptions
+  //   const existingSubscriptions = await stripe.subscriptions.list({
+  //     customer: customerId,
+  //     status: 'active',
+  //     limit: 1,
+  //   })
 
-    const existingSubscription = existingSubscriptions.data[0]
+  //   const existingSubscription = existingSubscriptions.data[0]
 
-    if (existingSubscription) {
-      // User has an existing subscription - handle plan switching
-      try {
-        // Get the current subscription item
-        const currentItem = existingSubscription.items.data[0]
+  //   if (existingSubscription) {
+  //     // User has an existing subscription - handle plan switching
+  //     try {
+  //       // Get the current subscription item
+  //       const currentItem = existingSubscription.items.data[0]
         
-        // Update the subscription with the new price
-        const updatedSubscription = await stripe.subscriptions.update(
-          existingSubscription.id,
-          {
-            items: [{
-              id: currentItem.id,
-              price: priceId,
-            }],
-            proration_behavior: 'create_prorations',
-            metadata: {
-              userId: user.id,
-            },
-          }
-        )
+  //       // Update the subscription with the new price
+  //       const updatedSubscription = await stripe.subscriptions.update(
+  //         existingSubscription.id,
+  //         {
+  //           items: [{
+  //             id: currentItem.id,
+  //             price: priceId,
+  //           }],
+  //           proration_behavior: 'create_prorations',
+  //           metadata: {
+  //             userId: user.id,
+  //           },
+  //         }
+  //       )
 
-        // Return success immediately since we're updating an existing subscription
-        return NextResponse.json({ 
-          success: true, 
-          message: 'Subscription updated successfully',
-          subscriptionId: updatedSubscription.id 
-        })
-      } catch (updateError) {
-        console.error('Error updating subscription:', updateError)
-        return NextResponse.json(
-          { error: 'Failed to update subscription' },
-          { status: 500 }
-        )
-      }
-    } else {
-      // No existing subscription - create new one via checkout
-      if (!process.env.NEXT_PUBLIC_SITE_URL) {
-        throw new Error('NEXT_PUBLIC_SITE_URL is not defined')
-      }
+  //       // Return success immediately since we're updating an existing subscription
+  //       return NextResponse.json({ 
+  //         success: true, 
+  //         message: 'Subscription updated successfully',
+  //         subscriptionId: updatedSubscription.id 
+  //       })
+  //     } catch (updateError) {
+  //       console.error('Error updating subscription:', updateError)
+  //       return NextResponse.json(
+  //         { error: 'Failed to update subscription' },
+  //         { status: 500 }
+  //       )
+  //     }
+  //   } else {
+  //     // No existing subscription - create new one via checkout
+  //     if (!process.env.NEXT_PUBLIC_SITE_URL) {
+  //       throw new Error('NEXT_PUBLIC_SITE_URL is not defined')
+  //     }
 
-      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL.trim()
-      if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
-        throw new Error('NEXT_PUBLIC_SITE_URL must start with http:// or https://')
-      }
+  //     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL.trim()
+  //     if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
+  //       throw new Error('NEXT_PUBLIC_SITE_URL must start with http:// or https://')
+  //     }
 
-      const session = await stripe.checkout.sessions.create({
-        mode: 'subscription',
-        payment_method_types: ['card'],
-        customer: customerId,
-        line_items: [
-          {
-            price: priceId,
-            quantity: 1,
-          },
-        ],
-        success_url: `${baseUrl}/settings?success=true`,
-        cancel_url: `${baseUrl}/settings?canceled=true`,
-        metadata: {
-          userId: user.id,
-        },
-      })
+  //     const session = await stripe.checkout.sessions.create({
+  //       mode: 'subscription',
+  //       payment_method_types: ['card'],
+  //       customer: customerId,
+  //       line_items: [
+  //         {
+  //           price: priceId,
+  //           quantity: 1,
+  //         },
+  //       ],
+  //       success_url: `${baseUrl}/settings?success=true`,
+  //       cancel_url: `${baseUrl}/settings?canceled=true`,
+  //       metadata: {
+  //         userId: user.id,
+  //       },
+  //     })
 
-      if (!session.id) {
-        throw new Error('No session ID returned from Stripe')
-      }
+  //     if (!session.id) {
+  //       throw new Error('No session ID returned from Stripe')
+  //     }
 
-      return NextResponse.json({ sessionId: session.id })
-    }
-  } catch (error) {
-    console.error('Error creating checkout session:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Error creating checkout session' },
-      { status: 500 }
-    )
+  //     return NextResponse.json({ sessionId: session.id })
+  //   }
+  // } catch (error) {
+  //   console.error('Error creating checkout session:', error)
+  //   return NextResponse.json(
+  //     { error: error instanceof Error ? error.message : 'Error creating checkout session' },
+  //     { status: 500 }
+  //   )
+  // }
+
+  if (!process.env.NEXT_PUBLIC_SITE_URL) {
+    throw new Error('NEXT_PUBLIC_SITE_URL is not defined')
   }
+  
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL.trim()
+  if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
+    throw new Error('NEXT_PUBLIC_SITE_URL must start with http:// or https://')
+  }
+  
+  const session = await stripe.checkout.sessions.create({
+    mode: 'subscription',
+    payment_method_types: ['card'],
+    customer: customerId,
+    line_items: [
+      {
+        price: priceId,
+        quantity: 1,
+      },
+    ],
+    success_url: `${baseUrl}/settings?success=true`,
+    cancel_url: `${baseUrl}/settings?canceled=true`,
+    metadata: {
+      userId: user.id,
+    },
+  })
+  
+  if (!session.id) {
+    throw new Error('No session ID returned from Stripe')
+  }
+  
+  return NextResponse.json({ sessionId: session.id })
+} catch (error) {
+  console.error('Error creating checkout session:', error)
+  return NextResponse.json(
+    { error: error instanceof Error ? error.message : 'Error creating checkout session' },
+    { status: 500 }
+  )
+}
 }
