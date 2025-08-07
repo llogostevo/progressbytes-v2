@@ -300,7 +300,9 @@ const handlePlanSelect = async (plan: Plan) => {
 
       // If they're on a paid plan, just update to free plan
       // The webhook will handle any subscription cancellation when Stripe sends events
-      if (profile.user_type !== 'basic' && profile.stripe_customer_id) {
+    // TODO: need to code this from the DB rather than directly in the code here
+    // TODO: cache the plan data
+      if ((profile.user_type !== 'basic' && profile.user_type !== 'teacherBasic' ) && profile.stripe_customer_id) {
         // Just update the profile - let Stripe handle the cancellation via webhooks
         toast.info('Switching to free plan. Your subscription will be cancelled automatically.');
       }
