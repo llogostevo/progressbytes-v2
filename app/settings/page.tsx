@@ -278,100 +278,114 @@ function SettingsPageContent() {
     }
   }
 
-  
-const handlePlanSelect = async (plan: Plan) => {
-  if (!userEmail || plan.slug === userType) return;
 
-  setIsLoadingCheckout(true);
-  try {
-    // If it's a free plan
-    if (plan.price === 0) {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not found');
+  const handlePlanSelect = async (plan: Plan) => {
+    if (!userEmail || plan.slug === userType) return;
 
-      // Check if user currently has a paid plan
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('user_type, stripe_customer_id')
-        .eq('userid', user.id)
-        .single();
+    setIsLoadingCheckout(true);
+    try {
+      // If it's a free plan
+      if (plan.price === 0) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not found');
 
-      if (error || !profile) throw new Error('Could not fetch user profile');
+        // Check if user currently has a paid plan
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('user_type, stripe_customer_id')
+          .eq('userid', user.id)
+          .single();
 
-      // If they're on a paid plan, just update to free plan
-      // The webhook will handle any subscription cancellation when Stripe sends events
-      if (profile.user_type !== 'basic' && profile.stripe_customer_id) {
-        // Just update the profile - let Stripe handle the cancellation via webhooks
-        toast.info('Switching to free plan. Your subscription will be cancelled automatically.');
+        if (error || !profile) throw new Error('Could not fetch user profile');
+
+        // If they're on a paid plan, just update to free plan
+        // The webhook will handle any subscription cancellation when Stripe sends events
+        // TODO: need to code this from the DB rather than directly in the code here
+        // TODO: cache the plan data
+        if ((profile.user_type !== 'basic' && profile.user_type !== 'teacherBasic') && profile.stripe_customer_id) {
+          // Cancel the subscription via API
+          const cancelResponse = await fetch('/api/cancel-subscription', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (!cancelResponse.ok) {
+            const cancelData = await cancelResponse.json();
+            throw new Error(cancelData.error || 'Failed to cancel subscription');
+          }
+
+          toast.info('Switching to free plan. Your subscription will be cancelled automatically.');
+        }
+
+        // Update to free plan
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            user_type: plan.slug,
+            plan_end_date: null,
+          })
+          .eq('userid', user.id);
+
+        if (updateError) throw updateError;
+
+        setUserType(plan.slug);
+        toast.success(`Successfully switched to ${plan.name}`);
+        return;
       }
 
-      // Update to free plan
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          user_type: plan.slug,
-          plan_end_date: null,
-        })
-        .eq('userid', user.id);
+      // For paid plans — handle subscription creation/update
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          priceId: plan.stripe_price_id,
+        }),
+      });
 
-      if (updateError) throw updateError;
+      const data = await response.json();
 
-      setUserType(plan.slug);
-      toast.success(`Successfully switched to ${plan.name}`);
-      return;
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create checkout session');
+      }
+
+      // Check if this was a direct subscription update (no checkout needed)
+      if (data.success) {
+        toast.success('Plan updated successfully!');
+        setUserType(plan.slug);
+        return;
+      }
+
+      // Otherwise, redirect to Stripe checkout
+      if (!data.sessionId) {
+        throw new Error('No session ID returned');
+      }
+
+      const stripe = await stripePromise;
+      if (!stripe) {
+        throw new Error('Stripe failed to load');
+      }
+
+      const { error: stripeError } = await stripe.redirectToCheckout({
+        sessionId: data.sessionId,
+      });
+
+      if (stripeError) throw stripeError;
+
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : 'An error occurred during checkout, please contact support'
+      );
+    } finally {
+      setIsLoadingCheckout(false);
     }
-
-    // For paid plans — handle subscription creation/update
-    const response = await fetch('/api/create-checkout-session', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        priceId: plan.stripe_price_id,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to create checkout session');
-    }
-
-    // Check if this was a direct subscription update (no checkout needed)
-    if (data.success) {
-      toast.success('Plan updated successfully!');
-      setUserType(plan.slug);
-      return;
-    }
-
-    // Otherwise, redirect to Stripe checkout
-    if (!data.sessionId) {
-      throw new Error('No session ID returned');
-    }
-
-    const stripe = await stripePromise;
-    if (!stripe) {
-      throw new Error('Stripe failed to load');
-    }
-
-    const { error: stripeError } = await stripe.redirectToCheckout({
-      sessionId: data.sessionId,
-    });
-
-    if (stripeError) throw stripeError;
-
-  } catch (error) {
-    console.error('Error:', error);
-    toast.error(
-      error instanceof Error
-        ? error.message
-        : 'An error occurred during checkout, please contact support'
-    );
-  } finally {
-    setIsLoadingCheckout(false);
-  }
-};
+  };
 
   const generateJoinCode = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
