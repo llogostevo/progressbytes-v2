@@ -103,13 +103,13 @@ function LoginFormContent() {
     }
 
     if (authData.user) {
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({ 
-          school, 
-          user_type: userType, 
-          role: "student" })
-        .eq("userid", authData.user.id)
+              const { error: profileError } = await supabase
+          .from("profiles")
+          .update({ 
+            school, 
+            user_type: userType, 
+            role: "regular" })
+          .eq("userid", authData.user.id)
 
       if (profileError) {
         toast.error(`Profile update failed: ${profileError.message}`)

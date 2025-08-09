@@ -94,7 +94,7 @@ interface SupabaseMember {
 
 
 
-type UserRole = 'admin' | 'student' | 'teacher'
+type UserRole = 'regular' | 'admin'
 
 export default function SettingsPage() {
   return (
@@ -631,12 +631,12 @@ function SettingsPageContent() {
         console.error('Error fetching profile:', profileError)
       } else {
         setUserType(profile?.user_type)
-        setUserRole(profile?.role || 'student')
+        setUserRole(profile?.role || 'regular')
         setUserCourses(profile?.courses || [])
       }
 
       // Fetch user's classes
-      if (profile?.role === 'teacher') {
+      if (profile?.user_type?.startsWith('teacher')) {
         // Fetch classes where user is the teacher
         const { data: classes, error: classesError } = await supabase
           .from('classes')
@@ -981,7 +981,7 @@ function SettingsPageContent() {
       </Card>
 
       {/* Teacher Class Membership */}
-      {userRole === 'teacher' && (
+      {userType?.startsWith('teacher') && (
         <Card className="mb-8">
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -1134,7 +1134,7 @@ function SettingsPageContent() {
       </Dialog>
 
       {/* Student Class Membership */}
-      {(userRole === 'student' || userRole === 'teacher') && (
+      {(userType === 'basic' || userType === 'revision' || userType === 'revisionAI' || userType?.startsWith('teacher')) && (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -1187,7 +1187,7 @@ function SettingsPageContent() {
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          {userRole === 'student' && (
+                          {(userType === 'basic' || userType === 'revision' || userType === 'revisionAI') && (
                             <Button
                               variant="ghost"
                               size="icon"
