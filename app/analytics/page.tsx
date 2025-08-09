@@ -123,7 +123,7 @@ interface StudentClassMember {
   }
 }
 
-type UserRole = 'admin' | 'student' | 'teacher'
+type UserRole = 'regular' | 'admin'
 
 type DbMember = {
   student_id: string;
@@ -600,6 +600,7 @@ export default function AnalyticsPage() {
 
 
   const [currentUserRole, setCurrentUserRole] = useState<UserRole | null>(null)
+  const [currentUserType, setCurrentUserType] = useState<string | null>(null)
   const [userActivity, setUserActivity] = useState<UserActivity[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingSessions, setIsLoadingSessions] = useState(true)
@@ -723,11 +724,12 @@ export default function AnalyticsPage() {
       if (profileError) {
         console.error('Error fetching profile:', profileError)
       } else {
-        setCurrentUserRole(profile?.role || 'student')
+        setCurrentUserRole(profile?.role || 'regular')
+        setCurrentUserType(profile?.user_type || null)
       }
 
       // Fetch classes based on user role
-      if (profile?.role === 'teacher') {
+      if (profile?.user_type?.startsWith('teacher')) {
         // Fetch classes where user is the teacher
         const { data: teacherClasses, error: teacherClassesError } = await supabase
           .from('classes')
@@ -740,7 +742,7 @@ export default function AnalyticsPage() {
           setClasses(teacherClasses || [])
         }
         setIsLoadingClasses(false)
-      } else if (profile?.role === 'student') {
+      } else if (profile?.user_type === 'basic' || profile?.user_type === 'revision' || profile?.user_type === 'revisionAI') {
         // Fetch classes where user is a student
         const { data: studentClasses, error: studentClassesError } = await supabase
           .from('class_members')
@@ -777,7 +779,7 @@ export default function AnalyticsPage() {
       }
 
       // Fetch students if user is admin or teacher
-      if (profile?.role === 'admin' || profile?.role === 'teacher') {
+      if (profile?.role === 'admin' || profile?.user_type?.startsWith('teacher')) {
         // Fetch all users
         const { data: usersData, error: usersError } = await supabase
           .from("profiles")
@@ -936,7 +938,7 @@ export default function AnalyticsPage() {
     ? userActivity
     : userActivity.filter(activity => {
       // For students, only show their own activity
-      if (currentUserRole === 'student') {
+      if (currentUserType === 'basic' || currentUserType === 'revision' || currentUserType === 'revisionAI') {
         return activity.user_id === selectedStudent
       }
       // For teachers, show activity of students in their class
@@ -997,7 +999,7 @@ export default function AnalyticsPage() {
       return aValue.localeCompare(bValue, undefined, { sensitivity: 'base' });
     });
 
-  if (!currentUserRole || (currentUserRole !== 'admin' && currentUserRole !== 'teacher')) {
+  if (!currentUserRole || (currentUserRole !== 'admin' && !currentUserType?.startsWith('teacher'))) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">

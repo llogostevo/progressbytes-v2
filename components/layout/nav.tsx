@@ -37,7 +37,7 @@ export function Nav() {
     { title: "Quizzes", href: "/", icon: BookOpen },
     { title: "Progress", href: "/progress", icon: BarChart2 },
     { title: "Revisit", href: "/revisit", icon: BookOpen },
-    ...(userRole === "admin" || userRole === "teacher"
+    ...(userRole === "admin"
       ? [{ title: "Analytics", href: "/analytics", icon: BarChart2 }]
       : []),
     { title: "Settings", href: "/settings", icon: Settings },

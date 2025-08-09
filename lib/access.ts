@@ -14,7 +14,7 @@
 export interface User {
   user_type: UserType;
   email?: string;
-  role?: 'student' | 'teacher' | 'admin';
+  role?: 'regular' | 'admin';
   ai_interest_banner?: boolean;
 }
 
