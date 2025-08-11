@@ -94,7 +94,7 @@ export async function POST(req: Request) {
 
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('userid')
+          .select('userid, user_type')
           .eq('stripe_customer_id', customerId)
           .single();
 
@@ -110,16 +110,26 @@ export async function POST(req: Request) {
         });
 
         if (activeSubs.data.length === 0) {
+
+          // Determine the appropriate downgrade plan based on current user type
+          let downgradePlan = 'basic';
+
+          if (profile.user_type?.startsWith('teacher')) {
+            // If user is a teacher, downgrade to teacherBasic instead of basic
+            downgradePlan = 'teacherBasic';
+          }
+
+
           // Only downgrade if no active subscriptions remain
           await supabase
             .from('profiles')
             .update({
-              user_type: 'basic',
+              user_type: downgradePlan,
               plan_end_date: null,
             })
             .eq('userid', profile.userid);
 
-          console.log(`Downgraded ${profile.userid} to basic due to no active subscriptions`);
+          console.log(`Downgraded ${profile.userid} to ${downgradePlan} due to no active subscriptions`);
         } else {
           console.log(`Subscription deleted, but user ${profile.userid} still has active plans`);
         }
