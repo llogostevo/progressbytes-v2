@@ -298,7 +298,7 @@ async function getRandomQuestionForTopic(
   const length = Math.min(maxQuestions, filteredQuestionsByDifficulty.length)
 
   const randomIndex = Math.floor(Math.random() * length)
-  return filteredQuestions[randomIndex]
+  return filteredQuestionsByDifficulty[randomIndex]
 
   
 }
