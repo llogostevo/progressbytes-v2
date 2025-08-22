@@ -5,6 +5,7 @@ import { stripe } from '@/utils/stripe/stripe';
 import { supabaseAdmin as supabase } from '@/utils/supabase/admin';
 
 import Stripe from 'stripe';
+import { isTeacher } from '@/lib/access';
 
 /**
  * Stripe webhook handler for processing subscription-related events
@@ -114,7 +115,7 @@ export async function POST(req: Request) {
           // Determine the appropriate downgrade plan based on current user type
           let downgradePlan = 'basic';
 
-          if (profile.user_type?.startsWith('teacher')) {
+          if (isTeacher(profile.user_type)) {
             // If user is a teacher, downgrade to teacherBasic instead of basic
             downgradePlan = 'teacherBasic';
           }
