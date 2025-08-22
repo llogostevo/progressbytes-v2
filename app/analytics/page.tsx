@@ -3,6 +3,7 @@
 // access control
 // import { useUser } from "@/hooks/useUser"
 import { useAccess } from "@/hooks/useAccess"
+import { isAdmin, isTeacher } from '@/lib/access';
 // import { canAccessAnalytics } from "@/lib/access"
 
 // react
@@ -729,7 +730,7 @@ export default function AnalyticsPage() {
       }
 
       // Fetch classes based on user role
-      if (profile?.user_type?.startsWith('teacher')) {
+      if (isTeacher(profile?.user_type)) {
         // Fetch classes where user is the teacher
         const { data: teacherClasses, error: teacherClassesError } = await supabase
           .from('classes')
@@ -779,7 +780,7 @@ export default function AnalyticsPage() {
       }
 
       // Fetch students if user is admin or teacher
-      if (profile?.role === 'admin' || profile?.user_type?.startsWith('teacher')) {
+      if (isAdmin( profile?.role) || isTeacher(profile?.user_type)) {
         // Fetch all users
         const { data: usersData, error: usersError } = await supabase
           .from("profiles")
@@ -999,7 +1000,8 @@ export default function AnalyticsPage() {
       return aValue.localeCompare(bValue, undefined, { sensitivity: 'base' });
     });
 
-  if (!currentUserRole || (currentUserRole !== 'admin' && !currentUserType?.startsWith('teacher'))) {
+  if (!currentUserRole || (!isAdmin(currentUserRole) && !isTeacher(currentUserType))) {
+        
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
