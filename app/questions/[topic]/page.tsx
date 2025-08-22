@@ -24,6 +24,7 @@ import { QuestionTypeFilter } from "@/components/question-type-filter"
 import { SubtopicFilter } from "@/components/subtopic-filter"
 import { Skeleton } from "@/components/ui/skeleton"
 import { canAccessFilters, getMaxQuestionsPerTopic, UserType, canSkipQuestions } from "@/lib/access"
+import { QuestionDifficultyFilter } from "@/components/question-difficulty-filter"
 
 // Define types for the database responses
 interface DBQuestion {
@@ -33,6 +34,7 @@ interface DBQuestion {
   explanation?: string;
   created_at: string;
   model_answer?: string;
+  difficulty?: string;
   multiple_choice_questions?: {
     options: string[];
     correct_answer_index: number;
@@ -292,7 +294,12 @@ async function getRandomQuestionForTopic(
 }
 
 // Add this new function to get available question types
-async function getAvailableQuestionTypes(topicId: string): Promise<string[]> {
+async function getAvailableQuestionTypes(topicId: string): Promise<
+{ 
+  types: string[], 
+  difficulties: string[] 
+}
+> {
   const supabase = createClient()
 
   const { data: questions, error: questionsError } = await supabase
@@ -300,7 +307,8 @@ async function getAvailableQuestionTypes(topicId: string): Promise<string[]> {
     .select(`
       subtopic_question_link (
         questions (
-          type
+          type,
+          difficulty
         )
       )
     `)
@@ -308,11 +316,12 @@ async function getAvailableQuestionTypes(topicId: string): Promise<string[]> {
 
   if (questionsError || !questions) {
     console.error('Error fetching question types:', questionsError)
-    return []
+    return { types: [], difficulties: [] }
   }
 
   // Get unique question types
   const types = new Set<string>()
+  const difficulties = new Set<string>()
   // TODO: fix the type error
   // @ts-expect-error - this is a workaround to fix the type error
   questions.forEach((subtopic: DBSubtopic) => {
@@ -320,10 +329,16 @@ async function getAvailableQuestionTypes(topicId: string): Promise<string[]> {
       if (link.questions?.type) {
         types.add(link.questions.type)
       }
+      if (link.questions?.difficulty) {
+        difficulties.add(link.questions.difficulty)
+      }
     })
   })
 
-  return Array.from(types)
+  return {
+    types: Array.from(types),
+    difficulties: Array.from(difficulties),
+  }
 }
 
 async function getQuestionById(questionId: string): Promise<Question | undefined> {
@@ -493,10 +508,16 @@ export default function QuestionPage() {
   const [isLoadingUserType, setIsLoadingUserType] = useState(true)
   const [freeUser, setFreeUser] = useState(true)
   const [user, setUser] = useState<User | null>(null)
+  
   const [selectedQuestionType, setSelectedQuestionType] = useState<string | null>(null)
   const [availableQuestionTypes, setAvailableQuestionTypes] = useState<string[]>([])
+  
   const [subtopics, setSubtopics] = useState<Array<{ id: string; subtopictitle: string }>>([])
   const [selectedSubtopics, setSelectedSubtopics] = useState<string[]>([])
+  
+  const [selectedQuestionDifficulty, setSelectedQuestionDifficulty] = useState<string | null>(null)
+  const [availableQuestionDifficulty, setAvailableQuestionDifficulty] = useState<string[]>([])
+
   const [hasStartedAnswering, setHasStartedAnswering] = useState(false)
 
   // const freeUser = currentUser.email === "student@example.com"
@@ -545,9 +566,13 @@ export default function QuestionPage() {
         setTopic(currentTopic || null)
 
         if (currentTopic) {
-          // Get available question types
-          const types = await getAvailableQuestionTypes(currentTopic.id)
+          // Get available question types and difficulties
+          const { types, difficulties } = await getAvailableQuestionTypes(currentTopic.id)
+
           setAvailableQuestionTypes(types)
+
+          // Get available question difficulty
+          setAvailableQuestionDifficulty(difficulties)
 
           // Get subtopics for the current topic
           const subtopicsData = await getSubtopicsForTopic(currentTopic.id)
@@ -1181,6 +1206,21 @@ export default function QuestionPage() {
                   selectedType={selectedQuestionType}
                   onTypeChange={handleQuestionTypeChange}
                   availableTypes={availableQuestionTypes}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Question Difficulty Filter Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Filter by Difficulty</CardTitle>
+                <CardDescription>Choose question difficulty to practice</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <QuestionDifficultyFilter
+                  selectedDifficulty={selectedQuestionDifficulty}
+                  onDifficultyChange={setSelectedQuestionDifficulty}
+                  availableDifficulty={availableQuestionDifficulty}
                 />
               </CardContent>
             </Card>
