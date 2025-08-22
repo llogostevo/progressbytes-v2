@@ -10,6 +10,7 @@ import { Menu, LogIn, LogOut, BookOpen, BarChart2, Settings } from "lucide-react
 import { cn } from "@/lib/utils"
 import type { LucideIcon } from "lucide-react"
 import { useAuth } from "@/app/providers/AuthProvider"
+import { isAdmin, isTeacher } from "@/lib/access"
 
 interface NavItem {
   title: string
@@ -21,7 +22,7 @@ export function Nav() {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
-  const { isLoggedIn, userRole, refreshUser } = useAuth() // global context
+  const { isLoggedIn, userRole, userType, refreshUser } = useAuth() // global context
 
   const handleAuth = async () => {
     if (isLoggedIn) {
@@ -33,13 +34,17 @@ export function Nav() {
     }
   }
 
+
   const navigationItems: NavItem[] = [
     { title: "Quizzes", href: "/", icon: BookOpen },
     { title: "Progress", href: "/progress", icon: BarChart2 },
     { title: "Revisit", href: "/revisit", icon: BookOpen },
-    ...(userRole === "admin"
+    ...(isTeacher(userType)
       ? [{ title: "Analytics", href: "/analytics", icon: BarChart2 }]
       : []),
+    ...(isAdmin(userRole)
+        ? [{ title: "Admin", href: "/#", icon: BarChart2 }]
+        : []),
     { title: "Settings", href: "/settings", icon: Settings },
   ]
 
