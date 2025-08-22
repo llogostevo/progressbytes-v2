@@ -325,6 +325,7 @@ export default function RevisitPage() {
           const mappedQuestion = {
             id: q.id,
             type: q.type,
+            difficulty: q.difficulty,
             question_text: q.question_text,
             explanation: q.explanation,
             topic: topic?.id,

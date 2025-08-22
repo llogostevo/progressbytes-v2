@@ -52,7 +52,7 @@ export function QuestionDifficultyFilter({ selectedDifficulty, onDifficultyChang
           size="sm"
           className="flex-shrink-0"
         >
-          All Types
+          All Difficulties
         </Button>
         {!showDifficulty && (
           <Button

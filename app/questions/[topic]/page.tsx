@@ -114,6 +114,7 @@ function transformQuestion(dbQuestion: DBQuestion, topicName: string): Question 
     question_text: dbQuestion.question_text,
     explanation: dbQuestion.explanation,
     created_at: dbQuestion.created_at,
+    difficulty: dbQuestion.difficulty as Question['difficulty'],
     // Map model_answer based on question type
     model_answer: (() => {
       switch (dbQuestion.type) {
@@ -185,7 +186,8 @@ async function getRandomQuestionForTopic(
   freeUser: boolean,
   userType: "revision" | "revisionAI" | "basic" | null,
   selectedSubtopics: string[],
-  selectedQuestionType?: string | null
+  selectedQuestionType?: string | null,
+  selectedQuestionDifficulty?: string | null
 ): Promise<Question | null> {
   const supabase = createClient()
 
@@ -210,6 +212,7 @@ async function getRandomQuestionForTopic(
         questions (
           id,
           type,
+          difficulty,
           question_text,
           explanation,
           created_at,
@@ -280,25 +283,32 @@ async function getRandomQuestionForTopic(
     ? allQuestions.filter(q => q.type === selectedQuestionType)
     : allQuestions
 
-  if (filteredQuestions.length === 0) {
+  // Filter questions by difficulty if a difficulty is selected
+  const filteredQuestionsByDifficulty = selectedQuestionDifficulty
+    ? filteredQuestions.filter(q => q.difficulty === selectedQuestionDifficulty)
+    : filteredQuestions
+
+  if (filteredQuestionsByDifficulty.length === 0) {
     return null
   }
 
   // Determine the number of questions based on access level
   const accessUser: { user_type: UserType } = userType ? { user_type: userType as UserType } : { user_type: 'anonymous' }
   const maxQuestions = getMaxQuestionsPerTopic(accessUser)
-  const length = Math.min(maxQuestions, filteredQuestions.length)
+  const length = Math.min(maxQuestions, filteredQuestionsByDifficulty.length)
 
   const randomIndex = Math.floor(Math.random() * length)
   return filteredQuestions[randomIndex]
+
+  
 }
 
 // Add this new function to get available question types
 async function getAvailableQuestionTypes(topicId: string): Promise<
-{ 
-  types: string[], 
-  difficulties: string[] 
-}
+  {
+    types: string[],
+    difficulties: string[]
+  }
 > {
   const supabase = createClient()
 
@@ -349,6 +359,7 @@ async function getQuestionById(questionId: string): Promise<Question | undefined
     .select(`
       id,
       type,
+      difficulty,
       question_text,
       explanation,
       created_at,
@@ -508,13 +519,13 @@ export default function QuestionPage() {
   const [isLoadingUserType, setIsLoadingUserType] = useState(true)
   const [freeUser, setFreeUser] = useState(true)
   const [user, setUser] = useState<User | null>(null)
-  
+
   const [selectedQuestionType, setSelectedQuestionType] = useState<string | null>(null)
   const [availableQuestionTypes, setAvailableQuestionTypes] = useState<string[]>([])
-  
+
   const [subtopics, setSubtopics] = useState<Array<{ id: string; subtopictitle: string }>>([])
   const [selectedSubtopics, setSelectedSubtopics] = useState<string[]>([])
-  
+
   const [selectedQuestionDifficulty, setSelectedQuestionDifficulty] = useState<string | null>(null)
   const [availableQuestionDifficulty, setAvailableQuestionDifficulty] = useState<string[]>([])
 
@@ -562,7 +573,6 @@ export default function QuestionPage() {
     const loadQuestion = async () => {
       try {
         const currentTopic = await getTopicBySlug(topicSlug)
-        console.log("Current topic:", currentTopic)
         setTopic(currentTopic || null)
 
         if (currentTopic) {
@@ -570,8 +580,6 @@ export default function QuestionPage() {
           const { types, difficulties } = await getAvailableQuestionTypes(currentTopic.id)
 
           setAvailableQuestionTypes(types)
-
-          // Get available question difficulty
           setAvailableQuestionDifficulty(difficulties)
 
           // Get subtopics for the current topic
@@ -584,10 +592,10 @@ export default function QuestionPage() {
             if (question) {
               newQuestion = question
             } else {
-              newQuestion = await getRandomQuestionForTopic(currentTopic.id, freeUser, userType, selectedSubtopics, selectedQuestionType)
+              newQuestion = await getRandomQuestionForTopic(currentTopic.id, freeUser, userType, selectedSubtopics, selectedQuestionType, selectedQuestionDifficulty)
             }
           } else {
-            newQuestion = await getRandomQuestionForTopic(currentTopic.id, freeUser, userType, selectedSubtopics, selectedQuestionType)
+            newQuestion = await getRandomQuestionForTopic(currentTopic.id, freeUser, userType, selectedSubtopics, selectedQuestionType, selectedQuestionDifficulty)
           }
 
           if (!newQuestion) {
@@ -622,87 +630,9 @@ export default function QuestionPage() {
     }
 
     loadQuestion()
-  }, [topicSlug, isLoadingUserType, userType, freeUser, questionId, selectedQuestionType, selectedSubtopics])
+  }, [topicSlug, isLoadingUserType, userType, freeUser, questionId, selectedQuestionType, selectedSubtopics, selectedQuestionDifficulty])
 
-  // const handleSubmitAnswer = async (responseText: string) => {
-  //   if (!question || !user) return
 
-  //   setIsSubmitting(true)
-
-  //   try {
-  //     // Create initial answer record
-  //     const { data: answerData, error: insertError } = await supabase
-  //       .from('student_answers')
-  //       .insert({
-  //         student_id: user.id,
-  //         question_id: question.id,
-  //         response_text: responseText,
-  //         self_assessed: false,
-  //         submitted_at: new Date().toISOString()
-  //       })
-  //       .select()
-  //       .single()
-
-  //     if (insertError) throw insertError
-
-  //     if (userType === "revisionAI") {
-  //       // Paid version - use AI feedback
-  //       /* TODO: setup supabase AI connection */
-  //       // Simulate API call delay
-  //       await new Promise((resolve) => setTimeout(resolve, 1500))
-
-  //       // Mock AI feedback generation
-  //       const mockFeedback = generateMockFeedback(responseText, question)
-
-  //       // Update the answer with AI feedback
-  //       const { error: updateError } = await supabase
-  //         .from('student_answers')
-  //         .update({
-  //           ai_feedback: mockFeedback.feedback,
-  //           ai_score: mockFeedback.score
-  //         })
-  //         .eq('id', answerData.id)
-
-  //       if (updateError) throw updateError
-
-  //       setAnswer({
-  //         id: answerData.id,
-  //         question_id: question.id,
-  //         student_id: user.id,
-  //         response_text: responseText,
-  //         ai_feedback: mockFeedback.feedback,
-  //         score: mockFeedback.score,
-  //         submitted_at: answerData.submitted_at,
-  //         self_assessed: false,
-  //       })
-  //     } else {
-  //       // Free version - just set the basic answer
-  //       setAnswer({
-  //         id: answerData.id,
-  //         question_id: question.id,
-  //         student_id: user.id,
-  //         response_text: responseText,
-  //         ai_feedback: null,
-  //         score: "amber", // Placeholder, will be updated after self-assessment
-  //         submitted_at: answerData.submitted_at,
-  //         self_assessed: false,
-  //       })
-  //     }
-
-  //     // Track question submission
-  //     await supabase.from('user_activity').insert({
-  //       user_id: user.id,
-  //       event: 'submitted_question',
-  //       path: `/questions/${topicSlug}`,
-  //       user_email: user.email
-  //     })
-
-  //   } catch (error) {
-  //     console.error("Error saving answer:", error)
-  //   } finally {
-  //     setIsSubmitting(false)
-  //   }
-  // }
 
   const handleSubmitAnswer = async (responseText: string) => {
     if (!question) return
@@ -824,7 +754,11 @@ export default function QuestionPage() {
       if (!topic) {
         throw new Error("No topic found")
       }
-      const newQuestion = await getRandomQuestionForTopic(topic.id, freeUser, userType, selectedSubtopics, selectedQuestionType)
+      // const newQuestion = await getRandomQuestionForTopic(topic.id, freeUser, userType, selectedSubtopics, selectedQuestionType)
+      const newQuestion = await getRandomQuestionForTopic(
+        topic.id, freeUser, userType, selectedSubtopics,
+        selectedQuestionType, selectedQuestionDifficulty
+      )
 
       if (!newQuestion) {
         setQuestion(null)
@@ -848,8 +782,11 @@ export default function QuestionPage() {
       if (!topic) {
         throw new Error("No topic found")
       }
-      const newQuestion = await getRandomQuestionForTopic(topic.id, freeUser, userType, selectedSubtopics, selectedQuestionType)
-
+      // const newQuestion = await getRandomQuestionForTopic(topic.id, freeUser, userType, selectedSubtopics, selectedQuestionType)
+      const newQuestion = await getRandomQuestionForTopic(
+        topic.id, freeUser, userType, selectedSubtopics,
+        selectedQuestionType, selectedQuestionDifficulty
+      )
       if (!newQuestion) {
         setQuestion(null)
         setAnswer(null)
@@ -1135,6 +1072,13 @@ export default function QuestionPage() {
     setHasStartedAnswering(false)
   }
 
+  const handleQuestionDifficultyChange = (difficulty: string | null) => {
+    setSelectedQuestionDifficulty(difficulty)
+    setAnswer(null)
+    setSelfAssessmentScore(null)
+    setHasStartedAnswering(false)
+  }
+
   const handleStartAnswering = () => {
     setHasStartedAnswering(true)
   }
@@ -1219,7 +1163,7 @@ export default function QuestionPage() {
               <CardContent>
                 <QuestionDifficultyFilter
                   selectedDifficulty={selectedQuestionDifficulty}
-                  onDifficultyChange={setSelectedQuestionDifficulty}
+                  onDifficultyChange={handleQuestionDifficultyChange}
                   availableDifficulty={availableQuestionDifficulty}
                 />
               </CardContent>
