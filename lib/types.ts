@@ -6,7 +6,7 @@ export interface Question {
   id: string
   topic: string
   type: "text" | "multiple-choice" | "fill-in-the-blank" | "matching" | "code" | "algorithm" | "sql" | "short-answer" | "essay" | "true-false"
-  difficulty: "low" | "medium" | "high"
+  difficulty?: "low" | "medium" | "high"
   question_text: string
   model_answer: string | string[] | boolean
   options?: string[]
