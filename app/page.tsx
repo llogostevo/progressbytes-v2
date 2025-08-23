@@ -262,14 +262,12 @@
 // }
 
 // app/page.tsx
-'use server'
 
 import { createClient } from '@/utils/supabase/server'
 import { UserLogin } from '@/components/user-login'
 import { HomeAccessControl } from './components/HomeAccessControl'
 import { getTopics } from '@/lib/getTopics'
 
-export const revalidate = 0 // keep page dynamic; data itself is cached by getTopics()
 
 export default async function Home() {
   const supabase = await createClient()
