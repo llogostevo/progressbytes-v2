@@ -183,7 +183,9 @@ type DBTopic = {
 async function fetchAndTransformTopics(): Promise<Topic[]> {
     console.log(">>> Fetching from Supabase (cache miss) <<<")
 
-    const { data, error } = await supabasePublic
+    const supabase = await supabasePublic()
+
+    const { data, error } = await supabase
         .from('topics')
         .select(`
       id, name, description, slug, icon, topicnumber, summary, unit_id, active,
