@@ -73,3 +73,5 @@ export interface Plan {
   stripe_product_id?: string
   active: boolean
 };
+
+//TODO: shoudl add in here the types from getTopics.ts 
