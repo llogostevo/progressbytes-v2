@@ -22,7 +22,7 @@ import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
-
+import { isTeacher } from "@/lib/access"
 
 // Initialize Stripe
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
@@ -636,7 +636,7 @@ function SettingsPageContent() {
       }
 
       // Fetch user's classes
-      if (profile?.user_type?.startsWith('teacher')) {
+      if (isTeacher(userType)) {
         // Fetch classes where user is the teacher
         const { data: classes, error: classesError } = await supabase
           .from('classes')
@@ -981,7 +981,7 @@ function SettingsPageContent() {
       </Card>
 
       {/* Teacher Class Membership */}
-      {userType?.startsWith('teacher') && (
+      {isTeacher(userType) && (
         <Card className="mb-8">
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -1134,7 +1134,7 @@ function SettingsPageContent() {
       </Dialog>
 
       {/* Student Class Membership */}
-      {(userType === 'basic' || userType === 'revision' || userType === 'revisionAI' || userType?.startsWith('teacher')) && (
+      {(userType === 'basic' || userType === 'revision' || userType === 'revisionAI' || isTeacher(userType)) && (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">

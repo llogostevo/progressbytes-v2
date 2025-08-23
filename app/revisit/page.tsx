@@ -43,6 +43,7 @@ import { QuestionTypeFilter } from "@/components/question-type-filter"
 import { DynamicIcon } from "@/components/ui/dynamicicon"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
+import { QuestionDifficultyFilter } from "@/components/question-difficulty-filter"
 
 interface DBTopic {
   id: string
@@ -157,8 +158,8 @@ export default function RevisitPage() {
   const searchParams = useSearchParams()
   const tabParam = searchParams.get("tab") as ScoreType | null
   const typeParam = searchParams.get("type")
+  const difficultyParam = searchParams.get("difficulty") as string | null
   const selectedTopics = useMemo(() => searchParams.get("topics")?.split(",") || [], [searchParams])
-
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [allAnswers, setAllAnswers] = useState<Answer[]>([])
@@ -184,6 +185,17 @@ export default function RevisitPage() {
       })
       : allAnswers
   }, [allAnswers, selectedTopics, topics, questions])
+
+  // Memoize filtered difficulty
+
+  const availableDifficulty = useMemo(() => {
+    const set = new Set<string>()
+    filteredAnswers.forEach((answer) => {
+      const q = questions[answer.question_id]
+      if (q?.difficulty) set.add(String(q.difficulty).toLowerCase())
+    })
+    return Array.from(set)
+  }, [filteredAnswers, questions])
 
   // First useEffect for initial data loading
   useEffect(() => {
@@ -325,6 +337,7 @@ export default function RevisitPage() {
           const mappedQuestion = {
             id: q.id,
             type: q.type,
+            difficulty: q.difficulty,
             question_text: q.question_text,
             explanation: q.explanation,
             topic: topic?.id,
@@ -379,16 +392,32 @@ export default function RevisitPage() {
     getUser()
   }, [])
 
-  // Filter answers by score and type
+  // Filter answers by score and type and difficulty
+  // const filteredAnswersByScoreAndType = useMemo(() => {
+  //   return filteredAnswers
+  //     .filter((answer) => activeTab === "all" || answer.score === activeTab)
+  //     .filter((answer) => {
+  //       if (typeParam === "all" || !typeParam) return true
+  //       const question = questions[answer.question_id]
+  //       return question?.type === typeParam
+  //     })
+  // }, [filteredAnswers, activeTab, typeParam, questions])
+
   const filteredAnswersByScoreAndType = useMemo(() => {
     return filteredAnswers
       .filter((answer) => activeTab === "all" || answer.score === activeTab)
       .filter((answer) => {
         if (typeParam === "all" || !typeParam) return true
-        const question = questions[answer.question_id]
-        return question?.type === typeParam
+        const q = questions[answer.question_id]
+        return q?.type === typeParam
       })
-  }, [filteredAnswers, activeTab, typeParam, questions])
+      .filter((answer) => {
+        if (!difficultyParam || difficultyParam === "all") return true
+        const q = questions[answer.question_id]
+        return String(q?.difficulty).toLowerCase() === difficultyParam.toLowerCase()
+      })
+  }, [filteredAnswers, activeTab, typeParam, difficultyParam, questions])
+
 
   // Group answers by topic
   const answersByTopic = useMemo(() => {
@@ -467,24 +496,52 @@ export default function RevisitPage() {
   }
 
   // Calculate counts for each filter
+  // const totalAnswers = filteredAnswers.filter((a) => {
+  //   const question = questions[a.question_id]
+  //   return !typeParam || typeParam === "all" || question?.type === typeParam
+  // }).length
+  // const scoreCount = {
+  //   green: filteredAnswers.filter((a) => {
+  //     const question = questions[a.question_id]
+  //     return a.score === "green" && (!typeParam || typeParam === "all" || question?.type === typeParam)
+  //   }).length,
+  //   amber: filteredAnswers.filter((a) => {
+  //     const question = questions[a.question_id]
+  //     return a.score === "amber" && (!typeParam || typeParam === "all" || question?.type === typeParam)
+  //   }).length,
+  //   red: filteredAnswers.filter((a) => {
+  //     const question = questions[a.question_id]
+  //     return a.score === "red" && (!typeParam || typeParam === "all" || question?.type === typeParam)
+  //   }).length,
+
+  // }
+  const matchesType = (q?: Question) =>
+    !typeParam || typeParam === "all" || q?.type === typeParam
+
+  const matchesDifficulty = (q?: Question) =>
+    !difficultyParam || difficultyParam === "all" ||
+    String(q?.difficulty).toLowerCase() === difficultyParam.toLowerCase()
+
   const totalAnswers = filteredAnswers.filter((a) => {
-    const question = questions[a.question_id]
-    return !typeParam || typeParam === "all" || question?.type === typeParam
+    const q = questions[a.question_id]
+    return matchesType(q) && matchesDifficulty(q)
   }).length
+
   const scoreCount = {
     green: filteredAnswers.filter((a) => {
-      const question = questions[a.question_id]
-      return a.score === "green" && (!typeParam || typeParam === "all" || question?.type === typeParam)
+      const q = questions[a.question_id]
+      return a.score === "green" && matchesType(q) && matchesDifficulty(q)
     }).length,
     amber: filteredAnswers.filter((a) => {
-      const question = questions[a.question_id]
-      return a.score === "amber" && (!typeParam || typeParam === "all" || question?.type === typeParam)
+      const q = questions[a.question_id]
+      return a.score === "amber" && matchesType(q) && matchesDifficulty(q)
     }).length,
     red: filteredAnswers.filter((a) => {
-      const question = questions[a.question_id]
-      return a.score === "red" && (!typeParam || typeParam === "all" || question?.type === typeParam)
+      const q = questions[a.question_id]
+      return a.score === "red" && matchesType(q) && matchesDifficulty(q)
     }).length,
   }
+
 
   const handleDeleteClick = (answer: Answer) => {
     setAnswerToDelete(answer)
@@ -590,6 +647,29 @@ export default function RevisitPage() {
                         params.delete("type")
                       } else {
                         params.set("type", type)
+                      }
+                      router.push(`?${params.toString()}`)
+                    }}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Difficulty */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Filter by Difficulty</CardTitle>
+                  <CardDescription>Choose question difficulty to review</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <QuestionDifficultyFilter
+                    selectedDifficulty={difficultyParam}
+                    availableDifficulty={availableDifficulty}
+                    onDifficultyChange={(difficulty: string | null) => {
+                      const params = new URLSearchParams(searchParams.toString())
+                      if (difficulty === null) {
+                        params.delete("difficulty")
+                      } else {
+                        params.set("difficulty", difficulty)
                       }
                       router.push(`?${params.toString()}`)
                     }}

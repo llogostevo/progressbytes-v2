@@ -52,6 +52,7 @@ export default async function Home() {
             questions!inner (
               id,
               type,
+              difficulty,
               question_text,
               explanation,
               created_at,
@@ -109,6 +110,7 @@ export default async function Home() {
           questions: {
             id: string;
             type: Question['type'];
+            difficulty: Question['difficulty'];
             question_text: string;
             explanation?: string;
             created_at: string;
@@ -142,6 +144,7 @@ export default async function Home() {
           questions: {
             id: string;
             type: Question['type'];
+            difficulty: Question['difficulty'];
             question_text: string;
             explanation?: string;
             created_at: string;
@@ -175,6 +178,7 @@ export default async function Home() {
           const questionData: Question = {
             id: question.id,
             type: question.type,
+            difficulty: question.difficulty,
             topic: topic.slug,
             question_text: question.question_text,
             explanation: question.explanation,

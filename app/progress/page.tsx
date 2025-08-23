@@ -33,6 +33,7 @@ import React from "react"
 interface DBQuestion {
   id: string
   type: string
+  difficulty: Question['difficulty']
   question_text: string
   explanation?: string
   created_at: string
@@ -666,6 +667,7 @@ export default function ProgressPage() {
                   id: question.id,
                   type: question.type as Question["type"],
                   topic: dbTopic.slug,
+                  difficulty: question.difficulty as Question['difficulty'],
                   question_text: question.question_text,
                   explanation: question.explanation,
                   created_at: question.created_at,

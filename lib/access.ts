@@ -182,3 +182,13 @@ export const getAvailableQuestionsForTopic = (
 // New helper function to check if user can skip questions
 export const canSkipQuestions = (user: User): boolean =>
   userAccessLimits[user.user_type]?.canSkipQuestions ?? false;
+
+// New helper function to check if user is a teacher
+export const isTeacher = (userType: string | null | undefined): boolean => {
+  return userType?.startsWith('teacher') ?? false;
+};
+
+// New helper function to check if user is a teacher
+export const isAdmin = (role: string | null | undefined): boolean => {
+  return role?.startsWith('admin') ?? false;
+};

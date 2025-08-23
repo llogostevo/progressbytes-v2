@@ -133,6 +133,7 @@ export default function QuestionManager() {
         return {
           id: q.id,
           type: q.type,
+          difficulty: q.difficulty,
           topic: q.subtopic_question_link?.[0]?.subtopics?.topics?.slug || "",
           question_text: q.question_text,
           explanation: q.explanation,
@@ -374,6 +375,7 @@ export default function QuestionManager() {
       id: '', // Temporary ID, will be replaced by database
       type: "multiple-choice", // Default type
       topic: "",
+      difficulty: "low",
       question_text: "",
       explanation: "",
       created_at: new Date().toISOString(),
