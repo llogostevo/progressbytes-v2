@@ -8,7 +8,7 @@ export interface Question {
   type: "text" | "multiple-choice" | "fill-in-the-blank" | "matching" | "code" | "algorithm" | "sql" | "short-answer" | "essay" | "true-false"
   difficulty: "low" | "medium" | "high"
   question_text: string
-  model_answer: string | string[] | boolean
+  model_answer?: string | string[] | boolean
   options?: string[]
   correctAnswerIndex?: number
   order_important?: boolean

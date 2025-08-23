@@ -194,7 +194,7 @@ async function fetchAndTransformTopics(): Promise<Topic[]> {
         id,
         subtopic_question_link!inner (
           questions!inner (
-            id, type, difficulty, question_text, explanation, created_at, model_answer,
+            id, type, difficulty, question_text, explanation, created_at,
             multiple_choice_questions ( options, correct_answer_index, model_answer ),
             short_answer_questions ( model_answer ),
             fill_in_the_blank_questions ( correct_answers, model_answer, order_important, options ),
@@ -230,31 +230,80 @@ async function fetchAndTransformTopics(): Promise<Topic[]> {
                     question_text: q.question_text,
                     explanation: q.explanation,
                     created_at: q.created_at,
-                    model_answer: q.model_answer || ''
                 }
+
+                // const merged: Question = {
+                //     ...base,
+                //     ...(q.type === 'multiple-choice' && {
+                //         options: q.multiple_choice_questions?.options,
+                //         correctAnswerIndex: q.multiple_choice_questions?.correct_answer_index
+                //     }),
+                //     ...(q.type === 'fill-in-the-blank' && {
+                //         options: q.fill_in_the_blank_questions?.options,
+                //         order_important: q.fill_in_the_blank_questions?.order_important,
+                //         model_answer: q.fill_in_the_blank_questions?.correct_answers || []
+                //     }),
+                //     ...(q.type === 'matching' && {
+                //         pairs: (q.matching_questions ?? []).map((mq) => ({
+                //             statement: mq.statement,
+                //             match: mq.match
+                //         }))
+                //     }),
+                //     ...((q.type === 'code' || q.type === 'algorithm' || q.type === 'sql') && {
+                //         model_answer_code: q.code_questions?.model_answer_code,
+                //         language: q.code_questions?.language
+                //     })
+                // }
 
                 const merged: Question = {
                     ...base,
+                  
+                    // Multiple choice
                     ...(q.type === 'multiple-choice' && {
-                        options: q.multiple_choice_questions?.options,
-                        correctAnswerIndex: q.multiple_choice_questions?.correct_answer_index
+                      options: q.multiple_choice_questions?.options,
+                      correctAnswerIndex: q.multiple_choice_questions?.correct_answer_index,
+                      // if your Question type allows it:
+                      model_answer: q.multiple_choice_questions?.model_answer ?? '',
                     }),
+                  
+                    // Short answer (and alias 'text' if you use that)
+                    ...((q.type === 'short-answer' || q.type === 'text') && {
+                      model_answer: q.short_answer_questions?.model_answer ?? '',
+                    }),
+                  
+                    // Fill in the blank
                     ...(q.type === 'fill-in-the-blank' && {
-                        options: q.fill_in_the_blank_questions?.options,
-                        order_important: q.fill_in_the_blank_questions?.order_important,
-                        model_answer: q.fill_in_the_blank_questions?.correct_answers || []
+                      options: q.fill_in_the_blank_questions?.options,
+                      order_important: q.fill_in_the_blank_questions?.order_important,
+                      // if your Question type expects answers array:
+                      model_answer: q.fill_in_the_blank_questions?.correct_answers || [],
                     }),
+                  
+                    // Matching
                     ...(q.type === 'matching' && {
-                        pairs: (q.matching_questions ?? []).map((mq) => ({
-                            statement: mq.statement,
-                            match: mq.match
-                        }))
+                      pairs: (q.matching_questions ?? []).map((mq) => ({
+                        statement: mq.statement,
+                        match: mq.match,
+                      })),
+                      // include model_answer only if your schema uses it:
+                      model_answer: (q.matching_questions?.[0]?.model_answer ?? ''),
                     }),
+                  
+                    // Essay
+                    ...(q.type === 'essay' && {
+                      model_answer: q.essay_questions?.model_answer ?? '',
+                      // add rubric to your Question type if you want to keep it:
+                      rubric: q.essay_questions?.rubric,
+                    }),
+                  
+                    // Code / algorithm / sql
                     ...((q.type === 'code' || q.type === 'algorithm' || q.type === 'sql') && {
-                        model_answer_code: q.code_questions?.model_answer_code,
-                        language: q.code_questions?.language
-                    })
-                }
+                      model_answer_code: q.code_questions?.model_answer_code,
+                      language: q.code_questions?.language,
+                      model_answer: q.code_questions?.model_answer ?? '',
+                    }),
+                  }
+                  
 
                 return merged
             })
