@@ -9,17 +9,6 @@ import { Users, Clock, FileText, Calendar, Navigation, Activity, Download } from
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 
-// interface Class {
-//   id: string
-//   name: string
-//   teacher_id: string
-//   created_at: string
-//   teacher?: {
-//     email: string
-//     full_name: string
-//   }
-// }
-
 interface UserActivity {
   user_id: string
   user_email: string
@@ -27,6 +16,9 @@ interface UserActivity {
   questions_submitted: number
   last_activity: string
   class_id?: string
+  low_questions: number
+  medium_questions: number
+  high_questions: number
 }
 
 interface UserEvent {
@@ -111,11 +103,14 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
   const [userSessions, setUserSessions] = useState<UserSession[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [currentSessionIndex, setCurrentSessionIndex] = useState(0)
-  
+
   // Filter states
   const [timeRange, setTimeRange] = useState("7") // days
   const [minDuration, setMinDuration] = useState("30") // minutes
-  const [minQuestions, setMinQuestions] = useState("5") // questions
+  // const [minQuestions, setMinQuestions] = useState("5") // questions
+  const [minLowQuestions, setMinLowQuestions] = useState("2") // low difficulty questions
+  const [minMediumQuestions, setMinMediumQuestions] = useState("2") // medium difficulty questions
+  const [minHighQuestions, setMinHighQuestions] = useState("1") // high difficulty questions
 
   const formatDuration = (minutes: number) => {
     if (minutes < 60) {
@@ -139,9 +134,9 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
   const handleUserClick = async (email: string) => {
     setSelectedUser(email)
     setCurrentSessionIndex(0)
-    
+
     const supabase = createClient()
-    
+
     // Calculate the date range
     const endDate = new Date()
     const startDate = new Date()
@@ -159,7 +154,7 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
     if (activity) {
       // Group activities by session
       const sessions = new Map<string, UserSession>()
-      
+
       activity.forEach(record => {
         const date = new Date(record.created_at).toDateString()
         if (!sessions.has(date)) {
@@ -173,20 +168,20 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
             submitted_questions: []
           })
         }
-        
+
         const session = sessions.get(date)!
         session.events.push(record)
-        
+
         // Update last activity time
         if (new Date(record.created_at) > new Date(session.last_activity)) {
           session.last_activity = record.created_at
         }
-        
+
         // Update login time if this is earlier
         if (new Date(record.created_at) < new Date(session.login_time)) {
           session.login_time = record.created_at
         }
-        
+
         // Count questions submitted and track paths
         if (record.event === 'submitted_question') {
           session.questions_submitted++
@@ -197,13 +192,13 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
             session.submitted_questions.push({ path: record.path, count: 1 })
           }
         }
-        
+
         // Track unique pages visited
         if (!session.pages_visited.includes(record.path)) {
           session.pages_visited.push(record.path)
         }
       })
-      
+
       // Calculate duration for each session
       const sessionsArray = Array.from(sessions.values()).map(session => ({
         ...session,
@@ -211,12 +206,12 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
           (new Date(session.last_activity).getTime() - new Date(session.login_time).getTime()) / (1000 * 60)
         )
       }))
-      
+
       // Sort by most recent
-      sessionsArray.sort((a, b) => 
+      sessionsArray.sort((a, b) =>
         new Date(b.login_time).getTime() - new Date(a.login_time).getTime()
       )
-      
+
       setUserSessions(sessionsArray)
       setIsDialogOpen(true)
     }
@@ -230,18 +225,143 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
     setCurrentSessionIndex(prev => Math.min(userSessions.length - 1, prev + 1))
   }
 
+  // const applyFilters = useCallback((usersToFilter: UserActivity[]) => {
+  //   return usersToFilter.filter(user => {
+  //     const durationMatch = user.total_duration >= parseInt(minDuration)
+  //     const questionsMatch = user.questions_submitted >= parseInt(minQuestions)
+  //     return durationMatch && questionsMatch
+  //   })
+  // }, [minDuration, minQuestions])
+
   const applyFilters = useCallback((usersToFilter: UserActivity[]) => {
     return usersToFilter.filter(user => {
       const durationMatch = user.total_duration >= parseInt(minDuration)
-      const questionsMatch = user.questions_submitted >= parseInt(minQuestions)
-      return durationMatch && questionsMatch
+      const lowQuestionsMatch = user.low_questions >= parseInt(minLowQuestions)
+      const mediumQuestionsMatch = user.medium_questions >= parseInt(minMediumQuestions)
+      const highQuestionsMatch = user.high_questions >= parseInt(minHighQuestions)
+      return durationMatch && lowQuestionsMatch && mediumQuestionsMatch && highQuestionsMatch
     })
-  }, [minDuration, minQuestions])
+  }, [minDuration, minLowQuestions, minMediumQuestions, minHighQuestions])
+
+
+  // useEffect(() => {
+  //   const fetchUserActivity = async () => {
+  //     const supabase = createClient()
+
+  //     // Calculate the date range
+  //     const endDate = new Date()
+  //     const startDate = new Date()
+  //     startDate.setDate(startDate.getDate() - parseInt(timeRange))
+
+  //     // If "all" is selected, fetch activity for all class members
+  //     // Otherwise, fetch activity only for students in the selected class
+  //     let activityQuery = supabase
+  //       .from("user_activity")
+  //       .select("*")
+  //       .gte('created_at', startDate.toISOString())
+  //       .lte('created_at', endDate.toISOString())
+
+  //     // Filter by class members if a specific class is selected
+  //     if (selectedClass !== "all" && classMembers.length > 0) {
+  //       const classMemberEmails = classMembers.map(member => member.email)
+  //       activityQuery = activityQuery.in('user_email', classMemberEmails)
+  //     }
+
+  //     const { data: activity } = await activityQuery
+
+  //     if (activity) {
+  //       // Group and process user activity
+  //       const userMap = new Map<string, UserActivity>()
+
+  //       // First pass: Initialize user records
+  //       activity.forEach(record => {
+  //         if (!userMap.has(record.user_id)) {
+  //           userMap.set(record.user_id, {
+  //             user_id: record.user_id,
+  //             user_email: record.user_email || 'Unknown',
+  //             total_duration: 0,
+  //             questions_submitted: 0,
+  //             last_activity: record.created_at,
+  //             class_id: record.class_id,
+  //             low_questions: 0,
+  //             medium_questions: 0,
+  //             high_questions: 0
+  //           })
+  //         }
+  //       })
+
+  //       // Second pass: Calculate durations and count questions
+  //       activity.forEach(record => {
+  //         const user = userMap.get(record.user_id)!
+
+  //         // Update last activity if this is more recent
+  //         if (new Date(record.created_at) > new Date(user.last_activity)) {
+  //           user.last_activity = record.created_at
+  //         }
+
+  //         // Count questions submitted
+  //         if (record.event === 'submitted_question') {
+  //           user.questions_submitted++
+  //         }
+  //       })
+
+  //       // Third pass: Calculate total duration for each user
+  //       const userActivityMap = new Map<string, typeof activity>()
+  //       activity.forEach(record => {
+  //         if (!userActivityMap.has(record.user_id)) {
+  //           userActivityMap.set(record.user_id, [])
+  //         }
+  //         userActivityMap.get(record.user_id)!.push(record)
+  //       })
+
+  //       userActivityMap.forEach((userActivity, userId) => {
+  //         const user = userMap.get(userId)!
+
+  //         // Group activities by date
+  //         const dailyActivities = new Map<string, typeof userActivity>()
+  //         userActivity.forEach(record => {
+  //           const date = new Date(record.created_at).toDateString()
+  //           if (!dailyActivities.has(date)) {
+  //             dailyActivities.set(date, [])
+  //           }
+  //           dailyActivities.get(date)!.push(record)
+  //         })
+
+  //         // Calculate total duration across all days
+  //         let totalDuration = 0
+  //         dailyActivities.forEach((dayActivity) => {
+  //           if (dayActivity.length > 1) {
+  //             // Sort by timestamp
+  //             dayActivity.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+
+  //             // Calculate duration from first to last activity of the day
+  //             const firstActivity = dayActivity[0]
+  //             const lastActivity = dayActivity[dayActivity.length - 1]
+  //             const durationMinutes = Math.round(
+  //               (new Date(lastActivity.created_at).getTime() - new Date(firstActivity.created_at).getTime()) / (1000 * 60)
+  //             )
+  //             totalDuration += durationMinutes
+  //           }
+  //         })
+
+  //         user.total_duration = totalDuration
+  //       })
+
+  //       const usersArray = Array.from(userMap.values())
+  //       setUsers(usersArray)
+  //       setFilteredUsers(applyFilters(usersArray))
+  //     }
+
+  //     setIsLoading(false)
+  //   }
+
+  //   fetchUserActivity()
+  // }, [timeRange, applyFilters, selectedClass, classMembers])
 
   useEffect(() => {
     const fetchUserActivity = async () => {
       const supabase = createClient()
-      
+
       // Calculate the date range
       const endDate = new Date()
       const startDate = new Date()
@@ -264,9 +384,25 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
       const { data: activity } = await activityQuery
 
       if (activity) {
+        // Get unique user IDs from activity
+        const userIds = [...new Set(activity.map(record => record.user_id))]
+
+        // Fetch student answers with question difficulty for these users
+        const { data: studentAnswers } = await supabase
+          .from('student_answers')
+          .select(`
+            student_id,
+            questions (
+              difficulty
+            )
+          `)
+          .in('student_id', userIds)
+          .gte('submitted_at', startDate.toISOString())
+          .lte('submitted_at', endDate.toISOString())
+
         // Group and process user activity
         const userMap = new Map<string, UserActivity>()
-        
+
         // First pass: Initialize user records
         activity.forEach(record => {
           if (!userMap.has(record.user_id)) {
@@ -276,7 +412,10 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
               total_duration: 0,
               questions_submitted: 0,
               last_activity: record.created_at,
-              class_id: record.class_id
+              class_id: record.class_id,
+              low_questions: 0,
+              medium_questions: 0,
+              high_questions: 0
             })
           }
         })
@@ -284,12 +423,12 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
         // Second pass: Calculate durations and count questions
         activity.forEach(record => {
           const user = userMap.get(record.user_id)!
-          
+
           // Update last activity if this is more recent
           if (new Date(record.created_at) > new Date(user.last_activity)) {
             user.last_activity = record.created_at
           }
-          
+
           // Count questions submitted
           if (record.event === 'submitted_question') {
             user.questions_submitted++
@@ -307,7 +446,7 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
 
         userActivityMap.forEach((userActivity, userId) => {
           const user = userMap.get(userId)!
-          
+
           // Group activities by date
           const dailyActivities = new Map<string, typeof userActivity>()
           userActivity.forEach(record => {
@@ -324,7 +463,7 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
             if (dayActivity.length > 1) {
               // Sort by timestamp
               dayActivity.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-              
+
               // Calculate duration from first to last activity of the day
               const firstActivity = dayActivity[0]
               const lastActivity = dayActivity[dayActivity.length - 1]
@@ -338,17 +477,95 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
           user.total_duration = totalDuration
         })
 
+        // Fourth pass: Count questions by difficulty for each user
+        // if (studentAnswers) {
+        //   console.log('Student answers found:', studentAnswers.length)
+        //   console.log('Sample student answer:', studentAnswers[0])
+
+
+        //   const userAnswersMap = new Map<string, typeof studentAnswers>()
+        //   studentAnswers.forEach(answer => {
+        //     if (!userAnswersMap.has(answer.student_id)) {
+        //       userAnswersMap.set(answer.student_id, [])
+        //     }
+        //     userAnswersMap.get(answer.student_id)!.push(answer)
+        //   })
+
+        //   userAnswersMap.forEach((userAnswers, userId) => {
+        //     const user = userMap.get(userId)
+        //     if (user) {
+        //       console.log(`Processing user ${user.user_email}:`, userAnswers.length, 'answers')
+
+        //       userAnswers.forEach(answer => {
+        //         console.log('Answer questions:', answer.questions)
+
+        //         const difficulty = answer.questions?.difficulty
+        //         console.log('Difficulty:', difficulty)
+
+        //         if (difficulty === 'low') {
+        //           user.low_questions++
+        //         } else if (difficulty === 'medium') {
+        //           user.medium_questions++
+        //         } else if (difficulty === 'high') {
+        //           user.high_questions++
+        //         }
+        //       })
+        //       console.log(`Final counts for ${user.user_email}:`, {
+        //         low: user.low_questions,
+        //         medium: user.medium_questions,
+        //         high: user.high_questions
+        //       })
+        //     }
+        //   })
+        // }
+
+        // helper to normalize object | array | null -> array
+        const toArray = <T,>(x: T | T[] | null | undefined): T[] =>
+          Array.isArray(x) ? x : x ? [x] : [];
+
+        // Fourth pass: Count questions by difficulty for each user
+        if (studentAnswers) {
+          type Difficulty = "low" | "medium" | "high";
+          const isDifficulty = (x: unknown): x is Difficulty =>
+            x === "low" || x === "medium" || x === "high";
+
+          const perUserTotals = new Map<string, { low: number; medium: number; high: number }>();
+
+          for (const ans of studentAnswers) {
+            if (!perUserTotals.has(ans.student_id)) {
+              perUserTotals.set(ans.student_id, { low: 0, medium: 0, high: 0 });
+            }
+            const totals = perUserTotals.get(ans.student_id)!;
+
+            // normalize to array to avoid "object is not iterable"
+            const qs = toArray(ans.questions);
+
+            for (const q of qs) {
+              const d = typeof q?.difficulty === "string" ? q.difficulty.toLowerCase() : null;
+              if (isDifficulty(d)) totals[d] += 1;
+            }
+          }
+
+          for (const [userId, totals] of perUserTotals.entries()) {
+            const user = userMap.get(userId);
+            if (user) {
+              user.low_questions = totals.low;
+              user.medium_questions = totals.medium;
+              user.high_questions = totals.high;
+            }
+          }
+        }
+
         const usersArray = Array.from(userMap.values())
         setUsers(usersArray)
         setFilteredUsers(applyFilters(usersArray))
       }
-      
+
       setIsLoading(false)
     }
 
     fetchUserActivity()
   }, [timeRange, applyFilters, selectedClass, classMembers])
-
   const handleFilterChange = () => {
     setFilteredUsers(applyFilters(users))
   }
@@ -361,14 +578,17 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
 
   const exportToCSV = (users: UserActivity[], filename: string) => {
     // Create CSV content
-    const headers = ['Email', 'Total Duration (minutes)', 'Questions Submitted', 'Last Activity']
+    const headers = ['Email', 'Total Duration (minutes)', 'Low Questions', 'Medium Questions', 'High Questions', 'Questions Submitted', 'Last Activity']
     const rows = users.map(user => [
       user.user_email,
       user.total_duration,
+      user.low_questions,
+      user.medium_questions,
+      user.high_questions,
       user.questions_submitted,
       new Date(user.last_activity).toLocaleString()
     ])
-    
+
     const csvContent = [
       headers.join(','),
       ...rows.map(row => row.join(','))
@@ -419,7 +639,7 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="space-y-2">
               <Label>Minimum Duration (minutes)</Label>
               <Input
@@ -431,8 +651,8 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
                 className="h-10"
               />
             </div>
-            
-            <div className="space-y-2">
+
+            {/* <div className="space-y-2">
               <Label>Minimum Questions</Label>
               <Input
                 type="number"
@@ -442,10 +662,48 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
                 min="0"
                 className="h-10"
               />
+            </div> */}
+            <div className="space-y-2">
+              <Label>Minimum Low Questions</Label>
+              <Input
+                type="number"
+                value={minLowQuestions}
+                onChange={(e) => setMinLowQuestions(e.target.value)}
+                onKeyDown={handleKeyDown}
+                min="0"
+                className="h-10"
+                placeholder="0"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Minimum Medium Questions</Label>
+              <Input
+                type="number"
+                value={minMediumQuestions}
+                onChange={(e) => setMinMediumQuestions(e.target.value)}
+                onKeyDown={handleKeyDown}
+                min="0"
+                className="h-10"
+                placeholder="0"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Minimum High Questions</Label>
+              <Input
+                type="number"
+                value={minHighQuestions}
+                onChange={(e) => setMinHighQuestions(e.target.value)}
+                onKeyDown={handleKeyDown}
+                min="0"
+                className="h-10"
+                placeholder="0"
+              />
             </div>
           </div>
-          
-          <Button 
+
+          <Button
             className="mt-4"
             onClick={handleFilterChange}
           >
@@ -481,7 +739,7 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
             <div className="space-y-2">
               {filteredUsers.map(user => (
                 <div key={user.user_id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
-                  <div 
+                  <div
                     className="truncate cursor-pointer hover:text-primary"
                     onClick={() => handleUserClick(user.user_email)}
                   >
@@ -494,7 +752,12 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
                     </div>
                     <div className="flex items-center gap-1">
                       <FileText className="h-4 w-4" />
-                      {user.questions_submitted}
+                      <div className="flex items-center gap-1">
+                        <FileText className="h-4 w-4" />
+                        <span className="text-green-600">{user.low_questions}L</span>
+                        <span className="text-amber-600">{user.medium_questions}M</span>
+                        <span className="text-red-600">{user.high_questions}H</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -528,7 +791,7 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
             <div className="space-y-2">
               {users.filter(user => !filteredUsers.some(filtered => filtered.user_id === user.user_id)).map(user => (
                 <div key={user.user_id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
-                  <div 
+                  <div
                     className="truncate cursor-pointer hover:text-primary"
                     onClick={() => handleUserClick(user.user_email)}
                   >
@@ -541,7 +804,10 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
                     </div>
                     <div className="flex items-center gap-1">
                       <FileText className="h-4 w-4" />
-                      {user.questions_submitted}
+                      {/* {user.questions_submitted} */}
+                      <span className="text-green-600">{user.low_questions}L</span>
+                      <span className="text-amber-600">{user.medium_questions}M</span>
+                      <span className="text-red-600">{user.high_questions}H</span>
                     </div>
                   </div>
                 </div>
@@ -578,7 +844,7 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
               <span className="sr-only">Close</span>
             </button>
           </DialogHeader>
-          
+
           {userSessions.length > 0 && userSessions[currentSessionIndex] && (
             <div className="space-y-4">
               <Card>
@@ -611,7 +877,7 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-6 border-t pt-4">
                     <div>
                       <h4 className="text-sm font-medium mb-2">Pages Visited:</h4>
