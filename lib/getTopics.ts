@@ -107,7 +107,7 @@
 'use server'
 
 import { unstable_cache } from 'next/cache'
-import { createClient } from '@/utils/supabase/server'
+import { supabasePublic } from '@/utils/supabase/supabase-public'
 import type { Topic, Question } from '@/lib/types'
 
 // ---- Raw DB shapes (what the SELECT returns) ----
@@ -183,9 +183,7 @@ type DBTopic = {
 async function fetchAndTransformTopics(): Promise<Topic[]> {
     console.log(">>> Fetching from Supabase (cache miss) <<<")
 
-    const supabase = await createClient()
-
-    const { data, error } = await supabase
+    const { data, error } = await supabasePublic
         .from('topics')
         .select(`
       id, name, description, slug, icon, topicnumber, summary, unit_id, active,
