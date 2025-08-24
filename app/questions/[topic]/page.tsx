@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useMemo, useEffect, useState } from "react"
 import { useParams, useSearchParams } from "next/navigation"
 import { FeedbackDisplay } from "@/components/question-components/feedback-display"
 import { SelfAssessment } from "@/components/question-components/self-assessment"
@@ -84,7 +84,7 @@ async function getTopicBySlug(slug: string): Promise<Topic | undefined> {
 
   const { data: topic, error } = await supabase
     .from('topics')
-    .select('*')
+    .select('id, name, slug')
     .eq('slug', slug)
     .single()
 
@@ -535,39 +535,77 @@ export default function QuestionPage() {
 
   // const freeUser = currentUser.email === "student@example.com"
 
-  const supabase = createClient()
+  // const supabase = createClient()
 
-  //TODO: put this into a hook?? or into data.ts??
-  useEffect(() => {
-    const checkHasPaid = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        setFreeUser(true)
-        setIsLoadingUserType(false)
-        return
-      }
+  // //TODO: put this into a hook?? or into data.ts??
+  // useEffect(() => {
+  //   const checkHasPaid = async () => {
+  //     const { data: { user } } = await supabase.auth.getUser()
+  //     if (!user) {
+  //       setFreeUser(true)
+  //       setIsLoadingUserType(false)
+  //       return
+  //     }
 
-      const { data } = await supabase
-        .from('profiles')
-        .select('user_type')
-        .eq('userid', user.id)
-        .single()
+  //     const { data } = await supabase
+  //       .from('profiles')
+  //       .select('user_type')
+  //       .eq('userid', user.id)
+  //       .single()
 
-      if (!data) {
-        setUserType("anonymous")
+  //     if (!data) {
+  //       setUserType("anonymous")
+  //       setUser(user)
+  //       setFreeUser(true)
+  //       setIsLoadingUserType(false)
+  //       return
+  //     }
+
+  //     setUserType(data.user_type)
+  //     setUser(user)
+  //     setFreeUser(false)
+  //     setIsLoadingUserType(false)
+  //   }
+  //   checkHasPaid()
+  // }, [supabase, topicSlug])
+
+    // Create a stable supabase client instance
+    const supabase = useMemo(() => createClient(), [])
+  
+    useEffect(() => {
+      const checkHasPaid = async () => {
+        const { data: { user } } = await supabase.auth.getUser()
+  
+        if (!user) {
+          setFreeUser(true)
+          setIsLoadingUserType(false)
+          return
+        }
+  
+        const { data } = await supabase
+          .from("profiles")
+          .select("user_type")
+          .eq("userid", user.id)
+          .single()
+  
+        if (!data) {
+          setUserType("anonymous")
+          setUser(user)
+          setFreeUser(true)
+          setIsLoadingUserType(false)
+          return
+        }
+  
+        setUserType(data.user_type)
         setUser(user)
-        setFreeUser(true)
+        setFreeUser(false)
         setIsLoadingUserType(false)
-        return
       }
-
-      setUserType(data.user_type)
-      setUser(user)
-      setFreeUser(false)
-      setIsLoadingUserType(false)
-    }
-    checkHasPaid()
-  }, [supabase, topicSlug])
+  
+      checkHasPaid()
+    }, [supabase]) 
+  
+  
 
   useEffect(() => {
     if (isLoadingUserType) return
