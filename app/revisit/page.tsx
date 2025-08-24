@@ -55,20 +55,63 @@ interface DBTopic {
   disabled?: boolean
 }
 
-interface TypeSpecificData {
-  model_answer?: string | boolean | string[]
-  model_answer_code?: string
-  order_important?: boolean
-  correct_answers?: string[]
-  correct_answer?: boolean
-  options?: string[]
-  correct_answer_index?: number
+// interface TypeSpecificData {
+//   model_answer?: string | boolean | string[]
+//   model_answer_code?: string
+//   order_important?: boolean
+//   correct_answers?: string[]
+//   correct_answer?: boolean
+//   options?: string[]
+//   correct_answer_index?: number
+// }
+
+// interface MatchingPair {
+//   statement: string
+//   match: string
+// }
+
+// Put these near your component (or in types.ts)
+
+type RevisitPair = { statement: string; match: string }
+
+type RevisitQuestionPayload = {
+  id: string
+  type: string
+  difficulty: string | null
+  question_text: string
+  explanation: string
+  topic: string | null
+  created_at: string
+  model_answer: string | string[] | boolean | null
+  model_answer_code?: string | null
+  options?: string[] | null
+  correctAnswerIndex?: number | null
+  order_important?: boolean | null
+  language?: string | null
+  pairs?: RevisitPair[] | null
+  correct_answer?: boolean | null
 }
 
-interface MatchingPair {
-  statement: string
-  match: string
+type RevisitRow = {
+  answer_id: string
+  question_id: string
+  submitted_at: string
+  student_score: ScoreType | null
+  response_text: string | null
+  topic_slug: string | null
+  topic_name: string | null
+  question: RevisitQuestionPayload
 }
+
+// types for counts
+type RevisitCounts = {
+  total: number
+  green: number
+  amber: number
+  red: number
+}
+
+
 
 function RevisitSkeleton() {
   return (
@@ -171,6 +214,17 @@ export default function RevisitPage() {
   const [deleteConfirmation, setDeleteConfirmation] = useState("")
   const [isDeleting, setIsDeleting] = useState(false)
 
+
+  // state for counts
+  const [counts, setCounts] = useState<RevisitCounts>({
+    total: 0,
+    green: 0,
+    amber: 0,
+    red: 0,
+  })
+  const [countsLoading, setCountsLoading] = useState(false)
+
+
   // Memoize filtered answers
   const filteredAnswers = useMemo(() => {
     if (allAnswers.length === 0 || topics.length === 0) return allAnswers
@@ -197,209 +251,150 @@ export default function RevisitPage() {
     return Array.from(set)
   }, [filteredAnswers, questions])
 
-  // First useEffect for initial data loading
+
   useEffect(() => {
-    const getUser = async () => {
+    const fetchCounts = async () => {
+      if (!user) return
+      setCountsLoading(true)
       const supabase = createClient()
+
+      // normalize filters for the RPC (convert "all" → null)
+      const topicsArg = selectedTopics.length ? selectedTopics : null
+      const typeArg = typeParam && typeParam !== "all" ? typeParam : null
+      const difficultyArg = difficultyParam && difficultyParam !== "all" ? difficultyParam : null
+
+      const { data, error } = await supabase.rpc(
+        'get_revisit_counts_v1',
+        {
+          p_user: user.id,
+          p_topic_slugs: topicsArg,   // text[] or null
+          p_type: typeArg,            // text or null
+          p_difficulty: difficultyArg // text or null
+        }
+      )
+
+      if (error) {
+        console.error('counts rpc error', error)
+        setCountsLoading(false)
+        return
+      }
+
+      // function returns one row; supabase returns it as an array with length 1
+      const row = Array.isArray(data) ? data[0] : data
+      setCounts({
+        total: Number(row?.total ?? 0),
+        green: Number(row?.green ?? 0),
+        amber: Number(row?.amber ?? 0),
+        red: Number(row?.red ?? 0),
+      })
+      setCountsLoading(false)
+    }
+
+    fetchCounts()
+  }, [user, selectedTopics, typeParam, difficultyParam])
+
+
+  useEffect(() => {
+    const getUserAndAnswers = async () => {
+      const supabase = createClient()
+
       const {
         data: { user },
       } = await supabase.auth.getUser()
-      if (user) {
-        setUser(user)
 
-        // Fetch topics from the database
-        const { data: topicsData, error: topicsError } = await supabase.from("topics").select("*")
-
-        if (topicsError) {
-          console.error("Error fetching topics:", topicsError)
-          return
-        }
-
-        setTopics(topicsData || [])
-
-        // Fetch answers for the user
-        const { data: answersData, error: answersError } = await supabase
-          .from("student_answers")
-          .select("*")
-          .eq("student_id", user.id)
-          .order("submitted_at", { ascending: false })
-
-        if (answersError) {
-          console.error("Error fetching answers:", answersError)
-          return
-        }
-
-        // Map database fields to Answer type
-        const mappedAnswers: Answer[] = answersData.map((answer) => ({
-          id: answer.id,
-          question_id: answer.question_id,
-          student_id: answer.student_id,
-          response_text: answer.response_text,
-          ai_feedback: answer.ai_feedback,
-          score: answer.student_score as ScoreType,
-          submitted_at: answer.submitted_at,
-          self_assessed: answer.self_assessed,
-        }))
-
-        // Get all question IDs from answers
-        const questionIds = mappedAnswers.map((answer) => answer.question_id)
-
-        // Fetch questions with their type-specific data
-        const { data: questionsData, error: questionsError } = await supabase
-          .from("questions")
-          .select(`
-            *,
-            short_answer_questions(*),
-            true_false_questions(*),
-            matching_questions(*),
-            fill_in_the_blank_questions(
-              options,
-              correct_answers,
-              order_important
-            ),
-            code_questions(*),
-            multiple_choice_questions(*),
-            essay_questions(*),
-            subtopic_question_link(
-              subtopic:subtopics(
-                topic:topics(*)
-              )
-            )
-          `)
-          .in("id", questionIds)
-
-        if (questionsError) {
-          console.error("Error fetching questions:", questionsError)
-          return
-        }
-
-        // Create a map of questions with their type-specific data
-        const questionMap: Record<string, Question> = {}
-        questionsData?.forEach((q) => {
-          let typeSpecificData: TypeSpecificData | null = null
-          let pairs: MatchingPair[] = []
-          let options: string[] = []
-          let correctAnswerIndex = 0
-          let correctAnswers: string[] = []
-          let fibq = undefined
-
-          switch (q.type) {
-            case "short-answer":
-              typeSpecificData = {
-                model_answer: q.short_answer_questions?.model_answer || "",
-                model_answer_code: q.short_answer_questions?.model_answer_code,
-              }
-              break
-            case "text":
-              typeSpecificData = {
-                model_answer: q.short_answer_questions?.model_answer || "",
-                model_answer_code: q.short_answer_questions?.model_answer_code,
-              }
-              break
-            case "true-false":
-              typeSpecificData = Array.isArray(q.true_false_questions)
-                ? q.true_false_questions[0]
-                : q.true_false_questions;
-              break
-            case "matching":
-              typeSpecificData = q.matching_questions?.[0] as TypeSpecificData
-              pairs = q.matching_questions || []
-              break
-            case "fill-in-the-blank":
-              fibq = q.fill_in_the_blank_questions
-              if (Array.isArray(fibq)) {
-                fibq = fibq[0]
-              }
-              typeSpecificData = fibq as TypeSpecificData
-              options = fibq?.options || []
-              correctAnswers = fibq?.correct_answers || []
-              break
-            case "code":
-              console.log("CODE QUESTION:", q.code_questions)
-              typeSpecificData = {
-                model_answer: q.code_questions?.model_answer || "",
-                model_answer_code: q.code_questions?.model_answer_code,
-              }
-              break
-            case "multiple-choice":
-              // Handle both array and object cases
-              const mcq = Array.isArray(q.multiple_choice_questions)
-                ? q.multiple_choice_questions[0]
-                : q.multiple_choice_questions
-              typeSpecificData = mcq as TypeSpecificData
-              options = typeSpecificData?.options || []
-              correctAnswerIndex = typeSpecificData?.correct_answer_index || 0
-              break
-            case "essay":
-              typeSpecificData = {
-                model_answer: q.essay_questions?.model_answer || "",
-              }
-              break
-          }
-
-          const topic = q.subtopic_question_link?.[0]?.subtopic?.topic
-
-          const mappedQuestion = {
-            id: q.id,
-            type: q.type,
-            difficulty: q.difficulty,
-            question_text: q.question_text,
-            explanation: q.explanation,
-            topic: topic?.id,
-            model_answer: (() => {
-              switch (q.type) {
-                case "multiple-choice":
-                  return options[correctAnswerIndex] || ""
-                case "fill-in-the-blank":
-                  return correctAnswers
-                case "true-false":
-                  return typeSpecificData?.model_answer ?? ""
-                case "matching":
-                  return typeSpecificData?.model_answer || ""
-                case "code":
-                  return typeSpecificData?.model_answer || ""
-                case "short-answer":
-                  return typeSpecificData?.model_answer || ""
-                case "text":
-                  return typeSpecificData?.model_answer || ""
-                case "essay":
-                  return typeSpecificData?.model_answer || ""
-                default:
-                  return ""
-              }
-            })(),
-            model_answer_code: typeSpecificData?.model_answer_code,
-            pairs: pairs,
-            order_important: fibq?.order_important,
-            options: options,
-            correctAnswerIndex: correctAnswerIndex,
-            created_at: q.created_at,
-            correct_answer: typeSpecificData?.correct_answer,
-          }
-
-          if (q.type === "text") {
-            console.log("TEXT QUESTION:", q.id, "typeSpecificData:", typeSpecificData);
-          }
-
-          questionMap[q.id] = mappedQuestion
-        })
-
-        setQuestions(questionMap)
-        setAllAnswers(mappedAnswers)
-
-        await supabase.from("user_activity").insert({
-          user_id: user.id,
-          event: "visited_revisit",
-          path: "/revisit",
-          user_email: user.email,
-        })
-      } else {
+      if (!user) {
         setUser(null)
+        setIsLoading(false)
+        return
       }
+
+      setUser(user)
+
+      // Optional: still fetch topics for dropdowns or filters
+      const { data: topicsData, error: topicsError } = await supabase
+        .from("topics")
+        .select("*")
+
+      if (topicsError) {
+        console.error("Error fetching topics:", topicsError)
+      } else {
+        setTopics(topicsData || [])
+      }
+
+
+      // This calls an RPC from the supabase database
+      // access this via function get_revisit_attempts_v2 in supabase database functions
+      const { data: rows, error: rpcError } = await supabase
+        .rpc('get_revisit_attempts_v2', {
+          p_user: user.id,
+          p_topic_slugs: null,
+          p_type: null,
+          p_difficulty: null,
+          p_limit: 200,
+          p_offset: 0,
+        })
+
+
+      if (rpcError) {
+        console.error(rpcError)
+        setIsLoading(false)
+        return
+      }
+
+      const answers: Answer[] = []
+      const questionMap: Record<string, Question> = {}
+
+      rows?.forEach((row: RevisitRow) => {
+        answers.push({
+          id: row.answer_id,
+          question_id: row.question_id,
+          student_id: user.id,
+          response_text: row.response_text ?? "",   // normalize null → ""
+          ai_feedback: null,                        // RPC doesn’t return this
+          score: (row.student_score ?? "amber") as ScoreType, // safe default
+          submitted_at: row.submitted_at,
+          self_assessed: false,                     // see next section
+        })
+
+        const q = row.question
+        questionMap[row.question_id] = {
+          id: q.id,
+          type: q.type as Question['type'],
+          difficulty: q.difficulty as Question['difficulty'] | 'medium',
+          topic: q.topic || '',
+          question_text: q.question_text,
+          explanation: q.explanation ?? "",
+          model_answer: q.model_answer ?? "",
+          model_answer_code: q.model_answer_code ?? undefined,
+          pairs: q.pairs ?? [],
+          order_important: q.order_important ?? false,
+          options: q.options ?? [],
+          correctAnswerIndex: q.correctAnswerIndex ?? 0,
+          created_at: q.created_at,
+          correct_answer: q.correct_answer ?? undefined,
+          // language is optional on your UI type; include if it exists:
+          language: q.language ?? undefined,
+        }
+      })
+
+      setQuestions(questionMap)
+      setAllAnswers(answers)
+
+
+      // Optional: log user visit
+      await supabase.from("user_activity").insert({
+        user_id: user.id,
+        event: "visited_revisit",
+        path: "/revisit",
+        user_email: user.email,
+      })
+
       setIsLoading(false)
     }
-    getUser()
+
+    getUserAndAnswers()
   }, [])
+
 
   // Filter answers by score and type and difficulty
   const filteredAnswersByScoreAndType = useMemo(() => {
@@ -525,32 +520,32 @@ export default function RevisitPage() {
   //   }).length,
 
   // }
-  const matchesType = (q?: Question) =>
-    !typeParam || typeParam === "all" || q?.type === typeParam
+  // const matchesType = (q?: Question) =>
+  //   !typeParam || typeParam === "all" || q?.type === typeParam
 
-  const matchesDifficulty = (q?: Question) =>
-    !difficultyParam || difficultyParam === "all" ||
-    String(q?.difficulty).toLowerCase() === difficultyParam.toLowerCase()
+  // const matchesDifficulty = (q?: Question) =>
+  //   !difficultyParam || difficultyParam === "all" ||
+  //   String(q?.difficulty).toLowerCase() === difficultyParam.toLowerCase()
 
-  const totalAnswers = filteredAnswers.filter((a) => {
-    const q = questions[a.question_id]
-    return matchesType(q) && matchesDifficulty(q)
-  }).length
+  // const totalAnswers = filteredAnswers.filter((a) => {
+  //   const q = questions[a.question_id]
+  //   return matchesType(q) && matchesDifficulty(q)
+  // }).length
 
-  const scoreCount = {
-    green: filteredAnswers.filter((a) => {
-      const q = questions[a.question_id]
-      return a.score === "green" && matchesType(q) && matchesDifficulty(q)
-    }).length,
-    amber: filteredAnswers.filter((a) => {
-      const q = questions[a.question_id]
-      return a.score === "amber" && matchesType(q) && matchesDifficulty(q)
-    }).length,
-    red: filteredAnswers.filter((a) => {
-      const q = questions[a.question_id]
-      return a.score === "red" && matchesType(q) && matchesDifficulty(q)
-    }).length,
-  }
+  // const scoreCount = {
+  //   green: filteredAnswers.filter((a) => {
+  //     const q = questions[a.question_id]
+  //     return a.score === "green" && matchesType(q) && matchesDifficulty(q)
+  //   }).length,
+  //   amber: filteredAnswers.filter((a) => {
+  //     const q = questions[a.question_id]
+  //     return a.score === "amber" && matchesType(q) && matchesDifficulty(q)
+  //   }).length,
+  //   red: filteredAnswers.filter((a) => {
+  //     const q = questions[a.question_id]
+  //     return a.score === "red" && matchesType(q) && matchesDifficulty(q)
+  //   }).length,
+  // }
 
 
   const handleDeleteClick = (answer: Answer) => {
@@ -701,7 +696,10 @@ export default function RevisitPage() {
               <div className="font-medium flex items-center justify-center gap-1">
                 <FileText className="h-4 w-4" /> All Questions
               </div>
-              <div className="text-xs text-muted-foreground">{totalAnswers} total</div>
+              {/* <div className="text-xs text-muted-foreground">{totalAnswers} total</div> */}
+              <div className="text-xs text-muted-foreground">
+                {countsLoading ? '…' : `${counts.total} total`}
+              </div>
             </div>
           </Button>
           <Button
@@ -713,7 +711,10 @@ export default function RevisitPage() {
               <div className="font-medium flex items-center justify-center gap-1">
                 <CheckCircle className="h-4 w-4" /> Strong
               </div>
-              <div className="text-xs">{scoreCount.green} questions</div>
+              {/* <div className="text-xs">{scoreCount.green} questions</div> */}
+              <div className="text-xs">
+                {countsLoading ? '…' : `${counts.green} questions`}
+              </div>
             </div>
           </Button>
           <Button
@@ -725,7 +726,10 @@ export default function RevisitPage() {
               <div className="font-medium flex items-center justify-center gap-1">
                 <AlertTriangle className="h-4 w-4" /> Developing
               </div>
-              <div className="text-xs">{scoreCount.amber} questions</div>
+              {/* <div className="text-xs">{scoreCount.amber} questions</div> */}
+              <div className="text-xs">
+                {countsLoading ? '…' : `${counts.amber} questions`}
+              </div>
             </div>
           </Button>
           <Button
@@ -737,7 +741,10 @@ export default function RevisitPage() {
               <div className="font-medium flex items-center justify-center gap-1">
                 <AlertCircle className="h-4 w-4" /> Needs Work
               </div>
-              <div className="text-xs">{scoreCount.red} questions</div>
+              {/* <div className="text-xs">{scoreCount.red} questions</div> */}
+              <div className="text-xs">
+                {countsLoading ? '…' : `${counts.red} questions`}
+              </div>
             </div>
           </Button>
         </div>
