@@ -377,8 +377,8 @@ export default function RevisitPage() {
             correct_answer: typeSpecificData?.correct_answer,
           }
 
-          if (q.id === "sa7") {
-            console.log("DEBUG typeSpecificData", typeSpecificData);
+          if (q.type === "text") {
+            console.log("TEXT QUESTION:", q.id, "typeSpecificData:", typeSpecificData);
           }
 
           questionMap[q.id] = mappedQuestion
@@ -442,15 +442,22 @@ export default function RevisitPage() {
         }
 
         // Only add if not already in the array (avoid duplicates)
-        if (!acc[topicSlug].some((a) => a.question_id === answer.question_id)) {
-          acc[topicSlug].push(answer)
-        }
+        // if (!acc[topicSlug].some((a) => a.question_id === answer.question_id)) {
+        //   acc[topicSlug].push(answer)
+        // }
+
+        (acc[topicSlug] ||= []).push(answer)
+
 
         return acc
       },
       {} as Record<string, Answer[]>,
     )
   }, [filteredAnswersByScoreAndType, questions, topics])
+
+  Object.values(answersByTopic).forEach(list => {
+    list.sort((a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime())
+  })
 
   const getScoreLabel = (score: ScoreType) => {
     switch (score) {
@@ -789,7 +796,8 @@ export default function RevisitPage() {
 
                         return (
                           <Card
-                            key={`${answer.question_id}-${answer.score}`}
+                            key={answer.id}
+
                             className="hover:shadow-md transition-shadow"
                           >
                             <CardHeader className="pb-4">
