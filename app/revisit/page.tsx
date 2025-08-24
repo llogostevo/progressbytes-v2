@@ -463,7 +463,7 @@ export default function RevisitPage() {
       }
 
       const { data: rows, error: rpcError } = await supabase
-        .rpc('get_revisit_attempts_v1', {
+        .rpc('get_revisit_attempts_v2', {
           p_user: user.id,
           p_topic_slugs: null,
           p_type: null,
