@@ -462,6 +462,9 @@ export default function RevisitPage() {
         setTopics(topicsData || [])
       }
 
+
+      // This calls an RPC from the supabase database
+      // access this via function get_revisit_attempts_v2 in supabase database functions
       const { data: rows, error: rpcError } = await supabase
         .rpc('get_revisit_attempts_v2', {
           p_user: user.id,
