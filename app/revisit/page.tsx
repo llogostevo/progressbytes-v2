@@ -291,6 +291,13 @@ export default function RevisitPage() {
                 order_important: q.short_answer_questions?.order_important,
               }
               break
+            case "text":
+              typeSpecificData = {
+                model_answer: q.short_answer_questions?.model_answer || "",
+                model_answer_code: q.short_answer_questions?.model_answer_code,
+                order_important: q.short_answer_questions?.order_important,
+              }
+              break
             case "true-false":
               typeSpecificData = Array.isArray(q.true_false_questions)
                 ? q.true_false_questions[0]
@@ -458,6 +465,10 @@ export default function RevisitPage() {
     switch (type) {
       case "short-answer":
         return "Short Answer"
+      case "text":
+        return "Text"
+      case "essay":
+        return "Essay"
       case "true-false":
         return "True/False"
       case "matching":
