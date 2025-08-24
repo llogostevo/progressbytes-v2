@@ -288,7 +288,12 @@ export default function RevisitPage() {
               typeSpecificData = {
                 model_answer: q.short_answer_questions?.model_answer || "",
                 model_answer_code: q.short_answer_questions?.model_answer_code,
-                order_important: q.short_answer_questions?.order_important,
+              }
+              break
+            case "text":
+              typeSpecificData = {
+                model_answer: q.short_answer_questions?.model_answer || "",
+                model_answer_code: q.short_answer_questions?.model_answer_code,
               }
               break
             case "true-false":
@@ -352,7 +357,11 @@ export default function RevisitPage() {
                 case "matching":
                   return typeSpecificData?.model_answer || ""
                 case "code":
+                  return typeSpecificData?.model_answer || ""
                 case "short-answer":
+                  return typeSpecificData?.model_answer || ""
+                case "text":
+                  return typeSpecificData?.model_answer || ""
                 case "essay":
                   return typeSpecificData?.model_answer || ""
                 default:
@@ -368,8 +377,8 @@ export default function RevisitPage() {
             correct_answer: typeSpecificData?.correct_answer,
           }
 
-          if (q.id === "sa7") {
-            console.log("DEBUG typeSpecificData", typeSpecificData);
+          if (q.type === "text") {
+            console.log("TEXT QUESTION:", q.id, "typeSpecificData:", typeSpecificData);
           }
 
           questionMap[q.id] = mappedQuestion
@@ -433,15 +442,22 @@ export default function RevisitPage() {
         }
 
         // Only add if not already in the array (avoid duplicates)
-        if (!acc[topicSlug].some((a) => a.question_id === answer.question_id)) {
-          acc[topicSlug].push(answer)
-        }
+        // if (!acc[topicSlug].some((a) => a.question_id === answer.question_id)) {
+        //   acc[topicSlug].push(answer)
+        // }
+
+        (acc[topicSlug] ||= []).push(answer)
+
 
         return acc
       },
       {} as Record<string, Answer[]>,
     )
   }, [filteredAnswersByScoreAndType, questions, topics])
+
+  Object.values(answersByTopic).forEach(list => {
+    list.sort((a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime())
+  })
 
   const getScoreLabel = (score: ScoreType) => {
     switch (score) {
@@ -458,6 +474,10 @@ export default function RevisitPage() {
     switch (type) {
       case "short-answer":
         return "Short Answer"
+      case "text":
+        return "Short Answer"
+      case "essay":
+        return "Essay"
       case "true-false":
         return "True/False"
       case "matching":
@@ -776,7 +796,8 @@ export default function RevisitPage() {
 
                         return (
                           <Card
-                            key={`${answer.question_id}-${answer.score}`}
+                            key={answer.id}
+
                             className="hover:shadow-md transition-shadow"
                           >
                             <CardHeader className="pb-4">

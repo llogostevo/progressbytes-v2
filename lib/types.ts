@@ -8,7 +8,7 @@ export interface Question {
   type: "text" | "multiple-choice" | "fill-in-the-blank" | "matching" | "code" | "algorithm" | "sql" | "short-answer" | "essay" | "true-false"
   difficulty: "low" | "medium" | "high"
   question_text: string
-  model_answer: string | string[] | boolean
+  model_answer?: string | string[] | boolean
   options?: string[]
   correctAnswerIndex?: number
   order_important?: boolean
@@ -73,3 +73,5 @@ export interface Plan {
   stripe_product_id?: string
   active: boolean
 };
+
+//TODO: shoudl add in here the types from getTopics.ts 
