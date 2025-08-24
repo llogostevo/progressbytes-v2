@@ -288,14 +288,12 @@ export default function RevisitPage() {
               typeSpecificData = {
                 model_answer: q.short_answer_questions?.model_answer || "",
                 model_answer_code: q.short_answer_questions?.model_answer_code,
-                order_important: q.short_answer_questions?.order_important,
               }
               break
             case "text":
               typeSpecificData = {
                 model_answer: q.short_answer_questions?.model_answer || "",
                 model_answer_code: q.short_answer_questions?.model_answer_code,
-                order_important: q.short_answer_questions?.order_important,
               }
               break
             case "true-false":
@@ -359,7 +357,11 @@ export default function RevisitPage() {
                 case "matching":
                   return typeSpecificData?.model_answer || ""
                 case "code":
+                  return typeSpecificData?.model_answer || ""
                 case "short-answer":
+                  return typeSpecificData?.model_answer || ""
+                case "text":
+                  return typeSpecificData?.model_answer || ""
                 case "essay":
                   return typeSpecificData?.model_answer || ""
                 default:
@@ -466,7 +468,7 @@ export default function RevisitPage() {
       case "short-answer":
         return "Short Answer"
       case "text":
-        return "Text"
+        return "Short Answer"
       case "essay":
         return "Essay"
       case "true-false":
