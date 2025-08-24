@@ -402,16 +402,6 @@ export default function RevisitPage() {
   }, [])
 
   // Filter answers by score and type and difficulty
-  // const filteredAnswersByScoreAndType = useMemo(() => {
-  //   return filteredAnswers
-  //     .filter((answer) => activeTab === "all" || answer.score === activeTab)
-  //     .filter((answer) => {
-  //       if (typeParam === "all" || !typeParam) return true
-  //       const question = questions[answer.question_id]
-  //       return question?.type === typeParam
-  //     })
-  // }, [filteredAnswers, activeTab, typeParam, questions])
-
   const filteredAnswersByScoreAndType = useMemo(() => {
     return filteredAnswers
       .filter((answer) => activeTab === "all" || answer.score === activeTab)
