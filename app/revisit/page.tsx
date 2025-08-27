@@ -264,7 +264,7 @@ export default function RevisitPage() {
       const difficultyArg = difficultyParam && difficultyParam !== "all" ? difficultyParam : null
 
       const { data, error } = await supabase.rpc(
-        'get_revisit_counts_v1',
+        'get_revisit_counts_v2',
         {
           p_user: user.id,
           p_topic_slugs: topicsArg,   // text[] or null
@@ -325,12 +325,12 @@ export default function RevisitPage() {
       // This calls an RPC from the supabase database
       // access this via function get_revisit_attempts_v2 in supabase database functions
       const { data: rows, error: rpcError } = await supabase
-        .rpc('get_revisit_attempts_v2', {
+        .rpc('get_revisit_attempts_v3', {
           p_user: user.id,
           p_topic_slugs: null,
           p_type: null,
           p_difficulty: null,
-          p_limit: 200,
+          p_limit: 1000,
           p_offset: 0,
         })
 
