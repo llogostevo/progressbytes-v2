@@ -157,7 +157,13 @@ function SettingsPageContent() {
   const [deleteMemberDialogOpen, setDeleteMemberDialogOpen] = useState(false)
   const [memberToDelete, setMemberToDelete] = useState<SupabaseMember | null>(null)
   const [isDeletingMember, setIsDeletingMember] = useState(false)
-  // const [plans, setPlans] = useState<Plan[]>([]);
+
+
+  // Teacher: add students by email or CSV
+  const [addStudentEmail, setAddStudentEmail] = useState("")
+  const [isAddingStudent, setIsAddingStudent] = useState(false)
+  const [isBulkAdding, setIsBulkAdding] = useState(false)
+  const [selectedClassMembers, setSelectedClassMembers] = useState<SupabaseMember[] | null>(null)
 
   const supabase = createClient()
   const searchParams = useSearchParams()
@@ -567,6 +573,34 @@ function SettingsPageContent() {
   }
 
   const handleDeleteClassMember = async () => {
+
+    // Teacher context: removing from selectedClass dialog
+    if (memberToDelete && selectedClass) {
+      setIsDeletingMember(true)
+      try {
+        const { error } = await supabase
+          .from('class_members')
+          .delete()
+          .eq('class_id', selectedClass.id)
+          .eq('student_id', memberToDelete.student_id)
+
+        if (error) throw error
+
+        setSelectedClassMembers(prev => (prev || []).filter(m => m.student_id !== memberToDelete.student_id))
+        setDeleteMemberDialogOpen(false)
+        setMemberToDelete(null)
+        toast.success('Student removed from class')
+      } catch (error) {
+        console.error('Error removing student:', error)
+        toast.error('Failed to remove student from class')
+      } finally {
+        setIsDeletingMember(false)
+      }
+      return
+    }
+
+    // Student context: user leaving a class via their own membership card
+
     if (!memberToDelete || !selectedMembership) return
 
     setIsDeletingMember(true)
@@ -579,7 +613,6 @@ function SettingsPageContent() {
 
       if (error) throw error
 
-      // Update the local state to remove the deleted member
       if (selectedMembership.members) {
         const updatedMembers = selectedMembership.members.filter(
           member => member.student_id !== memberToDelete.student_id
@@ -600,6 +633,244 @@ function SettingsPageContent() {
       setIsDeletingMember(false)
     }
   }
+
+  // --- Teacher helpers: fetch, add, and bulk-add students to a class ---
+
+  // Download CSV Template helper
+  const handleDownloadCSVTemplate = () => {
+    const header = 'email\n'
+    const sampleRows = [
+      'student1@example.com',
+      'student2@example.com',
+      'student3@example.com',
+    ]
+    const csv = header + sampleRows.join('\n') + '\n'
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'student_emails_template.csv'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+  const fetchSelectedClassMembers = async (classId: string) => {
+    try {
+      // Ensure we're acting as the teacher of this class (helps satisfy RLS)
+      const { data: authData } = await supabase.auth.getUser()
+      const teacherId = authData?.user?.id
+      if (!teacherId) {
+        toast.error('Not authenticated')
+        setSelectedClassMembers([])
+        return
+      }
+
+      // Fetch class_members for this class and teacher
+      const { data, error } = await supabase
+        .from('class_members')
+        .select(`
+          student_id,
+          joined_at,
+          class:classes!inner ( id, teacher_id )
+        `)
+        .eq('class_id', classId)
+        .eq('class.teacher_id', teacherId)
+
+      if (error) {
+        console.error('Error fetching class members:', error)
+        toast.error('Failed to load class members')
+        setSelectedClassMembers([])
+        return
+      }
+
+      // Get all student IDs
+      const studentIds = (data || []).map((row: any) => row.student_id)
+      if (!studentIds.length) {
+        setSelectedClassMembers([])
+        return
+      }
+      // Fetch profiles for these students
+      const { data: profiles, error: profilesErr } = await supabase
+        .from('profiles')
+        .select('userid, email, forename, lastname')
+        .in('userid', studentIds)
+
+      console.log('studentIds:', studentIds)
+      console.log('profiles fetched:', profiles)
+      console.log('profiles error:', profilesErr)
+
+
+      if (profilesErr) {
+        console.error('Error fetching profiles:', profilesErr)
+        toast.error('Failed to load student profiles')
+        setSelectedClassMembers([])
+        return
+      }
+      const profilesById = new Map<string, any>((profiles || []).map((p: any) => [p.userid, p]))
+      // Normalize result
+      const membersOnly = (data || []).map((m: any) => {
+        const profile = profilesById.get(m.student_id)
+        console.log('profile', profile)
+        const fullName = profile ? `${profile.forename ?? ''} ${profile.lastname ?? ''}`.trim() : ''
+
+        return {
+          student_id: m.student_id,
+          joined_at: m.joined_at,
+          student: {
+            email: profile?.email || 'No email found',
+            full_name: fullName,
+          },
+        }
+      }) as SupabaseMember[]
+      setSelectedClassMembers(membersOnly)
+    } catch (e) {
+      console.error('Error fetching class members (exception):', e)
+      toast.error('Failed to load class members')
+      setSelectedClassMembers([])
+    }
+  }
+
+  const addStudentToClassByEmail = async (classId: string, email: string) => {
+    try {
+      setIsAddingStudent(true)
+      const trimmed = email.trim().toLowerCase()
+      if (!trimmed) {
+        toast.error('Please enter an email')
+        return
+      }
+      // Find user profile
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('userid, email, forename, lastname')
+        .eq('email', trimmed)
+        .single()
+
+      if (profileError || !profile) {
+        toast.error(`Email not recognised: ${trimmed}`)
+        return
+      }
+
+      // Already a member?
+      const { data: existing } = await supabase
+        .from('class_members')
+        .select('student_id')
+        .eq('class_id', classId)
+        .eq('student_id', profile.userid)
+        .maybeSingle()
+
+      if (existing) {
+        toast.info(`${trimmed} is already in this class`)
+        return
+      }
+
+      // Add member
+      const { data: inserted, error: joinError } = await supabase
+        .from('class_members')
+        .insert([{
+          class_id: classId,
+          student_id: profile.userid,
+          joined_at: new Date().toISOString(),
+        }])
+        .select('student_id, joined_at')
+        .single()
+
+      if (joinError) throw joinError
+
+      const normalizedMember: SupabaseMember = {
+        student_id: inserted.student_id,
+        joined_at: inserted.joined_at,
+        student: {
+          email: profile.email,
+          full_name: `${profile.forename ?? ''} ${profile.lastname ?? ''}`.trim(),
+        },
+      }
+
+      if (selectedClass?.id === classId) {
+        setSelectedClassMembers(prev => ([...(prev || []), normalizedMember]))
+      }
+      toast.success(`Added ${profile.email} to class`)
+      setAddStudentEmail("")
+    } catch (e) {
+      console.error('Error adding student:', e)
+      toast.error('Failed to add student')
+    } finally {
+      setIsAddingStudent(false)
+    }
+  }
+
+  const parseCSVEmails = (text: string): string[] => {
+    // Split on commas, newlines, or semicolons, trim, dedupe, basic email shape
+    const tokens = text.split(/[\n,;\s]+/).map(t => t.trim().toLowerCase()).filter(Boolean)
+    const unique = Array.from(new Set(tokens))
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return unique.filter(e => emailRegex.test(e))
+  }
+
+  const bulkAddStudentsFromCSV = async (classId: string, csvText: string) => {
+    setIsBulkAdding(true)
+    try {
+      const emails = parseCSVEmails(csvText)
+      if (emails.length === 0) {
+        toast.error('No valid emails found in CSV')
+        return
+      }
+
+      let added = 0
+      const failed: string[] = []
+
+      for (const email of emails) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('userid, email, forename, lastname')
+          .eq('email', email)
+          .maybeSingle()
+
+        if (!profile) { failed.push(`${email} (not recognised)`); continue }
+
+        const { data: existing } = await supabase
+          .from('class_members')
+          .select('student_id')
+          .eq('class_id', classId)
+          .eq('student_id', profile.userid)
+          .maybeSingle()
+
+        if (existing) { continue }
+
+        const { data: inserted, error: joinError } = await supabase
+          .from('class_members')
+          .insert([{ class_id: classId, student_id: profile.userid, joined_at: new Date().toISOString() }])
+          .select('student_id, joined_at')
+          .single()
+
+        if (joinError) { failed.push(`${email} (error)`); continue }
+
+        const normalizedMember: SupabaseMember = {
+          student_id: inserted.student_id,
+          joined_at: inserted.joined_at,
+          student: {
+            email: profile.email,
+            full_name: `${profile.forename ?? ''} ${profile.lastname ?? ''}`.trim(),
+          },
+        }
+
+        added += 1
+        if (selectedClass?.id === classId) {
+          setSelectedClassMembers(prev => ([...(prev || []), normalizedMember]))
+        }
+      }
+
+      if (added > 0) toast.success(`Added ${added} student${added === 1 ? '' : 's'}`)
+      if (failed.length > 0) toast.error(`Failed: ${failed.join(', ')}`)
+    } catch (e) {
+      console.error('Bulk add error:', e)
+      toast.error('Bulk add failed')
+    } finally {
+      setIsBulkAdding(false)
+    }
+  }
+
 
   useEffect(() => {
     // Check for success/cancel parameters from Stripe checkout
@@ -638,9 +909,9 @@ function SettingsPageContent() {
         setUserCourses(profile?.courses || [])
       }
 
-      // Fetch user's classes
-      if (isTeacher(userType)) {
-        // Fetch classes where user is the teacher
+      // Fetch user's classes (use freshly fetched profile type, not state)
+      const isTeacherRole = isTeacher(profile?.user_type as UserType | null)
+      if (isTeacherRole) {
         const { data: classes, error: classesError } = await supabase
           .from('classes')
           .select('*')
@@ -691,7 +962,7 @@ function SettingsPageContent() {
               .eq('class_id', membership.class_id)
 
             if (membersError) {
-              console.error('Error fetching class members:', membersError)
+              console.error('Error fetching class members (student view):', membersError)
               return membership
             }
 
@@ -753,7 +1024,7 @@ function SettingsPageContent() {
     fetchCourses()
     // fetchPlans();
     setIsLoading(false)
-  }, [supabase, searchParams, router, ])
+  }, [supabase, searchParams, router,])
 
   // const studentPlans = plans.filter(plan => plan.plan_type === 'student');
   // const teacherPlans = plans.filter(plan => plan.plan_type === 'teacher');
@@ -779,41 +1050,41 @@ function SettingsPageContent() {
           <h1 className="text-2xl font-bold">Settings</h1>
         </div>
 
-      {/* User Details */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>User Details</CardTitle>
-          <CardDescription>Your account information and subscription status</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center space-x-4">
-              <User className="h-6 w-6 text-muted-foreground" />
-              <div>
-                <h3 className="font-medium">Email</h3>
-                <p className="text-sm text-muted-foreground">{userEmail}</p>
+        {/* User Details */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>User Details</CardTitle>
+            <CardDescription>Your account information and subscription status</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center space-x-4">
+                <User className="h-6 w-6 text-muted-foreground" />
+                <div>
+                  <h3 className="font-medium">Email</h3>
+                  <p className="text-sm text-muted-foreground">{userEmail}</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <GraduationCap className="h-6 w-6 text-muted-foreground" />
+                <div>
+                  <h3 className="font-medium">Role</h3>
+                  <p className="text-sm text-muted-foreground capitalize">{userRole}</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <CreditCard className="h-6 w-6 text-muted-foreground" />
+                <div>
+                  <h3 className="font-medium">Subscription</h3>
+                  <p className="text-sm text-muted-foreground capitalize">{userType || 'Basic'}</p>
+                </div>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <GraduationCap className="h-6 w-6 text-muted-foreground" />
-              <div>
-                <h3 className="font-medium">Role</h3>
-                <p className="text-sm text-muted-foreground capitalize">{userRole}</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <CreditCard className="h-6 w-6 text-muted-foreground" />
-              <div>
-                <h3 className="font-medium">Subscription</h3>
-                <p className="text-sm text-muted-foreground capitalize">{userType || 'Basic'}</p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      {/* Subscription Plans */}
-      {/* {studentPlans.length > 0 && (
+        {/* Subscription Plans */}
+        {/* {studentPlans.length > 0 && (
         <Card className="mb-8">
           <CardHeader>
             <CardTitle>Student Plans</CardTitle>
@@ -928,559 +1199,600 @@ function SettingsPageContent() {
         </Card>
       )} */}
 
-      <UpgradePageClient />
+        <UpgradePageClient />
 
-      {/* Course Management */}
-      <Card className="mb-8">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Your Courses</CardTitle>
-              <CardDescription>Manage your enrolled courses</CardDescription>
-            </div>
-            <Button onClick={() => setAddCourseDialogOpen(true)} disabled={isAddingCourse}>
-              <BookmarkPlus className="h-4 w-4 mr-2" />
-              {isAddingCourse ? 'Adding...' : 'Add Course'}
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {userCourses.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No courses enrolled yet</p>
-            ) : (
-              userCourses.map((courseSlug) => {
-                const course = availableCourses.find(c => c.slug === courseSlug)
-                if (!course) return null
-
-                return (
-                  <Card key={`enrolled-course-${courseSlug}`}>
-                    <CardContent className="pt-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          {course.icon === 'book' && <Book className="h-6 w-6 text-muted-foreground" />}
-                          {course.icon === 'library' && <Library className="h-6 w-6 text-muted-foreground" />}
-                          {course.icon === 'bookmarked' && <BookMarked className="h-6 w-6 text-muted-foreground" />}
-                          <div>
-                            <h3 className="font-medium">{course.name}</h3>
-                            <p className="text-sm text-muted-foreground">{course.description}</p>
-                          </div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setCourseToDelete(courseSlug)
-                            setDeleteDialogOpen(true)
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )
-              })
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Teacher Class Membership */}
-      {isTeacher(userType) && (
+        {/* Course Management */}
         <Card className="mb-8">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Teacher Class Membership</CardTitle>
-                <CardDescription>Manage your teaching classes</CardDescription>
+                <CardTitle>Your Courses</CardTitle>
+                <CardDescription>Manage your enrolled courses</CardDescription>
               </div>
-              <Button onClick={() => setCreateClassDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Class
+              <Button onClick={() => setAddCourseDialogOpen(true)} disabled={isAddingCourse}>
+                <BookmarkPlus className="h-4 w-4 mr-2" />
+                {isAddingCourse ? 'Adding...' : 'Add Course'}
               </Button>
             </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {userClasses.length === 0 ? (
-                <div className="text-center py-8">
-                  <School className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-sm text-muted-foreground">You are not currently teaching any classes</p>
-                  <Button
-                    variant="outline"
-                    className="mt-4"
-                    onClick={() => setCreateClassDialogOpen(true)}
-                  >
-                    Create Your First Class
-                  </Button>
-                </div>
+              {userCourses.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No courses enrolled yet</p>
               ) : (
-                userClasses.map((classItem) => (
-                  <Card key={`teaching-class-${classItem.id}`}>
-                    <CardContent className="pt-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-medium">{classItem.name}</h3>
-                          <div className="mt-2 flex items-center space-x-2">
-                            <Badge variant="secondary" className="text-xs">
-                              Join Code: {classItem.join_code}
-                            </Badge>
+                userCourses.map((courseSlug) => {
+                  const course = availableCourses.find(c => c.slug === courseSlug)
+                  if (!course) return null
+
+                  return (
+                    <Card key={`enrolled-course-${courseSlug}`}>
+                      <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            {course.icon === 'book' && <Book className="h-6 w-6 text-muted-foreground" />}
+                            {course.icon === 'library' && <Library className="h-6 w-6 text-muted-foreground" />}
+                            {course.icon === 'bookmarked' && <BookMarked className="h-6 w-6 text-muted-foreground" />}
+                            <div>
+                              <h3 className="font-medium">{course.name}</h3>
+                              <p className="text-sm text-muted-foreground">{course.description}</p>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
                           <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => {
-                              setSelectedClass(classItem)
-                              setShowJoinCodeDialogOpen(true)
+                              setCourseToDelete(courseSlug)
+                              setDeleteDialogOpen(true)
                             }}
-                            title="Show Join Code"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              setClassToDelete(classItem)
-                              setDeleteClassDialogOpen(true)
-                            }}
-                            title="Delete Class"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
+                      </CardContent>
+                    </Card>
+                  )
+                })
               )}
             </div>
           </CardContent>
         </Card>
-      )}
 
-      {/* Show Join Code Dialog */}
-      <Dialog open={showJoinCodeDialogOpen} onOpenChange={setShowJoinCodeDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{selectedClass?.name}</DialogTitle>
-            <DialogDescription>
-              Class details and management
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-6">
-            {/* Join Code Display */}
-            <div className="bg-muted p-6 rounded-lg text-center">
-              <p className="text-sm text-muted-foreground mb-2">Class Join Code</p>
-              <div className="text-4xl font-mono font-bold tracking-wider mb-4">
-                {selectedClass?.join_code}
-              </div>
-              <Button
-                variant="outline"
-                onClick={() => selectedClass && handleCopyJoinCode(selectedClass.join_code)}
-                className="w-full"
-              >
-                <Copy className="h-4 w-4 mr-2" />
-                Copy Code
-              </Button>
-            </div>
-
-            {/* Class Members */}
-            <div className="space-y-4">
+        {/* Teacher Class Membership */}
+        {isTeacher(userType) && (
+          <Card className="mb-8">
+            <CardHeader>
               <div className="flex items-center justify-between">
-                <h4 className="font-medium">Class Members</h4>
-                <Badge variant="secondary">
-                  {studentClasses
-                    .filter(m => m.class_id === selectedClass?.id)
-                    .length} Students
-                </Badge>
+                <div>
+                  <CardTitle>Teacher Class Membership</CardTitle>
+                  <CardDescription>Manage your teaching classes</CardDescription>
+                </div>
+                <Button onClick={() => setCreateClassDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Class
+                </Button>
               </div>
-              <div className="space-y-2">
-                {studentClasses
-                  .filter(membership => membership.class_id === selectedClass?.id)
-                  .map(membership => (
-                    membership.members?.map(member => (
-                      <div
-                        key={member.student_id}
-                        className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                      >
-                        <div className="flex items-center space-x-3">
-                          <User className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {userClasses.length === 0 ? (
+                  <div className="text-center py-8">
+                    <School className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-sm text-muted-foreground">You are not currently teaching any classes</p>
+                    <Button
+                      variant="outline"
+                      className="mt-4"
+                      onClick={() => setCreateClassDialogOpen(true)}
+                    >
+                      Create Your First Class
+                    </Button>
+                  </div>
+                ) : (
+                  userClasses.map((classItem) => (
+                    <Card key={`teaching-class-${classItem.id}`}>
+                      <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-sm font-medium">
-                              {member.student.full_name || member.student.email}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              Joined {new Date(member.joined_at).toLocaleDateString()}
-                            </p>
+                            <h3 className="font-medium">{classItem.name}</h3>
+                            <div className="mt-2 flex items-center space-x-2">
+                              <Badge variant="secondary" className="text-xs">
+                                Join Code: {classItem.join_code}
+                              </Badge>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setSelectedClass(classItem)
+                                setShowJoinCodeDialogOpen(true)
+                                fetchSelectedClassMembers(classItem.id)
+                              }}
+                              title="Show Join Code"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setClassToDelete(classItem)
+                                setDeleteClassDialogOpen(true)
+                              }}
+                              title="Delete Class"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setMemberToDelete(member)
-                            setSelectedMembership(membership)
-                            setDeleteMemberDialogOpen(true)
-                          }}
-                          title="Remove Student"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))
-                  ))}
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
               </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+            </CardContent>
+          </Card>
+        )}
 
-      {/* Student Class Membership */}
-      {(userType === 'basic' || userType === 'revision' || userType === 'revisionAI' || isTeacher(userType)) && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Student Class Membership</CardTitle>
-                <CardDescription>View and join classes as a student</CardDescription>
+        {/* Show Join Code Dialog */}
+        {/* <Dialog open={showJoinCodeDialogOpen} onOpenChange={setShowJoinCodeDialogOpen}> */}
+        <Dialog open={showJoinCodeDialogOpen} onOpenChange={(open) => { setShowJoinCodeDialogOpen(open); if (!open) { setSelectedClass(null); setSelectedClassMembers(null); setAddStudentEmail("") } }}>
+          <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{selectedClass?.name}</DialogTitle>
+              <DialogDescription>
+                Class details and management
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-6">
+              {/* Join Code Display */}
+              <div className="bg-muted p-6 rounded-lg text-center">
+                <p className="text-sm text-muted-foreground mb-2">Class Join Code</p>
+                <div className="text-4xl font-mono font-bold tracking-wider mb-4">
+                  {selectedClass?.join_code}
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => selectedClass && handleCopyJoinCode(selectedClass.join_code)}
+                  className="w-full"
+                >
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy Code
+                </Button>
               </div>
-              <Button onClick={() => setJoinClassDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Join Class
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {studentClasses.length === 0 ? (
-                <div className="text-center py-8">
-                  <School className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-sm text-muted-foreground">You are not currently enrolled in any classes</p>
-                  <Button
-                    variant="outline"
-                    className="mt-4"
-                    onClick={() => setJoinClassDialogOpen(true)}
-                  >
-                    Join Your First Class
+              {/* Add Student by Email */}
+              <div className="space-y-2">
+                <h4 className="font-medium">Add Student by Email</h4>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="student@example.com"
+                    value={addStudentEmail}
+                    onChange={(e) => setAddStudentEmail(e.target.value)}
+                    disabled={isAddingStudent}
+                  />
+                  <Button onClick={() => selectedClass && addStudentToClassByEmail(selectedClass.id, addStudentEmail)} disabled={isAddingStudent}>
+                    {isAddingStudent ? 'Adding…' : 'Add'}
                   </Button>
                 </div>
-              ) : (
-                studentClasses.map((membership) => (
-                  <Card key={`enrolled-class-${membership.class_id}-${membership.student_id}`}>
-                    <CardContent className="pt-6">
-                      <div className="flex items-center justify-between">
+              </div>
+
+              {/* Bulk Add via CSV */}
+              <div className="space-y-2">
+                <h4 className="font-medium">Bulk Add via CSV</h4>
+                <p className="text-xs text-muted-foreground">Upload a CSV file containing a list of email addresses (header optional).</p>
+                <Input
+                  type="file"
+                  accept=".csv"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0]
+                    if (!file || !selectedClass) return
+                    const text = await file.text()
+                    bulkAddStudentsFromCSV(selectedClass.id, text)
+                    // reset the input so the same file can be selected again if needed
+                    e.currentTarget.value = ''
+                  }}
+                  disabled={isBulkAdding}
+                />
+                <Button onClick={() => selectedClass && bulkAddStudentsFromCSV(selectedClass.id, addStudentEmail)} className="hidden" />
+                <div className="pt-2">
+                  <Button variant="outline" onClick={handleDownloadCSVTemplate}>
+                    Download CSV Template
+                  </Button>
+                </div>
+              </div>
+
+
+              {/* Class Members */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium">Class Members</h4>
+                  <Badge variant="secondary">
+                    {(selectedClassMembers || []).length} Students
+                  </Badge>
+                </div>
+                <div className="space-y-2">
+                  {(selectedClassMembers || []).map(member => (
+                    <div
+                      key={member.student_id}
+                      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <User className="h-4 w-4 text-muted-foreground" />
                         <div>
-                          <h3 className="font-medium">{membership.class.name}</h3>
-                          <div className="mt-2 flex items-center space-x-2">
-                            <Badge variant="secondary" className="text-xs">
-                              Joined {new Date(membership.joined_at).toLocaleDateString()}
-                            </Badge>
-                          </div>
+                          <p className="text-sm font-medium">
+                            {member.student.email}
+                          </p>
+                          {member.student.full_name && member.student.full_name.trim().length > 0 && (
+                            <p className="text-xs text-muted-foreground">
+                              {member.student.full_name}
+                            </p>
+                          )}
+                          <p className="text-xs text-muted-foreground">
+                            Joined {new Date(member.joined_at).toLocaleDateString()}
+                          </p>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              setSelectedMembership(membership)
-                              setViewClassDialogOpen(true)
-                            }}
-                            title="View Class Details"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          {(userType === 'basic' || userType === 'revision' || userType === 'revisionAI') && (
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setMemberToDelete(member)
+                          setDeleteMemberDialogOpen(true)
+                        }}
+                        title="Remove Student"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Student Class Membership */}
+        {(userType === 'basic' || userType === 'revision' || userType === 'revisionAI' || isTeacher(userType)) && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Student Class Membership</CardTitle>
+                  <CardDescription>View and join classes as a student</CardDescription>
+                </div>
+                <Button onClick={() => setJoinClassDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Join Class
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {studentClasses.length === 0 ? (
+                  <div className="text-center py-8">
+                    <School className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-sm text-muted-foreground">You are not currently enrolled in any classes</p>
+                    <Button
+                      variant="outline"
+                      className="mt-4"
+                      onClick={() => setJoinClassDialogOpen(true)}
+                    >
+                      Join Your First Class
+                    </Button>
+                  </div>
+                ) : (
+                  studentClasses.map((membership) => (
+                    <Card key={`enrolled-class-${membership.class_id}-${membership.student_id}`}>
+                      <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="font-medium">{membership.class.name}</h3>
+                            <div className="mt-2 flex items-center space-x-2">
+                              <Badge variant="secondary" className="text-xs">
+                                Joined {new Date(membership.joined_at).toLocaleDateString()}
+                              </Badge>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
                             <Button
                               variant="ghost"
                               size="icon"
                               onClick={() => {
                                 setSelectedMembership(membership)
-                                setLeaveClassDialogOpen(true)
+                                setViewClassDialogOpen(true)
                               }}
-                              title="Leave Class"
+                              title="View Class Details"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Eye className="h-4 w-4" />
                             </Button>
-                          )}
+                            {(userType === 'basic' || userType === 'revision' || userType === 'revisionAI') && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  setSelectedMembership(membership)
+                                  setLeaveClassDialogOpen(true)
+                                }}
+                                title="Leave Class"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Add Course Dialog */}
+        <Dialog open={addCourseDialogOpen} onOpenChange={setAddCourseDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Course</DialogTitle>
+              <DialogDescription>
+                Select a course to add to your profile
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              {availableCourses
+                .filter(course => !userCourses.includes(course.slug))
+                .map(course => (
+                  <Card
+                    key={`available-course-${course.slug}`}
+                    className={`cursor-pointer hover:bg-muted/50 ${isAddingCourse ? 'opacity-50 pointer-events-none' : ''}`}
+                    onClick={() => handleAddCourse(course.slug)}
+                  >
+                    <CardContent className="pt-6">
+                      <div className="flex items-center space-x-4">
+                        {course.icon === 'book' && <Book className="h-6 w-6 text-muted-foreground" />}
+                        {course.icon === 'library' && <Library className="h-6 w-6 text-muted-foreground" />}
+                        {course.icon === 'bookmarked' && <BookMarked className="h-6 w-6 text-muted-foreground" />}
+                        <div>
+                          <h3 className="font-medium">{course.name}</h3>
+                          <p className="text-sm text-muted-foreground">{course.description}</p>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
-                ))
+                ))}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Course Dialog */}
+        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Course</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to remove this course? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="confirmation">Type &quot;delete&quot; to confirm</Label>
+                <Input
+                  id="confirmation"
+                  value={deleteConfirmation}
+                  onChange={(e) => setDeleteConfirmation(e.target.value)}
+                  placeholder="delete"
+                />
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteCourse}
+                  disabled={deleteConfirmation !== "delete" || isDeleting}
+                >
+                  {isDeleting ? "Deleting..." : "Delete Course"}
+                </Button>
+              </DialogFooter>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Create Class Dialog */}
+        <Dialog open={createClassDialogOpen} onOpenChange={setCreateClassDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create New Class</DialogTitle>
+              <DialogDescription>
+                Create a new class and get a join code for your students
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="className">Class Name</Label>
+                <Input
+                  id="className"
+                  value={newClassName}
+                  onChange={(e) => setNewClassName(e.target.value)}
+                  placeholder="Enter class name"
+                />
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setCreateClassDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleCreateClass}
+                  disabled={isCreatingClass || !newClassName.trim()}
+                >
+                  {isCreatingClass ? 'Creating...' : 'Create Class'}
+                </Button>
+              </DialogFooter>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Class Dialog */}
+        <Dialog open={deleteClassDialogOpen} onOpenChange={setDeleteClassDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Class</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this class? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="deleteConfirmation">Type &quot;delete&quot; to confirm</Label>
+                <Input
+                  id="deleteConfirmation"
+                  value={deleteClassConfirmation}
+                  onChange={(e) => setDeleteClassConfirmation(e.target.value)}
+                  placeholder="delete"
+                />
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDeleteClassDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteClass}
+                  disabled={deleteClassConfirmation !== "delete" || isDeletingClass}
+                >
+                  {isDeletingClass ? "Deleting..." : "Delete Class"}
+                </Button>
+              </DialogFooter>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Join Class Dialog */}
+        <Dialog open={joinClassDialogOpen} onOpenChange={setJoinClassDialogOpen}>
+          <DialogContent className="max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Join Class</DialogTitle>
+              <DialogDescription>
+                Enter the join code provided by your teacher
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="joinCode">Join Code</Label>
+                <Input
+                  id="joinCode"
+                  value={joinCode}
+                  onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                  placeholder="Enter join code"
+                  className="uppercase"
+                />
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setJoinClassDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleJoinClass}
+                  disabled={isJoiningClass || !joinCode.trim()}
+                >
+                  {isJoiningClass ? 'Joining...' : 'Join Class'}
+                </Button>
+              </DialogFooter>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* View Class Dialog */}
+        <Dialog open={viewClassDialogOpen} onOpenChange={setViewClassDialogOpen}>
+          <DialogContent className="max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Class Details</DialogTitle>
+              <DialogDescription>
+                Information about the class
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              {selectedMembership && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <h3 className="font-medium">Class Information</h3>
+                    <p className="text-sm text-muted-foreground">
+                      <span className="font-medium">Name:</span> {selectedMembership.class.name}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      <span className="font-medium">Teacher:</span> {selectedMembership.class.teacher?.full_name || selectedMembership.class.teacher?.email || 'Unknown'}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      <span className="font-medium">Joined:</span> {new Date(selectedMembership.joined_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
               )}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </DialogContent>
+        </Dialog>
 
-      {/* Add Course Dialog */}
-      <Dialog open={addCourseDialogOpen} onOpenChange={setAddCourseDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add Course</DialogTitle>
-            <DialogDescription>
-              Select a course to add to your profile
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            {availableCourses
-              .filter(course => !userCourses.includes(course.slug))
-              .map(course => (
-                <Card
-                  key={`available-course-${course.slug}`}
-                  className={`cursor-pointer hover:bg-muted/50 ${isAddingCourse ? 'opacity-50 pointer-events-none' : ''}`}
-                  onClick={() => handleAddCourse(course.slug)}
-                >
-                  <CardContent className="pt-6">
-                    <div className="flex items-center space-x-4">
-                      {course.icon === 'book' && <Book className="h-6 w-6 text-muted-foreground" />}
-                      {course.icon === 'library' && <Library className="h-6 w-6 text-muted-foreground" />}
-                      {course.icon === 'bookmarked' && <BookMarked className="h-6 w-6 text-muted-foreground" />}
-                      <div>
-                        <h3 className="font-medium">{course.name}</h3>
-                        <p className="text-sm text-muted-foreground">{course.description}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Course Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Course</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to remove this course? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="confirmation">Type &quot;delete&quot; to confirm</Label>
-              <Input
-                id="confirmation"
-                value={deleteConfirmation}
-                onChange={(e) => setDeleteConfirmation(e.target.value)}
-                placeholder="delete"
-              />
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleDeleteCourse}
-                disabled={deleteConfirmation !== "delete" || isDeleting}
-              >
-                {isDeleting ? "Deleting..." : "Delete Course"}
-              </Button>
-            </DialogFooter>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Create Class Dialog */}
-      <Dialog open={createClassDialogOpen} onOpenChange={setCreateClassDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create New Class</DialogTitle>
-            <DialogDescription>
-              Create a new class and get a join code for your students
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="className">Class Name</Label>
-              <Input
-                id="className"
-                value={newClassName}
-                onChange={(e) => setNewClassName(e.target.value)}
-                placeholder="Enter class name"
-              />
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setCreateClassDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                onClick={handleCreateClass}
-                disabled={isCreatingClass || !newClassName.trim()}
-              >
-                {isCreatingClass ? 'Creating...' : 'Create Class'}
-              </Button>
-            </DialogFooter>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Class Dialog */}
-      <Dialog open={deleteClassDialogOpen} onOpenChange={setDeleteClassDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Class</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this class? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="deleteConfirmation">Type &quot;delete&quot; to confirm</Label>
-              <Input
-                id="deleteConfirmation"
-                value={deleteClassConfirmation}
-                onChange={(e) => setDeleteClassConfirmation(e.target.value)}
-                placeholder="delete"
-              />
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setDeleteClassDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleDeleteClass}
-                disabled={deleteClassConfirmation !== "delete" || isDeletingClass}
-              >
-                {isDeletingClass ? "Deleting..." : "Delete Class"}
-              </Button>
-            </DialogFooter>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Join Class Dialog */}
-      <Dialog open={joinClassDialogOpen} onOpenChange={setJoinClassDialogOpen}>
-        <DialogContent className="max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Join Class</DialogTitle>
-            <DialogDescription>
-              Enter the join code provided by your teacher
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="joinCode">Join Code</Label>
-              <Input
-                id="joinCode"
-                value={joinCode}
-                onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                placeholder="Enter join code"
-                className="uppercase"
-              />
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setJoinClassDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                onClick={handleJoinClass}
-                disabled={isJoiningClass || !joinCode.trim()}
-              >
-                {isJoiningClass ? 'Joining...' : 'Join Class'}
-              </Button>
-            </DialogFooter>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* View Class Dialog */}
-      <Dialog open={viewClassDialogOpen} onOpenChange={setViewClassDialogOpen}>
-        <DialogContent className="max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Class Details</DialogTitle>
-            <DialogDescription>
-              Information about the class
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            {selectedMembership && (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <h3 className="font-medium">Class Information</h3>
-                  <p className="text-sm text-muted-foreground">
-                    <span className="font-medium">Name:</span> {selectedMembership.class.name}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    <span className="font-medium">Teacher:</span> {selectedMembership.class.teacher?.full_name || selectedMembership.class.teacher?.email || 'Unknown'}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    <span className="font-medium">Joined:</span> {new Date(selectedMembership.joined_at).toLocaleDateString()}
-                  </p>
-                </div>
+        {/* Leave Class Dialog */}
+        <Dialog open={leaveClassDialogOpen} onOpenChange={setLeaveClassDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Leave Class</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to leave this class? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="leaveConfirmation">Type &quot;delete&quot; to confirm</Label>
+                <Input
+                  id="leaveConfirmation"
+                  value={leaveClassConfirmation}
+                  onChange={(e) => setLeaveClassConfirmation(e.target.value)}
+                  placeholder="delete"
+                />
               </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Leave Class Dialog */}
-      <Dialog open={leaveClassDialogOpen} onOpenChange={setLeaveClassDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Leave Class</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to leave this class? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="leaveConfirmation">Type &quot;delete&quot; to confirm</Label>
-              <Input
-                id="leaveConfirmation"
-                value={leaveClassConfirmation}
-                onChange={(e) => setLeaveClassConfirmation(e.target.value)}
-                placeholder="delete"
-              />
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setLeaveClassDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleLeaveClass}
+                  disabled={leaveClassConfirmation !== "delete" || isLeavingClass}
+                >
+                  {isLeavingClass ? "Leaving..." : "Leave Class"}
+                </Button>
+              </DialogFooter>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setLeaveClassDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleLeaveClass}
-                disabled={leaveClassConfirmation !== "delete" || isLeavingClass}
-              >
-                {isLeavingClass ? "Leaving..." : "Leave Class"}
-              </Button>
-            </DialogFooter>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
 
-      {/* Delete Member Dialog */}
-      <Dialog open={deleteMemberDialogOpen} onOpenChange={setDeleteMemberDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Remove Student</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to remove this student from the class? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setDeleteMemberDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleDeleteClassMember}
-                disabled={isDeletingMember}
-              >
-                {isDeletingMember ? "Removing..." : "Remove Student"}
-              </Button>
-            </DialogFooter>
-          </div>
-        </DialogContent>
-      </Dialog>
+        {/* Delete Member Dialog */}
+        <Dialog open={deleteMemberDialogOpen} onOpenChange={setDeleteMemberDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Remove Student</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to remove this student from the class? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDeleteMemberDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteClassMember}
+                  disabled={isDeletingMember}
+                >
+                  {isDeletingMember ? "Removing..." : "Remove Student"}
+                </Button>
+              </DialogFooter>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   )
