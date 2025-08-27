@@ -107,7 +107,7 @@ export function CTABanner({ variant, userEmail }: CTABannerProps) {
             </p>
           </div>
           <div className="mt-3 sm:mt-0">
-            <Link href="/coming-soon">
+            <Link href="/settings">
               <Button size="sm" className="bg-amber-600 hover:bg-amber-700">
                 Upgrade
               </Button>
