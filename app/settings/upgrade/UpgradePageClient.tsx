@@ -11,8 +11,7 @@ import type { UserType } from "@/lib/access"
 // UI Components
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { BookOpen, BookOpenCheck, BookOpenText, School, ArrowLeft } from "lucide-react"
-import { Skeleton } from "@/components/ui/skeleton"
+import { BookOpen, BookOpenCheck, BookOpenText, School } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 
@@ -22,7 +21,6 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY 
 export default function UpgradePageClient() {
   const [userType, setUserType] = useState<UserType | null>(null)
   const [userEmail, setUserEmail] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
   const [isLoadingCheckout, setIsLoadingCheckout] = useState(false)
   const [plans, setPlans] = useState<Plan[]>([])
 
@@ -178,48 +176,16 @@ export default function UpgradePageClient() {
 
     fetchUser()
     fetchPlans()
-    setIsLoading(false)
   }, [supabase, searchParams, router])
 
   const studentPlans = plans.filter((plan) => plan.plan_type === "student")
   const teacherPlans = plans.filter((plan) => plan.plan_type === "teacher")
 
-  if (isLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center mb-8">
-          <Button variant="ghost" onClick={() => router.back()} className="mr-4">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <h1 className="text-2xl font-bold">Upgrade Plans</h1>
-        </div>
-        <div className="grid gap-6">
-          <Skeleton className="h-[400px]" />
-          <Skeleton className="h-[400px]" />
-        </div>
-      </div>
-    )
-  }
+  
 
   return (
     <div className="container mx-auto px-4 py-8">
-      
-      {/* Current Plan Info */}
-      {/* <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Current Plan</CardTitle>
-          <CardDescription>Your current subscription status</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center space-x-4">
-            <div>
-              <h3 className="font-medium">Plan</h3>
-              <p className="text-sm text-muted-foreground capitalize">{userType || "Basic"}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card> */}
+      <div className="max-w-4xl mx-auto">
 
       {/* Student Plans */}
       {studentPlans.length > 0 && (
@@ -337,6 +303,7 @@ export default function UpgradePageClient() {
           </CardContent>
         </Card>
       )}
+      </div>
     </div>
   )
 }

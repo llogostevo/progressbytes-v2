@@ -108,12 +108,14 @@ export default function SettingsPageCLient() {
 function SettingsSkeleton() {
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center mb-8">
-        <h1 className="text-2xl font-bold">Settings</h1>
-      </div>
-      <div className="grid gap-6">
-        <Skeleton className="h-[200px]" />
-        <Skeleton className="h-[400px]" />
+      <div className="max-w-4xl mx-auto">
+        <div className="flex items-center mb-8">
+          <h1 className="text-2xl font-bold">Settings</h1>
+        </div>
+        <div className="grid gap-6">
+          <Skeleton className="h-[200px]" />
+          <Skeleton className="h-[400px]" />
+        </div>
       </div>
     </div>
   )
@@ -772,9 +774,10 @@ function SettingsPageContent() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center mb-8">
-        <h1 className="text-2xl font-bold">Settings</h1>
-      </div>
+      <div className="max-w-4xl mx-auto">
+        <div className="flex items-center mb-8">
+          <h1 className="text-2xl font-bold">Settings</h1>
+        </div>
 
       {/* User Details */}
       <Card className="mb-8">
@@ -1478,6 +1481,7 @@ function SettingsPageContent() {
           </div>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   )
 }
