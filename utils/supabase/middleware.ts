@@ -44,11 +44,11 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith('/login') &&
     !request.nextUrl.pathname.startsWith('/auth') &&
     request.nextUrl.pathname !== '/coming-soon' &&
-    !request.nextUrl.pathname.startsWith('/questions')
+    !request.nextUrl.pathname.startsWith('/questions') // allow access to questions page as first question is free
   ) {
-    // no user, potentially respond by redirecting the user to the login page
+    // no user, respond by redirecting the user to the login page
     const url = request.nextUrl.clone()
-    url.pathname = '/'
+    url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
