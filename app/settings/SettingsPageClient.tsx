@@ -753,7 +753,7 @@ function SettingsPageContent() {
     fetchCourses()
     // fetchPlans();
     setIsLoading(false)
-  }, [supabase, searchParams, router])
+  }, [supabase, searchParams, router, ])
 
   // const studentPlans = plans.filter(plan => plan.plan_type === 'student');
   // const teacherPlans = plans.filter(plan => plan.plan_type === 'teacher');
