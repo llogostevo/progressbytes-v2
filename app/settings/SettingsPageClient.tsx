@@ -5,17 +5,17 @@ import { createClient } from "@/utils/supabase/client"
 import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { redirect } from "next/navigation"
-import { loadStripe } from '@stripe/stripe-js'
+// import { loadStripe } from '@stripe/stripe-js'
 
 
-import type { Plan } from '@/lib/types';
+// import type { Plan } from '@/lib/types';
 import { UserType } from "@/lib/access";
 
 
 // UI Components
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Book, GraduationCap, School, BookMarked, Library, BookmarkPlus, User, CreditCard, Plus, Copy, Eye, Trash2, BookOpen, BookOpenCheck, BookOpenText } from "lucide-react"
+import { Book, GraduationCap, School, BookMarked, Library, BookmarkPlus, User, CreditCard, Plus, Copy, Eye, Trash2 } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -23,9 +23,10 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { isTeacher } from "@/lib/access"
+import UpgradePageClient from "./upgrade/UpgradePageClient"
 
 // Initialize Stripe
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
+// const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
 
 interface Course {
   name: string
@@ -131,7 +132,7 @@ function SettingsPageContent() {
   const [availableCourses, setAvailableCourses] = useState<Course[]>([])
   const [isAddingCourse, setIsAddingCourse] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const [isLoadingCheckout, setIsLoadingCheckout] = useState(false)
+  // const [isLoadingCheckout, setIsLoadingCheckout] = useState(false)
   const [createClassDialogOpen, setCreateClassDialogOpen] = useState(false)
   const [newClassName, setNewClassName] = useState("")
   const [isCreatingClass, setIsCreatingClass] = useState(false)
@@ -154,7 +155,7 @@ function SettingsPageContent() {
   const [deleteMemberDialogOpen, setDeleteMemberDialogOpen] = useState(false)
   const [memberToDelete, setMemberToDelete] = useState<SupabaseMember | null>(null)
   const [isDeletingMember, setIsDeletingMember] = useState(false)
-  const [plans, setPlans] = useState<Plan[]>([]);
+  // const [plans, setPlans] = useState<Plan[]>([]);
 
   const supabase = createClient()
   const searchParams = useSearchParams()
@@ -279,113 +280,113 @@ function SettingsPageContent() {
   }
 
 
-  const handlePlanSelect = async (plan: Plan) => {
-    if (!userEmail || plan.slug === userType) return;
+  // const handlePlanSelect = async (plan: Plan) => {
+  //   if (!userEmail || plan.slug === userType) return;
 
-    setIsLoadingCheckout(true);
-    try {
-      // If it's a free plan
-      if (plan.price === 0) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error('User not found');
+  //   setIsLoadingCheckout(true);
+  //   try {
+  //     // If it's a free plan
+  //     if (plan.price === 0) {
+  //       const { data: { user } } = await supabase.auth.getUser();
+  //       if (!user) throw new Error('User not found');
 
-        // Check if user currently has a paid plan
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('user_type, stripe_customer_id')
-          .eq('userid', user.id)
-          .single();
+  //       // Check if user currently has a paid plan
+  //       const { data: profile, error } = await supabase
+  //         .from('profiles')
+  //         .select('user_type, stripe_customer_id')
+  //         .eq('userid', user.id)
+  //         .single();
 
-        if (error || !profile) throw new Error('Could not fetch user profile');
+  //       if (error || !profile) throw new Error('Could not fetch user profile');
 
-        // If they're on a paid plan, just update to free plan
-        // The webhook will handle any subscription cancellation when Stripe sends events
-        // TODO: need to code this from the DB rather than directly in the code here
-        // TODO: cache the plan data
-        if ((profile.user_type !== 'basic' && profile.user_type !== 'teacherBasic') && profile.stripe_customer_id) {
-          // Cancel the subscription via API
-          const cancelResponse = await fetch('/api/cancel-subscription', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          });
+  //       // If they're on a paid plan, just update to free plan
+  //       // The webhook will handle any subscription cancellation when Stripe sends events
+  //       // TODO: need to code this from the DB rather than directly in the code here
+  //       // TODO: cache the plan data
+  //       if ((profile.user_type !== 'basic' && profile.user_type !== 'teacherBasic') && profile.stripe_customer_id) {
+  //         // Cancel the subscription via API
+  //         const cancelResponse = await fetch('/api/cancel-subscription', {
+  //           method: 'POST',
+  //           headers: {
+  //             'Content-Type': 'application/json',
+  //           },
+  //         });
 
-          if (!cancelResponse.ok) {
-            const cancelData = await cancelResponse.json();
-            throw new Error(cancelData.error || 'Failed to cancel subscription');
-          }
+  //         if (!cancelResponse.ok) {
+  //           const cancelData = await cancelResponse.json();
+  //           throw new Error(cancelData.error || 'Failed to cancel subscription');
+  //         }
 
-          toast.info('Switching to free plan. Your subscription will be cancelled automatically.');
-        }
+  //         toast.info('Switching to free plan. Your subscription will be cancelled automatically.');
+  //       }
 
-        // Update to free plan
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({
-            user_type: plan.slug,
-            plan_end_date: null,
-          })
-          .eq('userid', user.id);
+  //       // Update to free plan
+  //       const { error: updateError } = await supabase
+  //         .from('profiles')
+  //         .update({
+  //           user_type: plan.slug,
+  //           plan_end_date: null,
+  //         })
+  //         .eq('userid', user.id);
 
-        if (updateError) throw updateError;
+  //       if (updateError) throw updateError;
 
-        setUserType(plan.slug);
-        toast.success(`Successfully switched to ${plan.name}`);
-        return;
-      }
+  //       setUserType(plan.slug);
+  //       toast.success(`Successfully switched to ${plan.name}`);
+  //       return;
+  //     }
 
-      // For paid plans — handle subscription creation/update
-      const response = await fetch('/api/create-checkout-session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          priceId: plan.stripe_price_id,
-        }),
-      });
+  //     // For paid plans — handle subscription creation/update
+  //     const response = await fetch('/api/create-checkout-session', {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify({
+  //         priceId: plan.stripe_price_id,
+  //       }),
+  //     });
 
-      const data = await response.json();
+  //     const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to create checkout session');
-      }
+  //     if (!response.ok) {
+  //       throw new Error(data.error || 'Failed to create checkout session');
+  //     }
 
-      // Check if this was a direct subscription update (no checkout needed)
-      if (data.success) {
-        toast.success('Plan updated successfully!');
-        setUserType(plan.slug);
-        return;
-      }
+  //     // Check if this was a direct subscription update (no checkout needed)
+  //     if (data.success) {
+  //       toast.success('Plan updated successfully!');
+  //       setUserType(plan.slug);
+  //       return;
+  //     }
 
-      // Otherwise, redirect to Stripe checkout
-      if (!data.sessionId) {
-        throw new Error('No session ID returned');
-      }
+  //     // Otherwise, redirect to Stripe checkout
+  //     if (!data.sessionId) {
+  //       throw new Error('No session ID returned');
+  //     }
 
-      const stripe = await stripePromise;
-      if (!stripe) {
-        throw new Error('Stripe failed to load');
-      }
+  //     const stripe = await stripePromise;
+  //     if (!stripe) {
+  //       throw new Error('Stripe failed to load');
+  //     }
 
-      const { error: stripeError } = await stripe.redirectToCheckout({
-        sessionId: data.sessionId,
-      });
+  //     const { error: stripeError } = await stripe.redirectToCheckout({
+  //       sessionId: data.sessionId,
+  //     });
 
-      if (stripeError) throw stripeError;
+  //     if (stripeError) throw stripeError;
 
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : 'An error occurred during checkout, please contact support'
-      );
-    } finally {
-      setIsLoadingCheckout(false);
-    }
-  };
+  //   } catch (error) {
+  //     console.error('Error:', error);
+  //     toast.error(
+  //       error instanceof Error
+  //         ? error.message
+  //         : 'An error occurred during checkout, please contact support'
+  //     );
+  //   } finally {
+  //     setIsLoadingCheckout(false);
+  //   }
+  // };
 
   const generateJoinCode = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -738,22 +739,22 @@ function SettingsPageContent() {
       }
     }
 
-    const fetchPlans = async () => {
-      const { data, error } = await supabase
-        .from('plans')
-        .select('*')
-        .order('price', { ascending: true });
-      if (!error) setPlans(data || []);
-    };
+    // const fetchPlans = async () => {
+    //   const { data, error } = await supabase
+    //     .from('plans')
+    //     .select('*')
+    //     .order('price', { ascending: true });
+    //   if (!error) setPlans(data || []);
+    // };
 
     fetchUser()
     fetchCourses()
-    fetchPlans();
+    // fetchPlans();
     setIsLoading(false)
   }, [supabase, searchParams, router])
 
-  const studentPlans = plans.filter(plan => plan.plan_type === 'student');
-  const teacherPlans = plans.filter(plan => plan.plan_type === 'teacher');
+  // const studentPlans = plans.filter(plan => plan.plan_type === 'student');
+  // const teacherPlans = plans.filter(plan => plan.plan_type === 'teacher');
 
   if (isLoading) {
     return (
@@ -809,7 +810,7 @@ function SettingsPageContent() {
       </Card>
 
       {/* Subscription Plans */}
-      {studentPlans.length > 0 && (
+      {/* {studentPlans.length > 0 && (
         <Card className="mb-8">
           <CardHeader>
             <CardTitle>Student Plans</CardTitle>
@@ -922,7 +923,9 @@ function SettingsPageContent() {
             </div>
           </CardContent>
         </Card>
-      )}
+      )} */}
+
+      <UpgradePageClient />
 
       {/* Course Management */}
       <Card className="mb-8">
