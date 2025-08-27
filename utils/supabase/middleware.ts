@@ -44,7 +44,9 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith('/login') &&
     !request.nextUrl.pathname.startsWith('/auth') &&
     request.nextUrl.pathname !== '/coming-soon' &&
-    !request.nextUrl.pathname.startsWith('/questions') // allow access to questions page as first question is free
+    !request.nextUrl.pathname.startsWith('/questions')  && // allow access to questions page as first question is free
+    !request.nextUrl.pathname.startsWith('/privacy-policy') &&
+    request.nextUrl.pathname !== '/terms-of-service'
   ) {
     // no user, respond by redirecting the user to the login page
     const url = request.nextUrl.clone()
