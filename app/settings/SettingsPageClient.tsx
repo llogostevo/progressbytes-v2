@@ -1336,7 +1336,7 @@ function SettingsPageContent() {
         {/* Show Join Code Dialog */}
         {/* <Dialog open={showJoinCodeDialogOpen} onOpenChange={setShowJoinCodeDialogOpen}> */}
         <Dialog open={showJoinCodeDialogOpen} onOpenChange={(open) => { setShowJoinCodeDialogOpen(open); if (!open) { setSelectedClass(null); setSelectedClassMembers(null); setAddStudentEmail("") } }}>
-          <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{selectedClass?.name}</DialogTitle>
               <DialogDescription>
@@ -1344,24 +1344,79 @@ function SettingsPageContent() {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-6">
-              {/* Join Code Display */}
-              <div className="bg-muted p-6 rounded-lg text-center">
-                <p className="text-sm text-muted-foreground mb-2">Class Join Code</p>
-                <div className="text-4xl font-mono font-bold tracking-wider mb-4">
-                  {selectedClass?.join_code}
+              {/* Class Members - Moved to top */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium">Class Members</h4>
+                  <Badge variant={(selectedClassMembers || []).length >= maxStudentsPerClass ? "destructive" : "secondary"}>
+                    {(selectedClassMembers || []).length} / {maxStudentsPerClass} Students
+                  </Badge>
                 </div>
-                <Button
-                  variant="outline"
-                  onClick={() => selectedClass && handleCopyJoinCode(selectedClass.join_code)}
-                  className="w-full"
-                >
-                  <Copy className="h-4 w-4 mr-2" />
-                  Copy Code
-                </Button>
+                <div className="space-y-2">
+                  {(selectedClassMembers || []).map(member => (
+                    <div
+                      key={member.student_id}
+                      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm font-medium">
+                            {member.student.email}
+                          </p>
+                          {member.student.full_name && member.student.full_name.trim().length > 0 && (
+                            <p className="text-xs text-muted-foreground">
+                              {member.student.full_name}
+                            </p>
+                          )}
+                          <p className="text-xs text-muted-foreground">
+                            Joined {new Date(member.joined_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setMemberToDelete(member)
+                          setDeleteMemberDialogOpen(true)
+                        }}
+                        title="Remove Student"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
               </div>
+
+              {/* Join Code Display */}
+              <div className="space-y-4 p-4 border border-dashed border-muted-foreground/25 rounded-lg bg-muted/20">
+                <div className="flex items-center space-x-2">
+                  <Copy className="h-5 w-5 text-muted-foreground" />
+                  <h4 className="font-medium">Class Join Code</h4>
+                </div>
+                <div className="text-center">
+                  <div className="text-4xl font-mono font-bold tracking-wider mb-4">
+                    {selectedClass?.join_code}
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => selectedClass && handleCopyJoinCode(selectedClass.join_code)}
+                    className="w-full"
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy Code
+                  </Button>
+                </div>
+              </div>
+
               {/* Add Student by Email */}
-              <div className="space-y-2">
-                <h4 className="font-medium">Add Student by Email</h4>
+              <div className="space-y-4 p-4 border border-dashed border-muted-foreground/25 rounded-lg bg-muted/20">
+                <div className="flex items-center space-x-2">
+                  <User className="h-5 w-5 text-muted-foreground" />
+                  <h4 className="font-medium">Add Student by Email</h4>
+                </div>
                 {(selectedClassMembers || []).length < maxStudentsPerClass ? (
                   <div className="flex gap-2">
                     <Input
@@ -1375,8 +1430,8 @@ function SettingsPageContent() {
                     </Button>
                   </div>
                 ) : (
-                  <div className="text-center py-4 border border-muted rounded-lg bg-muted/20">
-                    <p className="text-sm text-muted-foreground mb-2">You have reached your limit of students for this class</p>
+                  <div className="text-center py-4 border border-orange-200 rounded-lg bg-orange-50">
+                    <p className="text-sm text-orange-700 mb-2">You have reached your limit of students for this class</p>
                     <Button
                       variant="outline"
                       size="sm"
@@ -1458,53 +1513,6 @@ function SettingsPageContent() {
                     </Button>
                     <span className="text-xs text-muted-foreground">Get a sample CSV format</span>
                   </div>
-                </div>
-              </div>
-
-
-              {/* Class Members */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium">Class Members</h4>
-                  <Badge variant={(selectedClassMembers || []).length >= maxStudentsPerClass ? "destructive" : "secondary"}>
-                    {(selectedClassMembers || []).length} / {maxStudentsPerClass} Students
-                  </Badge>
-                </div>
-                <div className="space-y-2">
-                  {(selectedClassMembers || []).map(member => (
-                    <div
-                      key={member.student_id}
-                      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="text-sm font-medium">
-                            {member.student.email}
-                          </p>
-                          {member.student.full_name && member.student.full_name.trim().length > 0 && (
-                            <p className="text-xs text-muted-foreground">
-                              {member.student.full_name}
-                            </p>
-                          )}
-                          <p className="text-xs text-muted-foreground">
-                            Joined {new Date(member.joined_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setMemberToDelete(member)
-                          setDeleteMemberDialogOpen(true)
-                        }}
-                        title="Remove Student"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
                 </div>
               </div>
             </div>
@@ -1591,7 +1599,7 @@ function SettingsPageContent() {
 
         {/* Add Course Dialog */}
         <Dialog open={addCourseDialogOpen} onOpenChange={setAddCourseDialogOpen}>
-          <DialogContent>
+          <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Add Course</DialogTitle>
               <DialogDescription>
@@ -1661,7 +1669,7 @@ function SettingsPageContent() {
 
         {/* Create Class Dialog */}
         <Dialog open={createClassDialogOpen} onOpenChange={setCreateClassDialogOpen}>
-          <DialogContent>
+          <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Create New Class</DialogTitle>
               <DialogDescription>
@@ -1730,7 +1738,7 @@ function SettingsPageContent() {
 
         {/* Join Class Dialog */}
         <Dialog open={joinClassDialogOpen} onOpenChange={setJoinClassDialogOpen}>
-          <DialogContent className="max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Join Class</DialogTitle>
               <DialogDescription>
@@ -1765,7 +1773,7 @@ function SettingsPageContent() {
 
         {/* View Class Dialog */}
         <Dialog open={viewClassDialogOpen} onOpenChange={setViewClassDialogOpen}>
-          <DialogContent className="max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Class Details</DialogTitle>
               <DialogDescription>

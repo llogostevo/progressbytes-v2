@@ -105,7 +105,7 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     canSkipQuestions: true,
     canAccessAnalytics: true,
     maxClasses: 1,
-    maxStudentsPerClass: 10
+    maxStudentsPerClass: 30
   },
   teacherPremium: {
     canCreateClass: true,
