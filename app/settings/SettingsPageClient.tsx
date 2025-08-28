@@ -93,6 +93,22 @@ interface SupabaseMember {
   }
 }
 
+interface ClassMemberRow {
+  student_id: string
+  joined_at: string
+  class: {
+    id: string
+    teacher_id: string
+  }[]
+}
+
+interface ProfileRow {
+  userid: string
+  email: string
+  forename: string | null
+  lastname: string | null
+}
+
 
 
 
@@ -726,7 +742,7 @@ function SettingsPageContent() {
       }
 
       // Get all student IDs
-      const studentIds = (data || []).map((row: any) => row.student_id)
+      const studentIds = (data || []).map((row: ClassMemberRow) => row.student_id)
       if (!studentIds.length) {
         setSelectedClassMembers([])
         return
@@ -748,9 +764,9 @@ function SettingsPageContent() {
         setSelectedClassMembers([])
         return
       }
-      const profilesById = new Map<string, any>((profiles || []).map((p: any) => [p.userid, p]))
+      const profilesById = new Map<string, ProfileRow>((profiles || []).map((p: ProfileRow) => [p.userid, p]))
       // Normalize result
-      const membersOnly = (data || []).map((m: any) => {
+      const membersOnly = (data || []).map((m: ClassMemberRow) => {
         const profile = profilesById.get(m.student_id)
         console.log('profile', profile)
         const fullName = profile ? `${profile.forename ?? ''} ${profile.lastname ?? ''}`.trim() : ''
