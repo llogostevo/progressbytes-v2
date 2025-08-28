@@ -30,52 +30,59 @@ export default function UpgradePageClient() {
   const searchParams = useSearchParams()
 
   // Helper function to check if switching to a plan with fewer classes or students
-  const checkIfDowngrade = (currentPlan: UserType | null, newPlan: UserType): boolean => {
-    if (!currentPlan) return false
+  const checkIfDowngrade = (currentPlan: UserType | null, newPlan: UserType): { isDowngrade: boolean; type?: 'student' | 'teacher' } => {
+    if (!currentPlan) return { isDowngrade: false }
     
     const currentLimits = userAccessLimits[currentPlan]
     const newLimits = userAccessLimits[newPlan]
     
-    if (!currentLimits || !newLimits) return false
+    if (!currentLimits || !newLimits) return { isDowngrade: false }
     
     // Check if both plans are teacher plans (have class limits)
     if (currentLimits.maxClasses !== undefined && newLimits.maxClasses !== undefined) {
       // Check if new plan has fewer classes or fewer students per class
-      return newLimits.maxClasses < currentLimits.maxClasses || 
+      const isDowngrade = newLimits.maxClasses < currentLimits.maxClasses || 
              (newLimits.maxStudentsPerClass || 0) < (currentLimits.maxStudentsPerClass || 0)
+      return { isDowngrade, type: 'teacher' }
     }
     
     // Check if both plans are student plans (no class limits, but have question limits)
     if (currentLimits.maxClasses === undefined && newLimits.maxClasses === undefined) {
       // Check if new plan has fewer questions per day or per topic
-      return newLimits.maxQuestionsPerDay < currentLimits.maxQuestionsPerDay ||
+      const isDowngrade = newLimits.maxQuestionsPerDay < currentLimits.maxQuestionsPerDay ||
              newLimits.maxQuestionsPerTopic < currentLimits.maxQuestionsPerTopic
+      return { isDowngrade, type: 'student' }
     }
     
     // Check if switching from teacher to student plan (losing class management capabilities)
     if (currentLimits.maxClasses !== undefined && newLimits.maxClasses === undefined) {
-      return true
+      return { isDowngrade: true, type: 'teacher' }
     }
     
     // Check if switching from student to teacher plan (losing unlimited questions)
     if (currentLimits.maxClasses === undefined && newLimits.maxClasses !== undefined) {
       // Only show warning if the teacher plan has limited questions
-      return newLimits.maxQuestionsPerDay < currentLimits.maxQuestionsPerDay ||
+      const isDowngrade = newLimits.maxQuestionsPerDay < currentLimits.maxQuestionsPerDay ||
              newLimits.maxQuestionsPerTopic < currentLimits.maxQuestionsPerTopic
+      return { isDowngrade, type: 'student' }
     }
     
-    return false
+    return { isDowngrade: false }
   }
 
   const handlePlanSelect = async (plan: Plan) => {
     if (!userEmail || plan.slug === userType) return
 
-    // Check if this is a downgrade that reduces classes or students
-    const isDowngrade = checkIfDowngrade(userType, plan.slug)
+    // Check if this is a downgrade and get the type
+    const downgradeInfo = checkIfDowngrade(userType, plan.slug)
     
-    if (isDowngrade) {
+    if (downgradeInfo.isDowngrade) {
+      const message = downgradeInfo.type === 'student' 
+        ? "You're switching to a plan with fewer features. This may affect your current setup."
+        : "You're switching to a plan with fewer classes or students. This may affect your current setup."
+      
       toast.error("Plan Downgrade Warning", {
-        description: "You're switching to a plan with fewer classes or students. This may affect your current setup.",
+        description: message,
         action: {
           label: "Continue",
           onClick: () => processPlanChange(plan)
