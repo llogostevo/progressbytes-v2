@@ -646,7 +646,7 @@ function SettingsPageContent() {
       if (error) throw error
 
       setStudentClasses(prev => prev.filter(m =>
-        m.class_id !== selectedMembership.class_id || m.student_id !== user.id
+        !(m.class_id === selectedMembership.class_id && m.student_id === user.id)
       ))
       setLeaveClassDialogOpen(false)
       setSelectedMembership(null)
@@ -672,6 +672,9 @@ function SettingsPageContent() {
     if (memberToDelete && selectedClass) {
       setIsDeletingMember(true)
       try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) throw new Error('User not found')
+
         const { error } = await supabase
           .from('class_members')
           .delete()
@@ -681,6 +684,15 @@ function SettingsPageContent() {
         if (error) throw error
 
         setSelectedClassMembers(prev => (prev || []).filter(m => m.student_id !== memberToDelete.student_id))
+        
+        // If the current user is the one being removed, update their studentClasses state
+        // This ensures real-time updates when a teacher removes the current user from a class
+        if (memberToDelete.student_id === user.id) {
+          setStudentClasses(prev => prev.filter(m => 
+            !(m.class_id === selectedClass.id && m.student_id === user.id)
+          ))
+        }
+        
         setDeleteMemberDialogOpen(false)
         setMemberToDelete(null)
         toast.success('Student removed from class', { 
