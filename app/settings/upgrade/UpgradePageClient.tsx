@@ -52,7 +52,18 @@ export default function UpgradePageClient() {
              newLimits.maxQuestionsPerTopic < currentLimits.maxQuestionsPerTopic
     }
     
-    // If switching between different plan types, don't show warning
+    // Check if switching from teacher to student plan (losing class management capabilities)
+    if (currentLimits.maxClasses !== undefined && newLimits.maxClasses === undefined) {
+      return true
+    }
+    
+    // Check if switching from student to teacher plan (losing unlimited questions)
+    if (currentLimits.maxClasses === undefined && newLimits.maxClasses !== undefined) {
+      // Only show warning if the teacher plan has limited questions
+      return newLimits.maxQuestionsPerDay < currentLimits.maxQuestionsPerDay ||
+             newLimits.maxQuestionsPerTopic < currentLimits.maxQuestionsPerTopic
+    }
+    
     return false
   }
 
@@ -71,7 +82,9 @@ export default function UpgradePageClient() {
         },
         cancel: {
           label: "Cancel",
-          onClick: () => {}
+          onClick: () => {
+            toast.info("Your plan hasn't changed")
+          }
         },
         duration: Infinity
       })
