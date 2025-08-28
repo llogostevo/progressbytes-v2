@@ -120,8 +120,8 @@ interface StudentClassMember {
     teacher: {
       email: string
       full_name: string
-    }
-  }
+    }[] | null
+  }[]
 }
 
 type UserRole = 'regular' | 'admin'
@@ -758,12 +758,12 @@ export default function AnalyticsPage() {
         if (studentClassesError) {
           console.error('Error fetching student classes:', studentClassesError)
         } else {
-          const mappedClasses = (studentClasses || []).map((m: any) => ({
-            id: m.class.id,
-            name: m.class.name,
-            teacher_id: m.class.teacher_id,
-            created_at: m.class.created_at,
-            teacher: m.class.teacher
+          const mappedClasses = (studentClasses || []).map((m: StudentClassMember) => ({
+            id: m.class[0].id,
+            name: m.class[0].name,
+            teacher_id: m.class[0].teacher_id,
+            created_at: m.class[0].created_at,
+            teacher: m.class[0].teacher?.[0] || undefined
           }))
           setClasses(mappedClasses)
         }

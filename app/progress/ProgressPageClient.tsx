@@ -766,8 +766,8 @@ export default function ProgressPage() {
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null)
   const [students, setStudents] = useState<Array<{ userid: string; email: string; forename: string; lastname: string }>>([])
   const [classes, setClasses] = useState<Array<{ id: string; name: string }>>([])
-  const [selectedClass, setSelectedClass] = useState<string>("all")
-  const [classMembers, setClassMembers] = useState<Array<{ student_id: string; email: string; forename: string; lastname: string }>>([])
+  // const [selectedClass, setSelectedClass] = useState<string>("all")
+  // const [classMembers, setClassMembers] = useState<Array<{ student_id: string; email: string; forename: string; lastname: string }>>([])
 
   useEffect(() => {
     const getUser = async () => {
@@ -986,8 +986,15 @@ export default function ProgressPage() {
             .in("class_id", userClasses.map(c => c.id))
 
           if (allStudents) {
-            const uniqueStudents = allStudents.reduce((acc: Array<{ userid: string; email: string; forename: string; lastname: string }>, member) => {
-              const student = (member.students as any[])[0] as { userid: string; email: string; forename: string; lastname: string }
+            // Define the type for the database query result
+            type ClassMemberWithStudent = {
+              student_id: string
+              class_id: string
+              students: Array<{ userid: string; email: string; forename: string; lastname: string }>
+            }
+
+            const uniqueStudents = allStudents.reduce((acc: Array<{ userid: string; email: string; forename: string; lastname: string }>, member: ClassMemberWithStudent) => {
+              const student = member.students[0]
               if (!acc.find(s => s.userid === student.userid)) {
                 acc.push(student)
               }
@@ -995,15 +1002,15 @@ export default function ProgressPage() {
             }, [])
             
             setStudents(uniqueStudents)
-            setClassMembers(allStudents.map(member => {
-              const student = (member.students as any[])[0] as { userid: string; email: string; forename: string; lastname: string }
-              return {
-                student_id: member.student_id,
-                email: student.email,
-                forename: student.forename,
-                lastname: student.lastname
-              }
-            }))
+            // setClassMembers(allStudents.map((member: ClassMemberWithStudent) => {
+            //   const student = member.students[0]
+            //   return {
+            //     student_id: member.student_id,
+            //     email: student.email,
+            //     forename: student.forename,
+            //     lastname: student.lastname
+            //   }
+            // }))
           }
         }
 
