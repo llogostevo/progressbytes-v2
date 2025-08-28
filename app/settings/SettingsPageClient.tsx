@@ -1091,10 +1091,10 @@ function SettingsPageContent() {
           </CardContent>
         </Card>
 
-        
 
-        <UpgradePageClient />
-
+        <div id="plans">
+          <UpgradePageClient />
+        </div>
         {/* Course Management - removed for now until multiple courses are supported */}
         {/* <Card className="mb-8">
           <CardHeader>
@@ -1255,7 +1255,7 @@ function SettingsPageContent() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => router.push('/settings/upgrade')}
+                      onClick={() => router.push('/settings/#teacher-plans')}
                     >
                       Upgrade Plan
                     </Button>
@@ -1315,7 +1315,7 @@ function SettingsPageContent() {
                   <h4 className="font-medium">Bulk Add via CSV</h4>
                 </div>
                 <p className="text-sm text-muted-foreground">Upload a CSV file containing a list of email addresses (header optional).</p>
-                
+
                 <div className="space-y-3">
                   <div className="relative">
                     <div className="flex items-center space-x-2">
@@ -1336,9 +1336,8 @@ function SettingsPageContent() {
                       />
                       <label
                         htmlFor="csv-upload"
-                        className={`flex items-center space-x-2 px-4 py-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors ${
-                          isBulkAdding ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
+                        className={`flex items-center space-x-2 px-4 py-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors ${isBulkAdding ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
                       >
                         <Upload className="h-4 w-4" />
                         <span className="text-sm font-medium">
@@ -1358,10 +1357,10 @@ function SettingsPageContent() {
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="flex items-center space-x-2">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={handleDownloadCSVTemplate}
                       className="flex items-center space-x-2"

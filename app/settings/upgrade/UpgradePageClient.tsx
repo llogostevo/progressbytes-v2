@@ -189,7 +189,7 @@ export default function UpgradePageClient() {
 
       {/* Student Plans */}
       {studentPlans.length > 0 && (
-        <Card className="mb-8">
+        <Card id="student-plans" className="mb-8">
           <CardHeader>
             <CardTitle>Student Plans</CardTitle>
             <CardDescription>Choose a student plan that fits your needs</CardDescription>
@@ -248,7 +248,7 @@ export default function UpgradePageClient() {
 
       {/* Teacher Plans */}
       {teacherPlans.length > 0 && (
-        <Card className="mb-8">
+        <Card id="teacher-plans" className="mb-8">
           <CardHeader>
             <CardTitle>Teacher Plans</CardTitle>
             <CardDescription>Choose a teacher plan that fits your classroom needs</CardDescription>
