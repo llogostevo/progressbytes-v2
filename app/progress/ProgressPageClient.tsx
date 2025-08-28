@@ -765,7 +765,7 @@ export default function ProgressPage() {
   })
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null)
   const [students, setStudents] = useState<Array<{ userid: string; email: string; forename: string; lastname: string }>>([])
-  const [classes, setClasses] = useState<Array<{ id: string; name: string }>>([])
+
   // const [selectedClass, setSelectedClass] = useState<string>("all")
   // const [classMembers, setClassMembers] = useState<Array<{ student_id: string; email: string; forename: string; lastname: string }>>([])
 
@@ -968,8 +968,6 @@ export default function ProgressPage() {
           .eq("teacher_id", user.id)
 
         if (userClasses) {
-          setClasses(userClasses)
-          
           // Fetch students for all classes
           const { data: allStudents } = await supabase
             .from("class_members")
