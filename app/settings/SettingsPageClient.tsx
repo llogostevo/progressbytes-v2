@@ -50,7 +50,6 @@ interface Class {
 }
 
 interface ClassMember {
-  id: string
   class_id: string
   student_id: string
   joined_at: string
@@ -1054,7 +1053,6 @@ function SettingsPageContent() {
 
         // Transform the data to match our interface
         const transformedMemberships: ClassMember[] = membershipsWithMembers.map(membership => ({
-          id: membership.id,
           class_id: membership.class_id,
           student_id: membership.student_id,
           joined_at: membership.joined_at,
