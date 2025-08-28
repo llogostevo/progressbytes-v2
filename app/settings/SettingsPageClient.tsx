@@ -15,7 +15,7 @@ import { UserType } from "@/lib/access";
 // UI Components
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Book, GraduationCap, School, BookMarked, Library, BookmarkPlus, User, CreditCard, Plus, Copy, Eye, Trash2 } from "lucide-react"
+import { Book, GraduationCap, School, BookMarked, Library, BookmarkPlus, User, CreditCard, Plus, Copy, Eye, Trash2, Upload, FileText, Download } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -1083,121 +1083,7 @@ function SettingsPageContent() {
           </CardContent>
         </Card>
 
-        {/* Subscription Plans */}
-        {/* {studentPlans.length > 0 && (
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Student Plans</CardTitle>
-            <CardDescription>Choose a student plan</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-6 md:grid-cols-3">
-              {studentPlans.map(plan => (
-                <Card
-                  key={plan.slug}
-                  className={`relative${userType === plan.slug ? ' border-primary' : ''}${plan.active === false ? ' opacity-50 pointer-events-none' : ''}`}
-                >
-                  <CardHeader>
-                    {plan.slug === 'basic' && <BookOpen className="h-6 w-6 text-muted-foreground mb-2" />}
-                    {plan.slug === 'revision' && <BookOpenCheck className="h-6 w-6 text-muted-foreground mb-2" />}
-                    {plan.slug === 'revisionAI' && <BookOpenText className="h-6 w-6 text-muted-foreground mb-2" />}
-                    {plan.active === false && (
-                      <Badge className="absolute top-2 right-2 bg-gray-400 text-white">Coming Soon</Badge>
-                    )}
-                    <CardTitle>{plan.name}</CardTitle>
-                    <CardDescription>{plan.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="text-lg font-semibold">
-                        {plan.active ? `£${plan.price} /month` : 'Price: TBC'}
-                      </div>
-                      {Array.isArray(plan.features) && plan.features.length > 0 && (
-                        <ul className="list-disc list-inside text-sm text-muted-foreground">
-                          {plan.features.map((feature, idx) => (
-                            <li key={idx}>{feature}</li>
-                          ))}
-                        </ul>
-                      )}
-                      <Button
-                        className="w-full"
-                        variant={userType === plan.slug ? 'default' : 'outline'}
-                        onClick={() => handlePlanSelect(plan)}
-                        disabled={isLoadingCheckout || !plan.active}
-                      >
-                        {userType === plan.slug
-                          ? 'Current Plan'
-                          : !plan.active
-                            ? 'Coming Soon'
-                            : isLoadingCheckout
-                              ? 'Loading...'
-                              : 'Select Plan'}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {teacherPlans.length > 0 && (
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Teacher Plans</CardTitle>
-            <CardDescription>Choose a teacher plan</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-6 md:grid-cols-3">
-              {teacherPlans.map(plan => (
-                <Card
-                  key={plan.slug}
-                  className={`relative${userType === plan.slug ? ' border-primary' : ''}${plan.active === false ? ' opacity-50 pointer-events-none' : ''}`}
-                >
-                  <CardHeader>
-                    {plan.slug === 'teacherBasic' && <School className="h-6 w-6 text-muted-foreground mb-2" />}
-                    {plan.slug === 'teacherPremium' && <School className="h-6 w-6 text-primary mb-2" />}
-                    {plan.active === false && (
-                      <Badge className="absolute top-2 right-2 bg-gray-400 text-white">Coming Soon</Badge>
-                    )}
-                    <CardTitle>{plan.name}</CardTitle>
-                    <CardDescription>{plan.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="text-lg font-semibold">
-                        {plan.active ? `£${plan.price} /month` : 'Price: TBC'}
-                      </div>
-                      {Array.isArray(plan.features) && plan.features.length > 0 && (
-                        <ul className="list-disc list-inside text-sm text-muted-foreground">
-                          {plan.features.map((feature, idx) => (
-                            <li key={idx}>{feature}</li>
-                          ))}
-                        </ul>
-                      )}
-                      <Button
-                        className="w-full"
-                        variant={userType === plan.slug ? 'default' : 'outline'}
-                        onClick={() => handlePlanSelect(plan)}
-                        disabled={isLoadingCheckout}
-                      >
-                        {userType === plan.slug
-                          ? 'Current Plan'
-                          : !plan.active
-                            ? 'Coming Soon'
-                            : isLoadingCheckout
-                              ? 'Loading...'
-                              : 'Select Plan'}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )} */}
+        
 
         <UpgradePageClient />
 
@@ -1377,27 +1263,68 @@ function SettingsPageContent() {
               </div>
 
               {/* Bulk Add via CSV */}
-              <div className="space-y-2">
-                <h4 className="font-medium">Bulk Add via CSV</h4>
-                <p className="text-xs text-muted-foreground">Upload a CSV file containing a list of email addresses (header optional).</p>
-                <Input
-                  type="file"
-                  accept=".csv"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0]
-                    if (!file || !selectedClass) return
-                    const text = await file.text()
-                    bulkAddStudentsFromCSV(selectedClass.id, text)
-                    // reset the input so the same file can be selected again if needed
-                    e.currentTarget.value = ''
-                  }}
-                  disabled={isBulkAdding}
-                />
-                <Button onClick={() => selectedClass && bulkAddStudentsFromCSV(selectedClass.id, addStudentEmail)} className="hidden" />
-                <div className="pt-2">
-                  <Button variant="outline" onClick={handleDownloadCSVTemplate}>
-                    Download CSV Template
-                  </Button>
+              <div className="space-y-4 p-4 border border-dashed border-muted-foreground/25 rounded-lg bg-muted/20">
+                <div className="flex items-center space-x-2">
+                  <FileText className="h-5 w-5 text-muted-foreground" />
+                  <h4 className="font-medium">Bulk Add via CSV</h4>
+                </div>
+                <p className="text-sm text-muted-foreground">Upload a CSV file containing a list of email addresses (header optional).</p>
+                
+                <div className="space-y-3">
+                  <div className="relative">
+                    <div className="flex items-center space-x-2">
+                      <Input
+                        type="file"
+                        accept=".csv"
+                        id="csv-upload"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0]
+                          if (!file || !selectedClass) return
+                          const text = await file.text()
+                          bulkAddStudentsFromCSV(selectedClass.id, text)
+                          // reset the input so the same file can be selected again if needed
+                          e.currentTarget.value = ''
+                        }}
+                        disabled={isBulkAdding}
+                        className="hidden"
+                      />
+                      <label
+                        htmlFor="csv-upload"
+                        className={`flex items-center space-x-2 px-4 py-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors ${
+                          isBulkAdding ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                      >
+                        <Upload className="h-4 w-4" />
+                        <span className="text-sm font-medium">
+                          {isBulkAdding ? 'Processing...' : 'Choose CSV File'}
+                        </span>
+                      </label>
+                      <span className="text-sm text-muted-foreground">
+                        {isBulkAdding ? 'Uploading students...' : 'or drag and drop'}
+                      </span>
+                    </div>
+                    {isBulkAdding && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-md">
+                        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                          <span>Processing CSV...</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={handleDownloadCSVTemplate}
+                      className="flex items-center space-x-2"
+                    >
+                      <Download className="h-4 w-4" />
+                      <span>Download Template</span>
+                    </Button>
+                    <span className="text-xs text-muted-foreground">Get a sample CSV format</span>
+                  </div>
                 </div>
               </div>
 
