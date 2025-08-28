@@ -424,7 +424,7 @@ function SettingsPageContent() {
 
   const handleCreateClass = async () => {
     if (!newClassName.trim()) {
-      const id = toast.error('Please enter a class name', { 
+      toast.error('Please enter a class name', { 
         duration: 10000,
         closeButton: true
       })
@@ -433,10 +433,9 @@ function SettingsPageContent() {
 
     // Check if user has reached their class limit
     if (userClasses.length >= maxClasses) {
-      const id = toast.error('You have reached your limit of classes, you will need to upgrade to add more classes', { 
+      toast.error('You have reached your limit of classes, you will need to upgrade to add more classes', { 
         duration: 10000,
         closeButton: true
-
       })
       return
     }
@@ -464,14 +463,13 @@ function SettingsPageContent() {
       setUserClasses(prev => [...prev, newClass])
       setCreateClassDialogOpen(false)
       setNewClassName("")
-      const id = toast.success('Class created successfully', { 
+      toast.success('Class created successfully', { 
         duration: 10000,
         closeButton: true
-
       })
     } catch (err) {
       console.error('Error creating class:', err)
-      const id = toast.error('Failed to create class', { 
+      toast.error('Failed to create class', { 
         duration: 10000,
         closeButton: true
       })
@@ -483,12 +481,12 @@ function SettingsPageContent() {
   const handleCopyJoinCode = async (code: string) => {
     try {
       await navigator.clipboard.writeText(code)
-      const id = toast.success('Join code copied to clipboard', { 
+      toast.success('Join code copied to clipboard', { 
         duration: 10000,
         closeButton: true
       })
     } catch (err) {
-      const id = toast.error('Failed to copy join code: ' + (err as Error).message, { 
+      toast.error('Failed to copy join code: ' + (err as Error).message, { 
         duration: 10000,
         closeButton: true
       })
@@ -511,13 +509,13 @@ function SettingsPageContent() {
       setDeleteClassDialogOpen(false)
       setClassToDelete(null)
       setDeleteClassConfirmation("")
-      const id = toast.success('Class deleted successfully', { 
+      toast.success('Class deleted successfully', { 
         duration: 10000,
         closeButton: true
       })
     } catch (error) {
       console.error('Error deleting class:', error)
-      const id = toast.error('Failed to delete class', { 
+      toast.error('Failed to delete class', { 
         duration: 10000,
         closeButton: true
       })
@@ -528,7 +526,7 @@ function SettingsPageContent() {
 
   const handleJoinClass = async () => {
     if (!joinCode.trim()) {
-      const id = toast.error('Please enter a join code', { 
+      toast.error('Please enter a join code', { 
         duration: 10000,
         closeButton: true
       })
@@ -616,13 +614,13 @@ function SettingsPageContent() {
       setStudentClasses(prev => [...prev, newMember])
       setJoinClassDialogOpen(false)
       setJoinCode("")
-      const id = toast.success('Successfully joined class', { 
+      toast.success('Successfully joined class', { 
         duration: 10000,
         closeButton: true
       })
     } catch (error) {
       console.error('Error joining class:', error)
-      const id = toast.error(error instanceof Error ? error.message : 'Failed to join class', { 
+      toast.error(error instanceof Error ? error.message : 'Failed to join class', { 
         duration: 10000,
         closeButton: true
       })
@@ -653,13 +651,13 @@ function SettingsPageContent() {
       setLeaveClassDialogOpen(false)
       setSelectedMembership(null)
       setLeaveClassConfirmation("")
-      const id = toast.success('Successfully left class', { 
+      toast.success('Successfully left class', { 
         duration: 10000,
         closeButton: true
       })
     } catch (error) {
       console.error('Error leaving class:', error)
-      const id = toast.error('Failed to leave class', { 
+      toast.error('Failed to leave class', { 
         duration: 10000,
         closeButton: true
       })
@@ -685,21 +683,15 @@ function SettingsPageContent() {
         setSelectedClassMembers(prev => (prev || []).filter(m => m.student_id !== memberToDelete.student_id))
         setDeleteMemberDialogOpen(false)
         setMemberToDelete(null)
-        const id = toast.success('Student removed from class', { 
+        toast.success('Student removed from class', { 
           duration: 10000,
-          action: {
-            label: "Close",
-            onClick: () => toast.dismiss(id)
-          }
+          closeButton: true
         })
       } catch (error) {
         console.error('Error removing student:', error)
-        const id = toast.error('Failed to remove student from class', { 
+        toast.error('Failed to remove student from class', { 
           duration: 10000,
-          action: {
-            label: "Close",
-            onClick: () => toast.dismiss(id)
-          }
+          closeButton: true
         })
       } finally {
         setIsDeletingMember(false)
@@ -733,13 +725,13 @@ function SettingsPageContent() {
 
       setDeleteMemberDialogOpen(false)
       setMemberToDelete(null)
-      const id = toast.success('Student removed from class', { 
+      toast.success('Student removed from class', { 
         duration: 10000,
         closeButton: true
       })
     } catch (error) {
       console.error('Error removing student:', error)
-      const id = toast.error('Failed to remove student from class', { 
+      toast.error('Failed to remove student from class', { 
         duration: 10000,
         closeButton: true
       })
@@ -776,12 +768,9 @@ function SettingsPageContent() {
       const { data: authData } = await supabase.auth.getUser()
       const teacherId = authData?.user?.id
       if (!teacherId) {
-        const id = toast.error('Not authenticated', { 
+        toast.error('Not authenticated', { 
           duration: 10000,
-          action: {
-            label: "Close",
-            onClick: () => toast.dismiss(id)
-          }
+          closeButton: true
         })
         setSelectedClassMembers([])
         return
@@ -800,12 +789,9 @@ function SettingsPageContent() {
 
       if (error) {
         console.error('Error fetching class members:', error)
-        const id = toast.error('Failed to load class members', { 
+        toast.error('Failed to load class members', { 
           duration: 10000,
-          action: {
-            label: "Close",
-            onClick: () => toast.dismiss(id)
-          }
+          closeButton: true
         })
         setSelectedClassMembers([])
         return
@@ -830,12 +816,9 @@ function SettingsPageContent() {
 
       if (profilesErr) {
         console.error('Error fetching profiles:', profilesErr)
-        const id = toast.error('Failed to load student profiles', { 
+        toast.error('Failed to load student profiles', { 
           duration: 10000,
-          action: {
-            label: "Close",
-            onClick: () => toast.dismiss(id)
-          }
+          closeButton: true
         })
         setSelectedClassMembers([])
         return
@@ -859,7 +842,7 @@ function SettingsPageContent() {
       setSelectedClassMembers(membersOnly)
     } catch (e) {
       console.error('Error fetching class members (exception):', e)
-      const id = toast.error('Failed to load class members', { 
+      toast.error('Failed to load class members', { 
         duration: 10000,
         closeButton: true
       })
@@ -872,12 +855,9 @@ function SettingsPageContent() {
       setIsAddingStudent(true)
       const trimmed = email.trim().toLowerCase()
       if (!trimmed) {
-        const id = toast.error('Please enter an email', { 
+        toast.error('Please enter an email', { 
           duration: 10000,
-          action: {
-            label: "Close",
-            onClick: () => toast.dismiss(id)
-          }
+          closeButton: true
         })
         return
       }
@@ -885,12 +865,9 @@ function SettingsPageContent() {
       // Check if user has reached their student limit for this class
       const currentStudentCount = selectedClassMembers?.length || 0
       if (currentStudentCount >= maxStudentsPerClass) {
-        const id = toast.error('You have reached your limit of students for this class, you will need to upgrade to add more students', { 
+        toast.error('You have reached your limit of students for this class, you will need to upgrade to add more students', { 
           duration: 10000,
-          action: {
-            label: "Close",
-            onClick: () => toast.dismiss(id)
-          }
+          closeButton: true
         })
         return
       }
@@ -902,12 +879,9 @@ function SettingsPageContent() {
         .single()
 
       if (profileError || !profile) {
-        const id = toast.error(`Email not recognised: ${trimmed}`, { 
+        toast.error(`Email not recognised: ${trimmed}`, { 
           duration: 10000,
-          action: {
-            label: "Close",
-            onClick: () => toast.dismiss(id)
-          }
+          closeButton: true
         })
         return
       }
@@ -921,12 +895,9 @@ function SettingsPageContent() {
         .maybeSingle()
 
       if (existing) {
-        const id = toast.info(`${trimmed} is already in this class`, { 
+        toast.info(`${trimmed} is already in this class`, { 
           duration: 10000,
-          action: {
-            label: "Close",
-            onClick: () => toast.dismiss(id)
-          }
+          closeButton: true
         })
         return
       }
@@ -956,14 +927,14 @@ function SettingsPageContent() {
       if (selectedClass?.id === classId) {
         setSelectedClassMembers(prev => ([...(prev || []), normalizedMember]))
       }
-      const id = toast.success(`Added ${profile.email} to class`, { 
+      toast.success(`Added ${profile.email} to class`, { 
         duration: 10000,
         closeButton: true
       })
       setAddStudentEmail("")
     } catch (e) {
       console.error('Error adding student:', e)
-      const id = toast.error('Failed to add student', { 
+      toast.error('Failed to add student', { 
         duration: 10000,
         closeButton: true
       })
@@ -985,12 +956,9 @@ function SettingsPageContent() {
     try {
       const emails = parseCSVEmails(csvText)
       if (emails.length === 0) {
-        const id = toast.error('No valid emails found in CSV', { 
+        toast.error('No valid emails found in CSV', { 
           duration: 10000,
-          action: {
-            label: "Close",
-            onClick: () => toast.dismiss(id)
-          }
+          closeButton: true
         })
         return
       }
@@ -998,12 +966,9 @@ function SettingsPageContent() {
       // Check if user has reached their student limit for this class
       const currentStudentCount = selectedClassMembers?.length || 0
       if (currentStudentCount >= maxStudentsPerClass) {
-        const id = toast.error('You have reached your limit of students for this class, you will need to upgrade to add more students', { 
+        toast.error('You have reached your limit of students for this class, you will need to upgrade to add more students', { 
           duration: 10000,
-          action: {
-            label: "Close",
-            onClick: () => toast.dismiss(id)
-          }
+          closeButton: true
         })
         return
       }
@@ -1078,12 +1043,9 @@ function SettingsPageContent() {
         const addedMessage = added === 1 
           ? `Added 1 student: ${addedEmails[0]}`
           : `Added ${added} students: ${addedEmails.join(', ')}`
-        const id = toast.success(addedMessage, { 
+        toast.success(addedMessage, { 
           duration: 10000,
-          action: {
-            label: "Close",
-            onClick: () => toast.dismiss(id)
-          }
+          closeButton: true
         })
       }
 
@@ -1092,16 +1054,13 @@ function SettingsPageContent() {
         const failedMessage = failed.length === 1
           ? `Failed to add ${failed[0].email} (${failed[0].reason})`
           : `Failed to add ${failed.length} students: ${failed.map(f => `${f.email} (${f.reason})`).join(', ')}`
-        const id = toast.error(failedMessage, { 
+        toast.error(failedMessage, { 
           duration: 10000,
-          action: {
-            label: "Close",
-            onClick: () => toast.dismiss(id)
-          }
+          closeButton: true
         })
       }
     } catch (e) {
-      const id = toast.error('Bulk add operation failed. Please check you have a valid plan and you have not reached your student limit.' + e, { 
+      toast.error('Bulk add operation failed. Please check you have a valid plan and you have not reached your student limit.' + e, { 
         duration: 10000,
         closeButton: true
       })
@@ -1117,12 +1076,12 @@ function SettingsPageContent() {
     const canceled = searchParams.get('canceled')
 
     if (success === 'true') {
-      const id = toast.success('Payment successful! Your plan has been updated.', { 
+      toast.success('Payment successful! Your plan has been updated.', { 
         duration: 10000,
         closeButton: true
       })
     } else if (canceled === 'true') {
-      const id = toast.error('Payment was canceled. Your plan remains unchanged.', { 
+      toast.error('Payment was canceled. Your plan remains unchanged.', { 
         duration: 10000,
         closeButton: true
       })
