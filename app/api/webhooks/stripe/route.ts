@@ -6,6 +6,9 @@ import { supabaseAdmin as supabase } from '@/utils/supabase/admin';
 
 import Stripe from 'stripe';
 import { isTeacher } from '@/lib/access';
+import { cleanupExcessResources } from '@/lib/utils';
+
+
 
 /**
  * Stripe webhook handler for processing subscription-related events
@@ -40,7 +43,7 @@ export async function POST(req: Request) {
         // Look up the user from the profiles table using the stripe_customer_id
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('userid')
+          .select('userid, user_type')
           .eq('stripe_customer_id', customerId)
           .single();
 
@@ -86,6 +89,11 @@ export async function POST(req: Request) {
           })
           .eq('userid', userId);
 
+        console.log(`Plan updated for user ${userId} from ${profile.user_type} to ${plan.slug}`);
+        
+        // Clean up excess classes and students for the new plan
+        await cleanupExcessResources(supabase, userId, plan.slug);
+
         break;
       }
 
@@ -130,6 +138,9 @@ export async function POST(req: Request) {
             })
             .eq('userid', profile.userid);
 
+          // Clean up excess classes and students for the downgraded plan
+          await cleanupExcessResources(supabase, profile.userid, downgradePlan);
+
           console.log(`Downgraded ${profile.userid} to ${downgradePlan} due to no active subscriptions`);
         } else {
           console.log(`Subscription deleted, but user ${profile.userid} still has active plans`);
@@ -165,6 +176,9 @@ export async function POST(req: Request) {
                 plan_end_date: null,
               })
               .eq('userid', profile.userid);
+
+            // Clean up excess classes and students for the basic plan
+            await cleanupExcessResources(supabase, profile.userid, 'basic');
           }
         }
         break;

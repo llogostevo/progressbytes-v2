@@ -7,6 +7,8 @@ import { redirect } from "next/navigation"
 import { loadStripe } from "@stripe/stripe-js"
 import type { Plan } from "@/lib/types"
 import type { UserType } from "@/lib/access"
+import { userAccessLimits } from "@/lib/access"
+import { cleanupExcessResources } from "@/lib/utils"
 
 // UI Components
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -28,9 +30,80 @@ export default function UpgradePageClient() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
+  // Helper function to check if switching to a plan with fewer classes or students
+  const checkIfDowngrade = (currentPlan: UserType | null, newPlan: UserType): { isDowngrade: boolean; type?: 'student' | 'teacher' } => {
+    if (!currentPlan) return { isDowngrade: false }
+    
+    const currentLimits = userAccessLimits[currentPlan]
+    const newLimits = userAccessLimits[newPlan]
+    
+    if (!currentLimits || !newLimits) return { isDowngrade: false }
+    
+    // Check if both plans are teacher plans (have class limits)
+    if (currentLimits.maxClasses !== undefined && newLimits.maxClasses !== undefined) {
+      // Check if new plan has fewer classes or fewer students per class
+      const isDowngrade = newLimits.maxClasses < currentLimits.maxClasses || 
+             (newLimits.maxStudentsPerClass || 0) < (currentLimits.maxStudentsPerClass || 0)
+      return { isDowngrade, type: 'teacher' }
+    }
+    
+    // Check if both plans are student plans (no class limits, but have question limits)
+    if (currentLimits.maxClasses === undefined && newLimits.maxClasses === undefined) {
+      // Check if new plan has fewer questions per day or per topic
+      const isDowngrade = newLimits.maxQuestionsPerDay < currentLimits.maxQuestionsPerDay ||
+             newLimits.maxQuestionsPerTopic < currentLimits.maxQuestionsPerTopic
+      return { isDowngrade, type: 'student' }
+    }
+    
+    // Check if switching from teacher to student plan (losing class management capabilities)
+    if (currentLimits.maxClasses !== undefined && newLimits.maxClasses === undefined) {
+      return { isDowngrade: true, type: 'teacher' }
+    }
+    
+    // Check if switching from student to teacher plan (losing unlimited questions)
+    if (currentLimits.maxClasses === undefined && newLimits.maxClasses !== undefined) {
+      // Only show warning if the teacher plan has limited questions
+      const isDowngrade = newLimits.maxQuestionsPerDay < currentLimits.maxQuestionsPerDay ||
+             newLimits.maxQuestionsPerTopic < currentLimits.maxQuestionsPerTopic
+      return { isDowngrade, type: 'student' }
+    }
+    
+    return { isDowngrade: false }
+  }
+
   const handlePlanSelect = async (plan: Plan) => {
     if (!userEmail || plan.slug === userType) return
 
+    // Check if this is a downgrade and get the type
+    const downgradeInfo = checkIfDowngrade(userType, plan.slug)
+    
+    if (downgradeInfo.isDowngrade) {
+      const message = downgradeInfo.type === 'student' 
+        ? "You're switching to a plan with fewer features. This may affect your current setup."
+        : "You're switching to a plan with fewer classes or students. You will lose permenant access to your current classes and students if you are above the limits of the selected plan. "
+      
+      toast.error("Plan Downgrade Warning", {
+        description: message,
+        action: {
+          label: "Continue",
+          onClick: () => processPlanChange(plan)
+        },
+        cancel: {
+          label: "Cancel",
+          onClick: () => {
+            toast.info("Your plan hasn't changed")
+          }
+        },
+        duration: Infinity
+      })
+      return
+    }
+
+    // If not a downgrade, proceed directly
+    processPlanChange(plan)
+  }
+
+  const processPlanChange = async (plan: Plan) => {
     setIsLoadingCheckout(true)
     try {
       // If it's a free plan
@@ -77,6 +150,9 @@ export default function UpgradePageClient() {
           .eq("userid", user.id)
 
         if (updateError) throw updateError
+
+        // Clean up excess classes and students for the new plan
+        await cleanupExcessResources(supabase, user.id, plan.slug as UserType)
 
         setUserType(plan.slug)
         toast.success(`Successfully switched to ${plan.name}`)
@@ -189,7 +265,7 @@ export default function UpgradePageClient() {
 
       {/* Student Plans */}
       {studentPlans.length > 0 && (
-        <Card className="mb-8">
+        <Card id="student-plans" className="mb-8">
           <CardHeader>
             <CardTitle>Student Plans</CardTitle>
             <CardDescription>Choose a student plan that fits your needs</CardDescription>
@@ -248,7 +324,7 @@ export default function UpgradePageClient() {
 
       {/* Teacher Plans */}
       {teacherPlans.length > 0 && (
-        <Card className="mb-8">
+        <Card id="teacher-plans" className="mb-8">
           <CardHeader>
             <CardTitle>Teacher Plans</CardTitle>
             <CardDescription>Choose a teacher plan that fits your classroom needs</CardDescription>
