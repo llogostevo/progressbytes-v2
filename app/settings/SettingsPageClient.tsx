@@ -944,25 +944,25 @@ function SettingsPageContent() {
 
   useEffect(() => {
     // Check for success/cancel parameters from Stripe checkout
-    const success = searchParams.get('success')
-    const canceled = searchParams.get('canceled')
+    // const success = searchParams.get('success')
+    // const canceled = searchParams.get('canceled')
 
-    if (success === 'true') {
-      toast.success('Payment successful! Your plan has been updated.', { 
-        duration: 10000,
-        closeButton: true
-      })
-    } else if (canceled === 'true') {
-      toast.error('Payment was canceled. Your plan remains unchanged.', { 
-        duration: 10000,
-        closeButton: true
-      })
-    }
+    // if (success === 'true') {
+    //   toast.success('Payment successful! Your plan has been updated.', { 
+    //     duration: 10000,
+    //     closeButton: true
+    //   })
+    // } else if (canceled === 'true') {
+    //   toast.error('Payment was canceled. Your plan remains unchanged.', { 
+    //     duration: 10000,
+    //     closeButton: true
+    //   })
+    // }
 
-    // Remove query params from the URL
-    if (success || canceled) {
-      router.replace('/settings')  // Replaces current history entry
-    }
+    // // Remove query params from the URL
+    // if (success || canceled) {
+    //   router.replace('/settings')  // Replaces current history entry
+    // }
 
     const fetchUser = async () => {
       const { data: { user }, error: authError } = await supabase.auth.getUser()

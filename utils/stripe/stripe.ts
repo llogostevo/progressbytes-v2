@@ -66,7 +66,7 @@ export const plans: Record<string, Plan> = {
       'Unlimited total questions',
       'Full access to all topics',
       'AI-powered feedback',
-      'Personalized learning insights'
+      'Personalised learning insights'
     ],
     daily_question_limit: null, // unlimited
     total_question_limit: null, // unlimited

@@ -214,7 +214,7 @@ export default function UpgradePageClient() {
     if (success === "true") {
       toast.success("Payment successful! Your plan has been updated.")
     } else if (canceled === "true") {
-      toast.error("Payment was canceled. Your plan remains unchanged.")
+      toast.error("Payment was cancelled. Your plan remains unchanged.")
     }
 
     // Remove query params from the URL
