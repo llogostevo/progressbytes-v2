@@ -123,7 +123,7 @@ function SettingsSkeleton() {
 }
 
 function SettingsPageContent() {
-  const { maxClasses } = useAccess()
+  const { maxClasses, maxStudentsPerClass } = useAccess()
   const [userType, setUserType] = useState<UserType | null>(null)
   const [userRole, setUserRole] = useState<UserRole | null>(null)
   const [userEmail, setUserEmail] = useState<string | null>(null)
@@ -748,6 +748,13 @@ function SettingsPageContent() {
         toast.error('Please enter an email')
         return
       }
+
+      // Check if user has reached their student limit for this class
+      const currentStudentCount = selectedClassMembers?.length || 0
+      if (currentStudentCount >= maxStudentsPerClass) {
+        toast.error('You have reached your limit of students for this class, you will need to upgrade to add more students')
+        return
+      }
       // Find user profile
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
@@ -825,6 +832,13 @@ function SettingsPageContent() {
         return
       }
 
+      // Check if user has reached their student limit for this class
+      const currentStudentCount = selectedClassMembers?.length || 0
+      if (currentStudentCount >= maxStudentsPerClass) {
+        toast.error('You have reached your limit of students for this class, you will need to upgrade to add more students')
+        return
+      }
+
       let added = 0
       const failed: string[] = []
 
@@ -845,6 +859,16 @@ function SettingsPageContent() {
           .maybeSingle()
 
         if (existing) { continue }
+
+        // Check if we've reached the student limit during bulk add
+        if (added >= maxStudentsPerClass - currentStudentCount) {
+          failed.push(`Failed - (limit reached)`)
+          // add all the remaining emails to the failed list
+          for (const e of emails.slice(added + 1)) {
+            failed.push(`${e} - (limit reached)`)
+          }
+          continue
+        }
 
         const { data: inserted, error: joinError } = await supabase
           .from('class_members')
@@ -872,8 +896,7 @@ function SettingsPageContent() {
       if (added > 0) toast.success(`Added ${added} student${added === 1 ? '' : 's'}`)
       if (failed.length > 0) toast.error(`Failed: ${failed.join(', ')}`)
     } catch (e) {
-      console.error('Bulk add error:', e)
-      toast.error('Bulk add failed')
+      toast.error('Bulk add operation failed. Please check you have a valid plan and you have not reached your student limit.' + e)
     } finally {
       setIsBulkAdding(false)
     }
@@ -1295,17 +1318,30 @@ function SettingsPageContent() {
               {/* Add Student by Email */}
               <div className="space-y-2">
                 <h4 className="font-medium">Add Student by Email</h4>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="student@example.com"
-                    value={addStudentEmail}
-                    onChange={(e) => setAddStudentEmail(e.target.value)}
-                    disabled={isAddingStudent}
-                  />
-                  <Button onClick={() => selectedClass && addStudentToClassByEmail(selectedClass.id, addStudentEmail)} disabled={isAddingStudent}>
-                    {isAddingStudent ? 'Adding…' : 'Add'}
-                  </Button>
-                </div>
+                {(selectedClassMembers || []).length < maxStudentsPerClass ? (
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="student@example.com"
+                      value={addStudentEmail}
+                      onChange={(e) => setAddStudentEmail(e.target.value)}
+                      disabled={isAddingStudent}
+                    />
+                    <Button onClick={() => selectedClass && addStudentToClassByEmail(selectedClass.id, addStudentEmail)} disabled={isAddingStudent}>
+                      {isAddingStudent ? 'Adding…' : 'Add'}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="text-center py-4 border border-muted rounded-lg bg-muted/20">
+                    <p className="text-sm text-muted-foreground mb-2">You have reached your limit of students for this class</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => router.push('/settings/#teacher-plans')}
+                    >
+                      Upgrade Plan
+                    </Button>
+                  </div>
+                )}
               </div>
 
               {/* Bulk Add via CSV */}
@@ -1315,6 +1351,12 @@ function SettingsPageContent() {
                   <h4 className="font-medium">Bulk Add via CSV</h4>
                 </div>
                 <p className="text-sm text-muted-foreground">Upload a CSV file containing a list of email addresses (header optional).</p>
+                
+                {(selectedClassMembers || []).length >= maxStudentsPerClass && (
+                  <div className="text-center py-2 border border-orange-200 rounded-lg bg-orange-50">
+                    <p className="text-sm text-orange-700">You have reached your student limit. Bulk add will be disabled.</p>
+                  </div>
+                )}
 
                 <div className="space-y-3">
                   <div className="relative">
@@ -1331,12 +1373,12 @@ function SettingsPageContent() {
                           // reset the input so the same file can be selected again if needed
                           e.currentTarget.value = ''
                         }}
-                        disabled={isBulkAdding}
+                        disabled={isBulkAdding || (selectedClassMembers || []).length >= maxStudentsPerClass}
                         className="hidden"
                       />
                       <label
                         htmlFor="csv-upload"
-                        className={`flex items-center space-x-2 px-4 py-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors ${isBulkAdding ? 'opacity-50 cursor-not-allowed' : ''
+                        className={`flex items-center space-x-2 px-4 py-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors ${isBulkAdding || (selectedClassMembers || []).length >= maxStudentsPerClass ? 'opacity-50 cursor-not-allowed' : ''
                           }`}
                       >
                         <Upload className="h-4 w-4" />
@@ -1378,8 +1420,8 @@ function SettingsPageContent() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h4 className="font-medium">Class Members</h4>
-                  <Badge variant="secondary">
-                    {(selectedClassMembers || []).length} Students
+                  <Badge variant={(selectedClassMembers || []).length >= maxStudentsPerClass ? "destructive" : "secondary"}>
+                    {(selectedClassMembers || []).length} / {maxStudentsPerClass} Students
                   </Badge>
                 </div>
                 <div className="space-y-2">
