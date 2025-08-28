@@ -7,6 +7,7 @@ import { redirect } from "next/navigation"
 import { loadStripe } from "@stripe/stripe-js"
 import type { Plan } from "@/lib/types"
 import type { UserType } from "@/lib/access"
+import { userAccessLimits } from "@/lib/access"
 
 // UI Components
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -28,9 +29,60 @@ export default function UpgradePageClient() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
+  // Helper function to check if switching to a plan with fewer classes or students
+  const checkIfDowngrade = (currentPlan: UserType | null, newPlan: UserType): boolean => {
+    if (!currentPlan) return false
+    
+    const currentLimits = userAccessLimits[currentPlan]
+    const newLimits = userAccessLimits[newPlan]
+    
+    if (!currentLimits || !newLimits) return false
+    
+    // Check if both plans are teacher plans (have class limits)
+    if (currentLimits.maxClasses !== undefined && newLimits.maxClasses !== undefined) {
+      // Check if new plan has fewer classes or fewer students per class
+      return newLimits.maxClasses < currentLimits.maxClasses || 
+             (newLimits.maxStudentsPerClass || 0) < (currentLimits.maxStudentsPerClass || 0)
+    }
+    
+    // Check if both plans are student plans (no class limits, but have question limits)
+    if (currentLimits.maxClasses === undefined && newLimits.maxClasses === undefined) {
+      // Check if new plan has fewer questions per day or per topic
+      return newLimits.maxQuestionsPerDay < currentLimits.maxQuestionsPerDay ||
+             newLimits.maxQuestionsPerTopic < currentLimits.maxQuestionsPerTopic
+    }
+    
+    // If switching between different plan types, don't show warning
+    return false
+  }
+
   const handlePlanSelect = async (plan: Plan) => {
     if (!userEmail || plan.slug === userType) return
 
+    // Check if this is a downgrade that reduces classes or students
+    const isDowngrade = checkIfDowngrade(userType, plan.slug)
+    
+    if (isDowngrade) {
+      toast.error("Plan Downgrade Warning", {
+        description: "You're switching to a plan with fewer classes or students. This may affect your current setup.",
+        action: {
+          label: "Continue",
+          onClick: () => processPlanChange(plan)
+        },
+        cancel: {
+          label: "Cancel",
+          onClick: () => {}
+        },
+        duration: Infinity
+      })
+      return
+    }
+
+    // If not a downgrade, proceed directly
+    processPlanChange(plan)
+  }
+
+  const processPlanChange = async (plan: Plan) => {
     setIsLoadingCheckout(true)
     try {
       // If it's a free plan
