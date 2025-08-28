@@ -887,7 +887,8 @@ function SettingsPageContent() {
       }
 
       let added = 0
-      const failed: string[] = []
+      const addedEmails: string[] = []
+      const failed: { email: string; reason: string }[] = []
 
       for (const email of emails) {
         const { data: profile } = await supabase
@@ -896,7 +897,10 @@ function SettingsPageContent() {
           .eq('email', email)
           .maybeSingle()
 
-        if (!profile) { failed.push(`${email} (not recognised)`); continue }
+        if (!profile) { 
+          failed.push({ email, reason: 'not recognised' }); 
+          continue 
+        }
 
         const { data: existing } = await supabase
           .from('class_members')
@@ -905,16 +909,19 @@ function SettingsPageContent() {
           .eq('student_id', profile.userid)
           .maybeSingle()
 
-        if (existing) { continue }
+        if (existing) { 
+          failed.push({ email, reason: 'already in class' }); 
+          continue 
+        }
 
         // Check if we've reached the student limit during bulk add
         if (added >= maxStudentsPerClass - currentStudentCount) {
-          failed.push(`Failed - (limit reached)`)
+          failed.push({ email, reason: 'limit reached' })
           // add all the remaining emails to the failed list
-          for (const e of emails.slice(added + 1)) {
-            failed.push(`${e} - (limit reached)`)
+          for (const e of emails.slice(emails.indexOf(email) + 1)) {
+            failed.push({ email: e, reason: 'limit reached' })
           }
-          continue
+          break
         }
 
         const { data: inserted, error: joinError } = await supabase
@@ -923,7 +930,10 @@ function SettingsPageContent() {
           .select('student_id, joined_at')
           .single()
 
-        if (joinError) { failed.push(`${email} (error)`); continue }
+        if (joinError) { 
+          failed.push({ email, reason: 'database error' }); 
+          continue 
+        }
 
         const normalizedMember: SupabaseMember = {
           student_id: inserted.student_id,
@@ -935,13 +945,27 @@ function SettingsPageContent() {
         }
 
         added += 1
+        addedEmails.push(email)
         if (selectedClass?.id === classId) {
           setSelectedClassMembers(prev => ([...(prev || []), normalizedMember]))
         }
       }
 
-      if (added > 0) toast.success(`Added ${added} student${added === 1 ? '' : 's'}`)
-      if (failed.length > 0) toast.error(`Failed: ${failed.join(', ')}`)
+      // Show success toast with added emails
+      if (added > 0) {
+        const addedMessage = added === 1 
+          ? `Added 1 student: ${addedEmails[0]}`
+          : `Added ${added} students: ${addedEmails.join(', ')}`
+        toast.success(addedMessage)
+      }
+
+      // Show error toast with failed emails and reasons
+      if (failed.length > 0) {
+        const failedMessage = failed.length === 1
+          ? `Failed to add ${failed[0].email} (${failed[0].reason})`
+          : `Failed to add ${failed.length} students: ${failed.map(f => `${f.email} (${f.reason})`).join(', ')}`
+        toast.error(failedMessage)
+      }
     } catch (e) {
       toast.error('Bulk add operation failed. Please check you have a valid plan and you have not reached your student limit.' + e)
     } finally {
@@ -1417,7 +1441,9 @@ function SettingsPageContent() {
                           const text = await file.text()
                           bulkAddStudentsFromCSV(selectedClass.id, text)
                           // reset the input so the same file can be selected again if needed
-                          e.currentTarget.value = ''
+                          if (e.currentTarget) {
+                            e.currentTarget.value = ''
+                          }
                         }}
                         disabled={isBulkAdding || (selectedClassMembers || []).length >= maxStudentsPerClass}
                         className="hidden"
