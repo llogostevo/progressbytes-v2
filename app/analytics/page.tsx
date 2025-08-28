@@ -289,7 +289,6 @@ function PerformanceGraph({ studentAnswers, selectedStudent, topics }: {
   }).sort((a, b) => compareTopicNumbers(a.topicNumber, b.topicNumber))
 
 
-  console.log('Bar Chart Data:', barChartData); // Debug log
 
   return (
     <Card>
@@ -631,7 +630,6 @@ export default function AnalyticsPage() {
 
   const fetchStudentAnswers = useCallback(async () => {
     if (!selectedStudent) {
-      console.log('No student selected, skipping fetch')
       return
     }
 
@@ -666,14 +664,11 @@ export default function AnalyticsPage() {
         .order('submitted_at', { ascending: false })
         .eq('student_id', selectedStudent)
 
-      console.log('Student answers:', studentAnswers)
       if (studentAnswersError) {
-        console.error('Error fetching student answers:', studentAnswersError.message)
         return
       }
 
       if (!studentAnswers) {
-        console.log('No student answers found for student:', selectedStudent)
         return
       }
 
@@ -695,9 +690,8 @@ export default function AnalyticsPage() {
           };
         })
       );
-      console.log('Fetched student answers:', studentAnswers)
     } catch (error) {
-      console.error('Unexpected error fetching student answers:', error)
+      console.error('Error fetching student answers:', error)
     } finally {
       setIsLoadingPerformance(false)
     }
@@ -760,12 +754,11 @@ export default function AnalyticsPage() {
             )
           `)
           .eq('student_id', user.id)
-          .returns<StudentClassMember[]>()
 
         if (studentClassesError) {
           console.error('Error fetching student classes:', studentClassesError)
         } else {
-          const mappedClasses = (studentClasses || []).map((m: StudentClassMember) => ({
+          const mappedClasses = (studentClasses || []).map((m: any) => ({
             id: m.class.id,
             name: m.class.name,
             teacher_id: m.class.teacher_id,
