@@ -9,7 +9,7 @@ import { redirect } from "next/navigation"
 
 
 // import type { Plan } from '@/lib/types';
-import { UserType } from "@/lib/access";
+import { UserType, userAccessLimits } from "@/lib/access";
 import { useAccess } from "@/hooks/useAccess";
 
 
@@ -517,6 +517,38 @@ function SettingsPageContent() {
 
       if (existingMember) {
         throw new Error('You are already a member of this class')
+      }
+
+      // Get teacher's profile to check their access limits
+      const { data: teacherProfile, error: teacherError } = await supabase
+        .from('profiles')
+        .select('user_type')
+        .eq('userid', classData.teacher_id)
+        .single()
+
+      if (teacherError || !teacherProfile) {
+        throw new Error('Could not verify teacher information')
+      }
+
+      // Get current student count in the class
+      const { data: currentStudents, error: countError } = await supabase
+        .from('class_members')
+        .select('student_id', { count: 'exact' })
+        .eq('class_id', classData.id)
+
+      if (countError) {
+        throw new Error('Could not verify class capacity')
+      }
+
+      const currentStudentCount = currentStudents?.length || 0
+
+      // Get teacher's max students per class limit
+      const teacherUserType = teacherProfile.user_type as UserType
+      const teacherMaxStudents = userAccessLimits[teacherUserType]?.maxStudentsPerClass || 0
+
+      // Check if class is full
+      if (currentStudentCount >= teacherMaxStudents) {
+        throw new Error('This class is full. Please contact your teacher to upgrade their plan or remove some students.')
       }
 
       // Add student to class
@@ -1688,7 +1720,7 @@ function SettingsPageContent() {
             <DialogHeader>
               <DialogTitle>Join Class</DialogTitle>
               <DialogDescription>
-                Enter the join code provided by your teacher
+                Enter the join code provided by your teacher. Note: Classes may have capacity limits based on the teacher's plan.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
