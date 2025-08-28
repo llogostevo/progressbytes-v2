@@ -16,7 +16,7 @@ import { useAccess } from "@/hooks/useAccess";
 // UI Components
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Book, GraduationCap, School, BookMarked, Library, BookmarkPlus, User, CreditCard, Plus, Copy, Eye, Trash2, Upload, FileText, Download } from "lucide-react"
+import { Book, GraduationCap, School, BookMarked, Library, User, CreditCard, Plus, Copy, Eye, Trash2, Upload, FileText, Download } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
