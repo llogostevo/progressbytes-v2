@@ -10,6 +10,7 @@ import { redirect } from "next/navigation"
 
 // import type { Plan } from '@/lib/types';
 import { UserType } from "@/lib/access";
+import { useAccess } from "@/hooks/useAccess";
 
 
 // UI Components
@@ -122,6 +123,7 @@ function SettingsSkeleton() {
 }
 
 function SettingsPageContent() {
+  const { maxClasses } = useAccess()
   const [userType, setUserType] = useState<UserType | null>(null)
   const [userRole, setUserRole] = useState<UserRole | null>(null)
   const [userEmail, setUserEmail] = useState<string | null>(null)
@@ -408,6 +410,12 @@ function SettingsPageContent() {
   const handleCreateClass = async () => {
     if (!newClassName.trim()) {
       toast.error('Please enter a class name')
+      return
+    }
+
+    // Check if user has reached their class limit
+    if (userClasses.length >= maxClasses) {
+      toast.error('You have reached your limit of classes, you will need to upgrade to add more classes')
       return
     }
 
@@ -1152,10 +1160,24 @@ function SettingsPageContent() {
                   <CardTitle>Teacher Class Membership</CardTitle>
                   <CardDescription>Manage your teaching classes</CardDescription>
                 </div>
-                <Button onClick={() => setCreateClassDialogOpen(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Class
-                </Button>
+                {(userClasses.length < maxClasses) && (
+                  <Button onClick={() => setCreateClassDialogOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Class
+                  </Button>
+                )}
+                {userClasses.length >= maxClasses && (
+                  <>
+                    <p className="text-sm text-muted-foreground mb-2">You have reached your limit of classes</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => router.push('/settings/#teacher-plans')}
+                    >
+                      Upgrade Plan
+                    </Button>
+                  </>
+                )}
               </div>
             </CardHeader>
             <CardContent>
@@ -1164,13 +1186,25 @@ function SettingsPageContent() {
                   <div className="text-center py-8">
                     <School className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                     <p className="text-sm text-muted-foreground">You are not currently teaching any classes</p>
-                    <Button
-                      variant="outline"
-                      className="mt-4"
-                      onClick={() => setCreateClassDialogOpen(true)}
-                    >
-                      Create Your First Class
-                    </Button>
+                    {userClasses.length < maxClasses ? (
+                      <Button
+                        variant="outline"
+                        className="mt-4"
+                        onClick={() => setCreateClassDialogOpen(true)}
+                      >
+                        Create Your First Class
+                      </Button>
+                    ) : (
+                      <div className="mt-4">
+                        <p className="text-sm text-muted-foreground mb-2">You have reached your limit of classes</p>
+                        <Button
+                          variant="outline"
+                          onClick={() => router.push('/settings/upgrade')}
+                        >
+                          Upgrade Plan
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   userClasses.map((classItem) => (
@@ -1214,6 +1248,18 @@ function SettingsPageContent() {
                       </CardContent>
                     </Card>
                   ))
+                )}
+                {userClasses.length > 0 && userClasses.length >= maxClasses && (
+                  <div className="text-center py-4 border-t border-muted">
+                    <p className="text-sm text-muted-foreground mb-2">You have reached your limit of classes</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => router.push('/settings/upgrade')}
+                    >
+                      Upgrade Plan
+                    </Button>
+                  </div>
                 )}
               </div>
             </CardContent>
