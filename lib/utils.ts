@@ -2,6 +2,7 @@ import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { userAccessLimits } from '@/lib/access';
 import type { UserType } from '@/lib/access';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -18,7 +19,7 @@ export interface CleanupResults {
  * This function can be used by both the Stripe webhook and the UpgradePageClient
  */
 export async function cleanupExcessResources(
-  supabase: any, // Using any for flexibility with different Supabase client types
+  supabase: SupabaseClient,
   userId: string, 
   newPlanSlug: string
 ): Promise<CleanupResults> {
@@ -58,7 +59,7 @@ export async function cleanupExcessResources(
         // If teacher has more classes than allowed, delete excess classes
         if (classes.length > newPlanLimits.maxClasses) {
           const classesToDelete = classes.slice(newPlanLimits.maxClasses);
-          const classIdsToDelete = classesToDelete.map(c => c.id);
+          const classIdsToDelete = classesToDelete.map((c: { id: string }) => c.id);
 
           console.log(`Deleting ${classesToDelete.length} excess classes:`, classIdsToDelete);
 
@@ -125,7 +126,7 @@ export async function cleanupExcessResources(
             }
 
             if (recentMembers && recentMembers.length > 0) {
-              const studentIdsToRemove = recentMembers.map(m => m.student_id);
+              const studentIdsToRemove = recentMembers.map((m: { student_id: string }) => m.student_id);
               console.log(`Removing students:`, studentIdsToRemove);
               
               const { error: removeError } = await supabase
