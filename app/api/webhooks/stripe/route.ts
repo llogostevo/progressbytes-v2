@@ -5,134 +5,10 @@ import { stripe } from '@/utils/stripe/stripe';
 import { supabaseAdmin as supabase } from '@/utils/supabase/admin';
 
 import Stripe from 'stripe';
-import { isTeacher, userAccessLimits } from '@/lib/access';
-import type { UserType } from '@/lib/access';
+import { isTeacher } from '@/lib/access';
+import { cleanupExcessResources } from '@/lib/utils';
 
-/**
- * Clean up excess classes and students when a user changes plans
- */
-async function cleanupExcessResources(userId: string, newPlanSlug: string) {
-  try {
-    const newPlanLimits = userAccessLimits[newPlanSlug as UserType];
-    if (!newPlanLimits) {
-      console.error('Invalid plan slug for cleanup:', newPlanSlug);
-      return;
-    }
 
-    const cleanupResults = {
-      classesDeleted: 0,
-      studentsRemoved: 0,
-      classesChecked: 0
-    };
-
-    // Only perform cleanup for teacher plans (plans with class limits)
-    if (newPlanLimits.maxClasses !== undefined) {
-      // Get all classes for this teacher
-      const { data: classes, error: classesError } = await supabase
-        .from('classes')
-        .select('id, name')
-        .eq('teacher_id', userId)
-        .order('created_at', { ascending: true });
-
-      if (classesError) {
-        console.error('Error fetching classes for cleanup:', classesError);
-        return;
-      }
-
-      if (classes && classes.length > 0) {
-        cleanupResults.classesChecked = classes.length;
-
-        // If teacher has more classes than allowed, delete excess classes
-        if (classes.length > newPlanLimits.maxClasses) {
-          const classesToDelete = classes.slice(newPlanLimits.maxClasses);
-          const classIdsToDelete = classesToDelete.map(c => c.id);
-
-          // Delete class members for these classes first (due to foreign key constraints)
-          const { error: membersDeleteError } = await supabase
-            .from('class_members')
-            .delete()
-            .in('class_id', classIdsToDelete);
-
-          if (membersDeleteError) {
-            console.error('Error deleting class members during cleanup:', membersDeleteError);
-            return;
-          }
-
-          // Delete the excess classes
-          const { error: classesDeleteError } = await supabase
-            .from('classes')
-            .delete()
-            .in('id', classIdsToDelete);
-
-          if (classesDeleteError) {
-            console.error('Error deleting classes during cleanup:', classesDeleteError);
-            return;
-          }
-
-          cleanupResults.classesDeleted = classesToDelete.length;
-        }
-
-        // Check remaining classes for excess students
-        const remainingClasses = classes.slice(0, newPlanLimits.maxClasses);
-        
-        for (const classItem of remainingClasses) {
-          // Get current student count for this class
-          const { data: classMembers, error: membersError } = await supabase
-            .from('class_members')
-            .select('student_id')
-            .eq('class_id', classItem.id);
-
-          if (membersError) {
-            console.error('Error fetching class members during cleanup:', membersError);
-            continue;
-          }
-
-          const currentStudentCount = classMembers?.length || 0;
-          const maxStudentsPerClass = newPlanLimits.maxStudentsPerClass || 0;
-
-          // If class has more students than allowed, remove excess students
-          if (currentStudentCount > maxStudentsPerClass) {
-            const studentsToRemove = currentStudentCount - maxStudentsPerClass;
-            
-            // Get the most recently added students to remove
-            const { data: recentMembers, error: recentError } = await supabase
-              .from('class_members')
-              .select('student_id')
-              .eq('class_id', classItem.id)
-              .order('joined_at', { ascending: false })
-              .limit(studentsToRemove);
-
-            if (recentError) {
-              console.error('Error fetching recent members during cleanup:', recentError);
-              continue;
-            }
-
-            if (recentMembers && recentMembers.length > 0) {
-              const studentIdsToRemove = recentMembers.map(m => m.student_id);
-              
-              const { error: removeError } = await supabase
-                .from('class_members')
-                .delete()
-                .eq('class_id', classItem.id)
-                .in('student_id', studentIdsToRemove);
-
-              if (removeError) {
-                console.error('Error removing students from class during cleanup:', removeError);
-                continue;
-              }
-
-              cleanupResults.studentsRemoved += studentIdsToRemove.length;
-            }
-          }
-        }
-      }
-    }
-
-    console.log(`Cleanup completed for user ${userId}:`, cleanupResults);
-  } catch (error) {
-    console.error('Error in cleanupExcessResources:', error);
-  }
-}
 
 /**
  * Stripe webhook handler for processing subscription-related events
@@ -167,7 +43,7 @@ export async function POST(req: Request) {
         // Look up the user from the profiles table using the stripe_customer_id
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('userid')
+          .select('userid, user_type')
           .eq('stripe_customer_id', customerId)
           .single();
 
@@ -213,8 +89,10 @@ export async function POST(req: Request) {
           })
           .eq('userid', userId);
 
+        console.log(`Plan updated for user ${userId} from ${profile.user_type} to ${plan.slug}`);
+        
         // Clean up excess classes and students for the new plan
-        await cleanupExcessResources(userId, plan.slug);
+        await cleanupExcessResources(supabase, userId, plan.slug);
 
         break;
       }
@@ -261,7 +139,7 @@ export async function POST(req: Request) {
             .eq('userid', profile.userid);
 
           // Clean up excess classes and students for the downgraded plan
-          await cleanupExcessResources(profile.userid, downgradePlan);
+          await cleanupExcessResources(supabase, profile.userid, downgradePlan);
 
           console.log(`Downgraded ${profile.userid} to ${downgradePlan} due to no active subscriptions`);
         } else {
@@ -300,7 +178,7 @@ export async function POST(req: Request) {
               .eq('userid', profile.userid);
 
             // Clean up excess classes and students for the basic plan
-            await cleanupExcessResources(profile.userid, 'basic');
+            await cleanupExcessResources(supabase, profile.userid, 'basic');
           }
         }
         break;

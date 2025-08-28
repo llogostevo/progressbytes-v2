@@ -8,6 +8,7 @@ import { loadStripe } from "@stripe/stripe-js"
 import type { Plan } from "@/lib/types"
 import type { UserType } from "@/lib/access"
 import { userAccessLimits } from "@/lib/access"
+import { cleanupExcessResources } from "@/lib/utils"
 
 // UI Components
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -149,6 +150,9 @@ export default function UpgradePageClient() {
           .eq("userid", user.id)
 
         if (updateError) throw updateError
+
+        // Clean up excess classes and students for the new plan
+        await cleanupExcessResources(supabase, user.id, plan.slug as UserType)
 
         setUserType(plan.slug)
         toast.success(`Successfully switched to ${plan.name}`)
