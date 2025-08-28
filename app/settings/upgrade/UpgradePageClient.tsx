@@ -79,7 +79,7 @@ export default function UpgradePageClient() {
     if (downgradeInfo.isDowngrade) {
       const message = downgradeInfo.type === 'student' 
         ? "You're switching to a plan with fewer features. This may affect your current setup."
-        : "You're switching to a plan with fewer classes or students. This may affect your current setup."
+        : "You're switching to a plan with fewer classes or students. You will lose permenant access to your current classes and students if you are above the limits of the selected plan. "
       
       toast.error("Plan Downgrade Warning", {
         description: message,
