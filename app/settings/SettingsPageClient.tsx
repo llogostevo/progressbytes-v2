@@ -1736,7 +1736,7 @@ function SettingsPageContent() {
             <DialogHeader>
               <DialogTitle>Join Class</DialogTitle>
               <DialogDescription>
-                Enter the join code provided by your teacher. Note: Classes may have capacity limits based on the teacher's plan.
+                Enter the join code provided by your teacher. Note: Classes may have capacity limits based on the teacher&apos;s plan.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
