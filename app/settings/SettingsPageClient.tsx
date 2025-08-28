@@ -226,44 +226,6 @@ function SettingsPageContent() {
     }
   }
 
-
-  // const cancelAllUserSubscriptions = async (userId: string): Promise<void> => {
-  //   try {
-  //     // Get user's profile to check if they have a Stripe customer ID
-  //     const { data: profile, error: profileError } = await supabase
-  //       .from('profiles')
-  //       .select('stripe_customer_id')
-  //       .eq('userid', userId)
-  //       .single();
-
-  //     if (profileError || !profile) {
-  //       console.error('Error fetching profile or no profile found:', profileError);
-  //       return; // No profile or customer ID, nothing to cancel
-  //     }
-
-  //     // If user has a Stripe customer ID, cancel all their active subscriptions
-  //     if (profile.stripe_customer_id) {
-  //       // Import stripe dynamically to avoid server-side import issues
-  //       const { stripe } = await import('@/utils/stripe/stripe');
-
-  //       const activeSubscriptions = await stripe.subscriptions.list({
-  //         customer: profile.stripe_customer_id,
-  //         status: 'active',
-  //       });
-
-  //       // Cancel all active subscriptions
-  //       for (const subscription of activeSubscriptions.data) {
-  //         await stripe.subscriptions.cancel(subscription.id);
-  //         console.log(`Cancelled subscription ${subscription.id} for user ${userId}`);
-  //       }
-  //     }
-  //   } catch (error) {
-  //     console.error('Error cancelling subscriptions for user:', userId, error);
-  //     // Don't throw - let the calling function handle the error
-  //   }
-  // };
-
-
   const handleAddCourse = async (courseSlug: string) => {
     if (!userEmail) return
 
@@ -303,115 +265,6 @@ function SettingsPageContent() {
       setIsAddingCourse(false)
     }
   }
-
-
-  // const handlePlanSelect = async (plan: Plan) => {
-  //   if (!userEmail || plan.slug === userType) return;
-
-  //   setIsLoadingCheckout(true);
-  //   try {
-  //     // If it's a free plan
-  //     if (plan.price === 0) {
-  //       const { data: { user } } = await supabase.auth.getUser();
-  //       if (!user) throw new Error('User not found');
-
-  //       // Check if user currently has a paid plan
-  //       const { data: profile, error } = await supabase
-  //         .from('profiles')
-  //         .select('user_type, stripe_customer_id')
-  //         .eq('userid', user.id)
-  //         .single();
-
-  //       if (error || !profile) throw new Error('Could not fetch user profile');
-
-  //       // If they're on a paid plan, just update to free plan
-  //       // The webhook will handle any subscription cancellation when Stripe sends events
-  //       // TODO: need to code this from the DB rather than directly in the code here
-  //       // TODO: cache the plan data
-  //       if ((profile.user_type !== 'basic' && profile.user_type !== 'teacherBasic') && profile.stripe_customer_id) {
-  //         // Cancel the subscription via API
-  //         const cancelResponse = await fetch('/api/cancel-subscription', {
-  //           method: 'POST',
-  //           headers: {
-  //             'Content-Type': 'application/json',
-  //           },
-  //         });
-
-  //         if (!cancelResponse.ok) {
-  //           const cancelData = await cancelResponse.json();
-  //           throw new Error(cancelData.error || 'Failed to cancel subscription');
-  //         }
-
-  //         toast.info('Switching to free plan. Your subscription will be cancelled automatically.');
-  //       }
-
-  //       // Update to free plan
-  //       const { error: updateError } = await supabase
-  //         .from('profiles')
-  //         .update({
-  //           user_type: plan.slug,
-  //           plan_end_date: null,
-  //         })
-  //         .eq('userid', user.id);
-
-  //       if (updateError) throw updateError;
-
-  //       setUserType(plan.slug);
-  //       toast.success(`Successfully switched to ${plan.name}`);
-  //       return;
-  //     }
-
-  //     // For paid plans — handle subscription creation/update
-  //     const response = await fetch('/api/create-checkout-session', {
-  //       method: 'POST',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //       },
-  //       body: JSON.stringify({
-  //         priceId: plan.stripe_price_id,
-  //       }),
-  //     });
-
-  //     const data = await response.json();
-
-  //     if (!response.ok) {
-  //       throw new Error(data.error || 'Failed to create checkout session');
-  //     }
-
-  //     // Check if this was a direct subscription update (no checkout needed)
-  //     if (data.success) {
-  //       toast.success('Plan updated successfully!');
-  //       setUserType(plan.slug);
-  //       return;
-  //     }
-
-  //     // Otherwise, redirect to Stripe checkout
-  //     if (!data.sessionId) {
-  //       throw new Error('No session ID returned');
-  //     }
-
-  //     const stripe = await stripePromise;
-  //     if (!stripe) {
-  //       throw new Error('Stripe failed to load');
-  //     }
-
-  //     const { error: stripeError } = await stripe.redirectToCheckout({
-  //       sessionId: data.sessionId,
-  //     });
-
-  //     if (stripeError) throw stripeError;
-
-  //   } catch (error) {
-  //     console.error('Error:', error);
-  //     toast.error(
-  //       error instanceof Error
-  //         ? error.message
-  //         : 'An error occurred during checkout, please contact support'
-  //     );
-  //   } finally {
-  //     setIsLoadingCheckout(false);
-  //   }
-  // };
 
   const generateJoinCode = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -630,7 +483,7 @@ function SettingsPageContent() {
   }
 
   const handleLeaveClass = async () => {
-    if (!selectedMembership || leaveClassConfirmation !== "delete") return
+    if (!selectedMembership || leaveClassConfirmation !== "Leave") return
 
     setIsLeavingClass(true)
     try {
@@ -756,13 +609,20 @@ function SettingsPageContent() {
 
   // Download CSV Template helper
   const handleDownloadCSVTemplate = () => {
+    // Calculate available spaces for the selected class
+    const currentStudentCount = selectedClassMembers?.length || 0
+    const availableSpaces = Math.max(0, maxStudentsPerClass - currentStudentCount)
+    
+    // Create CSV content with message and sample data
+    const message = `# You have ${availableSpaces} place${availableSpaces !== 1 ? 's' : ''} left in the class\n`
     const header = 'email\n'
-    const sampleRows = [
-      'student1@example.com',
-      'student2@example.com',
-      'student3@example.com',
-    ]
-    const csv = header + sampleRows.join('\n') + '\n'
+    
+    // Generate sample rows based on available spaces
+    const sampleRows = Array.from({ length: availableSpaces }, (_, index) => 
+      `student${index + 1}@example.com`
+    )
+    
+    const csv = message + header + sampleRows.join('\n') + '\n'
 
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
@@ -1705,7 +1565,7 @@ function SettingsPageContent() {
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            {(userType === 'basic' || userType === 'revision' || userType === 'revisionAI') && (
+                      
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -1717,7 +1577,7 @@ function SettingsPageContent() {
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
-                            )}
+                            
                           </div>
                         </div>
                       </CardContent>
@@ -1766,7 +1626,7 @@ function SettingsPageContent() {
 
         {/* Delete Course Dialog */}
         <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <DialogContent>
+          <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Delete Course</DialogTitle>
               <DialogDescription>
@@ -1788,7 +1648,7 @@ function SettingsPageContent() {
                   Cancel
                 </Button>
                 <Button
-                  variant="destructive"
+                  className="bg-red-600 hover:bg-red-700 text-white"
                   onClick={handleDeleteCourse}
                   disabled={deleteConfirmation !== "delete" || isDeleting}
                 >
@@ -1835,7 +1695,7 @@ function SettingsPageContent() {
 
         {/* Delete Class Dialog */}
         <Dialog open={deleteClassDialogOpen} onOpenChange={setDeleteClassDialogOpen}>
-          <DialogContent>
+          <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Delete Class</DialogTitle>
               <DialogDescription>
@@ -1857,7 +1717,7 @@ function SettingsPageContent() {
                   Cancel
                 </Button>
                 <Button
-                  variant="destructive"
+                  className="bg-red-600 hover:bg-red-700 text-white"
                   onClick={handleDeleteClass}
                   disabled={deleteClassConfirmation !== "delete" || isDeletingClass}
                 >
@@ -1935,7 +1795,7 @@ function SettingsPageContent() {
 
         {/* Leave Class Dialog */}
         <Dialog open={leaveClassDialogOpen} onOpenChange={setLeaveClassDialogOpen}>
-          <DialogContent>
+          <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Leave Class</DialogTitle>
               <DialogDescription>
@@ -1944,12 +1804,12 @@ function SettingsPageContent() {
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="leaveConfirmation">Type &quot;delete&quot; to confirm</Label>
+                <Label htmlFor="leaveConfirmation">Type &quot;Leave&quot; to confirm</Label>
                 <Input
                   id="leaveConfirmation"
                   value={leaveClassConfirmation}
                   onChange={(e) => setLeaveClassConfirmation(e.target.value)}
-                  placeholder="delete"
+                  placeholder="Leave"
                 />
               </div>
               <DialogFooter>
@@ -1957,7 +1817,7 @@ function SettingsPageContent() {
                   Cancel
                 </Button>
                 <Button
-                  variant="destructive"
+                  className="bg-red-600 hover:bg-red-700 text-white"
                   onClick={handleLeaveClass}
                   disabled={leaveClassConfirmation !== "delete" || isLeavingClass}
                 >
@@ -1970,7 +1830,7 @@ function SettingsPageContent() {
 
         {/* Delete Member Dialog */}
         <Dialog open={deleteMemberDialogOpen} onOpenChange={setDeleteMemberDialogOpen}>
-          <DialogContent>
+          <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Remove Student</DialogTitle>
               <DialogDescription>
@@ -1983,7 +1843,7 @@ function SettingsPageContent() {
                   Cancel
                 </Button>
                 <Button
-                  variant="destructive"
+                  className="bg-red-600 hover:bg-red-700 text-white"
                   onClick={handleDeleteClassMember}
                   disabled={isDeletingMember}
                 >
