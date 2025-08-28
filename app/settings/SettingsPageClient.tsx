@@ -1087,8 +1087,8 @@ function SettingsPageContent() {
 
         <UpgradePageClient />
 
-        {/* Course Management */}
-        <Card className="mb-8">
+        {/* Course Management - removed for now until multiple courses are supported */}
+        {/* <Card className="mb-8">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -1141,7 +1141,7 @@ function SettingsPageContent() {
               )}
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* Teacher Class Membership */}
         {isTeacher(userType) && (
