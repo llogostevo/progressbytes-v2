@@ -2,6 +2,8 @@ import { UserType } from "./access"
 
 export type ScoreType = "green" | "amber" | "red"
 
+export type Bucket = "new" | "mid" | "old"
+
 export interface Question {
   id: string
   topic: string

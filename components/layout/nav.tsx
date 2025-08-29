@@ -6,7 +6,7 @@ import { createClient } from "@/utils/supabase/client"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
-import { Menu, LogIn, LogOut, BookOpen, BarChart2, Settings, Calendar } from "lucide-react"
+import { Menu, LogIn, LogOut, BookOpen, BarChart2, Settings, Calendar, Zap } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { LucideIcon } from "lucide-react"
 import { useAuth } from "@/app/providers/AuthProvider"
@@ -44,7 +44,9 @@ export function Nav() {
           { title: "Analytics", href: "/analytics", icon: BarChart2 },
           { title: "Coverage", href: "/coverage", icon: Calendar }
         ]
-      : []),
+      : [
+          { title: "ProgressBoost", href: "/progress-boost", icon: Zap }
+        ]),
     ...(isAdmin(userRole)
         ? [{ title: "Admin", href: "/#", icon: BarChart2 }]
         : []),
