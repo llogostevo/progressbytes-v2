@@ -120,8 +120,8 @@ interface StudentClassMember {
     teacher: {
       email: string
       full_name: string
-    }
-  }
+    }[] | null
+  }[]
 }
 
 type UserRole = 'regular' | 'admin'
@@ -289,7 +289,6 @@ function PerformanceGraph({ studentAnswers, selectedStudent, topics }: {
   }).sort((a, b) => compareTopicNumbers(a.topicNumber, b.topicNumber))
 
 
-  console.log('Bar Chart Data:', barChartData); // Debug log
 
   return (
     <Card>
@@ -619,6 +618,7 @@ export default function AnalyticsPage() {
   const [classes, setClasses] = useState<Class[]>([])
   const [selectedClass, setSelectedClass] = useState<string>("all")
   const [classMembers, setClassMembers] = useState<Array<{ student_id: string; email: string; forename: string; lastname: string }>>([])
+  const [allClassMembers, setAllClassMembers] = useState<Array<{ student_id: string; email: string; forename: string; lastname: string }>>([])
   const [timeFilter, setTimeFilter] = useState<"today" | "week" | "all">("all")
   const [studentSearch, setStudentSearch] = useState("");
   const [sortBy, setSortBy] = useState<"forename" | "lastname" | "email">("forename");
@@ -631,7 +631,6 @@ export default function AnalyticsPage() {
 
   const fetchStudentAnswers = useCallback(async () => {
     if (!selectedStudent) {
-      console.log('No student selected, skipping fetch')
       return
     }
 
@@ -666,14 +665,11 @@ export default function AnalyticsPage() {
         .order('submitted_at', { ascending: false })
         .eq('student_id', selectedStudent)
 
-      console.log('Student answers:', studentAnswers)
       if (studentAnswersError) {
-        console.error('Error fetching student answers:', studentAnswersError.message)
         return
       }
 
       if (!studentAnswers) {
-        console.log('No student answers found for student:', selectedStudent)
         return
       }
 
@@ -695,9 +691,8 @@ export default function AnalyticsPage() {
           };
         })
       );
-      console.log('Fetched student answers:', studentAnswers)
     } catch (error) {
-      console.error('Unexpected error fetching student answers:', error)
+      console.error('Error fetching student answers:', error)
     } finally {
       setIsLoadingPerformance(false)
     }
@@ -708,6 +703,82 @@ export default function AnalyticsPage() {
       fetchStudentAnswers()
     }
   }, [selectedStudent, fetchStudentAnswers])
+
+  // Fetch students for teachers after classes are loaded
+  useEffect(() => {
+    const fetchTeacherStudents = async () => {
+      if (!isTeacher(currentUserType) || classes.length === 0) {
+        return
+      }
+
+      setIsLoadingStudents(true)
+      try {
+
+        const { data: classMembersData, error: classMembersError } = await supabase
+          .from("class_members")
+          .select(`
+            student_id,
+            student:profiles!class_members_student_id_fkey (
+              userid,
+              email,
+              forename,
+              lastname
+            )
+          `)
+          .in('class_id', classes.map(c => c.id))
+
+        if (classMembersError) {
+          console.error('Error fetching class members:', classMembersError)
+        } else {
+
+          // Remove duplicates and map to students array
+          const uniqueStudents = (classMembersData || []).reduce((acc: Array<{ userid: string; email: string; forename: string; lastname: string }>, member) => {
+            // Handle the case where student might be an array or object
+            const studentData = Array.isArray(member.student) ? member.student[0] : member.student;
+            if (studentData && !acc.find(s => s.userid === studentData.userid)) {
+              acc.push(studentData)
+            }
+            return acc
+          }, [] as Array<{ userid: string; email: string; forename: string; lastname: string }>)
+          
+          setStudents(uniqueStudents)
+          
+          // Also populate allClassMembers for the homework tab
+          const allMembers = (classMembersData || []).map(member => {
+            // Handle the case where student might be an array or object
+            const studentData = Array.isArray(member.student) ? member.student[0] : member.student;
+            const { forename = '', lastname = '', email = '' } = studentData || {};
+            return {
+              student_id: member.student_id,
+              email,
+              forename,
+              lastname
+            }
+          })
+          setAllClassMembers(allMembers)
+          console.log('allClassMembers set:', allMembers.length, 'members')
+          
+          if (uniqueStudents.length > 0 && !selectedStudent) {
+            setSelectedStudent(uniqueStudents[0].userid)
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching teacher students:', error)
+      } finally {
+        setIsLoadingStudents(false)
+        setIsLoadingHomework(false)
+      }
+    }
+
+    fetchTeacherStudents()
+  }, [classes, currentUserType, selectedStudent, supabase])
+
+  // Debug useEffect for homework tab
+  useEffect(() => {
+    console.log('Debug - selectedClass:', selectedClass)
+    console.log('Debug - allClassMembers:', allClassMembers.length, allClassMembers)
+    console.log('Debug - classMembers:', classMembers.length, classMembers)
+  }, [selectedClass, allClassMembers, classMembers])
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -740,6 +811,7 @@ export default function AnalyticsPage() {
         if (teacherClassesError) {
           console.error('Error fetching teaching classes:', teacherClassesError)
         } else {
+
           setClasses(teacherClasses || [])
         }
         setIsLoadingClasses(false)
@@ -760,17 +832,16 @@ export default function AnalyticsPage() {
             )
           `)
           .eq('student_id', user.id)
-          .returns<StudentClassMember[]>()
 
         if (studentClassesError) {
           console.error('Error fetching student classes:', studentClassesError)
         } else {
           const mappedClasses = (studentClasses || []).map((m: StudentClassMember) => ({
-            id: m.class.id,
-            name: m.class.name,
-            teacher_id: m.class.teacher_id,
-            created_at: m.class.created_at,
-            teacher: m.class.teacher
+            id: m.class[0].id,
+            name: m.class[0].name,
+            teacher_id: m.class[0].teacher_id,
+            created_at: m.class[0].created_at,
+            teacher: m.class[0].teacher?.[0] || undefined
           }))
           setClasses(mappedClasses)
         }
@@ -781,18 +852,23 @@ export default function AnalyticsPage() {
 
       // Fetch students if user is admin or teacher
       if (isAdmin( profile?.role) || isTeacher(profile?.user_type)) {
-        // Fetch all users
-        const { data: usersData, error: usersError } = await supabase
-          .from("profiles")
-          .select("userid, email, forename, lastname")
-          .order('email')
-
-        if (usersError) {
-          console.error('Error fetching users:', usersError)
+        if (isTeacher(profile?.user_type)) {
+          // For teachers, we'll fetch students after classes are loaded
+          // This will be handled in a separate useEffect
         } else {
-          setStudents(usersData || [])
-          if (usersData && usersData.length > 0) {
-            setSelectedStudent(usersData[0].userid)
+          // For admins, fetch all users
+          const { data: usersData, error: usersError } = await supabase
+            .from("profiles")
+            .select("userid, email, forename, lastname")
+            .order('email')
+
+          if (usersError) {
+            console.error('Error fetching users:', usersError)
+          } else {
+            setStudents(usersData || [])
+            if (usersData && usersData.length > 0) {
+              setSelectedStudent(usersData[0].userid)
+            }
           }
         }
         setIsLoadingStudents(false)
@@ -826,7 +902,11 @@ export default function AnalyticsPage() {
 
       setIsLoading(false)
       setIsLoadingSessions(false)
-      setIsLoadingHomework(false)
+      // Only set homework loading to false if user is not a teacher
+      // For teachers, we'll set it to false after students are loaded
+      if (!isTeacher(profile?.user_type)) {
+        setIsLoadingHomework(false)
+      }
     }
 
     fetchUser()
@@ -897,6 +977,8 @@ export default function AnalyticsPage() {
   useEffect(() => {
     const fetchClassMembers = async () => {
       if (selectedClass === "all") {
+        // For "All Classes", we don't need to fetch class members separately
+        // since we already have all students from the teacher's classes in the students array
         setClassMembers([])
         return
       }
@@ -936,7 +1018,15 @@ export default function AnalyticsPage() {
 
   // Filter activity based on selected class
   const filteredActivity = selectedClass === "all"
-    ? userActivity
+    ? userActivity.filter(activity => {
+        // For students, only show their own activity
+        if (currentUserType === 'basic' || currentUserType === 'revision' || currentUserType === 'revisionAI') {
+          return activity.user_id === selectedStudent
+        }
+        // For teachers, show activity of students in their assigned classes
+        const studentInClass = students.find(s => s.userid === activity.user_id)
+        return studentInClass && classes.some(c => c.id === activity.class_id)
+      })
     : userActivity.filter(activity => {
       // For students, only show their own activity
       if (currentUserType === 'basic' || currentUserType === 'revision' || currentUserType === 'revisionAI') {
@@ -1244,7 +1334,10 @@ export default function AnalyticsPage() {
             {isLoadingHomework ? (
               <HomeworkSkeleton />
             ) : (
-              <UserActivityFilter selectedClass={selectedClass} classMembers={classMembers} />
+              <UserActivityFilter 
+                selectedClass={selectedClass} 
+                classMembers={selectedClass === "all" ? allClassMembers : classMembers} 
+              />
             )}
           </TabsContent>
 

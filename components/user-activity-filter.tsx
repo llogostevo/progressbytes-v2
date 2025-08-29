@@ -96,6 +96,7 @@ function ResultsSkeleton() {
 }
 
 export function UserActivityFilter({ selectedClass, classMembers }: UserActivityFilterProps) {
+  console.log('UserActivityFilter received:', { selectedClass, classMembersLength: classMembers.length, classMembers })
   const [users, setUsers] = useState<UserActivity[]>([])
   const [filteredUsers, setFilteredUsers] = useState<UserActivity[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -367,16 +368,47 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
       const startDate = new Date()
       startDate.setDate(startDate.getDate() - parseInt(timeRange))
 
-      // If "all" is selected, fetch activity for all class members
-      // Otherwise, fetch activity only for students in the selected class
+      // Start with all class members to ensure we show all students
+      // Remove duplicates based on user_id to handle "All Classes" case
+      const uniqueClassMembers = classMembers.filter((member, index, self) => 
+        index === self.findIndex(m => m.student_id === member.student_id)
+      )
+      
+      const allStudents = uniqueClassMembers.map(member => ({
+        user_id: member.student_id,
+        user_email: member.email,
+        total_duration: 0,
+        questions_submitted: 0,
+        last_activity: '',
+        class_id: selectedClass,
+        low_questions: 0,
+        medium_questions: 0,
+        high_questions: 0
+      }))
+
+      // Create a map of all students
+      const userMap = new Map<string, UserActivity>()
+      allStudents.forEach(student => {
+        userMap.set(student.user_id, student)
+      })
+
+      // If no class members, return empty results
+      if (classMembers.length === 0) {
+        setUsers([])
+        setFilteredUsers([])
+        setIsLoading(false)
+        return
+      }
+
+      // Fetch activity for all students in the class
       let activityQuery = supabase
         .from("user_activity")
         .select("*")
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())
 
-      // Filter by class members if a specific class is selected
-      if (selectedClass !== "all" && classMembers.length > 0) {
+      // Filter by class members
+      if (classMembers.length > 0) {
         const classMemberEmails = classMembers.map(member => member.email)
         activityQuery = activityQuery.in('user_email', classMemberEmails)
       }
@@ -400,23 +432,19 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
           .gte('submitted_at', startDate.toISOString())
           .lte('submitted_at', endDate.toISOString())
 
-        // Group and process user activity
-        const userMap = new Map<string, UserActivity>()
-
-        // First pass: Initialize user records
+        // Update user records with activity data
         activity.forEach(record => {
-          if (!userMap.has(record.user_id)) {
-            userMap.set(record.user_id, {
-              user_id: record.user_id,
-              user_email: record.user_email || 'Unknown',
-              total_duration: 0,
-              questions_submitted: 0,
-              last_activity: record.created_at,
-              class_id: record.class_id,
-              low_questions: 0,
-              medium_questions: 0,
-              high_questions: 0
-            })
+          const user = userMap.get(record.user_id)
+          if (user) {
+            // Update last activity if this is more recent
+            if (!user.last_activity || new Date(record.created_at) > new Date(user.last_activity)) {
+              user.last_activity = record.created_at
+            }
+
+            // Count questions submitted
+            if (record.event === 'submitted_question') {
+              user.questions_submitted++
+            }
           }
         })
 
@@ -435,7 +463,7 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
           }
         })
 
-        // Third pass: Calculate total duration for each user
+        // Calculate total duration for each user
         const userActivityMap = new Map<string, typeof activity>()
         activity.forEach(record => {
           if (!userActivityMap.has(record.user_id)) {
@@ -445,86 +473,45 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
         })
 
         userActivityMap.forEach((userActivity, userId) => {
-          const user = userMap.get(userId)!
+          const user = userMap.get(userId)
+          if (user) {
+            // Group activities by date
+            const dailyActivities = new Map<string, typeof userActivity>()
+            userActivity.forEach(record => {
+              const date = new Date(record.created_at).toDateString()
+              if (!dailyActivities.has(date)) {
+                dailyActivities.set(date, [])
+              }
+              dailyActivities.get(date)!.push(record)
+            })
 
-          // Group activities by date
-          const dailyActivities = new Map<string, typeof userActivity>()
-          userActivity.forEach(record => {
-            const date = new Date(record.created_at).toDateString()
-            if (!dailyActivities.has(date)) {
-              dailyActivities.set(date, [])
-            }
-            dailyActivities.get(date)!.push(record)
-          })
+            // Calculate total duration across all days
+            let totalDuration = 0
+            dailyActivities.forEach((dayActivity) => {
+              if (dayActivity.length > 1) {
+                // Sort by timestamp
+                dayActivity.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
 
-          // Calculate total duration across all days
-          let totalDuration = 0
-          dailyActivities.forEach((dayActivity) => {
-            if (dayActivity.length > 1) {
-              // Sort by timestamp
-              dayActivity.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+                // Calculate duration from first to last activity of the day
+                const firstActivity = dayActivity[0]
+                const lastActivity = dayActivity[dayActivity.length - 1]
+                const durationMinutes = Math.round(
+                  (new Date(lastActivity.created_at).getTime() - new Date(firstActivity.created_at).getTime()) / (1000 * 60)
+                )
+                totalDuration += durationMinutes
+              }
+            })
 
-              // Calculate duration from first to last activity of the day
-              const firstActivity = dayActivity[0]
-              const lastActivity = dayActivity[dayActivity.length - 1]
-              const durationMinutes = Math.round(
-                (new Date(lastActivity.created_at).getTime() - new Date(firstActivity.created_at).getTime()) / (1000 * 60)
-              )
-              totalDuration += durationMinutes
-            }
-          })
-
-          user.total_duration = totalDuration
+            user.total_duration = totalDuration
+          }
         })
 
-        // Fourth pass: Count questions by difficulty for each user
-        // if (studentAnswers) {
-        //   console.log('Student answers found:', studentAnswers.length)
-        //   console.log('Sample student answer:', studentAnswers[0])
-
-
-        //   const userAnswersMap = new Map<string, typeof studentAnswers>()
-        //   studentAnswers.forEach(answer => {
-        //     if (!userAnswersMap.has(answer.student_id)) {
-        //       userAnswersMap.set(answer.student_id, [])
-        //     }
-        //     userAnswersMap.get(answer.student_id)!.push(answer)
-        //   })
-
-        //   userAnswersMap.forEach((userAnswers, userId) => {
-        //     const user = userMap.get(userId)
-        //     if (user) {
-        //       console.log(`Processing user ${user.user_email}:`, userAnswers.length, 'answers')
-
-        //       userAnswers.forEach(answer => {
-        //         console.log('Answer questions:', answer.questions)
-
-        //         const difficulty = answer.questions?.difficulty
-        //         console.log('Difficulty:', difficulty)
-
-        //         if (difficulty === 'low') {
-        //           user.low_questions++
-        //         } else if (difficulty === 'medium') {
-        //           user.medium_questions++
-        //         } else if (difficulty === 'high') {
-        //           user.high_questions++
-        //         }
-        //       })
-        //       console.log(`Final counts for ${user.user_email}:`, {
-        //         low: user.low_questions,
-        //         medium: user.medium_questions,
-        //         high: user.high_questions
-        //       })
-        //     }
-        //   })
-        // }
-
-        // helper to normalize object | array | null -> array
-        const toArray = <T,>(x: T | T[] | null | undefined): T[] =>
-          Array.isArray(x) ? x : x ? [x] : [];
-
-        // Fourth pass: Count questions by difficulty for each user
+        // Count questions by difficulty for each user
         if (studentAnswers) {
+          // helper to normalize object | array | null -> array
+          const toArray = <T,>(x: T | T[] | null | undefined): T[] =>
+            Array.isArray(x) ? x : x ? [x] : [];
+
           type Difficulty = "low" | "medium" | "high";
           const isDifficulty = (x: unknown): x is Difficulty =>
             x === "low" || x === "medium" || x === "high";

@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import type { Answer, ScoreType, Topic, Question } from "@/lib/types"
-import { CheckCircle, AlertTriangle, AlertCircle, ArrowRight, Calendar, Flame, Star } from "lucide-react"
+import { CheckCircle, AlertTriangle, AlertCircle, ArrowRight, Calendar, Flame, Star, BarChart as BarChartIcon } from "lucide-react"
 import Link from "next/link"
 import { UserLogin } from "@/components/user-login"
 import { createClient } from "@/utils/supabase/client"
@@ -509,6 +509,245 @@ function StreakDisplay({ streakData, scorePercentages }: { streakData: StreakDat
   )
 }
 
+// Add new component for comprehensive count display
+function CountSection({ answers, topics }: { 
+  answers: Answer[]; 
+  topics: Topic[]; 
+}) {
+  // Calculate comprehensive statistics
+  const totalAnswers = answers.length
+  
+  // Score breakdowns
+  const scoreCount = {
+    green: answers.filter((a) => a.score === "green").length,
+    amber: answers.filter((a) => a.score === "amber").length,
+    red: answers.filter((a) => a.score === "red").length,
+  }
+
+  const scorePercentages = {
+    green: totalAnswers ? Math.round((scoreCount.green / totalAnswers) * 100) : 0,
+    amber: totalAnswers ? Math.round((scoreCount.amber / totalAnswers) * 100) : 0,
+    red: totalAnswers ? Math.round((scoreCount.red / totalAnswers) * 100) : 0,
+  }
+
+  // Difficulty breakdown (need to get difficulty from questions)
+  const difficultyCount = {
+    low: 0,
+    medium: 0,
+    high: 0,
+  }
+
+  // Question type breakdown
+  const questionTypeCount = {
+    "multiple-choice": 0,
+    "text": 0,
+    "fill-in-the-blank": 0,
+    "matching": 0,
+    "code": 0,
+    "algorithm": 0,
+    "sql": 0,
+    "short-answer": 0,
+    "essay": 0,
+    "true-false": 0,
+  }
+
+  // Topic breakdown
+  const topicCount = answers.reduce((acc, answer) => {
+    const topic = topics.find((t) => t.questions.some((q) => q.id === answer.question_id))
+    if (topic) {
+      acc[topic.name] = (acc[topic.name] || 0) + 1
+    }
+    return acc
+  }, {} as Record<string, number>)
+
+  // Calculate difficulty and question type counts
+  answers.forEach((answer) => {
+    const question = topics
+      .flatMap(t => t.questions)
+      .find(q => q.id === answer.question_id)
+    
+    if (question) {
+      // Count difficulty
+      difficultyCount[question.difficulty]++
+      
+      // Count question type
+      questionTypeCount[question.type]++
+    }
+  })
+
+  // Get top topics
+  const topTopics = Object.entries(topicCount)
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 3)
+
+  // Get most recent activity
+  const mostRecentAnswer = answers.length > 0 
+    ? answers.reduce((latest, current) => 
+        new Date(current.submitted_at) > new Date(latest.submitted_at) ? current : latest
+      )
+    : null
+
+  return (
+    <Card className="mb-8">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <BarChartIcon className="h-5 w-5" />
+          Question Statistics
+        </CardTitle>
+        <CardDescription>
+          Comprehensive breakdown of {totalAnswers} answered question{totalAnswers !== 1 ? "s" : ""}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Total Questions */}
+          <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="text-2xl font-bold text-blue-600">{totalAnswers}</div>
+            <div className="text-sm text-blue-700 font-medium">Total Questions</div>
+            <div className="text-xs text-blue-600">Answered</div>
+          </div>
+
+          {/* Score Breakdown */}
+          <div className="text-center p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+            <div className="text-2xl font-bold text-emerald-600">{scoreCount.green}</div>
+            <div className="text-sm text-emerald-700 font-medium">Strong</div>
+            <div className="text-xs text-emerald-600">{scorePercentages.green}%</div>
+          </div>
+
+          <div className="text-center p-4 bg-amber-50 rounded-lg border border-amber-200">
+            <div className="text-2xl font-bold text-amber-600">{scoreCount.amber}</div>
+            <div className="text-sm text-amber-700 font-medium">Developing</div>
+            <div className="text-xs text-amber-600">{scorePercentages.amber}%</div>
+          </div>
+
+          <div className="text-center p-4 bg-red-50 rounded-lg border border-red-200">
+            <div className="text-2xl font-bold text-red-600">{scoreCount.red}</div>
+            <div className="text-sm text-red-700 font-medium">Needs Work</div>
+            <div className="text-xs text-red-600">{scorePercentages.red}%</div>
+          </div>
+        </div>
+
+        {/* Difficulty and Type Breakdown */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+          {/* Difficulty Breakdown */}
+          <div className="p-4 bg-gray-50 rounded-lg border">
+            <h4 className="font-medium text-gray-900 mb-3">Difficulty Breakdown</h4>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Easy</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-16 bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-green-500 h-2 rounded-full" 
+                      style={{ width: `${totalAnswers ? (difficultyCount.low / totalAnswers) * 100 : 0}%` }}
+                    ></div>
+                  </div>
+                  <span className="text-sm font-medium text-gray-900">{difficultyCount.low}</span>
+                </div>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Medium</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-16 bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-yellow-500 h-2 rounded-full" 
+                      style={{ width: `${totalAnswers ? (difficultyCount.medium / totalAnswers) * 100 : 0}%` }}
+                    ></div>
+                  </div>
+                  <span className="text-sm font-medium text-gray-900">{difficultyCount.medium}</span>
+                </div>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Hard</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-16 bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-red-500 h-2 rounded-full" 
+                      style={{ width: `${totalAnswers ? (difficultyCount.high / totalAnswers) * 100 : 0}%` }}
+                    ></div>
+                  </div>
+                  <span className="text-sm font-medium text-gray-900">{difficultyCount.high}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Question Type Breakdown */}
+          <div className="p-4 bg-gray-50 rounded-lg border">
+            <h4 className="font-medium text-gray-900 mb-3">Question Types</h4>
+            <div className="space-y-2">
+              {Object.entries(questionTypeCount)
+                .filter(([, count]) => count > 0)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 5)
+                .map(([type, count]) => (
+                  <div key={type} className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600 capitalize">{type.replace('-', ' ')}</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-16 bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-blue-500 h-2 rounded-full" 
+                          style={{ width: `${totalAnswers ? (count / totalAnswers) * 100 : 0}%` }}
+                        ></div>
+                      </div>
+                      <span className="text-sm font-medium text-gray-900">{count}</span>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Top Topics and Recent Activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+          {/* Top Topics */}
+          <div className="p-4 bg-gray-50 rounded-lg border">
+            <h4 className="font-medium text-gray-900 mb-3">Top Topics</h4>
+            <div className="space-y-2">
+              {topTopics.length > 0 ? (
+                topTopics.map(([topic, count], index) => (
+                  <div key={topic} className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-900">#{index + 1}</span>
+                      <span className="text-sm text-gray-600">{topic}</span>
+                    </div>
+                    <span className="text-sm font-medium text-gray-900">{count} questions</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-gray-500">No topics attempted yet</p>
+              )}
+            </div>
+          </div>
+
+          {/* Recent Activity */}
+          <div className="p-4 bg-gray-50 rounded-lg border">
+            <h4 className="font-medium text-gray-900 mb-3">Recent Activity</h4>
+            <div className="space-y-2">
+              {mostRecentAnswer ? (
+                <div className="text-sm text-gray-600">
+                  <p>Last question answered: <span className="font-medium text-gray-900">
+                    {new Date(mostRecentAnswer.submitted_at).toLocaleDateString()}
+                  </span></p>
+                  <p className="mt-1">Score: <span className={`font-medium ${
+                    mostRecentAnswer.score === 'green' ? 'text-emerald-600' :
+                    mostRecentAnswer.score === 'amber' ? 'text-amber-600' : 'text-red-600'
+                  }`}>
+                    {mostRecentAnswer.score === 'green' ? 'Strong' :
+                     mostRecentAnswer.score === 'amber' ? 'Developing' : 'Needs Work'}
+                  </span></p>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">No recent activity</p>
+              )}
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 export default function ProgressPage() {
   // access control
   const { canViewAnswers: userCanViewAnswers } = useAccess()
@@ -524,6 +763,11 @@ export default function ProgressPage() {
     bestStreak: 0,
     lastActiveDate: new Date().toISOString()
   })
+  const [selectedStudent, setSelectedStudent] = useState<string | null>(null)
+  const [students, setStudents] = useState<Array<{ userid: string; email: string; forename: string; lastname: string }>>([])
+
+  // const [selectedClass, setSelectedClass] = useState<string>("all")
+  // const [classMembers, setClassMembers] = useState<Array<{ student_id: string; email: string; forename: string; lastname: string }>>([])
 
   useEffect(() => {
     const getUser = async () => {
@@ -610,6 +854,7 @@ export default function ProgressPage() {
                 questions!inner (
                   id,
                   type,
+                  difficulty,
                   question_text,
                   explanation,
                   created_at,
@@ -716,8 +961,60 @@ export default function ProgressPage() {
 
         setTopics(transformedTopics)
 
-        // Build query based on timeFilter
-        let query = supabase.from("student_answers").select("*").eq("student_id", user.id)
+        // Fetch classes and students for teacher/admin users
+        const { data: userClasses } = await supabase
+          .from("classes")
+          .select("*")
+          .eq("teacher_id", user.id)
+
+        if (userClasses) {
+          // Fetch students for all classes
+          const { data: allStudents } = await supabase
+            .from("class_members")
+            .select(`
+              student_id,
+              class_id,
+              students!inner (
+                userid,
+                email,
+                forename,
+                lastname
+              )
+            `)
+            .in("class_id", userClasses.map(c => c.id))
+
+          if (allStudents) {
+            // Define the type for the database query result
+            type ClassMemberWithStudent = {
+              student_id: string
+              class_id: string
+              students: Array<{ userid: string; email: string; forename: string; lastname: string }>
+            }
+
+            const uniqueStudents = allStudents.reduce((acc: Array<{ userid: string; email: string; forename: string; lastname: string }>, member: ClassMemberWithStudent) => {
+              const student = member.students[0]
+              if (!acc.find(s => s.userid === student.userid)) {
+                acc.push(student)
+              }
+              return acc
+            }, [])
+            
+            setStudents(uniqueStudents)
+            // setClassMembers(allStudents.map((member: ClassMemberWithStudent) => {
+            //   const student = member.students[0]
+            //   return {
+            //     student_id: member.student_id,
+            //     email: student.email,
+            //     forename: student.forename,
+            //     lastname: student.lastname
+            //   }
+            // }))
+          }
+        }
+
+        // Build query based on timeFilter and selected student
+        const studentId = selectedStudent || user.id
+        let query = supabase.from("student_answers").select("*").eq("student_id", studentId)
 
         if (timeFilter === "today") {
           const startDate = new Date()
@@ -767,7 +1064,7 @@ export default function ProgressPage() {
       setIsLoading(false)
     }
     getUser()
-  }, [timeFilter])
+  }, [timeFilter, selectedStudent])
 
   // Calculate statistics
   const totalAnswers = answers.length
@@ -836,6 +1133,28 @@ export default function ProgressPage() {
             <UserLogin email={user?.email} />
           </div>
           <p className="text-muted-foreground">Track your performance across all topics</p>
+          
+          {/* Student Selection - only show if user has students */}
+          {students.length > 0 && (
+            <div className="flex items-center gap-4 mt-4 mb-4">
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-700">View progress for:</label>
+                <select
+                  value={selectedStudent || user?.id || ""}
+                  onChange={(e) => setSelectedStudent(e.target.value === user?.id ? null : e.target.value)}
+                  className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                >
+                  <option value={user?.id || ""}>My Progress</option>
+                  {students.map((student) => (
+                    <option key={student.userid} value={student.userid}>
+                      {student.forename} {student.lastname} ({student.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+          
           {/* Time Filter Tabs - always visible */}
           <div className="flex items-center justify-end mt-4">
             <Tabs value={timeFilter} onValueChange={(value) => setTimeFilter(value as "today" | "week" | "all")}>
@@ -872,6 +1191,8 @@ export default function ProgressPage() {
         ) : (
           <>
             <StreakDisplay streakData={streakData} scorePercentages={scorePercentages} />
+
+            <CountSection answers={answers} topics={topics} />
             <Card className="mb-8">
               <CardHeader>
                 <CardTitle>Overall Performance</CardTitle>
