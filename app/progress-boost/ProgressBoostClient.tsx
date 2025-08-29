@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState, useCallback, useMemo as _useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/utils/supabase/client"
 
@@ -43,7 +43,6 @@ function normalizeQuestionType(raw: string | null | undefined): Question["type"]
 const get = (m: Record<string, number> | undefined, k: string) => Number((m && (m as any)[k]) ?? 0)
 
 type ScoreType = "green" | "amber" | "red"
-
 type ProgressMaps = { done: Record<string, number>; target: Record<string, number> }
 
 export default function ProgressBoostClient() {
@@ -63,7 +62,7 @@ export default function ProgressBoostClient() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [progress, setProgress] = useState<ProgressMaps>({ done: {}, target: {} })
 
-  // --- Answer / marking flow state (new) ---
+  // --- Answer / marking flow state ---
   const [answerId, setAnswerId] = useState<string | null>(null)
   const [autoScore, setAutoScore] = useState<ScoreType | null>(null) // for auto-marked types
   const [selfScore, setSelfScore] = useState<ScoreType | null>(null) // for self-assessed types
@@ -73,10 +72,7 @@ export default function ProgressBoostClient() {
   // -------- AUTH --------
   useEffect(() => {
     const run = async () => {
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser()
+      const { data: { user }, error } = await supabase.auth.getUser()
       if (error || !user) {
         router.replace("/login")
         return
@@ -122,6 +118,7 @@ export default function ProgressBoostClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAllowed, classId])
 
+  // Fallback for done/target counts if RPC doesn’t return them
   const computeCountsFallback = async (
     studentId: string,
     clsId: string,
@@ -210,9 +207,7 @@ export default function ProgressBoostClient() {
   const fetchPlan = async () => {
     setLoading(true)
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+      const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         router.replace("/login")
         return
@@ -220,6 +215,7 @@ export default function ProgressBoostClient() {
 
       const { start, end } = thisWeekBoundsLondon()
 
+      // Your planner RPC: IDs + progress maps (no model answers here)
       const { data, error } = await supabase.rpc("get_progressboost_plan_v3", {
         p_student: user.id,
         p_class: classId,
@@ -237,12 +233,12 @@ export default function ProgressBoostClient() {
         p_target_high_mid: PROGRESS_BOOST_RULES.high.mid,
         p_target_high_old: PROGRESS_BOOST_RULES.high.old,
       })
-
       if (error) throw error
 
-      const { done, target } = data && data.length > 0 && (data as any)[0]?.done_counts && (data as any)[0]?.target_counts
-        ? { done: (data as any)[0].done_counts, target: (data as any)[0].target_counts }
-        : await computeCountsFallback(user.id, classId, start, end)
+      const { done, target } =
+        data && data.length > 0 && (data as any)[0]?.done_counts && (data as any)[0]?.target_counts
+          ? { done: (data as any)[0].done_counts, target: (data as any)[0].target_counts }
+          : await computeCountsFallback(user.id, classId, start, end)
 
       setProgress({ done, target })
 
@@ -262,19 +258,24 @@ export default function ProgressBoostClient() {
       }
 
       const qIds = (data as any[]).map((row) => row.question_id)
+
+      // Pull *all* model-answer fields you display here (keeps the RPC lean)
       const { data: questionsData, error: qErr } = await supabase
         .from("questions")
         .select(`
           id, type, difficulty, question_text, explanation, created_at,
-          multiple_choice_questions(options, correct_answer_index),
-          fill_in_the_blank_questions(options, correct_answers, order_important),
-          matching_questions(statement, match),
-          code_questions(language, model_answer_code)
+          multiple_choice_questions (options, correct_answer_index),
+          fill_in_the_blank_questions (options, correct_answers, order_important),
+          matching_questions (statement, match),
+          true_false_questions (correct_answer),
+          short_answer_questions (model_answer),
+          essay_questions (model_answer, rubric),
+          code_questions (language, model_answer_code)
         `)
         .in("id", qIds)
-
       if (qErr) throw qErr
 
+      // Map to your UI Question shape
       const mapped = (questionsData || []).map((q: any) => {
         const norm = normalizeQuestionType(q.type)
         const base: any = {
@@ -284,6 +285,7 @@ export default function ProgressBoostClient() {
           question_text: q.question_text,
           explanation: q.explanation,
         }
+
         if (norm === "multiple-choice") {
           base.options = q.multiple_choice_questions?.options
           base.correctAnswerIndex = q.multiple_choice_questions?.correct_answer_index
@@ -292,11 +294,22 @@ export default function ProgressBoostClient() {
           base.order_important = q.fill_in_the_blank_questions?.order_important
           base.model_answer = q.fill_in_the_blank_questions?.correct_answers
         } else if (norm === "matching") {
-          base.pairs = (q.matching_questions || []).map((m: any) => ({ statement: m.statement, match: m.match }))
+          base.pairs = (q.matching_questions || []).map((m: any) => ({
+            statement: m.statement,
+            match: m.match,
+          }))
+        } else if (norm === "true-false") {
+          base.model_answer = q.true_false_questions?.correct_answer ?? null
+        } else if (norm === "text" || norm === "short-answer") {
+          base.model_answer = q.short_answer_questions?.model_answer ?? ""
+        } else if (norm === "essay") {
+          base.model_answer = q.essay_questions?.model_answer ?? ""
+          base.rubric = q.essay_questions?.rubric ?? ""
         } else if (norm === "code" || norm === "algorithm" || norm === "sql") {
           base.language = q.code_questions?.language
           base.model_answer_code = q.code_questions?.model_answer_code
         }
+
         return base as Question
       }) as Question[]
 
@@ -318,17 +331,11 @@ export default function ProgressBoostClient() {
 
   // ---------- SAVE ANSWER HELPERS ----------
   const afterAnswered = async () => {
-    // do not advance automatically; show feedback / self-assess.
-    // Next button will advance.
+    // Show review/self-assess. Next button advances.
   }
 
-  const saveAnswer = async (payload: {
-    response_text: string
-    autoScore?: ScoreType | null
-  }) => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+  const saveAnswer = async (payload: { response_text: string; autoScore?: ScoreType | null }) => {
+    const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       router.replace("/login")
       return null
@@ -380,7 +387,7 @@ export default function ProgressBoostClient() {
   const handleMatchingAnswer = async (selections: Record<string, string[]>) => {
     if (currentIndex >= questions.length) return
     setIsSubmitting(true)
-    // amber by default (could auto-mark with exact match, but keep simple)
+    // amber by default (can be auto-marked with exact match if you want)
     await saveAnswer({ response_text: JSON.stringify(selections), autoScore: null })
     setIsSubmitting(false)
     await afterAnswered()
@@ -413,7 +420,7 @@ export default function ProgressBoostClient() {
       .eq("id", answerId)
     if (error) {
       console.error(error)
-      toast.error("Failed to save self‑assessment")
+      toast.error("Failed to save self-assessment")
       return
     }
     setSelfScore(score)
@@ -449,7 +456,7 @@ export default function ProgressBoostClient() {
     const q = questions[currentIndex]
     if (!q) return null
 
-    // For brevity show a compact review per type
+    // Compact review per type
     if (q.type === "multiple-choice") {
       const isCorrect = autoScore === "green"
       return (
@@ -458,11 +465,7 @@ export default function ProgressBoostClient() {
             <h3 className="font-medium mb-2">Your Answer</h3>
             <div className="flex items-center gap-2">
               {q.options?.[Number(answerPayload ?? 0)] ?? "—"}
-              {isCorrect ? (
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
-              ) : (
-                <XCircle className="h-4 w-4 text-red-600" />
-              )}
+              {isCorrect ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : <XCircle className="h-4 w-4 text-red-600" />}
             </div>
           </div>
           <div className="p-3 bg-emerald-50 rounded border border-emerald-100">
@@ -563,9 +566,26 @@ export default function ProgressBoostClient() {
           <h3 className="font-medium mb-2">Your Answer</h3>
           <pre className="whitespace-pre-wrap font-sans text-sm">{answerPayload}</pre>
         </div>
+        <div className="p-3 bg-emerald-50 rounded border border-emerald-100">
+          <h3 className="font-medium mb-2 text-emerald-700">Model Answer</h3>
+          <div className="space-y-4">
+            <div>
+              {(q.type === "code" || q.type === "algorithm" || q.type === "sql") && (
+                <h4 className="text-sm font-medium mb-1">Pseudocode:</h4>
+              )}
+              <pre className="whitespace-pre-wrap font-sans text-sm">{q.model_answer}</pre>
+            </div>
+            {(q as any).model_answer_code && (
+              <div>
+                <h4 className="text-sm font-medium mb-1">{(q as any).language || "Python"}:</h4>
+                <pre className="whitespace-pre-wrap font-sans text-sm">{(q as any).model_answer_code}</pre>
+              </div>
+            )}
+          </div>
+        </div>
         {q.explanation && (
           <div className="p-3 bg-emerald-50 rounded border border-emerald-100">
-            <h3 className="font-medium mb-2 text-emerald-700">Mark Scheme</h3>
+            <h3 className="font-medium mb-2 text-emerald-700">Explanation</h3>
             <pre className="whitespace-pre-wrap font-sans text-sm">{q.explanation}</pre>
           </div>
         )}
@@ -614,7 +634,9 @@ export default function ProgressBoostClient() {
       {completed && (
         <Card className="border-green-300 bg-green-50 mb-6">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-green-700"><Trophy className="h-5 w-5" /> ProgressBoost Complete!</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-green-700">
+              <Trophy className="h-5 w-5" /> ProgressBoost Complete!
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-green-700">Awesome! You’ve hit all this week’s targets. Come back next week for a new Boost.</p>
