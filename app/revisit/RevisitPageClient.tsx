@@ -1,4 +1,4 @@
-// TODO: restrict user access to filters
+// TODO: restrict user access to filters?? need to decide if thats behind paywall
 "use client"
 
 // access control
