@@ -25,6 +25,20 @@ import { FeedbackDisplay } from "@/components/question-components/feedback-displ
 // ---- Utils ----
 import { PROGRESS_BOOST_RULES, NEW_DAYS, MID_DAYS, thisWeekBoundsLondon } from "@/lib/progressBoost"
 
+// ---------- Types ----------
+type ScoreType = "green" | "amber" | "red"
+
+type PlanRow = {
+  week_id: string
+  target_counts: Record<string, number>
+  item_id: string
+  question_id: string
+  bucket: "new" | "mid" | "old"
+  difficulty: "low" | "medium" | "high" | string
+  order_index: number
+  status: "pending" | "answered" | "skipped"
+}
+
 // Normalize backend question type strings to the UI’s canonical set
 function normalizeQuestionType(raw: string | null | undefined): Question["type"] {
   const t = String(raw || "").toLowerCase()
@@ -40,36 +54,42 @@ function normalizeQuestionType(raw: string | null | undefined): Question["type"]
   return t as Question["type"]
 }
 
-const get = (m: Record<string, number> | undefined, k: string) => Number((m && (m as any)[k]) ?? 0)
+const explain = (e: unknown) => {
+  if (e instanceof Error) return e.message
+  if (typeof e === "object" && e) {
+    try { return JSON.stringify(e, null, 2) } catch {}
+  }
+  return String(e)
+}
 
-type ScoreType = "green" | "amber" | "red"
-type ProgressMaps = { done: Record<string, number>; target: Record<string, number> }
+const toISODate = (d: Date) => d.toISOString().slice(0, 10)
+const getNum = (m: Record<string, number> | undefined, k: string) => Number((m && (m as any)[k]) ?? 0)
 
 export default function ProgressBoostClient() {
   const supabase = createClient()
   const router = useRouter()
 
-  // --- Auth ---
+  // --- Auth & class context ---
   const [authLoading, setAuthLoading] = useState(true)
   const [isAllowed, setIsAllowed] = useState(false)
-
-  // --- Weekly plan state ---
   const [classId, setClassId] = useState<string>("")
-  const [loading, setLoading] = useState(true)
-  const [completed, setCompleted] = useState(false)
 
+  // --- Plan & questions ---
+  const [plan, setPlan] = useState<PlanRow[]>([])
   const [questions, setQuestions] = useState<Question[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [progress, setProgress] = useState<ProgressMaps>({ done: {}, target: {} })
 
-  // --- Answer / marking flow state ---
+  // --- Progress + UI state ---
+  const [loading, setLoading] = useState(true)
+  const [completed, setCompleted] = useState(false)
   const [answerId, setAnswerId] = useState<string | null>(null)
-  const [autoScore, setAutoScore] = useState<ScoreType | null>(null) // for auto-marked types
-  const [selfScore, setSelfScore] = useState<ScoreType | null>(null) // for self-assessed types
+  const [autoScore, setAutoScore] = useState<ScoreType | null>(null)
+  const [selfScore, setSelfScore] = useState<ScoreType | null>(null)
   const [answerPayload, setAnswerPayload] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [progressMaps, setProgressMaps] = useState<{ done: Record<string, number>, target: Record<string, number> }>({ done: {}, target: {} })
 
-  // -------- AUTH --------
+  // ------------- Auth bootstrap -------------
   useEffect(() => {
     const run = async () => {
       const { data: { user }, error } = await supabase.auth.getUser()
@@ -78,6 +98,7 @@ export default function ProgressBoostClient() {
         return
       }
 
+      // Teacher? send home
       const { data: profile } = await supabase
         .from("profiles")
         .select("user_type")
@@ -89,14 +110,20 @@ export default function ProgressBoostClient() {
         return
       }
 
-      const { data: memberships } = await supabase
+      // Find the class
+      const { data: memberships, error: mErr } = await supabase
         .from("class_members")
-        .select("class_id, classes(id,name)")
+        .select("class_id")
         .eq("student_id", user.id)
 
+      if (mErr) {
+        toast.error("Failed to load classes: " + explain(mErr))
+        return
+      }
+
       if (!memberships || memberships.length === 0) {
-        setAuthLoading(false)
         setIsAllowed(true)
+        setAuthLoading(false)
         setLoading(false)
         toast("You’re not enrolled in a class yet.")
         return
@@ -111,100 +138,76 @@ export default function ProgressBoostClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // -------- FETCH PLAN --------
+  // ------------- Fetch (or create) this week's frozen plan -------------
   useEffect(() => {
     if (!isAllowed || !classId) return
-    void fetchPlan()
+    void fetchWeek()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAllowed, classId])
 
-  // Fallback for done/target counts if RPC doesn’t return them
-  const computeCountsFallback = async (
-    studentId: string,
-    clsId: string,
-    weekStart: Date,
-    weekEnd: Date
-  ): Promise<ProgressMaps> => {
-    const { data: coverageRows } = await supabase
-      .from("class_subtopic_coverage")
-      .select("subtopic_id, covered_on")
-      .eq("class_id", clsId)
-
-    const lastCovered = new Map<string, string>()
-    for (const r of coverageRows || []) {
-      const prev = lastCovered.get(r.subtopic_id)
-      if (!prev || new Date(r.covered_on) > new Date(prev)) lastCovered.set(r.subtopic_id, r.covered_on)
+  const recomputeProgressFromPlan = (rows: PlanRow[]) => {
+    if (!rows || rows.length === 0) {
+      setProgressMaps({ done: {}, target: {} })
+      setCompleted(false)
+      return
     }
+    // target from the week header (identical on every row)
+    const target = rows[0].target_counts || {}
 
-    const subtopicIds = Array.from(lastCovered.keys())
-    if (subtopicIds.length === 0) {
-      return {
-        done: {},
-        target: {
-          "low:new": PROGRESS_BOOST_RULES.low.new,
-          "low:mid": PROGRESS_BOOST_RULES.low.mid,
-          "low:old": PROGRESS_BOOST_RULES.low.old,
-          "medium:new": PROGRESS_BOOST_RULES.medium.new,
-          "medium:mid": PROGRESS_BOOST_RULES.medium.mid,
-          "medium:old": PROGRESS_BOOST_RULES.medium.old,
-          "high:new": PROGRESS_BOOST_RULES.high.new,
-          "high:mid": PROGRESS_BOOST_RULES.high.mid,
-          "high:old": PROGRESS_BOOST_RULES.high.old,
-        },
+    // count done per (difficulty:bucket)
+    const done: Record<string, number> = {}
+    for (const r of rows) {
+      if (r.status === "answered") {
+        const key = `${r.difficulty}:${r.bucket}`
+        done[key] = (done[key] || 0) + 1
       }
     }
 
-    const { data: links } = await supabase
-      .from("subtopic_question_link")
-      .select("subtopic_id, question_id, questions(id, difficulty)")
-      .in("subtopic_id", subtopicIds)
+    setProgressMaps({ done, target })
 
-    const now = new Date()
-    const questionBucket = new Map<string, { difficulty: string; bucket: string }>()
-    for (const row of links || []) {
-      const q = Array.isArray((row as any).questions) ? (row as any).questions[0] : (row as any).questions
-      if (!q) continue
-      const coveredOn = lastCovered.get(row.subtopic_id)
-      if (!coveredOn) continue
-      const days = Math.floor((now.getTime() - new Date(coveredOn).getTime()) / (1000 * 60 * 60 * 24))
-      const bucket = days <= NEW_DAYS ? "new" : days <= MID_DAYS ? "mid" : "old"
-      questionBucket.set(q.id, { difficulty: String(q.difficulty), bucket })
-    }
-
-    const qIds = Array.from(questionBucket.keys())
-
-    const { data: answers } = await supabase
-      .from("student_answers")
-      .select("question_id, submitted_at")
-      .eq("student_id", studentId)
-      .gte("submitted_at", weekStart.toISOString())
-      .lt("submitted_at", weekEnd.toISOString())
-      .in("question_id", qIds.length ? qIds : ["_none_"])
-
-    const doneCounts: Record<string, number> = {}
-    for (const a of answers || []) {
-      const meta = questionBucket.get(a.question_id as string)
-      if (!meta) continue
-      const key = `${meta.difficulty}:${meta.bucket}`
-      doneCounts[key] = (doneCounts[key] || 0) + 1
-    }
-
-    const targetCounts: Record<string, number> = {
-      "low:new": PROGRESS_BOOST_RULES.low.new,
-      "low:mid": PROGRESS_BOOST_RULES.low.mid,
-      "low:old": PROGRESS_BOOST_RULES.low.old,
-      "medium:new": PROGRESS_BOOST_RULES.medium.new,
-      "medium:mid": PROGRESS_BOOST_RULES.medium.mid,
-      "medium:old": PROGRESS_BOOST_RULES.medium.old,
-      "high:new": PROGRESS_BOOST_RULES.high.new,
-      "high:mid": PROGRESS_BOOST_RULES.high.mid,
-      "high:old": PROGRESS_BOOST_RULES.high.old,
-    }
-
-    return { done: doneCounts, target: targetCounts }
+    const totalDone = Object.values(done).reduce((a, b) => a + Number(b || 0), 0)
+    const totalTarget = Object.values(target).reduce((a, b) => a + Number(b || 0), 0)
+    setCompleted(totalTarget > 0 && totalDone >= totalTarget)
   }
 
-  const fetchPlan = async () => {
+  const mapDbQuestionToUI = (q: any): Question => {
+    const norm = normalizeQuestionType(q.type)
+    const base: any = {
+      id: q.id,
+      type: norm,
+      difficulty: q.difficulty,
+      question_text: q.question_text,
+      explanation: q.explanation,
+    }
+
+    if (norm === "multiple-choice") {
+      base.options = q.multiple_choice_questions?.options
+      base.correctAnswerIndex = q.multiple_choice_questions?.correct_answer_index
+    } else if (norm === "fill-in-the-blank") {
+      base.options = q.fill_in_the_blank_questions?.options
+      base.order_important = q.fill_in_the_blank_questions?.order_important
+      base.model_answer = q.fill_in_the_blank_questions?.correct_answers
+    } else if (norm === "matching") {
+      base.pairs = (q.matching_questions || []).map((m: any) => ({
+        statement: m.statement, match: m.match,
+      }))
+    } else if (norm === "true-false") {
+      base.model_answer = q.true_false_questions?.correct_answer ?? null
+    } else if (norm === "text" || norm === "short-answer") {
+      base.model_answer = q.short_answer_questions?.model_answer ?? ""
+    } else if (norm === "essay") {
+      base.model_answer = q.essay_questions?.model_answer ?? ""
+      base.rubric = q.essay_questions?.rubric ?? ""
+    } else if (norm === "code" || norm === "algorithm" || norm === "sql") {
+      base.language = q.code_questions?.language
+      base.model_answer = q.code_questions?.model_answer ?? ""
+      base.model_answer_code = q.code_questions?.model_answer_code
+    }
+
+    return base as Question
+  }
+
+  const fetchWeek = async () => {
     setLoading(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -215,52 +218,51 @@ export default function ProgressBoostClient() {
 
       const { start, end } = thisWeekBoundsLondon()
 
-      // Your planner RPC: IDs + progress maps (no model answers here)
-      const { data, error } = await supabase.rpc("get_progressboost_plan_v3", {
+      // Frozen, idempotent plan for the week
+      const { data: planRows, error: planErr } = await supabase.rpc("get_or_create_progressboost_week_v1", {
         p_student: user.id,
         p_class: classId,
-        p_week_start: start.toISOString(),
-        p_week_end: end.toISOString(),
+        p_week_start: toISODate(start),
+        p_week_end: toISODate(end),
         p_new_days: NEW_DAYS,
         p_mid_days: MID_DAYS,
-        p_target_low_new: PROGRESS_BOOST_RULES.low.new,
-        p_target_low_mid: PROGRESS_BOOST_RULES.low.mid,
-        p_target_low_old: PROGRESS_BOOST_RULES.low.old,
-        p_target_med_new: PROGRESS_BOOST_RULES.medium.new,
-        p_target_med_mid: PROGRESS_BOOST_RULES.medium.mid,
-        p_target_med_old: PROGRESS_BOOST_RULES.medium.old,
-        p_target_high_new: PROGRESS_BOOST_RULES.high.new,
-        p_target_high_mid: PROGRESS_BOOST_RULES.high.mid,
-        p_target_high_old: PROGRESS_BOOST_RULES.high.old,
+        p_targets: {
+          "low:new": PROGRESS_BOOST_RULES.low.new,
+          "low:mid": PROGRESS_BOOST_RULES.low.mid,
+          "low:old": PROGRESS_BOOST_RULES.low.old,
+          "medium:new": PROGRESS_BOOST_RULES.medium.new,
+          "medium:mid": PROGRESS_BOOST_RULES.medium.mid,
+          "medium:old": PROGRESS_BOOST_RULES.medium.old,
+          "high:new": PROGRESS_BOOST_RULES.high.new,
+          "high:mid": PROGRESS_BOOST_RULES.high.mid,
+          "high:old": PROGRESS_BOOST_RULES.high.old,
+        },
+        p_recent_exclude_days: 7,
       })
-      if (error) throw error
+      if (planErr) throw planErr
 
-      const { done, target } =
-        data && data.length > 0 && (data as any)[0]?.done_counts && (data as any)[0]?.target_counts
-          ? { done: (data as any)[0].done_counts, target: (data as any)[0].target_counts }
-          : await computeCountsFallback(user.id, classId, start, end)
+      const rows = (planRows || []) as PlanRow[]
+      // Order by frozen order_index and de-duplicate by question_id (belt & braces)
+      const ordered = [...rows].sort((a, b) => a.order_index - b.order_index)
+      const seenQ = new Set<string>()
+      const dedupPlan = ordered.filter(r => {
+        if (seenQ.has(r.question_id)) return false
+        seenQ.add(r.question_id)
+        return true
+      })
 
-      setProgress({ done, target })
+      setPlan(dedupPlan)
+      recomputeProgressFromPlan(dedupPlan)
 
-      const totalDone = Object.values(done).reduce((a: number, b: any) => a + Number(b || 0), 0)
-      const totalTarget = Object.values(target).reduce((a: number, b: any) => a + Number(b || 0), 0)
-
-      if (totalTarget > 0 && totalDone >= totalTarget) {
-        setCompleted(true)
+      if (dedupPlan.length === 0) {
         setQuestions([])
-        toast.success("✅ You’ve completed this week’s ProgressBoost!")
+        setCurrentIndex(0)
         return
       }
 
-      if (!data || data.length === 0) {
-        setQuestions([])
-        return
-      }
-
-      const qIds = (data as any[]).map((row) => row.question_id)
-
-      // Pull *all* model-answer fields you display here (keeps the RPC lean)
-      const { data: questionsData, error: qErr } = await supabase
+      // Load questions & order by the frozen plan's order_index
+      const qIds = dedupPlan.map(r => r.question_id)
+      const { data: qData, error: qErr } = await supabase
         .from("questions")
         .select(`
           id, type, difficulty, question_text, explanation, created_at,
@@ -270,66 +272,38 @@ export default function ProgressBoostClient() {
           true_false_questions (correct_answer),
           short_answer_questions (model_answer),
           essay_questions (model_answer, rubric),
-          code_questions (language, model_answer_code)
+          code_questions (language, model_answer, model_answer_code)
         `)
         .in("id", qIds)
       if (qErr) throw qErr
 
-      // Map to your UI Question shape
-      const mapped = (questionsData || []).map((q: any) => {
-        const norm = normalizeQuestionType(q.type)
-        const base: any = {
-          id: q.id,
-          type: norm,
-          difficulty: q.difficulty,
-          question_text: q.question_text,
-          explanation: q.explanation,
-        }
+      const byId = new Map((qData || []).map((q: any) => [q.id, q]))
+      const orderedPlan = dedupPlan // already ordered & deduped
+      const orderedQuestions = orderedPlan
+        .map(r => byId.get(r.question_id))
+        .filter(Boolean)
+        .map(mapDbQuestionToUI)
 
-        if (norm === "multiple-choice") {
-          base.options = q.multiple_choice_questions?.options
-          base.correctAnswerIndex = q.multiple_choice_questions?.correct_answer_index
-        } else if (norm === "fill-in-the-blank") {
-          base.options = q.fill_in_the_blank_questions?.options
-          base.order_important = q.fill_in_the_blank_questions?.order_important
-          base.model_answer = q.fill_in_the_blank_questions?.correct_answers
-        } else if (norm === "matching") {
-          base.pairs = (q.matching_questions || []).map((m: any) => ({
-            statement: m.statement,
-            match: m.match,
-          }))
-        } else if (norm === "true-false") {
-          base.model_answer = q.true_false_questions?.correct_answer ?? null
-        } else if (norm === "text" || norm === "short-answer") {
-          base.model_answer = q.short_answer_questions?.model_answer ?? ""
-        } else if (norm === "essay") {
-          base.model_answer = q.essay_questions?.model_answer ?? ""
-          base.rubric = q.essay_questions?.rubric ?? ""
-        } else if (norm === "code" || norm === "algorithm" || norm === "sql") {
-          base.language = q.code_questions?.language
-          base.model_answer_code = q.code_questions?.model_answer_code
-        }
+      setQuestions(orderedQuestions)
 
-        return base as Question
-      }) as Question[]
+      // Jump to first pending (so students can return mid-week)
+      const firstPendingIdx = orderedPlan.findIndex(r => r.status === "pending")
+      setCurrentIndex(firstPendingIdx >= 0 ? firstPendingIdx : 0)
 
-      setQuestions(mapped)
-      setCurrentIndex(0)
-      setCompleted(false)
-      // reset answer state when a new batch arrives
+      // Reset answer state for new batch
       setAnswerId(null)
       setAutoScore(null)
       setSelfScore(null)
       setAnswerPayload(null)
     } catch (e) {
       console.error(e)
-      toast.error("Failed to load ProgressBoost")
+      toast.error("Failed to load ProgressBoost: " + explain(e))
     } finally {
       setLoading(false)
     }
   }
 
-  // ---------- SAVE ANSWER HELPERS ----------
+  // ---------- Save answer & mark the frozen plan item ----------
   const afterAnswered = async () => {
     // Show review/self-assess. Next button advances.
   }
@@ -342,6 +316,8 @@ export default function ProgressBoostClient() {
     }
 
     const q = questions[currentIndex]
+    if (!q) return null
+
     const { data: row, error } = await supabase
       .from("student_answers")
       .insert({
@@ -357,8 +333,26 @@ export default function ProgressBoostClient() {
 
     if (error) {
       console.error(error)
-      toast.error("Failed to save answer")
+      toast.error("Failed to save answer: " + explain(error))
       return null
+    }
+
+    // `plan` is already ordered & deduped for the UI
+    const planItem = plan[currentIndex]
+    if (planItem?.item_id) {
+      const { error: updErr } = await supabase
+        .from("progressboost_items")
+        .update({ status: "answered", answer_id: row.id, completed_at: new Date().toISOString() })
+        .eq("id", planItem.item_id)
+      if (updErr) {
+        console.error("Mark item answered failed:", updErr)
+        toast.error(`Mark answered failed: ${explain(updErr)}`)
+      } else {
+        // reflect locally
+        const newPlan = plan.map(p => p.item_id === planItem.item_id ? { ...p, status: "answered", answer_id: row.id } as any : p)
+        setPlan(newPlan)
+        recomputeProgressFromPlan(newPlan)
+      }
     }
 
     setAnswerId(row.id)
@@ -367,7 +361,7 @@ export default function ProgressBoostClient() {
     return row.id as string
   }
 
-  // ---------- HANDLERS (auto-mark where possible) ----------
+  // ---------- Handlers ----------
   const handleMultipleChoiceAnswer = async (selectedIndex: number, isCorrect: boolean) => {
     if (currentIndex >= questions.length) return
     setIsSubmitting(true)
@@ -387,7 +381,6 @@ export default function ProgressBoostClient() {
   const handleMatchingAnswer = async (selections: Record<string, string[]>) => {
     if (currentIndex >= questions.length) return
     setIsSubmitting(true)
-    // amber by default (can be auto-marked with exact match if you want)
     await saveAnswer({ response_text: JSON.stringify(selections), autoScore: null })
     setIsSubmitting(false)
     await afterAnswered()
@@ -411,7 +404,6 @@ export default function ProgressBoostClient() {
     await afterAnswered()
   }
 
-  // Self-assessment for manual-marked types
   const handleSelfAssess = async (score: ScoreType) => {
     if (!answerId) return
     const { error } = await supabase
@@ -420,34 +412,32 @@ export default function ProgressBoostClient() {
       .eq("id", answerId)
     if (error) {
       console.error(error)
-      toast.error("Failed to save self-assessment")
+      toast.error("Failed to save self-assessment: " + explain(error))
       return
     }
     setSelfScore(score)
   }
 
-  // Move on after seeing feedback / self assessment
   const handleNext = async () => {
-    // reset local answer state
     setAnswerId(null)
     setAnswerPayload(null)
     setAutoScore(null)
     setSelfScore(null)
 
     if (currentIndex + 1 < questions.length) {
-      setCurrentIndex((i) => i + 1)
+      setCurrentIndex(i => i + 1)
       return
     }
-    // reached end of batch -> recompute plan
-    await fetchPlan()
+    // end of set -> refresh in case teacher updated coverage / you resume later in week
+    await fetchWeek()
   }
 
-  // ---------------- PROGRESS DISPLAY ----------------
+  // ------------- Progress display -------------
   const totalPercent = useMemo(() => {
-    const totalDone = Object.values(progress.done).reduce((a, b) => a + Number(b || 0), 0)
-    const totalTarget = Object.values(progress.target).reduce((a, b) => a + Number(b || 0), 0)
+    const totalDone = Object.values(progressMaps.done).reduce((a, b) => a + Number(b || 0), 0)
+    const totalTarget = Object.values(progressMaps.target).reduce((a, b) => a + Number(b || 0), 0)
     return totalTarget > 0 ? Math.round((totalDone / totalTarget) * 100) : 0
-  }, [progress])
+  }, [progressMaps])
 
   if (authLoading) return <div className="p-8">Checking access…</div>
   if (!isAllowed) return null
@@ -456,7 +446,6 @@ export default function ProgressBoostClient() {
     const q = questions[currentIndex]
     if (!q) return null
 
-    // Compact review per type
     if (q.type === "multiple-choice") {
       const isCorrect = autoScore === "green"
       return (
@@ -573,7 +562,7 @@ export default function ProgressBoostClient() {
               {(q.type === "code" || q.type === "algorithm" || q.type === "sql") && (
                 <h4 className="text-sm font-medium mb-1">Pseudocode:</h4>
               )}
-              <pre className="whitespace-pre-wrap font-sans text-sm">{q.model_answer}</pre>
+              <pre className="whitespace-pre-wrap font-sans text-sm">{(q as any).model_answer}</pre>
             </div>
             {(q as any).model_answer_code && (
               <div>
@@ -616,16 +605,16 @@ export default function ProgressBoostClient() {
 
           <div className="grid grid-cols-3 gap-2 text-sm">
             <div className="bg-green-50 p-2 rounded">
-              Easy: {get(progress.done, "low:new") + get(progress.done, "low:mid") + get(progress.done, "low:old")} /
-              {get(progress.target, "low:new") + get(progress.target, "low:mid") + get(progress.target, "low:old")}
+              Easy: {getNum(progressMaps.done, "low:new") + getNum(progressMaps.done, "low:mid") + getNum(progressMaps.done, "low:old")} /
+              {getNum(progressMaps.target, "low:new") + getNum(progressMaps.target, "low:mid") + getNum(progressMaps.target, "low:old")}
             </div>
             <div className="bg-yellow-50 p-2 rounded">
-              Medium: {get(progress.done, "medium:new") + get(progress.done, "medium:mid") + get(progress.done, "medium:old")} /
-              {get(progress.target, "medium:new") + get(progress.target, "medium:mid") + get(progress.target, "medium:old")}
+              Medium: {getNum(progressMaps.done, "medium:new") + getNum(progressMaps.done, "medium:mid") + getNum(progressMaps.done, "medium:old")} /
+              {getNum(progressMaps.target, "medium:new") + getNum(progressMaps.target, "medium:mid") + getNum(progressMaps.target, "medium:old")}
             </div>
             <div className="bg-red-50 p-2 rounded">
-              Hard: {get(progress.done, "high:new") + get(progress.done, "high:mid") + get(progress.done, "high:old")} /
-              {get(progress.target, "high:new") + get(progress.target, "high:mid") + get(progress.target, "high:old")}
+              Hard: {getNum(progressMaps.done, "high:new") + getNum(progressMaps.done, "high:mid") + getNum(progressMaps.done, "high:old")} /
+              {getNum(progressMaps.target, "high:new") + getNum(progressMaps.target, "high:mid") + getNum(progressMaps.target, "high:old")}
             </div>
           </div>
         </CardContent>
@@ -666,12 +655,10 @@ export default function ProgressBoostClient() {
           <CardContent>
             <p className="mb-4">{questions[currentIndex].question_text}</p>
 
-            {/* If already answered, show review & next. Otherwise show the interactive component */}
             {answerId ? (
               <>
                 {renderAnswerReview()}
 
-                {/* Self-assessment only for manual-marked types */}
                 {autoScore === null && (
                   <div className="mt-4">
                     {selfScore ? (
