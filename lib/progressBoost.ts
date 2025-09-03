@@ -4,8 +4,8 @@ export const PROGRESS_BOOST_RULES = {
   high: { new: 1, mid: 1, old: 1 }
 }
 
-export const NEW_DAYS = 14
-export const MID_DAYS = 56
+export const NEW_DAYS = 7
+export const MID_DAYS = 28
 
 export function thisWeekBoundsLondon(): { start: Date; end: Date } {
   const now = new Date()
