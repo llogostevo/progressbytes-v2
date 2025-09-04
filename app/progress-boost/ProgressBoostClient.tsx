@@ -266,10 +266,10 @@ export default function ProgressBoostClient() {
         .from("questions")
         .select(`
           id, type, difficulty, question_text, explanation, created_at,
-          multiple_choice_questions (options, correct_answer_index),
-          fill_in_the_blank_questions (options, correct_answers, order_important),
-          matching_questions (statement, match),
-          true_false_questions (correct_answer),
+          multiple_choice_questions (options, correct_answer_index, model_answer),
+          fill_in_the_blank_questions (options, correct_answers, order_important, model_answer),
+          matching_questions (statement, match, model_answer),
+          true_false_questions (correct_answer, model_answer),
           short_answer_questions (model_answer),
           essay_questions (model_answer, rubric),
           code_questions (language, model_answer, model_answer_code)
