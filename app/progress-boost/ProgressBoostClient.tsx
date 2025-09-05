@@ -733,6 +733,7 @@ export default function ProgressBoostClient() {
           <CardContent>
             <p className="mb-4">{questions[currentIndex].question_text}</p>
 
+//TODO: Review against question page
             {answerId ? (
               <>
                 {renderAnswerReview()}
