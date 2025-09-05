@@ -8,7 +8,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Zap, Target, Trophy, RefreshCw, CheckCircle2, XCircle } from "lucide-react"
+import { Zap, Target, Trophy, RefreshCw, CheckCircle2, XCircle, SkipForward } from "lucide-react"
 import { toast } from "sonner"
 
 import type { Question } from "@/lib/types"
@@ -21,6 +21,8 @@ import { TrueFalseQuestion } from "@/components/question-components/question-typ
 import { EssayQuestion } from "@/components/question-components/question-type/essay-question"
 import { SelfAssessment } from "@/components/question-components/self-assessment"
 import { FeedbackDisplay } from "@/components/question-components/feedback-display"
+
+import Link from "next/link"
 
 // ---- Utils ----
 import { PROGRESS_BOOST_RULES, NEW_DAYS, MID_DAYS, thisWeekBoundsLondon } from "@/lib/progressBoost"
@@ -64,6 +66,44 @@ const explain = (e: unknown) => {
 
 const toISODate = (d: Date) => d.toISOString().slice(0, 10)
 const getNum = (m: Record<string, number> | undefined, k: string) => Number((m && (m as any)[k]) ?? 0)
+
+// Coerce arbitrary RPC rows into our strict PlanRow shape (narrow literal unions)
+function normalizePlanRows(raw: any[]): PlanRow[] {
+  return (raw || []).map((r) => {
+    const s = r?.status;
+    const status: PlanRow["status"] =
+      s === "pending" || s === "answered" || s === "skipped" ? s : "pending";
+    const b = r?.bucket;
+    const bucket: PlanRow["bucket"] = b === "new" || b === "mid" || b === "old" ? b : "new";
+    return {
+      week_id: String(r.week_id),
+      target_counts: (r.target_counts ?? {}) as Record<string, number>,
+      item_id: String(r.item_id),
+      question_id: String(r.question_id),
+      bucket,
+      difficulty: String(r.difficulty),
+      order_index: Number(r.order_index ?? 0),
+      status,
+    };
+  });
+}
+
+// Find the next index to show: prefer pending (forward, circular), then skipped
+function findNextIndex(from: number, rows: PlanRow[]): number {
+  const n = rows.length
+  if (n === 0) return -1
+  // scan forward circularly for the next pending
+  for (let step = 1; step <= n; step++) {
+    const idx = (from + step) % n
+    if (rows[idx]?.status === "pending") return idx
+  }
+  // if none pending, scan for skipped
+  for (let step = 1; step <= n; step++) {
+    const idx = (from + step) % n
+    if (rows[idx]?.status === "skipped") return idx
+  }
+  return -1
+}
 
 export default function ProgressBoostClient() {
   const supabase = createClient()
@@ -241,11 +281,11 @@ export default function ProgressBoostClient() {
       })
       if (planErr) throw planErr
 
-      const rows = (planRows || []) as PlanRow[]
+      const rows = normalizePlanRows(planRows as any[])
       // Order by frozen order_index and de-duplicate by question_id (belt & braces)
       const ordered = [...rows].sort((a, b) => a.order_index - b.order_index)
       const seenQ = new Set<string>()
-      const dedupPlan = ordered.filter(r => {
+      const dedupPlan: PlanRow[] = ordered.filter((r) => {
         if (seenQ.has(r.question_id)) return false
         seenQ.add(r.question_id)
         return true
@@ -288,7 +328,8 @@ export default function ProgressBoostClient() {
 
       // Jump to first pending (so students can return mid-week)
       const firstPendingIdx = orderedPlan.findIndex(r => r.status === "pending")
-      setCurrentIndex(firstPendingIdx >= 0 ? firstPendingIdx : 0)
+      const firstSkippedIdx = orderedPlan.findIndex(r => r.status === "skipped")
+      setCurrentIndex(firstPendingIdx >= 0 ? firstPendingIdx : (firstSkippedIdx >= 0 ? firstSkippedIdx : 0))
 
       // Reset answer state for new batch
       setAnswerId(null)
@@ -349,7 +390,9 @@ export default function ProgressBoostClient() {
         toast.error(`Mark answered failed: ${explain(updErr)}`)
       } else {
         // reflect locally
-        const newPlan = plan.map(p => p.item_id === planItem.item_id ? { ...p, status: "answered", answer_id: row.id } as any : p)
+        const newPlan: PlanRow[] = plan.map((p) =>
+          p.item_id === planItem.item_id ? { ...p, status: "answered" as const } : p
+        )
         setPlan(newPlan)
         recomputeProgressFromPlan(newPlan)
       }
@@ -424,12 +467,40 @@ export default function ProgressBoostClient() {
     setAutoScore(null)
     setSelfScore(null)
 
-    if (currentIndex + 1 < questions.length) {
-      setCurrentIndex(i => i + 1)
+    const next = findNextIndex(currentIndex, plan)
+    if (next >= 0) {
+      setCurrentIndex(next)
       return
     }
-    // end of set -> refresh in case teacher updated coverage / you resume later in week
     await fetchWeek()
+  }
+
+  const handleSkip = async () => {
+    const item = plan[currentIndex]
+    if (!item) return
+    // Mark as skipped in DB
+    const { error } = await supabase
+      .from("progressboost_items")
+      .update({ status: "skipped" })
+      .eq("id", item.item_id)
+    if (error) {
+      console.error(error)
+      toast.error("Failed to skip: " + explain(error))
+      return
+    }
+    // Update local plan and advance
+    const newPlan: PlanRow[] = plan.map((p) =>
+      p.item_id === item.item_id ? { ...p, status: "skipped" as const } : p
+    )
+    setPlan(newPlan)
+    recomputeProgressFromPlan(newPlan)
+    const next = findNextIndex(currentIndex, newPlan)
+    if (next >= 0) {
+      setCurrentIndex(next)
+    } else {
+      // nothing else to do, refresh
+      await fetchWeek()
+    }
   }
 
   // ------------- Progress display -------------
@@ -649,7 +720,14 @@ export default function ProgressBoostClient() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Question {currentIndex + 1} of {questions.length}</CardTitle>
-              <Badge className="capitalize" variant="outline">{String(questions[currentIndex].difficulty)}</Badge>
+              <div className="flex items-center gap-2">
+                <Badge className="capitalize" variant="outline">{String(questions[currentIndex].difficulty)}</Badge>
+                {!answerId && (
+                  <Button variant="outline" size="sm" onClick={handleSkip} className="text-muted-foreground hover:text-foreground">
+                    <SkipForward className="mr-2 h-4 w-4" /> Skip
+                  </Button>
+                )}
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -659,20 +737,28 @@ export default function ProgressBoostClient() {
               <>
                 {renderAnswerReview()}
 
-                {autoScore === null && (
+                {/* For auto-marked types, show their score banner; for manual, ask for self‑assessment */}
+                {autoScore !== null ? (
+                  <div className="mt-4">
+                    <FeedbackDisplay answer={{ id: answerId as string, ai_feedback: null, score: autoScore } as any} />
+                  </div>
+                ) : (
                   <div className="mt-4">
                     {selfScore ? (
-                      <FeedbackDisplay answer={{ id: answerId, ai_feedback: null, score: selfScore } as any} />
+                      <FeedbackDisplay answer={{ id: answerId as string, ai_feedback: null, score: selfScore } as any} />
                     ) : (
                       <SelfAssessment onSelectScore={handleSelfAssess} />
                     )}
                   </div>
                 )}
 
-                <div className="mt-6">
+                <div className="mt-6 flex flex-col sm:flex-row gap-3">
                   <Button onClick={handleNext} className="bg-emerald-600 hover:bg-emerald-700">
-                    <RefreshCw className="mr-2 h-4 w-4" /> Next question
+                    <RefreshCw className="mr-2 h-4 w-4" /> Try Another Question
                   </Button>
+                  <Link href="/progress">
+                    <Button variant="outline">View My Progress</Button>
+                  </Link>
                 </div>
               </>
             ) : questions[currentIndex].type === "multiple-choice" ? (
