@@ -32,7 +32,7 @@ import {
 import { PostgrestError } from '@supabase/supabase-js'
 import React from "react"
 import Link from "next/link"
-import { Class, StudentClassMember } from "@/lib/types"
+import { Class } from "@/lib/types"
 
 interface UserActivity {
   id: string
