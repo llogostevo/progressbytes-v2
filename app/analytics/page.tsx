@@ -9,11 +9,10 @@ import { isAdmin, isTeacher } from '@/lib/access';
 // react
 import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Activity, Users, Eye, Navigation, Home, FileText, BarChart, RefreshCw, CheckCircle, Calendar, Filter } from "lucide-react"
+import { BarChart, Calendar, Filter } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import { redirect } from "next/navigation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { UserSessions } from "@/components/user-sessions"
 import { UserActivityFilter } from "@/components/user-activity-filter"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -34,19 +33,6 @@ import React from "react"
 import Link from "next/link"
 import { Class } from "@/lib/types"
 
-interface UserActivity {
-  id: string
-  user_id: string
-  event: string
-  path: string
-  created_at: string
-  user_email?: string
-  student_score?: 'red' | 'amber' | 'green'
-  question_type?: string
-  question_text?: string
-  topic?: string
-  class_id?: string
-}
 
 interface StudentAnswerData {
   id: string;
@@ -89,17 +75,6 @@ interface ProcessedStudentAnswer {
   };
 }
 
-interface UserSession {
-  id: string
-  user_id: string
-  user_email: string
-  login_time: string
-  last_activity: string
-  duration_minutes: number
-  questions_submitted: number
-  pages_visited: string[]
-  events: UserActivity[]
-}
 
 interface StudentClassMember {
   class: {
@@ -128,118 +103,6 @@ type DbMember = {
 // Define a type for student list items
 type StudentListItem = { id: string; email: string; forename?: string; lastname?: string };
 
-function ActivitySkeleton() {
-  return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-4 w-64" />
-        </div>
-        <Skeleton className="h-10 w-32" />
-      </div>
-
-      {/* Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {[...Array(3)].map((_, i) => (
-          <Card key={i}>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <Skeleton className="h-8 w-16 mb-2" />
-                  <Skeleton className="h-4 w-24" />
-                </div>
-                <Skeleton className="h-8 w-8" />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Performance Graph */}
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-48 mb-2" />
-          <Skeleton className="h-4 w-64" />
-        </CardHeader>
-        <CardContent>
-          <div className="h-[400px]">
-            <Skeleton className="w-full h-full" />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Activity Breakdown */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-32 mb-2" />
-            <Skeleton className="h-4 w-48" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-4 w-16" />
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-32 mb-2" />
-            <Skeleton className="h-4 w-48" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-4 w-16" />
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Recent Activity */}
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-32 mb-2" />
-          <Skeleton className="h-4 w-48" />
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {/* Header */}
-            <div className="grid grid-cols-4 gap-4 text-sm font-medium text-muted-foreground pb-2 border-b">
-              <div>Event</div>
-              <div>User</div>
-              <div>Path</div>
-              <div>Time</div>
-            </div>
-            {/* Activity Items */}
-            {[...Array(10)].map((_, i) => (
-              <div key={i} className="grid grid-cols-4 gap-4 text-sm py-2">
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-4 w-4" />
-                  <Skeleton className="h-4 w-24" />
-                </div>
-                <Skeleton className="h-4 w-48" />
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-4 w-32" />
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
 
 // Helper to compare topicnumber strings like 1.1.1, 1.1.2, etc.
 function compareTopicNumbers(a?: string, b?: string) {
@@ -508,43 +371,6 @@ function StudentSelectorSkeleton() {
   )
 }
 
-// Add new skeleton components
-function SessionsSkeleton() {
-  return (
-    <Card>
-      <CardHeader>
-        <Skeleton className="h-6 w-48 mb-2" />
-        <Skeleton className="h-4 w-64" />
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="border rounded-lg p-4">
-              <div className="flex items-center justify-between mb-3">
-                <Skeleton className="h-5 w-48" />
-                <Skeleton className="h-4 w-24" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-4 w-4" />
-                  <Skeleton className="h-4 w-32" />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-4 w-4" />
-                  <Skeleton className="h-4 w-40" />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-4 w-4" />
-                  <Skeleton className="h-4 w-36" />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
 
 function HomeworkSkeleton() {
   return (
@@ -591,16 +417,10 @@ export default function AnalyticsPage() {
 
   const [currentUserRole, setCurrentUserRole] = useState<UserRole | null>(null)
   const [currentUserType, setCurrentUserType] = useState<string | null>(null)
-  const [userActivity, setUserActivity] = useState<UserActivity[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [isLoadingSessions, setIsLoadingSessions] = useState(true)
   const [isLoadingHomework, setIsLoadingHomework] = useState(true)
   const [isLoadingPerformance, setIsLoadingPerformance] = useState(false)
   const [isLoadingClasses, setIsLoadingClasses] = useState(true)
   const [isLoadingStudents, setIsLoadingStudents] = useState(true)
-  const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 10
-  const [allUserSessions, setAllUserSessions] = useState<UserSession[]>([])
   const [topics, setTopics] = useState<Array<{ id: string; name: string; slug: string; topicnumber: string }>>([])
   const [students, setStudents] = useState<Array<{ userid: string; email: string; forename: string; lastname: string }>>([])
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null)
@@ -614,10 +434,6 @@ export default function AnalyticsPage() {
   const [sortBy, setSortBy] = useState<"forename" | "lastname" | "email">("forename");
 
   const supabase = createClient()
-
-  const handleUserClick = (userid: string) => {
-    setSelectedStudent(userid)
-  }
 
   const fetchStudentAnswers = useCallback(async () => {
     if (!selectedStudent) {
@@ -878,20 +694,6 @@ export default function AnalyticsPage() {
         setTopics(topicsData || [])
       }
 
-      // Fetch all user activity
-      const { data: activity } = await supabase
-        .from("user_activity")
-        .select("*")
-        .order('created_at', { ascending: false })
-
-      if (activity) {
-        setUserActivity(activity)
-      } else {
-        setUserActivity([])
-      }
-
-      setIsLoading(false)
-      setIsLoadingSessions(false)
       // Only set homework loading to false if user is not a teacher
       // For teachers, we'll set it to false after students are loaded
       if (!isTeacher(profile?.user_type)) {
@@ -901,68 +703,6 @@ export default function AnalyticsPage() {
 
     fetchUser()
   }, [supabase])
-
-  useEffect(() => {
-    // Group activities by session for all users
-    const sessions = new Map<string, UserSession>()
-
-    userActivity.forEach(activity => {
-      const date = new Date(activity.created_at).toDateString()
-      const sessionKey = `${activity.user_id}_${date}`
-
-      if (!sessions.has(sessionKey)) {
-        sessions.set(sessionKey, {
-          id: sessionKey,
-          user_id: activity.user_id,
-          user_email: activity.user_email || 'Unknown',
-          login_time: activity.created_at,
-          last_activity: activity.created_at,
-          duration_minutes: 0,
-          questions_submitted: 0,
-          pages_visited: [],
-          events: []
-        })
-      }
-
-      const session = sessions.get(sessionKey)!
-      session.events.push(activity)
-
-      // Update last activity time
-      if (new Date(activity.created_at) > new Date(session.last_activity)) {
-        session.last_activity = activity.created_at
-      }
-
-      // Update login time if this is earlier
-      if (new Date(activity.created_at) < new Date(session.login_time)) {
-        session.login_time = activity.created_at
-      }
-
-      // Count questions submitted
-      if (activity.event === 'submitted_question') {
-        session.questions_submitted++
-      }
-
-      // Track unique pages visited
-      if (!session.pages_visited.includes(activity.path)) {
-        session.pages_visited.push(activity.path)
-      }
-    })
-
-    // Calculate duration for each session
-    const sessionsArray = Array.from(sessions.values()).map(session => ({
-      ...session,
-      duration_minutes: Math.round(
-        (new Date(session.last_activity).getTime() - new Date(session.login_time).getTime()) / (1000 * 60)
-      )
-    }))
-
-    // Sort by most recent
-    sessionsArray.sort((a, b) =>
-      new Date(b.login_time).getTime() - new Date(a.login_time).getTime()
-    )
-
-    setAllUserSessions(sessionsArray)
-  }, [userActivity])
 
   useEffect(() => {
     const fetchClassMembers = async () => {
@@ -1005,41 +745,6 @@ export default function AnalyticsPage() {
 
     fetchClassMembers()
   }, [selectedClass, supabase])
-
-  // Filter activity based on selected class
-  const filteredActivity = selectedClass === "all"
-    ? userActivity.filter(activity => {
-        // For students, only show their own activity
-        if (currentUserType === 'basic' || currentUserType === 'revision' || currentUserType === 'revisionAI') {
-          return activity.user_id === selectedStudent
-        }
-        // For teachers, show activity of students in their assigned classes
-        const studentInClass = students.find(s => s.userid === activity.user_id)
-        return studentInClass && classes.some(c => c.id === activity.class_id)
-      })
-    : userActivity.filter(activity => {
-      // For students, only show their own activity
-      if (currentUserType === 'basic' || currentUserType === 'revision' || currentUserType === 'revisionAI') {
-        return activity.user_id === selectedStudent
-      }
-      // For teachers, show activity of students in their class
-      const studentInClass = students.find(s => s.userid === activity.user_id)
-      return studentInClass && activity.class_id === selectedClass
-    })
-
-  // Update unique users count based on filtered activity
-  const filteredUniqueUsers = new Set(filteredActivity.map(a => a.user_id)).size
-
-  // Update page views based on filtered activity
-  const filteredPageViews = filteredActivity.reduce((acc, curr) => {
-    acc[curr.path] = (acc[curr.path] || 0) + 1
-    return acc
-  }, {} as Record<string, number>)
-
-  // Get top 5 most visited pages from filtered data
-  const topPages = Object.entries(filteredPageViews)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 5)
 
   // Filter studentAnswers by timeFilter for Performance tab
   const filteredStudentAnswers = studentAnswers.filter((answer) => {
@@ -1151,174 +856,13 @@ export default function AnalyticsPage() {
           )}
         </div>
 
-        <Tabs defaultValue="activity" className="space-y-6">
+        <Tabs defaultValue="homework" className="space-y-6">
           <div className="overflow-x-auto">
             <TabsList className="w-full md:w-auto justify-start md:justify-center">
-              <TabsTrigger value="activity">Activity</TabsTrigger>
-              <TabsTrigger value="sessions">Sessions</TabsTrigger>
               <TabsTrigger value="homework">Homework</TabsTrigger>
               <TabsTrigger value="performance">Performance</TabsTrigger>
             </TabsList>
           </div>
-
-          <TabsContent value="activity">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Activity className="h-5 w-5 mr-2" />
-                  Site Analytics
-                </CardTitle>
-                <CardDescription>Overview of site usage and user activity</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <ActivitySkeleton />
-                ) : (
-                  <div className="space-y-8">
-                    {/* Overview Stats */}
-                    <div className="grid grid-cols-3 gap-4">
-                      <Card>
-                        <CardContent className="pt-6">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="text-2xl font-bold">{filteredUniqueUsers}</div>
-                              <p className="text-sm text-muted-foreground">Unique Users</p>
-                            </div>
-                            <Users className="h-8 w-8 text-muted-foreground" />
-                          </div>
-                        </CardContent>
-                      </Card>
-                      <Card>
-                        <CardContent className="pt-6">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="text-2xl font-bold">{filteredActivity.filter(a => a.event === 'visited_question').length}</div>
-                              <p className="text-sm text-muted-foreground">Questions Viewed</p>
-                            </div>
-                            <Eye className="h-8 w-8 text-muted-foreground" />
-                          </div>
-                        </CardContent>
-                      </Card>
-                      <Card>
-                        <CardContent className="pt-6">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="text-2xl font-bold">{filteredActivity.length}</div>
-                              <p className="text-sm text-muted-foreground">Total Page Views</p>
-                            </div>
-                            <Navigation className="h-8 w-8 text-muted-foreground" />
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-
-                    {/* Top Pages */}
-                    <div className="border-t pt-6">
-                      <h3 className="font-medium mb-4">Most Visited Pages</h3>
-                      <div className="space-y-2">
-                        {topPages.map(([path, count], index) => (
-                          <div key={index} className="flex items-center justify-between text-sm">
-                            <div className="flex items-center">
-                              <span className="font-medium">{index + 1}.</span>
-                              <span className="ml-2">{path}</span>
-                            </div>
-                            <span className="text-muted-foreground">{count} views</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Activity Breakdown */}
-                    <div className="border-t pt-6">
-                      <h3 className="font-medium mb-4">Activity Breakdown</h3>
-                      <div className="grid grid-cols-2 gap-4">
-                        <Card>
-                          <CardContent className="pt-6">
-                            <div className="text-2xl font-bold">{filteredActivity.filter(a => a.event === 'visited_revisit').length}</div>
-                            <p className="text-sm text-muted-foreground">Revisit Sessions</p>
-                          </CardContent>
-                        </Card>
-                        <Card>
-                          <CardContent className="pt-6">
-                            <div className="text-2xl font-bold">{filteredActivity.filter(a => a.event === 'visited_progress').length}</div>
-                            <p className="text-sm text-muted-foreground">Progress Checks</p>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    </div>
-
-                    {/* Recent Activity */}
-                    <div className="border-t pt-6">
-                      <h3 className="font-medium mb-4">Recent Activity</h3>
-                      <div className="space-y-2">
-                        {/* Header */}
-                        <div className="grid grid-cols-4 gap-4 text-sm font-medium text-muted-foreground pb-2 border-b">
-                          <div>Event</div>
-                          <div>User</div>
-                          <div>Path</div>
-                          <div>Time</div>
-                        </div>
-                        {/* Activity Items */}
-                        {filteredActivity
-                          .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-                          .map((activity) => (
-                            <div key={activity.id} className="grid grid-cols-4 gap-4 text-sm py-2">
-                              <div className="flex items-center gap-2">
-                                {activity.event === 'visited_home' && <Home className="h-4 w-4 text-muted-foreground" />}
-                                {activity.event === 'visited_question' && <FileText className="h-4 w-4 text-muted-foreground" />}
-                                {activity.event === 'visited_progress' && <BarChart className="h-4 w-4 text-muted-foreground" />}
-                                {activity.event === 'visited_revisit' && <RefreshCw className="h-4 w-4 text-muted-foreground" />}
-                                {activity.event === 'submitted_question' && <CheckCircle className="h-4 w-4 text-muted-foreground" />}
-                                <span className="capitalize">{activity.event.replace(/_/g, ' ')}</span>
-                              </div>
-                              <div
-                                className="truncate cursor-pointer hover:text-primary"
-                                onClick={() => handleUserClick(activity.user_id)}
-                              >
-                                {activity.user_email}
-                              </div>
-                              <div className="truncate">{activity.path}</div>
-                              <div>{new Date(activity.created_at).toLocaleString()}</div>
-                            </div>
-                          ))}
-                      </div>
-
-                      {/* Pagination */}
-                      <div className="flex items-center justify-between mt-4">
-                        <div className="text-sm text-muted-foreground">
-                          Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredActivity.length)} of {filteredActivity.length} activities
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            className="px-3 py-1 text-sm border rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                            disabled={currentPage === 1}
-                          >
-                            Previous
-                          </button>
-                          <button
-                            className="px-3 py-1 text-sm border rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                            onClick={() => setCurrentPage(prev => Math.min(Math.ceil(filteredActivity.length / itemsPerPage), prev + 1))}
-                            disabled={currentPage >= Math.ceil(filteredActivity.length / itemsPerPage)}
-                          >
-                            Next
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="sessions">
-            {isLoadingSessions ? (
-              <SessionsSkeleton />
-            ) : (
-              <UserSessions onUserClick={handleUserClick} sessions={allUserSessions} />
-            )}
-          </TabsContent>
 
           <TabsContent value="homework">
             {isLoadingHomework ? (

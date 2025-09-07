@@ -107,8 +107,6 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
 
   // Filter states
   const [timeRange, setTimeRange] = useState("7") // days
-  const [minDuration, setMinDuration] = useState("30") // minutes
-  // const [minQuestions, setMinQuestions] = useState("5") // questions
   const [minLowQuestions, setMinLowQuestions] = useState("2") // low difficulty questions
   const [minMediumQuestions, setMinMediumQuestions] = useState("2") // medium difficulty questions
   const [minHighQuestions, setMinHighQuestions] = useState("1") // high difficulty questions
@@ -236,13 +234,12 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
 
   const applyFilters = useCallback((usersToFilter: UserActivity[]) => {
     return usersToFilter.filter(user => {
-      const durationMatch = user.total_duration >= parseInt(minDuration)
       const lowQuestionsMatch = user.low_questions >= parseInt(minLowQuestions)
       const mediumQuestionsMatch = user.medium_questions >= parseInt(minMediumQuestions)
       const highQuestionsMatch = user.high_questions >= parseInt(minHighQuestions)
-      return durationMatch && lowQuestionsMatch && mediumQuestionsMatch && highQuestionsMatch
+      return lowQuestionsMatch && mediumQuestionsMatch && highQuestionsMatch
     })
-  }, [minDuration, minLowQuestions, minMediumQuestions, minHighQuestions])
+  }, [minLowQuestions, minMediumQuestions, minHighQuestions])
 
 
   // useEffect(() => {
@@ -610,7 +607,7 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
           <CardTitle>Filter Criteria</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Time Range (days)</Label>
               <Select value={timeRange} onValueChange={(value) => {
@@ -627,17 +624,6 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label>Minimum Duration (minutes)</Label>
-              <Input
-                type="number"
-                value={minDuration}
-                onChange={(e) => setMinDuration(e.target.value)}
-                onKeyDown={handleKeyDown}
-                min="0"
-                className="h-10"
-              />
-            </div>
 
             {/* <div className="space-y-2">
               <Label>Minimum Questions</Label>
