@@ -1,4 +1,3 @@
-
 "use client"
 
 import { isTeacher } from "@/lib/access"
@@ -10,10 +9,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, BookOpen, Plus, CheckCircle, XCircle, Trash2 } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Calendar, BookOpen, Plus, CheckCircle, XCircle, Trash2, Zap, Check, X, CalendarIcon } from "lucide-react"
 import { toast } from "sonner"
-import { Class, Unit, CoverageTopic, CoverageRecord, GroupedSubtopics } from "@/lib/types"
-
+import type { Class, Unit, CoverageTopic, CoverageRecord, GroupedSubtopics } from "@/lib/types"
 
 const getCoverageIntensity = (coveredOn: string): string => {
   const coverageDate = new Date(coveredOn)
@@ -29,6 +28,23 @@ const getCoverageIntensity = (coveredOn: string): string => {
   return "bg-green-50 text-gray-600" // 2+ years - very faint
 }
 
+const compareVersionNumbers = (a: string, b: string): number => {
+  const aParts = a.split(".").map(Number)
+  const bParts = b.split(".").map(Number)
+  const maxLength = Math.max(aParts.length, bParts.length)
+
+  for (let i = 0; i < maxLength; i++) {
+    const aPart = aParts[i] || 0
+    const bPart = bParts[i] || 0
+
+    if (aPart !== bPart) {
+      return aPart - bPart
+    }
+  }
+
+  return 0
+}
+
 export default function CoveragePage() {
   const [classes, setClasses] = useState<Class[]>([])
   const [selectedClass, setSelectedClass] = useState<string>("")
@@ -40,6 +56,10 @@ export default function CoveragePage() {
     coveredOn: new Date().toISOString().split("T")[0],
     notes: "",
   })
+  const [selectedSubtopics, setSelectedSubtopics] = useState<Set<string>>(new Set())
+  const [bulkMode, setBulkMode] = useState(false)
+  const [isAddingBulk, setIsAddingBulk] = useState(false)
+  const [bulkDate, setBulkDate] = useState(new Date().toISOString().split("T")[0])
 
   const supabase = createClient()
 
@@ -62,7 +82,6 @@ export default function CoveragePage() {
         return
       }
 
-      // Fetch teacher's classes
       const { data: teacherClasses, error: classesError } = await supabase
         .from("classes")
         .select("*")
@@ -93,7 +112,6 @@ export default function CoveragePage() {
 
     setIsLoadingSubtopics(true)
     try {
-      // Fetch all subtopics with their topics and units, ordered by unit, topic, subtopic
       const { data: subtopics, error: subtopicsError } = await supabase
         .from("subtopics")
         .select(`
@@ -127,7 +145,7 @@ export default function CoveragePage() {
         .from("class_subtopic_coverage")
         .select("*")
         .eq("class_id", selectedClass)
-        .order("covered_on", { ascending: false }) // Order by date, latest first
+        .order("covered_on", { ascending: false })
 
       if (coverageError) {
         console.error("Error fetching coverage records:", coverageError)
@@ -147,7 +165,6 @@ export default function CoveragePage() {
         coverageBySubtopic.get(record.subtopic_id)!.push(record)
       })
 
-      // Group subtopics by unit and topic
       const grouped: GroupedSubtopics[] = []
 
       subtopics?.forEach((subtopic) => {
@@ -195,12 +212,11 @@ export default function CoveragePage() {
         })
       })
 
-      // Sort by unit number, topic number, and subtopic number
       grouped.sort((a, b) => a.unit.unit_number - b.unit.unit_number)
       grouped.forEach((unitGroup) => {
-        unitGroup.topics.sort((a, b) => a.topic.topicnumber - b.topic.topicnumber)
+        unitGroup.topics.sort((a, b) => compareVersionNumbers(a.topic.topicnumber.toString(), b.topic.topicnumber.toString()))
         unitGroup.topics.forEach((topicGroup) => {
-          topicGroup.subtopics.sort((a, b) => a.subtopicnumber - b.subtopicnumber)
+          topicGroup.subtopics.sort((a, b) => compareVersionNumbers(a.subtopicnumber.toString(), b.subtopicnumber.toString()))
         })
       })
 
@@ -213,6 +229,62 @@ export default function CoveragePage() {
     }
   }
 
+  const handleQuickCoverage = async (subtopicId: string, notes?: string) => {
+    if (!selectedClass) return
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) throw new Error("User not found")
+
+      const newCoverageRecord = {
+        id: `temp-${Date.now()}`, // Temporary ID for optimistic update
+        class_id: selectedClass,
+        subtopic_id: subtopicId,
+        covered_on: new Date().toISOString().split("T")[0],
+        created_by: user.id,
+        notes: notes || null,
+      }
+
+      setGroupedSubtopics((prev) =>
+        prev.map((unitGroup) => ({
+          ...unitGroup,
+          topics: unitGroup.topics.map((topicGroup) => ({
+            ...topicGroup,
+            subtopics: topicGroup.subtopics.map((subtopic) =>
+              subtopic.id === subtopicId
+                ? { ...subtopic, coverageRecords: [newCoverageRecord, ...(subtopic.coverageRecords || [])] }
+                : subtopic,
+            ),
+          })),
+        })),
+      )
+
+      const { error } = await supabase.from("class_subtopic_coverage").insert({
+        class_id: selectedClass,
+        subtopic_id: subtopicId,
+        covered_on: new Date().toISOString().split("T")[0],
+        created_by: user.id,
+        notes: notes || null,
+      })
+
+      if (error) {
+        console.error("Error adding coverage:", error)
+        toast.error("Failed to add coverage record")
+        fetchSubtopicsWithCoverage()
+        return
+      }
+
+      toast.success("Marked as covered today")
+      fetchSubtopicsWithCoverage()
+    } catch (error) {
+      console.error("Error:", error)
+      toast.error("Failed to add coverage record")
+      fetchSubtopicsWithCoverage()
+    }
+  }
+
   const handleAddCoverage = async (subtopicId: string) => {
     if (!selectedClass) return
 
@@ -221,6 +293,29 @@ export default function CoveragePage() {
         data: { user },
       } = await supabase.auth.getUser()
       if (!user) throw new Error("User not found")
+
+      const newCoverageRecord = {
+        id: `temp-${Date.now()}`,
+        class_id: selectedClass,
+        subtopic_id: subtopicId,
+        covered_on: newCoverageData.coveredOn,
+        created_by: user.id,
+        notes: newCoverageData.notes || null,
+      }
+
+      setGroupedSubtopics((prev) =>
+        prev.map((unitGroup) => ({
+          ...unitGroup,
+          topics: unitGroup.topics.map((topicGroup) => ({
+            ...topicGroup,
+            subtopics: topicGroup.subtopics.map((subtopic) =>
+              subtopic.id === subtopicId
+                ? { ...subtopic, coverageRecords: [newCoverageRecord, ...(subtopic.coverageRecords || [])] }
+                : subtopic,
+            ),
+          })),
+        })),
+      )
 
       const { error } = await supabase.from("class_subtopic_coverage").insert({
         class_id: selectedClass,
@@ -233,6 +328,7 @@ export default function CoveragePage() {
       if (error) {
         console.error("Error adding coverage:", error)
         toast.error("Failed to add coverage record")
+        fetchSubtopicsWithCoverage()
         return
       }
 
@@ -247,24 +343,130 @@ export default function CoveragePage() {
     } catch (error) {
       console.error("Error:", error)
       toast.error("Failed to add coverage record")
+      fetchSubtopicsWithCoverage()
     }
+  }
+
+  const handleBulkCoverage = async () => {
+    if (!selectedClass || selectedSubtopics.size === 0) return
+
+    setIsAddingBulk(true)
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) throw new Error("User not found")
+
+      const newCoverageRecords = Array.from(selectedSubtopics).map((subtopicId) => ({
+        id: `temp-${Date.now()}-${subtopicId}`,
+        class_id: selectedClass,
+        subtopic_id: subtopicId,
+        covered_on: bulkDate, // Use selected bulk date instead of hardcoded today
+        created_by: user.id,
+        notes: null,
+      }))
+
+      setGroupedSubtopics((prev) =>
+        prev.map((unitGroup) => ({
+          ...unitGroup,
+          topics: unitGroup.topics.map((topicGroup) => ({
+            ...topicGroup,
+            subtopics: topicGroup.subtopics.map((subtopic) => {
+              if (selectedSubtopics.has(subtopic.id)) {
+                const newRecord = newCoverageRecords.find((r) => r.subtopic_id === subtopic.id)!
+                return { ...subtopic, coverageRecords: [newRecord, ...(subtopic.coverageRecords || [])] }
+              }
+              return subtopic
+            }),
+          })),
+        })),
+      )
+
+      const coverageRecords = Array.from(selectedSubtopics).map((subtopicId) => ({
+        class_id: selectedClass,
+        subtopic_id: subtopicId,
+        covered_on: bulkDate, // Use selected bulk date
+        created_by: user.id,
+        notes: null,
+      }))
+
+      const { error } = await supabase.from("class_subtopic_coverage").insert(coverageRecords)
+
+      if (error) {
+        console.error("Error adding bulk coverage:", error)
+        toast.error("Failed to add coverage records")
+        fetchSubtopicsWithCoverage()
+        return
+      }
+
+      toast.success(
+        `Marked ${selectedSubtopics.size} subtopics as covered on ${new Date(bulkDate).toLocaleDateString()}`,
+      )
+      setSelectedSubtopics(new Set())
+      setBulkMode(false)
+      fetchSubtopicsWithCoverage()
+    } catch (error) {
+      console.error("Error:", error)
+      toast.error("Failed to add coverage records")
+      fetchSubtopicsWithCoverage()
+    } finally {
+      setIsAddingBulk(false)
+    }
+  }
+
+  const toggleSubtopicSelection = (subtopicId: string) => {
+    const newSelection = new Set(selectedSubtopics)
+    if (newSelection.has(subtopicId)) {
+      newSelection.delete(subtopicId)
+    } else {
+      newSelection.add(subtopicId)
+    }
+    setSelectedSubtopics(newSelection)
+  }
+
+  const selectAllUncovered = () => {
+    const uncoveredSubtopics = new Set<string>()
+    groupedSubtopics.forEach((unitGroup) => {
+      unitGroup.topics.forEach((topicGroup) => {
+        topicGroup.subtopics.forEach((subtopic) => {
+          if (!subtopic.coverageRecords || subtopic.coverageRecords.length === 0) {
+            uncoveredSubtopics.add(subtopic.id)
+          }
+        })
+      })
+    })
+    setSelectedSubtopics(uncoveredSubtopics)
   }
 
   const handleDeleteCoverage = async (coverageId: string) => {
     try {
+      setGroupedSubtopics((prev) =>
+        prev.map((unitGroup) => ({
+          ...unitGroup,
+          topics: unitGroup.topics.map((topicGroup) => ({
+            ...topicGroup,
+            subtopics: topicGroup.subtopics.map((subtopic) => ({
+              ...subtopic,
+              coverageRecords: subtopic.coverageRecords?.filter((record) => record.id !== coverageId) || [],
+            })),
+          })),
+        })),
+      )
+
       const { error } = await supabase.from("class_subtopic_coverage").delete().eq("id", coverageId)
 
       if (error) {
         console.error("Error deleting coverage:", error)
         toast.error("Failed to delete coverage record")
+        fetchSubtopicsWithCoverage()
         return
       }
 
       toast.success("Coverage record deleted")
-      fetchSubtopicsWithCoverage()
     } catch (error) {
       console.error("Error:", error)
       toast.error("Failed to delete coverage record")
+      fetchSubtopicsWithCoverage()
     }
   }
 
@@ -316,6 +518,70 @@ export default function CoveragePage() {
 
         {selectedClass && (
           <>
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <Button
+                    variant={bulkMode ? "default" : "outline"}
+                    onClick={() => {
+                      setBulkMode(!bulkMode)
+                      setSelectedSubtopics(new Set())
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <Check className="h-4 w-4" />
+                    {bulkMode ? "Exit Bulk Mode" : "Bulk Select"}
+                  </Button>
+
+                  {bulkMode && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={selectAllUncovered}
+                        className="flex items-center gap-2 bg-transparent"
+                      >
+                        <CheckCircle className="h-4 w-4" />
+                        Select All Uncovered
+                      </Button>
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedSubtopics(new Set())}
+                        className="flex items-center gap-2"
+                      >
+                        <X className="h-4 w-4" />
+                        Clear Selection
+                      </Button>
+                    </>
+                  )}
+                </div>
+
+                {bulkMode && selectedSubtopics.size > 0 && (
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-gray-600">{selectedSubtopics.size} selected</span>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="bulk-date" className="text-sm whitespace-nowrap">
+                        Coverage Date:
+                      </Label>
+                      <Input
+                        id="bulk-date"
+                        type="date"
+                        value={bulkDate}
+                        onChange={(e) => setBulkDate(e.target.value)}
+                        className="w-auto"
+                      />
+                    </div>
+                    <Button onClick={handleBulkCoverage} disabled={isAddingBulk} className="flex items-center gap-2">
+                      <Zap className="h-4 w-4" />
+                      {isAddingBulk ? "Adding..." : "Mark All as Covered"}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {isLoadingSubtopics ? (
               <div className="space-y-4">
                 {[...Array(3)].map((_, i) => (
@@ -359,6 +625,13 @@ export default function CoveragePage() {
                               <div key={subtopic.id} className="border rounded-lg p-4 bg-gray-50">
                                 <div className="flex items-center justify-between mb-3">
                                   <div className="flex items-center gap-3">
+                                    {bulkMode && (
+                                      <Checkbox
+                                        checked={selectedSubtopics.has(subtopic.id)}
+                                        onCheckedChange={() => toggleSubtopicSelection(subtopic.id)}
+                                      />
+                                    )}
+
                                     {subtopic.coverageRecords && subtopic.coverageRecords.length > 0 ? (
                                       <CheckCircle className="h-5 w-5 text-green-600" />
                                     ) : (
@@ -368,15 +641,33 @@ export default function CoveragePage() {
                                       {subtopic.subtopicnumber}. {subtopic.subtopictitle}
                                     </div>
                                   </div>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setAddingCoverageFor(subtopic.id)}
-                                    className="flex items-center gap-1"
-                                  >
-                                    <Plus className="h-3 w-3" />
-                                    Add Coverage
-                                  </Button>
+
+                                  <div className="flex items-center gap-2">
+                                    {(!subtopic.coverageRecords || subtopic.coverageRecords.length === 0) &&
+                                      !bulkMode && (
+                                        <Button
+                                          variant="default"
+                                          size="sm"
+                                          onClick={() => handleQuickCoverage(subtopic.id)}
+                                          className="flex items-center gap-1 bg-green-600 hover:bg-green-700"
+                                        >
+                                          <Zap className="h-3 w-3" />
+                                          Covered Today
+                                        </Button>
+                                      )}
+
+                                    {!bulkMode && (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setAddingCoverageFor(subtopic.id)}
+                                        className="flex items-center gap-1"
+                                      >
+                                        <CalendarIcon className="h-3 w-3" />
+                                        Custom Date
+                                      </Button>
+                                    )}
+                                  </div>
                                 </div>
 
                                 {subtopic.coverageRecords && subtopic.coverageRecords.length > 0 && (
@@ -391,14 +682,16 @@ export default function CoveragePage() {
                                           <span>{new Date(coverage.covered_on).toLocaleDateString()}</span>
                                           {coverage.notes && <span className="opacity-80">- {coverage.notes}</span>}
                                         </div>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => handleDeleteCoverage(coverage.id)}
-                                          className="h-6 w-6 p-0 hover:bg-red-100"
-                                        >
-                                          <Trash2 className="h-3 w-3" />
-                                        </Button>
+                                        {!bulkMode && (
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => handleDeleteCoverage(coverage.id)}
+                                            className="h-6 w-6 p-0 hover:bg-red-100"
+                                          >
+                                            <Trash2 className="h-3 w-3" />
+                                          </Button>
+                                        )}
                                       </div>
                                     ))}
                                   </div>

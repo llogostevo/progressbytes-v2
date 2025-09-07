@@ -77,17 +77,77 @@ export interface Plan {
   active: boolean
 };
 
-// Coverage tracking types
+// // Coverage tracking types
+// export interface Class {
+//   id: string
+//   name: string
+//   teacher_id: string
+//   created_at: string
+//   join_code?: string
+//   teacher?: {
+//     email: string
+//     full_name: string
+//   }
+// }
+
+// export interface Unit {
+//   id: string
+//   name: string
+//   unit_number: number
+// }
+
+// export interface CoverageTopic {
+//   id: string
+//   name: string
+//   description: string
+//   slug: string
+//   topicnumber: number
+//   unit_id: string
+//   units: Unit
+// }
+
+// export interface Subtopic {
+//   id: string
+//   subtopictitle: string
+//   subtopicnumber: number
+//   topic_id: string
+//   topics: CoverageTopic
+//   coverageRecords: CoverageRecord[]
+// }
+
+// export interface CoverageRecord {
+//   id: string
+//   class_id: string
+//   subtopic_id: string
+//   covered_on: string
+//   created_at: string
+//   created_by: string
+//   notes: string | null
+// }
+
+// // export interface GroupedSubtopics {
+// //   unit: Unit
+// //   topics: {
+// //     topic: CoverageTopic
+// //     subtopics: (Subtopic & { coverageRecords?: CoverageRecord[] })[]
+// //   }[]
+// // }
+
+// export interface TopicGroup {
+//   topic: CoverageTopic
+//   subtopics: Subtopic[]
+// }
+// export interface GroupedSubtopics {
+//   unit: Unit
+//   topics: TopicGroup[]
+// }
+
 export interface Class {
   id: string
   name: string
   teacher_id: string
   created_at: string
-  join_code?: string
-  teacher?: {
-    email: string
-    full_name: string
-  }
+  updated_at?: string
 }
 
 export interface Unit {
@@ -99,11 +159,21 @@ export interface Unit {
 export interface CoverageTopic {
   id: string
   name: string
-  description: string
+  description?: string
   slug: string
   topicnumber: number
   unit_id: string
   units: Unit
+}
+
+export interface CoverageRecord {
+  id: string
+  class_id: string
+  subtopic_id: string
+  covered_on: string
+  created_by: string
+  notes?: string | null
+  created_at?: string
 }
 
 export interface Subtopic {
@@ -112,25 +182,19 @@ export interface Subtopic {
   subtopicnumber: number
   topic_id: string
   topics: CoverageTopic
+  coverageRecords: CoverageRecord[]
 }
 
-export interface CoverageRecord {
-  id: string
-  class_id: string
-  subtopic_id: string
-  covered_on: string
-  created_at: string
-  created_by: string
-  notes: string | null
+export interface TopicGroup {
+  topic: CoverageTopic
+  subtopics: Subtopic[]
 }
 
 export interface GroupedSubtopics {
   unit: Unit
-  topics: {
-    topic: CoverageTopic
-    subtopics: (Subtopic & { coverageRecords?: CoverageRecord[] })[]
-  }[]
+  topics: TopicGroup[]
 }
+
 
 // Class management types
 export interface ClassMember {
