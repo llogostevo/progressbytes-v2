@@ -97,7 +97,7 @@ async function getTopicBySlug(slug: string): Promise<Topic | undefined> {
 }
 
 function transformQuestion(dbQuestion: DBQuestion, topicName: string): Question {
- 
+
   return {
     id: dbQuestion.id,
     type: dbQuestion.type as Question['type'],
@@ -302,7 +302,7 @@ async function getRandomQuestionForTopic(
   const randomIndex = Math.floor(Math.random() * length)
   return filteredQuestionsByDifficulty[randomIndex]
 
-  
+
 }
 
 // Add this new function to get available question types
@@ -569,43 +569,43 @@ export default function QuestionPage() {
   //   checkHasPaid()
   // }, [supabase, topicSlug])
 
-    // Create a stable supabase client instance
-    const supabase = useMemo(() => createClient(), [])
-  
-    useEffect(() => {
-      const checkHasPaid = async () => {
-        const { data: { user } } = await supabase.auth.getUser()
-  
-        if (!user) {
-          setFreeUser(true)
-          setIsLoadingUserType(false)
-          return
-        }
-  
-        const { data } = await supabase
-          .from("profiles")
-          .select("user_type")
-          .eq("userid", user.id)
-          .single()
-  
-        if (!data) {
-          setUserType("anonymous")
-          setUser(user)
-          setFreeUser(true)
-          setIsLoadingUserType(false)
-          return
-        }
-  
-        setUserType(data.user_type)
-        setUser(user)
-        setFreeUser(false)
+  // Create a stable supabase client instance
+  const supabase = useMemo(() => createClient(), [])
+
+  useEffect(() => {
+    const checkHasPaid = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (!user) {
+        setFreeUser(true)
         setIsLoadingUserType(false)
+        return
       }
-  
-      checkHasPaid()
-    }, [supabase]) 
-  
-  
+
+      const { data } = await supabase
+        .from("profiles")
+        .select("user_type")
+        .eq("userid", user.id)
+        .single()
+
+      if (!data) {
+        setUserType("anonymous")
+        setUser(user)
+        setFreeUser(true)
+        setIsLoadingUserType(false)
+        return
+      }
+
+      setUserType(data.user_type)
+      setUser(user)
+      setFreeUser(false)
+      setIsLoadingUserType(false)
+    }
+
+    checkHasPaid()
+  }, [supabase])
+
+
 
   useEffect(() => {
     if (isLoadingUserType) return
@@ -645,10 +645,19 @@ export default function QuestionPage() {
             return
           }
 
+          console.log("=== QUESTION DEBUG INFO ===")
+          console.log("User Type:", userType)
+          console.log("User ID:", user?.id)
+          console.log("Topic ID:", currentTopic?.id)
           console.log("Raw question data:", newQuestion)
+          console.log("Question ID:", newQuestion.id)
           console.log("Question type:", newQuestion.type)
           console.log("Model answer:", newQuestion.model_answer)
           console.log("Model answer type:", typeof newQuestion.model_answer)
+          console.log("Options:", newQuestion.options)
+          console.log("Order important:", newQuestion.order_important)
+          console.log("=== END DEBUG INFO ===")
+          
           if (newQuestion.type === 'true-false') {
             console.log("True/False specific data:", {
               modelAnswer: newQuestion.model_answer,
