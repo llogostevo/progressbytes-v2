@@ -18,6 +18,7 @@ export interface Question {
   model_answer_code?: string
   language?: string
   explanation?: string
+  rubric?: string
   created_at: string
   pairs?: {
     statement: string
@@ -162,6 +163,120 @@ export interface StudentClassMember {
       full_name: string
     }[] | null
   }[]
+}
+
+// ProgressBoost types
+export interface ProgressBoostPlanRow {
+  week_id: string
+  target_counts: Record<string, number>
+  item_id: string
+  question_id: string
+  bucket: "new" | "mid" | "old"
+  difficulty: "low" | "medium" | "high" | string
+  order_index: number
+  status: "pending" | "answered" | "skipped"
+}
+
+export interface ProgressBoostTargets {
+  "low:new": number
+  "low:mid": number
+  "low:old": number
+  "medium:new": number
+  "medium:mid": number
+  "medium:old": number
+  "high:new": number
+  "high:mid": number
+  "high:old": number
+}
+
+export interface ProgressMaps {
+  done: Record<string, number>
+  target: Record<string, number>
+}
+
+// Database question types (raw from Supabase)
+export interface DbMultipleChoiceQuestion {
+  options: string[]
+  correct_answer_index: number
+  model_answer?: string
+}
+
+export interface DbFillInTheBlankQuestion {
+  options: string[]
+  correct_answers: string[]
+  order_important: boolean
+  model_answer?: string
+}
+
+export interface DbMatchingQuestion {
+  statement: string
+  match: string
+  model_answer?: string
+}
+
+export interface DbTrueFalseQuestion {
+  correct_answer: boolean
+  model_answer?: string
+}
+
+export interface DbShortAnswerQuestion {
+  model_answer: string
+}
+
+export interface DbEssayQuestion {
+  model_answer: string
+  rubric: string
+}
+
+export interface DbCodeQuestion {
+  language: string
+  model_answer: string
+  model_answer_code: string
+}
+
+export interface DbQuestion {
+  id: string
+  type: string
+  difficulty: string
+  question_text: string
+  explanation?: string
+  created_at: string
+  multiple_choice_questions?: DbMultipleChoiceQuestion
+  fill_in_the_blank_questions?: DbFillInTheBlankQuestion
+  matching_questions?: DbMatchingQuestion[]
+  true_false_questions?: DbTrueFalseQuestion
+  short_answer_questions?: DbShortAnswerQuestion
+  essay_questions?: DbEssayQuestion
+  code_questions?: DbCodeQuestion
+}
+
+// More flexible type for Supabase query results
+export interface DbQuestionResult {
+  id: string
+  type: string
+  difficulty: string
+  question_text: string
+  explanation?: string
+  created_at: string
+  multiple_choice_questions?: DbMultipleChoiceQuestion | null
+  fill_in_the_blank_questions?: DbFillInTheBlankQuestion | null
+  matching_questions?: DbMatchingQuestion[] | null
+  true_false_questions?: DbTrueFalseQuestion | null
+  short_answer_questions?: DbShortAnswerQuestion | null
+  essay_questions?: DbEssayQuestion | null
+  code_questions?: DbCodeQuestion | null
+}
+
+// Raw plan row from database
+export interface RawPlanRow {
+  week_id: string
+  target_counts: Record<string, number>
+  item_id: string
+  question_id: string
+  bucket: string
+  difficulty: string
+  order_index: number
+  status: string
 }
 
 //TODO: shoudl add in here the types from getTopics.ts 

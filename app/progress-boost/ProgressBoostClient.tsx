@@ -11,7 +11,7 @@ import { Progress } from "@/components/ui/progress"
 import { Zap, Target, Trophy, RefreshCw, CheckCircle2, XCircle, SkipForward } from "lucide-react"
 import { toast } from "sonner"
 
-import type { Question } from "@/lib/types"
+import type { Question, ProgressBoostPlanRow, ProgressMaps, DbQuestionResult, RawPlanRow, DbMatchingQuestion, Answer } from "@/lib/types"
 import { MultipleChoiceQuestion } from "@/components/question-components/question-type/multiple-choice-question"
 import { FillInTheBlankQuestion } from "@/components/question-components/question-type/fill-in-the-blank-question"
 import { TextQuestion } from "@/components/question-components/question-type/text-question"
@@ -30,16 +30,7 @@ import { PROGRESS_BOOST_RULES, NEW_DAYS, MID_DAYS, thisWeekBoundsLondon } from "
 // ---------- Types ----------
 type ScoreType = "green" | "amber" | "red"
 
-type PlanRow = {
-    week_id: string
-    target_counts: Record<string, number>
-    item_id: string
-    question_id: string
-    bucket: "new" | "mid" | "old"
-    difficulty: "low" | "medium" | "high" | string
-    order_index: number
-    status: "pending" | "answered" | "skipped"
-}
+// Use the imported type instead of local definition
 
 // Normalize backend question type strings to the UI’s canonical set
 function normalizeQuestionType(raw: string | null | undefined): Question["type"] {
@@ -65,16 +56,16 @@ const explain = (e: unknown) => {
 }
 
 const toISODate = (d: Date) => d.toISOString().slice(0, 10)
-const getNum = (m: Record<string, number> | undefined, k: string) => Number((m && (m as any)[k]) ?? 0)
+const getNum = (m: Record<string, number> | undefined, k: string) => Number((m && m[k]) ?? 0)
 
 // Coerce arbitrary RPC rows into our strict PlanRow shape (narrow literal unions)
-function normalizePlanRows(raw: any[]): PlanRow[] {
+function normalizePlanRows(raw: RawPlanRow[]): ProgressBoostPlanRow[] {
     return (raw || []).map((r) => {
         const s = r?.status;
-        const status: PlanRow["status"] =
+        const status: ProgressBoostPlanRow["status"] =
             s === "pending" || s === "answered" || s === "skipped" ? s : "pending";
         const b = r?.bucket;
-        const bucket: PlanRow["bucket"] = b === "new" || b === "mid" || b === "old" ? b : "new";
+        const bucket: ProgressBoostPlanRow["bucket"] = b === "new" || b === "mid" || b === "old" ? b : "new";
         return {
             week_id: String(r.week_id),
             target_counts: (r.target_counts ?? {}) as Record<string, number>,
@@ -89,7 +80,7 @@ function normalizePlanRows(raw: any[]): PlanRow[] {
 }
 
 // Find the next index to show: prefer pending (forward, circular), then skipped
-function findNextIndex(from: number, rows: PlanRow[]): number {
+function findNextIndex(from: number, rows: ProgressBoostPlanRow[]): number {
     const n = rows.length
     if (n === 0) return -1
     // scan forward circularly for the next pending
@@ -115,7 +106,7 @@ export default function ProgressBoostClient() {
     const [classId, setClassId] = useState<string>("")
 
     // --- Plan & questions ---
-    const [plan, setPlan] = useState<PlanRow[]>([])
+    const [plan, setPlan] = useState<ProgressBoostPlanRow[]>([])
     const [questions, setQuestions] = useState<Question[]>([])
     const [currentIndex, setCurrentIndex] = useState(0)
 
@@ -127,7 +118,7 @@ export default function ProgressBoostClient() {
     const [selfScore, setSelfScore] = useState<ScoreType | null>(null)
     const [answerPayload, setAnswerPayload] = useState<string | null>(null)
     const [isSubmitting, setIsSubmitting] = useState(false)
-    const [progressMaps, setProgressMaps] = useState<{ done: Record<string, number>, target: Record<string, number> }>({ done: {}, target: {} })
+    const [progressMaps, setProgressMaps] = useState<ProgressMaps>({ done: {}, target: {} })
 
     const [isFinalQuestion, setIsFinalQuestion] = useState(false)
 
@@ -187,7 +178,7 @@ export default function ProgressBoostClient() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isAllowed, classId])
 
-    const recomputeProgressFromPlan = (rows: PlanRow[]) => {
+    const recomputeProgressFromPlan = (rows: ProgressBoostPlanRow[]) => {
         if (!rows || rows.length === 0) {
             setProgressMaps({ done: {}, target: {} })
             setCompleted(false)
@@ -212,12 +203,12 @@ export default function ProgressBoostClient() {
         setCompleted(totalTarget > 0 && totalDone >= totalTarget)
     }
 
-    const mapDbQuestionToUI = (q: any): Question => {
+    const mapDbQuestionToUI = (q: DbQuestionResult): Question => {
         const norm = normalizeQuestionType(q.type)
-        const base: any = {
+        const base: Partial<Question> = {
             id: q.id,
             type: norm,
-            difficulty: q.difficulty,
+            difficulty: q.difficulty as "low" | "medium" | "high",
             question_text: q.question_text,
             explanation: q.explanation,
         }
@@ -230,11 +221,11 @@ export default function ProgressBoostClient() {
             base.order_important = q.fill_in_the_blank_questions?.order_important
             base.model_answer = q.fill_in_the_blank_questions?.correct_answers
         } else if (norm === "matching") {
-            base.pairs = (q.matching_questions || []).map((m: any) => ({
+            base.pairs = (q.matching_questions || []).map((m: DbMatchingQuestion) => ({
                 statement: m.statement, match: m.match,
             }))
         } else if (norm === "true-false") {
-            base.model_answer = q.true_false_questions?.correct_answer ?? null
+            base.model_answer = q.true_false_questions?.correct_answer ?? false
         } else if (norm === "text" || norm === "short-answer") {
             base.model_answer = q.short_answer_questions?.model_answer ?? ""
         } else if (norm === "essay") {
@@ -283,11 +274,11 @@ export default function ProgressBoostClient() {
             })
             if (planErr) throw planErr
 
-            const rows = normalizePlanRows(planRows as any[])
+            const rows = normalizePlanRows(planRows as RawPlanRow[])
             // Order by frozen order_index and de-duplicate by question_id (belt & braces)
             const ordered = [...rows].sort((a, b) => a.order_index - b.order_index)
             const seenQ = new Set<string>()
-            const dedupPlan: PlanRow[] = ordered.filter((r) => {
+            const dedupPlan: ProgressBoostPlanRow[] = ordered.filter((r) => {
                 if (seenQ.has(r.question_id)) return false
                 seenQ.add(r.question_id)
                 return true
@@ -319,11 +310,11 @@ export default function ProgressBoostClient() {
                 .in("id", qIds)
             if (qErr) throw qErr
 
-            const byId = new Map((qData || []).map((q: any) => [q.id, q]))
+            const byId = new Map((qData || []).map((q: unknown) => [(q as { id: string }).id, q as DbQuestionResult]))
             const orderedPlan = dedupPlan // already ordered & deduped
             const orderedQuestions = orderedPlan
                 .map(r => byId.get(r.question_id))
-                .filter(Boolean)
+                .filter((q): q is DbQuestionResult => q !== undefined)
                 .map(mapDbQuestionToUI)
 
             setQuestions(orderedQuestions)
@@ -392,7 +383,7 @@ export default function ProgressBoostClient() {
                 toast.error(`Mark answered failed: ${explain(updErr)}`)
             } else {
                 // reflect locally
-                const newPlan: PlanRow[] = plan.map((p) =>
+                const newPlan: ProgressBoostPlanRow[] = plan.map((p) =>
                     p.item_id === planItem.item_id ? { ...p, status: "answered" as const } : p
                 )
                 setPlan(newPlan)
@@ -434,7 +425,7 @@ export default function ProgressBoostClient() {
     const handleTrueFalseAnswer = async (answerValue: boolean) => {
         if (currentIndex >= questions.length) return
         const q = questions[currentIndex]
-        const isCorrect = String(answerValue) === String((q as any).model_answer)
+        const isCorrect = String(answerValue) === String(q.model_answer)
         setIsSubmitting(true)
         await saveAnswer({ response_text: answerValue ? "true" : "false", autoScore: isCorrect ? "green" : "red" })
         setIsSubmitting(false)
@@ -505,7 +496,7 @@ export default function ProgressBoostClient() {
             return
         }
         // Update local plan and advance
-        const newPlan: PlanRow[] = plan.map((p) =>
+        const newPlan: ProgressBoostPlanRow[] = plan.map((p) =>
             p.item_id === item.item_id ? { ...p, status: "skipped" as const } : p
         )
         setPlan(newPlan)
@@ -556,8 +547,8 @@ export default function ProgressBoostClient() {
             let selected: number[] = []
             try { selected = JSON.parse(answerPayload || "[]") } catch { }
             const selectedOptions = selected.map((i) => q.options?.[i])
-            const model = Array.isArray((q as any).model_answer) ? (q as any).model_answer : []
-            const orderImportant = (q as any).order_important
+            const model = Array.isArray(q.model_answer) ? q.model_answer : []
+            const orderImportant = q.order_important
             return (
                 <div className="space-y-4">
                     <div className="p-3 bg-muted rounded">
@@ -617,7 +608,7 @@ export default function ProgressBoostClient() {
         }
 
         if (q.type === "true-false") {
-            const correct = String(answerPayload) === String((q as any).model_answer)
+            const correct = String(answerPayload) === String(q.model_answer)
             return (
                 <div className="space-y-4">
                     <div className="p-3 bg-muted rounded">
@@ -629,7 +620,7 @@ export default function ProgressBoostClient() {
                     </div>
                     <div className="p-3 bg-emerald-50 rounded border border-emerald-100">
                         <h3 className="font-medium mb-2 text-emerald-700">Correct Answer</h3>
-                        <p>{String((q as any).model_answer) === "true" ? "True" : "False"}</p>
+                        <p>{String(q.model_answer) === "true" ? "True" : "False"}</p>
                     </div>
                 </div>
             )
@@ -649,12 +640,12 @@ export default function ProgressBoostClient() {
                             {(q.type === "code" || q.type === "algorithm" || q.type === "sql") && (
                                 <h4 className="text-sm font-medium mb-1">Pseudocode:</h4>
                             )}
-                            <pre className="whitespace-pre-wrap font-sans text-sm">{(q as any).model_answer}</pre>
+                            <pre className="whitespace-pre-wrap font-sans text-sm">{q.model_answer}</pre>
                         </div>
-                        {(q as any).model_answer_code && (
+                        {q.model_answer_code && (
                             <div>
-                                <h4 className="text-sm font-medium mb-1">{(q as any).language || "Python"}:</h4>
-                                <pre className="whitespace-pre-wrap font-sans text-sm">{(q as any).model_answer_code}</pre>
+                                <h4 className="text-sm font-medium mb-1">{q.language || "Python"}:</h4>
+                                <pre className="whitespace-pre-wrap font-sans text-sm">{q.model_answer_code}</pre>
                             </div>
                         )}
                     </div>
@@ -757,12 +748,12 @@ export default function ProgressBoostClient() {
                                 {/* For auto-marked types, show their score banner; for manual, ask for self‑assessment */}
                                 {autoScore !== null ? (
                                     <div className="mt-4">
-                                        <FeedbackDisplay answer={{ id: answerId as string, ai_feedback: null, score: autoScore } as any} />
+                                        <FeedbackDisplay answer={{ id: answerId as string, ai_feedback: null, score: autoScore } as Answer} />
                                     </div>
                                 ) : (
                                     <div className="mt-4">
                                         {selfScore ? (
-                                            <FeedbackDisplay answer={{ id: answerId as string, ai_feedback: null, score: selfScore } as any} />
+                                            <FeedbackDisplay answer={{ id: answerId as string, ai_feedback: null, score: selfScore } as Answer} />
                                         ) : (
                                             <SelfAssessment onSelectScore={handleSelfAssess} />
                                         )}
