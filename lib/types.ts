@@ -76,4 +76,92 @@ export interface Plan {
   active: boolean
 };
 
+// Coverage tracking types
+export interface Class {
+  id: string
+  name: string
+  teacher_id: string
+  created_at: string
+  join_code?: string
+  teacher?: {
+    email: string
+    full_name: string
+  }
+}
+
+export interface Unit {
+  id: string
+  name: string
+  unit_number: number
+}
+
+export interface CoverageTopic {
+  id: string
+  name: string
+  description: string
+  slug: string
+  topicnumber: number
+  unit_id: string
+  units: Unit
+}
+
+export interface Subtopic {
+  id: string
+  subtopictitle: string
+  subtopicnumber: number
+  topic_id: string
+  topics: CoverageTopic
+}
+
+export interface CoverageRecord {
+  id: string
+  class_id: string
+  subtopic_id: string
+  covered_on: string
+  created_at: string
+  created_by: string
+  notes: string | null
+}
+
+export interface GroupedSubtopics {
+  unit: Unit
+  topics: {
+    topic: CoverageTopic
+    subtopics: (Subtopic & { coverageRecords?: CoverageRecord[] })[]
+  }[]
+}
+
+// Class management types
+export interface ClassMember {
+  class_id: string
+  student_id: string
+  joined_at: string
+}
+
+export interface ClassMemberRow {
+  student_id: string
+  joined_at: string
+  class: {
+    id: string
+    name: string
+  }
+  student: {
+    email: string
+    full_name: string
+  }
+}
+
+export interface StudentClassMember {
+  class: {
+    id: string
+    name: string
+    teacher_id: string
+    created_at: string
+    teacher: {
+      email: string
+      full_name: string
+    }[] | null
+  }[]
+}
+
 //TODO: shoudl add in here the types from getTopics.ts 

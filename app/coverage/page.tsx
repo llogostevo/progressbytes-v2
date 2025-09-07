@@ -12,55 +12,8 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, BookOpen, Plus, CheckCircle, XCircle, Trash2 } from "lucide-react"
 import { toast } from "sonner"
+import { Class, Unit, CoverageTopic, CoverageRecord, GroupedSubtopics } from "@/lib/types"
 
-interface Class {
-  id: string
-  name: string
-  teacher_id: string
-  created_at: string
-}
-
-interface Unit {
-  id: string
-  name: string
-  unit_number: number
-}
-
-interface Topic {
-  id: string
-  name: string
-  description: string
-  slug: string
-  topicnumber: number
-  unit_id: string
-  units: Unit
-}
-
-interface Subtopic {
-  id: string
-  subtopictitle: string
-  subtopicnumber: number
-  topic_id: string
-  topics: Topic
-}
-
-interface CoverageRecord {
-  id: string
-  class_id: string
-  subtopic_id: string
-  covered_on: string
-  created_at: string
-  created_by: string
-  notes: string | null
-}
-
-interface GroupedSubtopics {
-  unit: Unit
-  topics: {
-    topic: Topic
-    subtopics: (Subtopic & { coverageRecords?: CoverageRecord[] })[]
-  }[]
-}
 
 const getCoverageIntensity = (coveredOn: string): string => {
   const coverageDate = new Date(coveredOn)
@@ -201,7 +154,7 @@ export default function CoveragePage() {
         const topicData = Array.isArray(subtopic.topics) ? subtopic.topics[0] : subtopic.topics
         const unitData = Array.isArray(topicData.units) ? topicData.units[0] : topicData.units
 
-        const topic: Topic = {
+        const topic: CoverageTopic = {
           id: topicData.id,
           name: topicData.name,
           description: topicData.description,
