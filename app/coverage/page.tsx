@@ -60,6 +60,7 @@ export default function CoveragePage() {
   const [bulkMode, setBulkMode] = useState(false)
   const [isAddingBulk, setIsAddingBulk] = useState(false)
   const [bulkDate, setBulkDate] = useState(new Date().toISOString().split("T")[0])
+  const [coverageFilter, setCoverageFilter] = useState<"all" | "covered" | "not-covered">("all")
 
   const supabase = createClient()
 
@@ -214,9 +215,13 @@ export default function CoveragePage() {
 
       grouped.sort((a, b) => a.unit.unit_number - b.unit.unit_number)
       grouped.forEach((unitGroup) => {
-        unitGroup.topics.sort((a, b) => compareVersionNumbers(a.topic.topicnumber.toString(), b.topic.topicnumber.toString()))
+        unitGroup.topics.sort((a, b) =>
+          compareVersionNumbers(a.topic.topicnumber.toString(), b.topic.topicnumber.toString()),
+        )
         unitGroup.topics.forEach((topicGroup) => {
-          topicGroup.subtopics.sort((a, b) => compareVersionNumbers(a.subtopicnumber.toString(), b.subtopicnumber.toString()))
+          topicGroup.subtopics.sort((a, b) =>
+            compareVersionNumbers(a.subtopicnumber.toString(), b.subtopicnumber.toString()),
+          )
         })
       })
 
@@ -470,6 +475,47 @@ export default function CoveragePage() {
     }
   }
 
+  const getCoverageStats = () => {
+    let totalSubtopics = 0
+    let coveredSubtopics = 0
+
+    groupedSubtopics.forEach((unitGroup) => {
+      unitGroup.topics.forEach((topicGroup) => {
+        topicGroup.subtopics.forEach((subtopic) => {
+          totalSubtopics++
+          if (subtopic.coverageRecords && subtopic.coverageRecords.length > 0) {
+            coveredSubtopics++
+          }
+        })
+      })
+    })
+
+    return {
+      total: totalSubtopics,
+      covered: coveredSubtopics,
+      notCovered: totalSubtopics - coveredSubtopics,
+    }
+  }
+
+  const getFilteredSubtopics = () => {
+    if (coverageFilter === "all") return groupedSubtopics
+
+    return groupedSubtopics
+      .map((unitGroup) => ({
+        ...unitGroup,
+        topics: unitGroup.topics
+          .map((topicGroup) => ({
+            ...topicGroup,
+            subtopics: topicGroup.subtopics.filter((subtopic) => {
+              const isCovered = subtopic.coverageRecords && subtopic.coverageRecords.length > 0
+              return coverageFilter === "covered" ? isCovered : !isCovered
+            }),
+          }))
+          .filter((topicGroup) => topicGroup.subtopics.length > 0),
+      }))
+      .filter((unitGroup) => unitGroup.topics.length > 0)
+  }
+
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-6">
@@ -518,68 +564,105 @@ export default function CoveragePage() {
 
         {selectedClass && (
           <>
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
+            <div className="mb-6 p-4 bg-white rounded-lg border">
+              <h3 className="text-lg font-semibold mb-3">Coverage Filters</h3>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
                   <Button
-                    variant={bulkMode ? "default" : "outline"}
-                    onClick={() => {
-                      setBulkMode(!bulkMode)
-                      setSelectedSubtopics(new Set())
-                    }}
+                    variant={coverageFilter === "all" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCoverageFilter("all")}
                     className="flex items-center gap-2"
                   >
-                    <Check className="h-4 w-4" />
-                    {bulkMode ? "Exit Bulk Mode" : "Bulk Select"}
+                    <BookOpen className="h-4 w-4" />
+                    All ({getCoverageStats().total})
                   </Button>
-
-                  {bulkMode && (
-                    <>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={selectAllUncovered}
-                        className="flex items-center gap-2 bg-transparent"
-                      >
-                        <CheckCircle className="h-4 w-4" />
-                        Select All Uncovered
-                      </Button>
-
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedSubtopics(new Set())}
-                        className="flex items-center gap-2"
-                      >
-                        <X className="h-4 w-4" />
-                        Clear Selection
-                      </Button>
-                    </>
-                  )}
+                  <Button
+                    variant={coverageFilter === "covered" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCoverageFilter("covered")}
+                    className="flex items-center gap-2"
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    Covered ({getCoverageStats().covered})
+                  </Button>
+                  <Button
+                    variant={coverageFilter === "not-covered" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCoverageFilter("not-covered")}
+                    className="flex items-center gap-2"
+                  >
+                    <XCircle className="h-4 w-4" />
+                    Not Covered ({getCoverageStats().notCovered})
+                  </Button>
                 </div>
+                <div className="text-sm text-gray-600">
+                  {getCoverageStats().covered} of {getCoverageStats().total} subtopics covered (
+                  {Math.round((getCoverageStats().covered / getCoverageStats().total) * 100) || 0}%)
+                </div>
+              </div>
+            </div>
 
-                {bulkMode && selectedSubtopics.size > 0 && (
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-gray-600">{selectedSubtopics.size} selected</span>
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="bulk-date" className="text-sm whitespace-nowrap">
-                        Coverage Date:
-                      </Label>
-                      <Input
-                        id="bulk-date"
-                        type="date"
-                        value={bulkDate}
-                        onChange={(e) => setBulkDate(e.target.value)}
-                        className="w-auto"
-                      />
-                    </div>
-                    <Button onClick={handleBulkCoverage} disabled={isAddingBulk} className="flex items-center gap-2">
-                      <Zap className="h-4 w-4" />
-                      {isAddingBulk ? "Adding..." : "Mark All as Covered"}
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
+              <div className="flex items-center gap-2 mb-6">
+                <Button
+                  variant={bulkMode ? "default" : "outline"}
+                  onClick={() => {
+                    setBulkMode(!bulkMode)
+                    setSelectedSubtopics(new Set())
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <Check className="h-4 w-4" />
+                  {bulkMode ? "Exit Bulk Mode" : "Bulk Select"}
+                </Button>
+
+                {bulkMode && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={selectAllUncovered}
+                      className="flex items-center gap-2 bg-transparent"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      Select All Uncovered
                     </Button>
-                  </div>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedSubtopics(new Set())}
+                      className="flex items-center gap-2"
+                    >
+                      <X className="h-4 w-4" />
+                      Clear Selection
+                    </Button>
+                  </>
                 )}
               </div>
+
+              {bulkMode && selectedSubtopics.size > 0 && (
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-600">{selectedSubtopics.size} selected</span>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="bulk-date" className="text-sm whitespace-nowrap">
+                      Coverage Date:
+                    </Label>
+                    <Input
+                      id="bulk-date"
+                      type="date"
+                      value={bulkDate}
+                      onChange={(e) => setBulkDate(e.target.value)}
+                      className="w-auto"
+                    />
+                  </div>
+                  <Button onClick={handleBulkCoverage} disabled={isAddingBulk} className="flex items-center gap-2">
+                    <Zap className="h-4 w-4" />
+                    {isAddingBulk ? "Adding..." : "Mark All as Covered"}
+                  </Button>
+                </div>
+              )}
             </div>
 
             {isLoadingSubtopics ? (
@@ -606,7 +689,7 @@ export default function CoveragePage() {
               </div>
             ) : (
               <div className="space-y-6">
-                {groupedSubtopics.map((unitGroup) => (
+                {getFilteredSubtopics().map((unitGroup) => (
                   <Card key={unitGroup.unit.id}>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
@@ -622,13 +705,24 @@ export default function CoveragePage() {
                           </h3>
                           <div className="space-y-3">
                             {topicGroup.subtopics.map((subtopic) => (
-                              <div key={subtopic.id} className="border rounded-lg p-4 bg-gray-50">
+                              <div
+                                key={subtopic.id}
+                                className={`border rounded-lg p-4 transition-all ${
+                                  bulkMode
+                                    ? selectedSubtopics.has(subtopic.id)
+                                      ? "bg-blue-50 border-blue-300 cursor-pointer hover:bg-blue-100"
+                                      : "bg-gray-50 cursor-pointer hover:bg-gray-100"
+                                    : "bg-gray-50"
+                                }`}
+                                onClick={bulkMode ? () => toggleSubtopicSelection(subtopic.id) : undefined}
+                              >
                                 <div className="flex items-center justify-between mb-3">
                                   <div className="flex items-center gap-3">
                                     {bulkMode && (
                                       <Checkbox
                                         checked={selectedSubtopics.has(subtopic.id)}
                                         onCheckedChange={() => toggleSubtopicSelection(subtopic.id)}
+                                        onClick={(e) => e.stopPropagation()}
                                       />
                                     )}
 
@@ -688,6 +782,7 @@ export default function CoveragePage() {
                                             size="sm"
                                             onClick={() => handleDeleteCoverage(coverage.id)}
                                             className="h-6 w-6 p-0 hover:bg-red-100"
+                                            onClickCapture={(e) => e.stopPropagation()}
                                           >
                                             <Trash2 className="h-3 w-3" />
                                           </Button>
