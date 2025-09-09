@@ -130,6 +130,86 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
     setEndDate(end)
   }
 
+  const setWeekRange = (weekType: 'this' | 'last') => {
+    const today = new Date()
+    const currentDay = today.getDay() // 0 = Sunday, 1 = Monday, etc.
+    
+    // Calculate days to subtract to get to Monday of current week
+    const daysToMonday = currentDay === 0 ? 6 : currentDay - 1 // If Sunday, go back 6 days; otherwise go back to Monday
+    
+    const mondayOfCurrentWeek = new Date(today)
+    mondayOfCurrentWeek.setDate(today.getDate() - daysToMonday)
+    
+    const sundayOfCurrentWeek = new Date(mondayOfCurrentWeek)
+    sundayOfCurrentWeek.setDate(mondayOfCurrentWeek.getDate() + 6) // Sunday is 6 days after Monday
+    
+    if (weekType === 'this') {
+      setStartDate(mondayOfCurrentWeek)
+      setEndDate(sundayOfCurrentWeek)
+    } else {
+      // For last week, subtract 7 days from both dates
+      const mondayOfLastWeek = new Date(mondayOfCurrentWeek)
+      mondayOfLastWeek.setDate(mondayOfCurrentWeek.getDate() - 7)
+      
+      const sundayOfLastWeek = new Date(sundayOfCurrentWeek)
+      sundayOfLastWeek.setDate(sundayOfCurrentWeek.getDate() - 7)
+      
+      setStartDate(mondayOfLastWeek)
+      setEndDate(sundayOfLastWeek)
+    }
+  }
+
+  // Helper function to check if two dates are the same day
+  const isSameDay = (date1: Date, date2: Date) => {
+    return date1.getFullYear() === date2.getFullYear() &&
+           date1.getMonth() === date2.getMonth() &&
+           date1.getDate() === date2.getDate()
+  }
+
+  // Helper function to get the date range for a specific number of days
+  const getDateRangeForDays = (days: number) => {
+    const end = new Date()
+    const start = new Date()
+    start.setDate(start.getDate() - days)
+    return { start, end }
+  }
+
+  // Helper function to get the week range
+  const getWeekRange = (weekType: 'this' | 'last') => {
+    const today = new Date()
+    const currentDay = today.getDay()
+    const daysToMonday = currentDay === 0 ? 6 : currentDay - 1
+    
+    const mondayOfCurrentWeek = new Date(today)
+    mondayOfCurrentWeek.setDate(today.getDate() - daysToMonday)
+    
+    const sundayOfCurrentWeek = new Date(mondayOfCurrentWeek)
+    sundayOfCurrentWeek.setDate(mondayOfCurrentWeek.getDate() + 6)
+    
+    if (weekType === 'this') {
+      return { start: mondayOfCurrentWeek, end: sundayOfCurrentWeek }
+    } else {
+      const mondayOfLastWeek = new Date(mondayOfCurrentWeek)
+      mondayOfLastWeek.setDate(mondayOfCurrentWeek.getDate() - 7)
+      
+      const sundayOfLastWeek = new Date(sundayOfCurrentWeek)
+      sundayOfLastWeek.setDate(sundayOfCurrentWeek.getDate() - 7)
+      
+      return { start: mondayOfLastWeek, end: sundayOfLastWeek }
+    }
+  }
+
+  // Check if current date range matches a specific range
+  const isDateRangeActive = (rangeType: 'days' | 'week', value: number | 'this' | 'last') => {
+    if (rangeType === 'days') {
+      const { start, end } = getDateRangeForDays(value as number)
+      return isSameDay(startDate, start) && isSameDay(endDate, end)
+    } else {
+      const { start, end } = getWeekRange(value as 'this' | 'last')
+      return isSameDay(startDate, start) && isSameDay(endDate, end)
+    }
+  }
+
   const formatDuration = (minutes: number) => {
     if (minutes < 60) {
       return `${minutes} minutes`
@@ -354,7 +434,7 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
                 const lastActivity = dayActivity[dayActivity.length - 1]
                 const durationMinutes = Math.round(
                   (new Date(lastActivity.created_at).getTime() - new Date(firstActivity.created_at).getTime()) /
-                    (1000 * 60),
+                  (1000 * 60),
                 )
                 totalDuration += durationMinutes
               }
@@ -467,8 +547,61 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
           <CardTitle>Filter Criteria</CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="mt-4 mb-4">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="space-y-2 flex-1">
+                <Label>Weekly Ranges</Label>
+                <div className="flex gap-2">
+                  <Button 
+                    variant={isDateRangeActive('week', 'last') ? "default" : "outline"} 
+                    size="sm" 
+                    onClick={() => setWeekRange('last')}
+                  >
+                    Last Week (Mon-Sun)
+                  </Button>
+                  <Button 
+                    variant={isDateRangeActive('week', 'this') ? "default" : "outline"} 
+                    size="sm" 
+                    onClick={() => setWeekRange('this')}
+                  >
+                    This Week (Mon-Sun)
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="space-y-2 flex-1">
+                <Label>Quick Date Ranges</Label>
+                <div className="flex flex-wrap gap-2">
+                  <Button 
+                    variant={isDateRangeActive('days', 7) ? "default" : "outline"} 
+                    size="sm" 
+                    onClick={() => setQuickDateRange(7)}
+                  >
+                    Last 7 days
+                  </Button>
+                  <Button 
+                    variant={isDateRangeActive('days', 14) ? "default" : "outline"} 
+                    size="sm" 
+                    onClick={() => setQuickDateRange(14)}
+                  >
+                    Last 14 days
+                  </Button>
+                  <Button 
+                    variant={isDateRangeActive('days', 30) ? "default" : "outline"} 
+                    size="sm" 
+                    onClick={() => setQuickDateRange(30)}
+                  >
+                    Last 30 days
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
+
+
               <Label>Start Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
@@ -552,20 +685,7 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
             </div>
           </div>
 
-          <div className="mt-4 space-y-2">
-            <Label>Quick Date Ranges</Label>
-            <div className="flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" onClick={() => setQuickDateRange(7)}>
-                Last 7 days
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setQuickDateRange(14)}>
-                Last 14 days
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setQuickDateRange(30)}>
-                Last 30 days
-              </Button>
-            </div>
-          </div>
+
 
           <Button className="mt-4" onClick={handleFilterChange}>
             Apply Filters
