@@ -1273,39 +1273,46 @@ export default function QuestionPage() {
               {!answer ? (
                 question.type === "multiple-choice" ? (
                   <MultipleChoiceQuestion
+                  key={question.id}
                     options={question.options || []}
                     correctAnswerIndex={question.correctAnswerIndex || 0}
                     onAnswerSelected={(...args) => { handleStartAnswering(); handleMultipleChoiceAnswer(...args); }}
                   />
                 ) : question.type === "fill-in-the-blank" ? (
                   <FillInTheBlankQuestion
+                  key={question.id}
                     question={question}
                     onAnswerSelected={(...args) => { handleStartAnswering(); handleFillInTheBlankAnswer(...args); }}
                   />
                 ) : (question.type === "code" || question.type === "algorithm" || question.type === "sql") ? (
                   <CodeQuestion
+                  key={question.id}
                     onSubmit={(...args) => { handleStartAnswering(); handleSubmitAnswer(...args); }}
                     disabled={isSubmitting}
                   />
                 ) : question.type === "matching" ? (
                   <MatchingQuestion
+                  key={question.id}
                     question={question}
                     onSubmit={(...args) => { handleStartAnswering(); handleMatchingAnswer(...args); }}
                     disabled={isSubmitting}
                   />
                 ) : question.type === "true-false" ? (
                   <TrueFalseQuestion
+                  key={question.id}
                     question={question}
                     onSubmit={(...args) => { handleStartAnswering(); handleTrueFalseAnswer(...args); }}
                     disabled={isSubmitting}
                   />
                 ) : question.type === "text" || question.type === "short-answer" ? (
                   <TextQuestion
+                  key={question.id}
                     onSubmit={(...args) => { handleStartAnswering(); handleSubmitAnswer(...args); }}
                     disabled={isSubmitting}
                   />
                 ) : question.type === "essay" ? (
                   <EssayQuestion
+                  key={question.id}
                     onSubmit={(...args) => { handleStartAnswering(); handleSubmitAnswer(...args); }}
                     disabled={isSubmitting}
                     minWords={20}
