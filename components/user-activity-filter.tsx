@@ -485,7 +485,6 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
                     mode="single"
                     selected={startDate}
                     onSelect={(date) => date && setStartDate(date)}
-                    initialFocus
                   />
                 </PopoverContent>
               </Popover>
@@ -508,7 +507,6 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
                     mode="single"
                     selected={endDate}
                     onSelect={(date) => date && setEndDate(date)}
-                    initialFocus
                   />
                 </PopoverContent>
               </Popover>
