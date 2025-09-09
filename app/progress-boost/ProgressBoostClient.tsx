@@ -974,7 +974,6 @@ export default function ProgressBoostClient() {
   const [answerId, setAnswerId] = useState<string | null>(null)
   const [autoScore, setAutoScore] = useState<ScoreType | null>(null)
   const [selfAssessmentScore, setSelfAssessmentScore] = useState<ScoreType | null>(null)
-  const [selfScore, setSelfScore] = useState<ScoreType | null>(null)
   const [answerPayload, setAnswerPayload] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [progressMaps, setProgressMaps] = useState<ProgressMaps>({ done: {}, target: {} })
@@ -1196,7 +1195,6 @@ export default function ProgressBoostClient() {
       // Reset answer state for new batch
       setAnswerId(null)
       setAutoScore(null)
-      setSelfScore(null)
       setAnswerPayload(null)
     } catch (e) {
       console.error(e)
@@ -1370,7 +1368,6 @@ export default function ProgressBoostClient() {
       return
     }
 
-    setSelfScore(score)
     setSelfAssessmentScore(score)
 
     // Update answer state
@@ -1392,7 +1389,6 @@ export default function ProgressBoostClient() {
     setAnswerId(null)
     setAnswerPayload(null)
     setAutoScore(null)
-    setSelfScore(null)
     setSelfAssessmentScore(null)
     setAnswer(null)
     setIsFinalQuestion(false)
