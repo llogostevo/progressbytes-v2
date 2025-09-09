@@ -100,7 +100,6 @@ export default function AssessPage() {
 
   const [isMobile, setIsMobile] = useState(false)
   const [showMobileGrading, setShowMobileGrading] = useState(false)
-  const [swipeDirection, setSwipeDirection] = useState<string | null>(null)
   const [swipeColor, setSwipeColor] = useState<string | null>(null)
   const [cardTransform, setCardTransform] = useState({ x: 0, y: 0, rotation: 0 })
   const [isDragging, setIsDragging] = useState(false)
@@ -123,7 +122,6 @@ export default function AssessPage() {
     const touch = e.touches[0]
     touchStartRef.current = { x: touch.clientX, y: touch.clientY }
     setIsDragging(true)
-    setSwipeDirection(null)
     setSwipeColor(null)
   }
 
@@ -142,13 +140,11 @@ export default function AssessPage() {
     if (Math.abs(deltaX) > Math.abs(deltaY)) {
       if (Math.abs(deltaX) > 30) {
         const direction = deltaX > 0 ? "right" : "left"
-        setSwipeDirection(direction)
         setSwipeColor(direction === "right" ? "amber" : "red")
       }
     } else {
       if (Math.abs(deltaY) > 30) {
         const direction = deltaY > 0 ? "down" : "up"
-        setSwipeDirection(direction)
         setSwipeColor(direction === "up" ? "green" : "blue")
       }
     }
@@ -162,7 +158,6 @@ export default function AssessPage() {
     const deltaY = touch.clientY - touchStartRef.current.y
 
     const minSwipeDistance = 120
-    const maxSwipeDistance = 200
 
     // Check if swipe is significant enough
     if (Math.abs(deltaX) > Math.abs(deltaY)) {
@@ -231,13 +226,11 @@ export default function AssessPage() {
 
     touchStartRef.current = null
     setIsDragging(false)
-    setSwipeDirection(null)
   }
 
   const resetCard = () => {
     setCardTransform({ x: 0, y: 0, rotation: 0 })
     setSwipeColor(null)
-    setSwipeDirection(null)
   }
 
   // Fetch answers that need grading
@@ -609,7 +602,7 @@ export default function AssessPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-slate-500">Email:</span>
-                      <span className="text-slate-700 text-sm">{student.email}</span>
+                      <span className="text-slate-700 text-sm truncate max-w-[200px] sm:max-w-none">{student.email}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-slate-500">Submitted:</span>
@@ -680,10 +673,10 @@ export default function AssessPage() {
               <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-t-lg relative py-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-slate-800 text-lg">Student Answer</CardTitle>
+                    <CardTitle className="text-slate-800 text-base">Student Answer</CardTitle>
                   </div>
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-slate-500">Self-Assessment:</p>
+                    <p className="text-sm font-medium text-slate-500 hidden sm:block">Self-Assessment:</p>
                     {currentAnswer.student_score ? (
                       <Badge 
                         variant="outline" 
