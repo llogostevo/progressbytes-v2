@@ -1417,8 +1417,13 @@ export default function AssessPage() {
   const [isMobile, setIsMobile] = useState(false)
   const [showMobileGrading, setShowMobileGrading] = useState(false)
   const [swipeDirection, setSwipeDirection] = useState<string | null>(null)
+  const [swipeColor, setSwipeColor] = useState<string | null>(null)
+  const [cardTransform, setCardTransform] = useState({ x: 0, y: 0, rotation: 0 })
+  const [isDragging, setIsDragging] = useState(false)
   const touchStartRef = useRef<{ x: number; y: number } | null>(null)
   const cardRef = useRef<HTMLDivElement>(null)
+  const studentAnswerCardRef = useRef<HTMLDivElement>(null)
+  const gradingSectionRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const checkMobile = () => {
@@ -1433,49 +1438,80 @@ export default function AssessPage() {
     if (!isMobile) return
     const touch = e.touches[0]
     touchStartRef.current = { x: touch.clientX, y: touch.clientY }
+    setIsDragging(true)
     setSwipeDirection(null)
+    setSwipeColor(null)
   }
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isMobile || !touchStartRef.current) return
+    if (!isMobile || !touchStartRef.current || !isDragging) return
 
     const touch = e.touches[0]
     const deltaX = touch.clientX - touchStartRef.current.x
     const deltaY = touch.clientY - touchStartRef.current.y
 
-    // Determine swipe direction based on larger delta
+    // Update card transform for visual feedback
+    const rotation = deltaX * 0.1 // Slight rotation based on horizontal movement
+    setCardTransform({ x: deltaX, y: deltaY, rotation })
+
+    // Determine swipe direction and color
     if (Math.abs(deltaX) > Math.abs(deltaY)) {
-      if (Math.abs(deltaX) > 50) {
-        setSwipeDirection(deltaX > 0 ? "right" : "left")
+      if (Math.abs(deltaX) > 30) {
+        const direction = deltaX > 0 ? "right" : "left"
+        setSwipeDirection(direction)
+        setSwipeColor(direction === "right" ? "amber" : "red")
       }
     } else {
-      if (Math.abs(deltaY) > 50) {
-        setSwipeDirection(deltaY > 0 ? "down" : "up")
+      if (Math.abs(deltaY) > 30) {
+        const direction = deltaY > 0 ? "down" : "up"
+        setSwipeDirection(direction)
+        setSwipeColor(direction === "up" ? "green" : "blue")
       }
     }
   }
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    if (!isMobile || !touchStartRef.current) return
+    if (!isMobile || !touchStartRef.current || !isDragging) return
 
     const touch = e.changedTouches[0]
     const deltaX = touch.clientX - touchStartRef.current.x
     const deltaY = touch.clientY - touchStartRef.current.y
 
-    const minSwipeDistance = 100
+    const minSwipeDistance = 120
+    const maxSwipeDistance = 200
 
+    // Check if swipe is significant enough
     if (Math.abs(deltaX) > Math.abs(deltaY)) {
       // Horizontal swipe
       if (Math.abs(deltaX) > minSwipeDistance) {
+        // Animate card off screen
+        const exitDirection = deltaX > 0 ? 1 : -1
+        setCardTransform({ 
+          x: exitDirection * window.innerWidth, 
+          y: deltaY, 
+          rotation: exitDirection * 30 
+        })
+        
         if (deltaX > 0) {
           // Swipe right - amber
           setSelectedScore("amber")
-          handleGradeAnswer("amber")
+          setSwipeColor("amber")
+          setTimeout(() => {
+            handleGradeAnswer("amber")
+            resetCard()
+          }, 300)
         } else {
           // Swipe left - red
           setSelectedScore("red")
-          handleGradeAnswer("red")
+          setSwipeColor("red")
+          setTimeout(() => {
+            handleGradeAnswer("red")
+            resetCard()
+          }, 300)
         }
+      } else {
+        // Reset card position
+        resetCard()
       }
     } else {
       // Vertical swipe
@@ -1483,15 +1519,40 @@ export default function AssessPage() {
         if (deltaY < 0) {
           // Swipe up - green
           setSelectedScore("green")
-          handleGradeAnswer("green")
+          setSwipeColor("green")
+          setCardTransform({ x: 0, y: -window.innerHeight, rotation: 0 })
+          setTimeout(() => {
+            handleGradeAnswer("green")
+            resetCard()
+          }, 300)
         } else {
-          // Swipe down - show grading interface
-          setShowMobileGrading(true)
+          // Swipe down - scroll to grading section
+          setSwipeColor("blue")
+          resetCard()
+          setTimeout(() => {
+            if (gradingSectionRef.current) {
+              gradingSectionRef.current.scrollIntoView({ 
+                behavior: 'smooth',
+                block: 'start'
+              })
+            }
+            setSwipeColor(null)
+          }, 200)
         }
+      } else {
+        // Reset card position
+        resetCard()
       }
     }
 
     touchStartRef.current = null
+    setIsDragging(false)
+    setSwipeDirection(null)
+  }
+
+  const resetCard = () => {
+    setCardTransform({ x: 0, y: 0, rotation: 0 })
+    setSwipeColor(null)
     setSwipeDirection(null)
   }
 
@@ -1842,138 +1903,193 @@ export default function AssessPage() {
 
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          {isMobile && (
-            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-              <h3 className="font-semibold text-blue-800 mb-2">Swipe to Grade</h3>
-              <div className="grid grid-cols-2 gap-2 text-sm text-blue-700">
-                <div>↑ Swipe Up: Green</div>
-                <div>→ Swipe Right: Amber</div>
-                <div>← Swipe Left: Red</div>
-                <div>↓ Swipe Down: Manual</div>
-              </div>
-            </div>
-          )}
 
-          <div
-            ref={cardRef}
-            className={`space-y-6 transition-transform duration-200 ${
-              swipeDirection === "left"
-                ? "-translate-x-2 bg-red-50"
-                : swipeDirection === "right"
-                  ? "translate-x-2 bg-amber-50"
-                  : swipeDirection === "up"
-                    ? "-translate-y-2 bg-green-50"
-                    : swipeDirection === "down"
-                      ? "translate-y-2 bg-blue-50"
-                      : ""
-            }`}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-          >
+          <div ref={cardRef} className="space-y-6">
             <Card className="shadow-lg border-0 bg-white">
-              <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-lg">
-                <CardTitle className="flex items-center gap-2 text-slate-800">
-                  <User className="h-5 w-5 text-blue-600" />
-                  Student Information
+              <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-lg py-3">
+                <CardTitle className="flex items-center gap-2 text-slate-800 text-lg">
+                  <User className="h-4 w-4 text-blue-600" />
+                  Assessment Review
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div>
-                    <p className="text-sm font-medium text-slate-500 mb-1">Student</p>
-                    <p className="font-semibold text-slate-800 text-lg">
-                      {student.forename} {student.lastname}
-                    </p>
+              <CardContent className="p-4 space-y-6">
+                {/* Student Information */}
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-700 mb-3">Student Details</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-slate-500">Student:</span>
+                      <span className="font-semibold text-slate-800">
+                        {student.forename} {student.lastname}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-slate-500">Email:</span>
+                      <span className="text-slate-700 text-sm">{student.email}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-slate-500">Submitted:</span>
+                      <span className="text-slate-700 text-sm">{new Date(currentAnswer.submitted_at).toLocaleDateString()}</span>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-slate-500 mb-1">Email</p>
-                    <p className="text-slate-700">{student.email}</p>
+                </div>
+
+                {/* Question */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-slate-700">Question</h3>
+                    <div className="flex gap-2">
+                      <Badge variant="secondary" className="bg-white text-slate-700 text-xs">
+                        {question.type}
+                      </Badge>
+                      <Badge variant="outline" className="border-green-200 text-green-700 text-xs">
+                        {question.difficulty}
+                      </Badge>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-slate-500 mb-1">Submitted</p>
-                    <p className="text-slate-700">{new Date(currentAnswer.submitted_at).toLocaleDateString()}</p>
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <p className="text-slate-700 leading-relaxed text-sm">{question.question_text}</p>
                   </div>
+                </div>
+
+                {/* Model Answer */}
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-700 mb-3">Model Answer</h3>
+                  <div className="bg-green-50 p-4 rounded-xl border border-green-200">
+                    <p className="whitespace-pre-wrap text-slate-800 leading-relaxed text-sm">{getModelAnswer(question)}</p>
+                  </div>
+                  {question.explanation && (
+                    <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                      <p className="text-xs font-semibold text-amber-800 mb-1">Explanation</p>
+                      <p className="text-xs text-amber-700 leading-relaxed">{question.explanation}</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="shadow-lg border-0 bg-white">
-              <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-t-lg">
+            <Card 
+              ref={studentAnswerCardRef}
+              className={`border-0 bg-white transition-transform duration-200 ease-out ${
+                isDragging ? "cursor-grabbing shadow-2xl" : "cursor-grab shadow-lg"
+              } ${
+                swipeColor === "green" 
+                  ? "bg-green-50 border-green-200 shadow-green-200" 
+                  : swipeColor === "amber" 
+                    ? "bg-amber-50 border-amber-200 shadow-amber-200"
+                    : swipeColor === "red"
+                      ? "bg-red-50 border-red-200 shadow-red-200"
+                      : swipeColor === "blue"
+                        ? "bg-blue-50 border-blue-200 shadow-blue-200"
+                        : ""
+              }`}
+              style={{
+                transform: `translate(${cardTransform.x}px, ${cardTransform.y}px) rotate(${cardTransform.rotation}deg)`,
+                zIndex: isDragging ? 10 : 1,
+                touchAction: 'none',
+                opacity: isDragging && Math.abs(cardTransform.x) > 50 ? 0.8 : 1
+              }}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
+              <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-t-lg relative py-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2 text-slate-800">
-                    <BookOpen className="h-5 w-5 text-green-600" />
-                    Question
-                  </CardTitle>
-                  <div className="flex gap-2">
-                    <Badge variant="secondary" className="bg-white text-slate-700">
-                      {question.type}
-                    </Badge>
-                    <Badge variant="outline" className="border-green-200 text-green-700">
-                      {question.difficulty}
-                    </Badge>
+                  <div>
+                    <CardTitle className="text-slate-800 text-lg">Student Answer</CardTitle>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-slate-500">Self-Assessment:</p>
+                    {currentAnswer.student_score ? (
+                      <Badge 
+                        variant="outline" 
+                        className={`text-xs ${
+                          currentAnswer.student_score === "green" 
+                            ? "bg-green-50 text-green-700 border-green-200" 
+                            : currentAnswer.student_score === "amber"
+                              ? "bg-amber-50 text-amber-700 border-amber-200"
+                              : "bg-red-50 text-red-700 border-red-200"
+                        }`}
+                      >
+                        {currentAnswer.student_score === "green" && "✓ Confident"}
+                        {currentAnswer.student_score === "amber" && "⚠ Somewhat"}
+                        {currentAnswer.student_score === "red" && "✗ Struggling"}
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="bg-slate-50 text-slate-500 border-slate-200 text-xs">
+                        Not assessed
+                      </Badge>
+                    )}
                   </div>
                 </div>
+                {isMobile && isDragging && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="text-6xl font-bold opacity-20">
+                      {swipeColor === "green" && "✓"}
+                      {swipeColor === "amber" && "⚠"}
+                      {swipeColor === "red" && "✗"}
+                      {swipeColor === "blue" && "📝"}
+                    </div>
+                  </div>
+                )}
               </CardHeader>
-              <CardContent className="p-6">
-                <div className="prose max-w-none">
-                  <p className="text-slate-700 leading-relaxed text-lg">{question.question_text}</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="shadow-lg border-0 bg-white">
-              <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-t-lg">
-                <CardTitle className="text-slate-800">Student Answer</CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
-                  <p className="whitespace-pre-wrap text-slate-800 leading-relaxed">{currentAnswer.response_text}</p>
+              <CardContent className="p-4 relative">
+                {/* Swipe Indicators - Mobile Only */}
+                {isMobile && (
+                  <>
+                    {/* Top - Strong Answer (Green) */}
+                    <div className="absolute top-0.5 left-1/2 transform -translate-x-1/2 z-10">
+                      <div className="text-green-500 text-xs opacity-60">↑</div>
+                    </div>
+                    
+                    {/* Right - Some Understanding (Amber) */}
+                    <div className="absolute top-1/2 right-0.5 transform -translate-y-1/2 z-10">
+                      <div className="text-amber-500 text-xs opacity-60">→</div>
+                    </div>
+                    
+                    {/* Bottom - Provide Feedback (Blue) */}
+                    <div className="absolute bottom-0.5 left-1/2 transform -translate-x-1/2 z-10">
+                      <div className="text-blue-500 text-xs opacity-60">↓</div>
+                    </div>
+                    
+                    {/* Left - Needs Work (Red) */}
+                    <div className="absolute top-1/2 left-0.5 transform -translate-y-1/2 z-10">
+                      <div className="text-red-500 text-xs opacity-60">←</div>
+                    </div>
+                  </>
+                )}
+                
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                  <p className="whitespace-pre-wrap text-slate-800 leading-relaxed text-sm">{currentAnswer.response_text}</p>
                 </div>
                 {currentAnswer.ai_feedback && (
-                  <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-                    <p className="text-sm font-semibold text-blue-800 mb-2">AI Feedback</p>
-                    <p className="text-sm text-blue-700 leading-relaxed">{currentAnswer.ai_feedback}</p>
+                  <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+                    <p className="text-xs font-semibold text-blue-800 mb-1">AI Feedback</p>
+                    <p className="text-xs text-blue-700 leading-relaxed">{currentAnswer.ai_feedback}</p>
                   </div>
                 )}
               </CardContent>
             </Card>
 
-            <Card className="shadow-lg border-0 bg-white">
-              <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-t-lg">
-                <CardTitle className="text-slate-800">Model Answer</CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="bg-green-50 p-6 rounded-xl border border-green-200">
-                  <p className="whitespace-pre-wrap text-slate-800 leading-relaxed">{getModelAnswer(question)}</p>
-                </div>
-                {question.explanation && (
-                  <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
-                    <p className="text-sm font-semibold text-amber-800 mb-2">Explanation</p>
-                    <p className="text-sm text-amber-700 leading-relaxed">{question.explanation}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
 
             {(!isMobile || showMobileGrading) && (
-              <Card className="shadow-lg border-0 bg-white">
-                <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 rounded-t-lg">
-                  <CardTitle className="text-slate-800">Teacher Assessment</CardTitle>
-                  <CardDescription className="text-slate-600">
+              <Card ref={gradingSectionRef} className="shadow-lg border-0 bg-white">
+                <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 rounded-t-lg py-3">
+                  <CardTitle className="text-slate-800 text-lg">Teacher Assessment</CardTitle>
+                  <CardDescription className="text-slate-600 text-sm">
                     Compare the student&apos;s answer with the model answer and assign a grade
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="p-6">
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <CardContent className="p-4">
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <GreenButton isSelected={selectedScore === "green"} onClick={() => setSelectedScore("green")} />
                       <AmberButton isSelected={selectedScore === "amber"} onClick={() => setSelectedScore("amber")} />
                       <RedButton isSelected={selectedScore === "red"} onClick={() => setSelectedScore("red")} />
                     </div>
 
                     {selectedScore && (
-                      <div className="space-y-3">
+                      <div className="space-y-2">
                         <label htmlFor="teacher-feedback" className="text-sm font-semibold text-slate-700">
                           Teacher Feedback (Optional)
                         </label>
@@ -1982,13 +2098,13 @@ export default function AssessPage() {
                           placeholder="Add any additional feedback for the student..."
                           value={teacherFeedback}
                           onChange={(e) => setTeacherFeedback(e.target.value)}
-                          className="min-h-[120px] border-slate-200 focus:border-blue-400 focus:ring-blue-400"
+                          className="min-h-[80px] border-slate-200 focus:border-blue-400 focus:ring-blue-400 text-sm"
                         />
                       </div>
                     )}
 
                     {selectedScore && (
-                      <div className="flex gap-3 pt-4">
+                      <div className="flex gap-3 pt-2">
                         <Button
                           onClick={() => handleGradeAnswer(selectedScore)}
                           disabled={isGrading}
