@@ -1,13 +1,20 @@
+"use client"
+
+import type React from "react"
+
 import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { createClient } from "@/utils/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Users, Clock, FileText, Calendar, Navigation, Activity, Download } from "lucide-react"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Users, Clock, FileText, CalendarIcon, Navigation, Activity, Download } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Skeleton } from "@/components/ui/skeleton"
+import { format } from "date-fns"
+import { cn } from "@/lib/utils"
 
 interface UserActivity {
   user_id: string
@@ -40,8 +47,8 @@ interface UserSession {
 }
 
 interface UserActivityFilterProps {
-  selectedClass: string;
-  classMembers: Array<{ student_id: string; email: string }>;
+  selectedClass: string
+  classMembers: Array<{ student_id: string; email: string }>
 }
 
 function FilterSkeleton() {
@@ -96,7 +103,7 @@ function ResultsSkeleton() {
 }
 
 export function UserActivityFilter({ selectedClass, classMembers }: UserActivityFilterProps) {
-  console.log('UserActivityFilter received:', { selectedClass, classMembersLength: classMembers.length, classMembers })
+  console.log("UserActivityFilter received:", { selectedClass, classMembersLength: classMembers.length, classMembers })
   const [users, setUsers] = useState<UserActivity[]>([])
   const [filteredUsers, setFilteredUsers] = useState<UserActivity[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -105,11 +112,23 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [currentSessionIndex, setCurrentSessionIndex] = useState(0)
 
-  // Filter states
-  const [timeRange, setTimeRange] = useState("7") // days
+  const [startDate, setStartDate] = useState<Date>(() => {
+    const date = new Date()
+    date.setDate(date.getDate() - 7) // Default to 7 days ago
+    return date
+  })
+  const [endDate, setEndDate] = useState<Date>(new Date())
   const [minLowQuestions, setMinLowQuestions] = useState("2") // low difficulty questions
   const [minMediumQuestions, setMinMediumQuestions] = useState("2") // medium difficulty questions
   const [minHighQuestions, setMinHighQuestions] = useState("1") // high difficulty questions
+
+  const setQuickDateRange = (days: number) => {
+    const end = new Date()
+    const start = new Date()
+    start.setDate(start.getDate() - days)
+    setStartDate(start)
+    setEndDate(end)
+  }
 
   const formatDuration = (minutes: number) => {
     if (minutes < 60) {
@@ -122,12 +141,12 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
 
   const formatPath = (path: string) => {
     // Extract the last part of the path (after the last slash)
-    const slug = path.split('/').pop() || path
+    const slug = path.split("/").pop() || path
     // Remove hyphens and capitalize first letter
     return slug
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ')
+      .split("-")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ")
   }
 
   const handleUserClick = async (email: string) => {
@@ -136,25 +155,18 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
 
     const supabase = createClient()
 
-    // Calculate the date range
-    const endDate = new Date()
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - parseInt(timeRange))
-
-    // Fetch user activity
     const { data: activity } = await supabase
       .from("user_activity")
       .select("*")
-      .eq('user_email', email)
-      .gte('created_at', startDate.toISOString())
-      .lte('created_at', endDate.toISOString())
-      .order('created_at', { ascending: true })
+      .eq("user_email", email)
+      .gte("created_at", startDate.toISOString())
+      .lte("created_at", endDate.toISOString())
+      .order("created_at", { ascending: true })
 
     if (activity) {
-      // Group activities by session
       const sessions = new Map<string, UserSession>()
 
-      activity.forEach(record => {
+      activity.forEach((record) => {
         const date = new Date(record.created_at).toDateString()
         if (!sessions.has(date)) {
           sessions.set(date, {
@@ -164,27 +176,24 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
             questions_submitted: 0,
             pages_visited: [],
             events: [],
-            submitted_questions: []
+            submitted_questions: [],
           })
         }
 
         const session = sessions.get(date)!
         session.events.push(record)
 
-        // Update last activity time
         if (new Date(record.created_at) > new Date(session.last_activity)) {
           session.last_activity = record.created_at
         }
 
-        // Update login time if this is earlier
         if (new Date(record.created_at) < new Date(session.login_time)) {
           session.login_time = record.created_at
         }
 
-        // Count questions submitted and track paths
-        if (record.event === 'submitted_question') {
+        if (record.event === "submitted_question") {
           session.questions_submitted++
-          const existingQuestion = session.submitted_questions.find(q => q.path === record.path)
+          const existingQuestion = session.submitted_questions.find((q) => q.path === record.path)
           if (existingQuestion) {
             existingQuestion.count++
           } else {
@@ -192,24 +201,19 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
           }
         }
 
-        // Track unique pages visited
         if (!session.pages_visited.includes(record.path)) {
           session.pages_visited.push(record.path)
         }
       })
 
-      // Calculate duration for each session
-      const sessionsArray = Array.from(sessions.values()).map(session => ({
+      const sessionsArray = Array.from(sessions.values()).map((session) => ({
         ...session,
         duration_minutes: Math.round(
-          (new Date(session.last_activity).getTime() - new Date(session.login_time).getTime()) / (1000 * 60)
-        )
+          (new Date(session.last_activity).getTime() - new Date(session.login_time).getTime()) / (1000 * 60),
+        ),
       }))
 
-      // Sort by most recent
-      sessionsArray.sort((a, b) =>
-        new Date(b.login_time).getTime() - new Date(a.login_time).getTime()
-      )
+      sessionsArray.sort((a, b) => new Date(b.login_time).getTime() - new Date(a.login_time).getTime())
 
       setUserSessions(sessionsArray)
       setIsDialogOpen(true)
@@ -217,179 +221,54 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
   }
 
   const handlePreviousSession = () => {
-    setCurrentSessionIndex(prev => Math.max(0, prev - 1))
+    setCurrentSessionIndex((prev) => Math.max(0, prev - 1))
   }
 
   const handleNextSession = () => {
-    setCurrentSessionIndex(prev => Math.min(userSessions.length - 1, prev + 1))
+    setCurrentSessionIndex((prev) => Math.min(userSessions.length - 1, prev + 1))
   }
 
-  // const applyFilters = useCallback((usersToFilter: UserActivity[]) => {
-  //   return usersToFilter.filter(user => {
-  //     const durationMatch = user.total_duration >= parseInt(minDuration)
-  //     const questionsMatch = user.questions_submitted >= parseInt(minQuestions)
-  //     return durationMatch && questionsMatch
-  //   })
-  // }, [minDuration, minQuestions])
-
-  const applyFilters = useCallback((usersToFilter: UserActivity[]) => {
-    return usersToFilter.filter(user => {
-      const lowQuestionsMatch = user.low_questions >= parseInt(minLowQuestions)
-      const mediumQuestionsMatch = user.medium_questions >= parseInt(minMediumQuestions)
-      const highQuestionsMatch = user.high_questions >= parseInt(minHighQuestions)
-      return lowQuestionsMatch && mediumQuestionsMatch && highQuestionsMatch
-    })
-  }, [minLowQuestions, minMediumQuestions, minHighQuestions])
-
-
-  // useEffect(() => {
-  //   const fetchUserActivity = async () => {
-  //     const supabase = createClient()
-
-  //     // Calculate the date range
-  //     const endDate = new Date()
-  //     const startDate = new Date()
-  //     startDate.setDate(startDate.getDate() - parseInt(timeRange))
-
-  //     // If "all" is selected, fetch activity for all class members
-  //     // Otherwise, fetch activity only for students in the selected class
-  //     let activityQuery = supabase
-  //       .from("user_activity")
-  //       .select("*")
-  //       .gte('created_at', startDate.toISOString())
-  //       .lte('created_at', endDate.toISOString())
-
-  //     // Filter by class members if a specific class is selected
-  //     if (selectedClass !== "all" && classMembers.length > 0) {
-  //       const classMemberEmails = classMembers.map(member => member.email)
-  //       activityQuery = activityQuery.in('user_email', classMemberEmails)
-  //     }
-
-  //     const { data: activity } = await activityQuery
-
-  //     if (activity) {
-  //       // Group and process user activity
-  //       const userMap = new Map<string, UserActivity>()
-
-  //       // First pass: Initialize user records
-  //       activity.forEach(record => {
-  //         if (!userMap.has(record.user_id)) {
-  //           userMap.set(record.user_id, {
-  //             user_id: record.user_id,
-  //             user_email: record.user_email || 'Unknown',
-  //             total_duration: 0,
-  //             questions_submitted: 0,
-  //             last_activity: record.created_at,
-  //             class_id: record.class_id,
-  //             low_questions: 0,
-  //             medium_questions: 0,
-  //             high_questions: 0
-  //           })
-  //         }
-  //       })
-
-  //       // Second pass: Calculate durations and count questions
-  //       activity.forEach(record => {
-  //         const user = userMap.get(record.user_id)!
-
-  //         // Update last activity if this is more recent
-  //         if (new Date(record.created_at) > new Date(user.last_activity)) {
-  //           user.last_activity = record.created_at
-  //         }
-
-  //         // Count questions submitted
-  //         if (record.event === 'submitted_question') {
-  //           user.questions_submitted++
-  //         }
-  //       })
-
-  //       // Third pass: Calculate total duration for each user
-  //       const userActivityMap = new Map<string, typeof activity>()
-  //       activity.forEach(record => {
-  //         if (!userActivityMap.has(record.user_id)) {
-  //           userActivityMap.set(record.user_id, [])
-  //         }
-  //         userActivityMap.get(record.user_id)!.push(record)
-  //       })
-
-  //       userActivityMap.forEach((userActivity, userId) => {
-  //         const user = userMap.get(userId)!
-
-  //         // Group activities by date
-  //         const dailyActivities = new Map<string, typeof userActivity>()
-  //         userActivity.forEach(record => {
-  //           const date = new Date(record.created_at).toDateString()
-  //           if (!dailyActivities.has(date)) {
-  //             dailyActivities.set(date, [])
-  //           }
-  //           dailyActivities.get(date)!.push(record)
-  //         })
-
-  //         // Calculate total duration across all days
-  //         let totalDuration = 0
-  //         dailyActivities.forEach((dayActivity) => {
-  //           if (dayActivity.length > 1) {
-  //             // Sort by timestamp
-  //             dayActivity.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-
-  //             // Calculate duration from first to last activity of the day
-  //             const firstActivity = dayActivity[0]
-  //             const lastActivity = dayActivity[dayActivity.length - 1]
-  //             const durationMinutes = Math.round(
-  //               (new Date(lastActivity.created_at).getTime() - new Date(firstActivity.created_at).getTime()) / (1000 * 60)
-  //             )
-  //             totalDuration += durationMinutes
-  //           }
-  //         })
-
-  //         user.total_duration = totalDuration
-  //       })
-
-  //       const usersArray = Array.from(userMap.values())
-  //       setUsers(usersArray)
-  //       setFilteredUsers(applyFilters(usersArray))
-  //     }
-
-  //     setIsLoading(false)
-  //   }
-
-  //   fetchUserActivity()
-  // }, [timeRange, applyFilters, selectedClass, classMembers])
+  const applyFilters = useCallback(
+    (usersToFilter: UserActivity[]) => {
+      return usersToFilter.filter((user) => {
+        const lowQuestionsMatch = user.low_questions >= Number.parseInt(minLowQuestions)
+        const mediumQuestionsMatch = user.medium_questions >= Number.parseInt(minMediumQuestions)
+        const highQuestionsMatch = user.high_questions >= Number.parseInt(minHighQuestions)
+        return lowQuestionsMatch && mediumQuestionsMatch && highQuestionsMatch
+      })
+    },
+    [minLowQuestions, minMediumQuestions, minHighQuestions],
+  )
 
   useEffect(() => {
     const fetchUserActivity = async () => {
       const supabase = createClient()
 
-      // Calculate the date range
       const endDate = new Date()
       const startDate = new Date()
-      startDate.setDate(startDate.getDate() - parseInt(timeRange))
+      startDate.setDate(startDate.getDate() - 7)
 
-      // Start with all class members to ensure we show all students
-      // Remove duplicates based on user_id to handle "All Classes" case
-      const uniqueClassMembers = classMembers.filter((member, index, self) => 
-        index === self.findIndex(m => m.student_id === member.student_id)
+      const uniqueClassMembers = classMembers.filter(
+        (member, index, self) => index === self.findIndex((m) => m.student_id === member.student_id),
       )
-      
-      const allStudents = uniqueClassMembers.map(member => ({
+
+      const allStudents = uniqueClassMembers.map((member) => ({
         user_id: member.student_id,
         user_email: member.email,
         total_duration: 0,
         questions_submitted: 0,
-        last_activity: '',
+        last_activity: "",
         class_id: selectedClass,
         low_questions: 0,
         medium_questions: 0,
-        high_questions: 0
+        high_questions: 0,
       }))
 
-      // Create a map of all students
       const userMap = new Map<string, UserActivity>()
-      allStudents.forEach(student => {
+      allStudents.forEach((student) => {
         userMap.set(student.user_id, student)
       })
 
-      // If no class members, return empty results
       if (classMembers.length === 0) {
         setUsers([])
         setFilteredUsers([])
@@ -397,72 +276,61 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
         return
       }
 
-      // Fetch activity for all students in the class
       let activityQuery = supabase
         .from("user_activity")
         .select("*")
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString())
+        .gte("created_at", startDate.toISOString())
+        .lte("created_at", endDate.toISOString())
 
-      // Filter by class members
       if (classMembers.length > 0) {
-        const classMemberEmails = classMembers.map(member => member.email)
-        activityQuery = activityQuery.in('user_email', classMemberEmails)
+        const classMemberEmails = classMembers.map((member) => member.email)
+        activityQuery = activityQuery.in("user_email", classMemberEmails)
       }
 
       const { data: activity } = await activityQuery
 
       if (activity) {
-        // Get unique user IDs from activity
-        const userIds = [...new Set(activity.map(record => record.user_id))]
+        const userIds = [...new Set(activity.map((record) => record.user_id))]
 
-        // Fetch student answers with question difficulty for these users
         const { data: studentAnswers } = await supabase
-          .from('student_answers')
+          .from("student_answers")
           .select(`
             student_id,
             questions (
               difficulty
             )
           `)
-          .in('student_id', userIds)
-          .gte('submitted_at', startDate.toISOString())
-          .lte('submitted_at', endDate.toISOString())
+          .in("student_id", userIds)
+          .gte("submitted_at", startDate.toISOString())
+          .lte("submitted_at", endDate.toISOString())
 
-        // Update user records with activity data
-        activity.forEach(record => {
+        activity.forEach((record) => {
           const user = userMap.get(record.user_id)
           if (user) {
-            // Update last activity if this is more recent
             if (!user.last_activity || new Date(record.created_at) > new Date(user.last_activity)) {
               user.last_activity = record.created_at
             }
 
-            // Count questions submitted
-            if (record.event === 'submitted_question') {
+            if (record.event === "submitted_question") {
               user.questions_submitted++
             }
           }
         })
 
-        // Second pass: Calculate durations and count questions
-        activity.forEach(record => {
+        activity.forEach((record) => {
           const user = userMap.get(record.user_id)!
 
-          // Update last activity if this is more recent
           if (new Date(record.created_at) > new Date(user.last_activity)) {
             user.last_activity = record.created_at
           }
 
-          // Count questions submitted
-          if (record.event === 'submitted_question') {
+          if (record.event === "submitted_question") {
             user.questions_submitted++
           }
         })
 
-        // Calculate total duration for each user
         const userActivityMap = new Map<string, typeof activity>()
-        activity.forEach(record => {
+        activity.forEach((record) => {
           if (!userActivityMap.has(record.user_id)) {
             userActivityMap.set(record.user_id, [])
           }
@@ -472,9 +340,8 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
         userActivityMap.forEach((userActivity, userId) => {
           const user = userMap.get(userId)
           if (user) {
-            // Group activities by date
             const dailyActivities = new Map<string, typeof userActivity>()
-            userActivity.forEach(record => {
+            userActivity.forEach((record) => {
               const date = new Date(record.created_at).toDateString()
               if (!dailyActivities.has(date)) {
                 dailyActivities.set(date, [])
@@ -482,18 +349,16 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
               dailyActivities.get(date)!.push(record)
             })
 
-            // Calculate total duration across all days
             let totalDuration = 0
             dailyActivities.forEach((dayActivity) => {
               if (dayActivity.length > 1) {
-                // Sort by timestamp
                 dayActivity.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
 
-                // Calculate duration from first to last activity of the day
                 const firstActivity = dayActivity[0]
                 const lastActivity = dayActivity[dayActivity.length - 1]
                 const durationMinutes = Math.round(
-                  (new Date(lastActivity.created_at).getTime() - new Date(firstActivity.created_at).getTime()) / (1000 * 60)
+                  (new Date(lastActivity.created_at).getTime() - new Date(firstActivity.created_at).getTime()) /
+                    (1000 * 60),
                 )
                 totalDuration += durationMinutes
               }
@@ -503,39 +368,34 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
           }
         })
 
-        // Count questions by difficulty for each user
         if (studentAnswers) {
-          // helper to normalize object | array | null -> array
-          const toArray = <T,>(x: T | T[] | null | undefined): T[] =>
-            Array.isArray(x) ? x : x ? [x] : [];
+          const toArray = <T,>(x: T | T[] | null | undefined): T[] => (Array.isArray(x) ? x : x ? [x] : [])
 
-          type Difficulty = "low" | "medium" | "high";
-          const isDifficulty = (x: unknown): x is Difficulty =>
-            x === "low" || x === "medium" || x === "high";
+          type Difficulty = "low" | "medium" | "high"
+          const isDifficulty = (x: unknown): x is Difficulty => x === "low" || x === "medium" || x === "high"
 
-          const perUserTotals = new Map<string, { low: number; medium: number; high: number }>();
+          const perUserTotals = new Map<string, { low: number; medium: number; high: number }>()
 
           for (const ans of studentAnswers) {
             if (!perUserTotals.has(ans.student_id)) {
-              perUserTotals.set(ans.student_id, { low: 0, medium: 0, high: 0 });
+              perUserTotals.set(ans.student_id, { low: 0, medium: 0, high: 0 })
             }
-            const totals = perUserTotals.get(ans.student_id)!;
+            const totals = perUserTotals.get(ans.student_id)!
 
-            // normalize to array to avoid "object is not iterable"
-            const qs = toArray(ans.questions);
+            const qs = toArray(ans.questions)
 
             for (const q of qs) {
-              const d = typeof q?.difficulty === "string" ? q.difficulty.toLowerCase() : null;
-              if (isDifficulty(d)) totals[d] += 1;
+              const d = typeof q?.difficulty === "string" ? q.difficulty.toLowerCase() : null
+              if (isDifficulty(d)) totals[d] += 1
             }
           }
 
           for (const [userId, totals] of perUserTotals.entries()) {
-            const user = userMap.get(userId);
+            const user = userMap.get(userId)
             if (user) {
-              user.low_questions = totals.low;
-              user.medium_questions = totals.medium;
-              user.high_questions = totals.high;
+              user.low_questions = totals.low
+              user.medium_questions = totals.medium
+              user.high_questions = totals.high
             }
           }
         }
@@ -549,42 +409,46 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
     }
 
     fetchUserActivity()
-  }, [timeRange, applyFilters, selectedClass, classMembers])
+  }, [startDate, endDate, applyFilters, selectedClass, classMembers])
+
   const handleFilterChange = () => {
     setFilteredUsers(applyFilters(users))
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       handleFilterChange()
     }
   }
 
   const exportToCSV = (users: UserActivity[], filename: string) => {
-    // Create CSV content
-    const headers = ['Email', 'Total Duration (minutes)', 'Low Questions', 'Medium Questions', 'High Questions', 'Questions Submitted', 'Last Activity']
-    const rows = users.map(user => [
+    const headers = [
+      "Email",
+      "Total Duration (minutes)",
+      "Low Questions",
+      "Medium Questions",
+      "High Questions",
+      "Questions Submitted",
+      "Last Activity",
+    ]
+    const rows = users.map((user) => [
       user.user_email,
       user.total_duration,
       user.low_questions,
       user.medium_questions,
       user.high_questions,
       user.questions_submitted,
-      new Date(user.last_activity).toLocaleString()
+      new Date(user.last_activity).toLocaleString(),
     ])
 
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.join(','))
-    ].join('\n')
+    const csvContent = [headers.join(","), ...rows.map((row) => row.join(","))].join("\n")
 
-    // Create and trigger download
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+    const link = document.createElement("a")
     const url = URL.createObjectURL(blob)
-    link.setAttribute('href', url)
-    link.setAttribute('download', filename)
-    link.style.visibility = 'hidden'
+    link.setAttribute("href", url)
+    link.setAttribute("download", filename)
+    link.style.visibility = "hidden"
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -609,33 +473,51 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Time Range (days)</Label>
-              <Select value={timeRange} onValueChange={(value) => {
-                setTimeRange(value)
-              }}>
-                <SelectTrigger className="h-10">
-                  <SelectValue placeholder="Select time range" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="7">Last 7 days</SelectItem>
-                  <SelectItem value="14">Last 14 days</SelectItem>
-                  <SelectItem value="30">Last 30 days</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label>Start Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn("w-full justify-start text-left font-normal", !startDate && "text-muted-foreground")}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {startDate ? format(startDate, "PPP") : <span>Pick start date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={startDate}
+                    onSelect={(date) => date && setStartDate(date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
+            <div className="space-y-2">
+              <Label>End Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn("w-full justify-start text-left font-normal", !endDate && "text-muted-foreground")}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {endDate ? format(endDate, "PPP") : <span>Pick end date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={endDate}
+                    onSelect={(date) => date && setEndDate(date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
 
-            {/* <div className="space-y-2">
-              <Label>Minimum Questions</Label>
-              <Input
-                type="number"
-                value={minQuestions}
-                onChange={(e) => setMinQuestions(e.target.value)}
-                onKeyDown={handleKeyDown}
-                min="0"
-                className="h-10"
-              />
-            </div> */}
             <div className="space-y-2">
               <Label>Minimum Low Questions</Label>
               <Input
@@ -676,10 +558,22 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
             </div>
           </div>
 
-          <Button
-            className="mt-4"
-            onClick={handleFilterChange}
-          >
+          <div className="mt-4 space-y-2">
+            <Label>Quick Date Ranges</Label>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" onClick={() => setQuickDateRange(7)}>
+                Last 7 days
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setQuickDateRange(14)}>
+                Last 14 days
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setQuickDateRange(30)}>
+                Last 30 days
+              </Button>
+            </div>
+          </div>
+
+          <Button className="mt-4" onClick={handleFilterChange}>
             Apply Filters
           </Button>
         </CardContent>
@@ -694,13 +588,12 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
                 <span className="hidden md:inline">Met Criteria</span>
-                <span className="md:hidden">Met</span>
-                ({filteredUsers.length})
+                <span className="md:hidden">Met</span>({filteredUsers.length})
               </CardTitle>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => exportToCSV(filteredUsers, 'met-criteria.csv')}
+                onClick={() => exportToCSV(filteredUsers, "met-criteria.csv")}
                 className="flex items-center gap-2 shrink-0"
               >
                 <Download className="h-4 w-4" />
@@ -710,7 +603,7 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {filteredUsers.map(user => (
+              {filteredUsers.map((user) => (
                 <div key={user.user_id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
                   <div
                     className="truncate cursor-pointer hover:text-primary"
@@ -725,12 +618,9 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
                     </div>
                     <div className="flex items-center gap-1">
                       <FileText className="h-4 w-4" />
-                      <div className="flex items-center gap-1">
-                        <FileText className="h-4 w-4" />
-                        <span className="text-green-600">{user.low_questions}L</span>
-                        <span className="text-amber-600">{user.medium_questions}M</span>
-                        <span className="text-red-600">{user.high_questions}H</span>
-                      </div>
+                      <span className="text-green-600">{user.low_questions}L</span>
+                      <span className="text-amber-600">{user.medium_questions}M</span>
+                      <span className="text-red-600">{user.high_questions}H</span>
                     </div>
                   </div>
                 </div>
@@ -746,13 +636,18 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
                 <span className="hidden md:inline">Did Not Meet Criteria</span>
-                <span className="md:hidden">Not Met</span>
-                ({users.filter(user => !filteredUsers.some(filtered => filtered.user_id === user.user_id)).length})
+                <span className="md:hidden">Not Met</span>(
+                {users.filter((user) => !filteredUsers.some((filtered) => filtered.user_id === user.user_id)).length})
               </CardTitle>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => exportToCSV(users.filter(user => !filteredUsers.some(filtered => filtered.user_id === user.user_id)), 'not-met-criteria.csv')}
+                onClick={() =>
+                  exportToCSV(
+                    users.filter((user) => !filteredUsers.some((filtered) => filtered.user_id === user.user_id)),
+                    "not-met-criteria.csv",
+                  )
+                }
                 className="flex items-center gap-2 shrink-0"
               >
                 <Download className="h-4 w-4" />
@@ -762,29 +657,30 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {users.filter(user => !filteredUsers.some(filtered => filtered.user_id === user.user_id)).map(user => (
-                <div key={user.user_id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
-                  <div
-                    className="truncate cursor-pointer hover:text-primary"
-                    onClick={() => handleUserClick(user.user_email)}
-                  >
-                    {user.user_email}
-                  </div>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
-                      {user.total_duration}m
+              {users
+                .filter((user) => !filteredUsers.some((filtered) => filtered.user_id === user.user_id))
+                .map((user) => (
+                  <div key={user.user_id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+                    <div
+                      className="truncate cursor-pointer hover:text-primary"
+                      onClick={() => handleUserClick(user.user_email)}
+                    >
+                      {user.user_email}
                     </div>
-                    <div className="flex items-center gap-1">
-                      <FileText className="h-4 w-4" />
-                      {/* {user.questions_submitted} */}
-                      <span className="text-green-600">{user.low_questions}L</span>
-                      <span className="text-amber-600">{user.medium_questions}M</span>
-                      <span className="text-red-600">{user.high_questions}H</span>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        {user.total_duration}m
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <FileText className="h-4 w-4" />
+                        <span className="text-green-600">{user.low_questions}L</span>
+                        <span className="text-amber-600">{user.medium_questions}M</span>
+                        <span className="text-red-600">{user.high_questions}H</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           </CardContent>
         </Card>
@@ -832,17 +728,23 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">Duration: {formatDuration(userSessions[currentSessionIndex].duration_minutes)}</span>
+                        <span className="text-sm">
+                          Duration: {formatDuration(userSessions[currentSessionIndex].duration_minutes)}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <FileText className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">Questions: {userSessions[currentSessionIndex].questions_submitted}</span>
+                        <span className="text-sm">
+                          Questions: {userSessions[currentSessionIndex].questions_submitted}
+                        </span>
                       </div>
                     </div>
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
                         <Navigation className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">Pages visited: {userSessions[currentSessionIndex].pages_visited.length}</span>
+                        <span className="text-sm">
+                          Pages visited: {userSessions[currentSessionIndex].pages_visited.length}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Activity className="h-4 w-4 text-muted-foreground" />
@@ -878,11 +780,7 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
               </Card>
 
               <div className="flex items-center justify-between">
-                <Button
-                  variant="outline"
-                  onClick={handlePreviousSession}
-                  disabled={currentSessionIndex === 0}
-                >
+                <Button variant="outline" onClick={handlePreviousSession} disabled={currentSessionIndex === 0}>
                   Previous Session
                 </Button>
                 <span className="text-sm text-muted-foreground">
@@ -902,4 +800,4 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
       </Dialog>
     </div>
   )
-} 
+}
