@@ -244,10 +244,6 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
     const fetchUserActivity = async () => {
       const supabase = createClient()
 
-      const endDate = new Date()
-      const startDate = new Date()
-      startDate.setDate(startDate.getDate() - 7)
-
       const uniqueClassMembers = classMembers.filter(
         (member, index, self) => index === self.findIndex((m) => m.student_id === member.student_id),
       )
@@ -484,7 +480,7 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
                     {startDate ? format(startDate, "PPP") : <span>Pick start date</span>}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
+                <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
                     selected={startDate}
@@ -507,7 +503,7 @@ export function UserActivityFilter({ selectedClass, classMembers }: UserActivity
                     {endDate ? format(endDate, "PPP") : <span>Pick end date</span>}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
+                <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
                     selected={endDate}
