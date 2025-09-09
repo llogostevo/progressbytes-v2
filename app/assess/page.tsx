@@ -205,8 +205,9 @@ export default function AssessPage() {
             resetCard()
           }, 300)
         } else {
-          // Swipe down - scroll to grading section
+          // Swipe down - show manual grading interface
           setSwipeColor("blue")
+          setShowMobileGrading(true)
           resetCard()
           setTimeout(() => {
             if (gradingSectionRef.current) {
@@ -448,6 +449,17 @@ export default function AssessPage() {
 
       setSelectedScore(null)
       setTeacherFeedback("")
+      setShowMobileGrading(false)
+      
+      // Scroll back up to the next student answer
+      setTimeout(() => {
+        if (studentAnswerCardRef.current) {
+          studentAnswerCardRef.current.scrollIntoView({ 
+            behavior: 'smooth',
+            block: 'start'
+          })
+        }
+      }, 100)
     } catch (error) {
       console.error("Error grading answer:", error)
       toast.error("Failed to save grade")
