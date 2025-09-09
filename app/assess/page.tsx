@@ -1961,7 +1961,7 @@ export default function AssessPage() {
                 <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 rounded-t-lg">
                   <CardTitle className="text-slate-800">Teacher Assessment</CardTitle>
                   <CardDescription className="text-slate-600">
-                    Compare the student's answer with the model answer and assign a grade
+                    Compare the student&apos;s answer with the model answer and assign a grade
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="p-6">
