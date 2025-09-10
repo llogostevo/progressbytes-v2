@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useEffect, useState, useCallback, useRef, useMemo } from "react"
+import { useEffect, useState, useCallback, useRef, useMemo, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/app/providers/AuthProvider"
 import { isTeacher } from "@/lib/access"
@@ -105,7 +105,7 @@ interface StudentAnswerForGrading {
       }[]
 }
 
-export default function AssessPage() {
+function AssessPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { userType, isLoggedIn } = useAuth()
@@ -964,5 +964,20 @@ export default function AssessPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function AssessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-slate-600 text-lg">Loading...</p>
+        </div>
+      </div>
+    }>
+      <AssessPageContent />
+    </Suspense>
   )
 }
