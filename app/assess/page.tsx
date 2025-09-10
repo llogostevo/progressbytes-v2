@@ -2,8 +2,8 @@
 
 import type React from "react"
 
-import { useEffect, useState, useCallback, useRef } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect, useState, useCallback, useRef, useMemo } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/app/providers/AuthProvider"
 import { isTeacher } from "@/lib/access"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -15,10 +15,22 @@ import { Textarea } from "@/components/ui/textarea"
 import { GreenButton } from "@/components/question-components/self-assessment/green-button"
 import { AmberButton } from "@/components/question-components/self-assessment/amber-button"
 import { RedButton } from "@/components/question-components/self-assessment/red-button"
+import { TopicFilter } from "@/components/topic-filter"
 import type { ScoreType } from "@/lib/types"
 import { toast } from "sonner"
 
 // Types for the grading interface
+interface DBTopic {
+  id: string
+  name: string
+  description: string
+  icon?: string
+  slug: string
+  unit: number
+  disabled?: boolean
+  topicnumber?: string
+}
+
 interface StudentAnswerForGrading {
   id: string
   student_id: string
@@ -38,6 +50,13 @@ interface StudentAnswerForGrading {
     question_text: string
     explanation: string | null
     created_at: string
+    topic_id?: string
+    topic?: {
+      id: string
+      name: string
+      slug: string
+      topicnumber?: string
+    }
     multiple_choice_questions?: {
       options: string[]
       correct_answer_index: number
@@ -88,6 +107,7 @@ interface StudentAnswerForGrading {
 
 export default function AssessPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { userType, isLoggedIn } = useAuth()
   const supabase = createClient()
 
@@ -97,6 +117,18 @@ export default function AssessPage() {
   const [isGrading, setIsGrading] = useState(false)
   const [selectedScore, setSelectedScore] = useState<ScoreType | null>(null)
   const [teacherFeedback, setTeacherFeedback] = useState("")
+  const [topics, setTopics] = useState<DBTopic[]>([])
+  const selectedTopics = useMemo(() => searchParams.get("topics")?.split(",") || [], [searchParams])
+
+  // Memoize filtered answers by topic
+  const filteredAnswersToGrade = useMemo(() => {
+    if (selectedTopics.length === 0) return answersToGrade
+
+    return answersToGrade.filter((answer) => {
+      const question = answer.questions
+      return question.topic && selectedTopics.includes(question.topic.slug)
+    })
+  }, [answersToGrade, selectedTopics])
 
   const [isMobile, setIsMobile] = useState(false)
   const [showMobileGrading, setShowMobileGrading] = useState(false)
@@ -234,6 +266,16 @@ export default function AssessPage() {
     setSwipeColor(null)
   }
 
+  const handleTopicChange = (topics: string[]) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (topics.length === 0) {
+      params.delete("topics")
+    } else {
+      params.set("topics", topics.join(","))
+    }
+    router.push(`?${params.toString()}`)
+  }
+
   // Fetch answers that need grading
   const fetchAnswersToGrade = useCallback(async () => {
     if (!isTeacher(userType)) return
@@ -297,6 +339,18 @@ export default function AssessPage() {
       question_text,
       explanation,
       created_at,
+      subtopic_question_link (
+        subtopics (
+          id,
+          topic_id,
+          topics (
+            id,
+            name,
+            slug,
+            topicnumber
+          )
+        )
+      ),
       multiple_choice_questions (
         options,
         correct_answer_index,
@@ -374,15 +428,39 @@ export default function AssessPage() {
             return null
           }
 
+          // Extract topic information from the question
+          const question = answer.questions as any // eslint-disable-line @typescript-eslint/no-explicit-any
+          const subtopicLink = question?.subtopic_question_link?.[0]
+          const subtopic = subtopicLink?.subtopics
+          const topic = subtopic?.topics
+
           return {
             ...answer,
-            questions: answer.questions as unknown as StudentAnswerForGrading["questions"],
+            questions: {
+              ...question,
+              topic_id: subtopic?.topic_id || '',
+              topic: topic
+                ? { id: topic.id, name: topic.name, slug: topic.slug, topicnumber: topic.topicnumber }
+                : undefined,
+            } as StudentAnswerForGrading["questions"],
             students: studentData,
           }
         })
         .filter((answer): answer is NonNullable<typeof answer> => answer !== null)
 
       console.log("Final mapped answers:", answersWithStudents)
+
+      // Fetch topics for the filter
+      const { data: topicsData, error: topicsError } = await supabase
+        .from("topics")
+        .select("*")
+        .order("topicnumber")
+
+      if (topicsError) {
+        console.error("Error fetching topics:", topicsError)
+      } else {
+        setTopics(topicsData || [])
+      }
 
       setAnswersToGrade(answersWithStudents)
     } catch (error) {
@@ -404,7 +482,7 @@ export default function AssessPage() {
 
   // Handle grading submission
   const handleGradeAnswer = async (score: ScoreType) => {
-    if (!answersToGrade[currentAnswerIndex]) return
+    if (!filteredAnswersToGrade[currentAnswerIndex]) return
 
     setIsGrading(true)
     try {
@@ -417,7 +495,7 @@ export default function AssessPage() {
         return
       }
 
-      const currentAnswer = answersToGrade[currentAnswerIndex]
+      const currentAnswer = filteredAnswersToGrade[currentAnswerIndex]
 
       const { error } = await supabase
         .from("student_answers")
@@ -437,13 +515,18 @@ export default function AssessPage() {
       toast.success("Grade saved successfully!")
 
       // Remove the graded answer from the list
-      const updatedAnswers = answersToGrade.filter((_, index) => index !== currentAnswerIndex)
+      const updatedAnswers = answersToGrade.filter((answer) => answer.id !== currentAnswer.id)
       setAnswersToGrade(updatedAnswers)
 
       // Adjust current index if needed
-      if (currentAnswerIndex >= updatedAnswers.length && updatedAnswers.length > 0) {
-        setCurrentAnswerIndex(updatedAnswers.length - 1)
-      } else if (updatedAnswers.length === 0) {
+      const newFilteredAnswers = updatedAnswers.filter((answer) => {
+        const question = answer.questions
+        return selectedTopics.length === 0 || (question.topic && selectedTopics.includes(question.topic.slug))
+      })
+      
+      if (currentAnswerIndex >= newFilteredAnswers.length && newFilteredAnswers.length > 0) {
+        setCurrentAnswerIndex(newFilteredAnswers.length - 1)
+      } else if (newFilteredAnswers.length === 0) {
         setCurrentAnswerIndex(0)
       }
 
@@ -520,21 +603,27 @@ export default function AssessPage() {
     )
   }
 
-  if (answersToGrade.length === 0) {
+  if (filteredAnswersToGrade.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
         <div className="text-center max-w-md">
           <div className="bg-white rounded-2xl p-8 shadow-lg">
             <AlertCircle className="h-16 w-16 text-slate-400 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-slate-800 mb-2">All Caught Up!</h2>
-            <p className="text-slate-600">There are currently no student answers waiting for your review.</p>
+            <h2 className="text-2xl font-bold text-slate-800 mb-2">
+              {selectedTopics.length > 0 ? "No Answers Found" : "All Caught Up!"}
+            </h2>
+            <p className="text-slate-600">
+              {selectedTopics.length > 0 
+                ? "No student answers found for the selected topics." 
+                : "There are currently no student answers waiting for your review."}
+            </p>
           </div>
         </div>
       </div>
     )
   }
 
-  const currentAnswer = answersToGrade[currentAnswerIndex]
+  const currentAnswer = filteredAnswersToGrade[currentAnswerIndex]
   const question = currentAnswer.questions
   const student = Array.isArray(currentAnswer.students) ? currentAnswer.students[0] : currentAnswer.students
 
@@ -549,9 +638,9 @@ export default function AssessPage() {
             </div>
             <div className="flex items-center gap-4">
               <Badge variant="outline" className="text-sm px-3 py-1 bg-blue-50 text-blue-700 border-blue-200">
-                {currentAnswerIndex + 1} of {answersToGrade.length}
+                {currentAnswerIndex + 1} of {filteredAnswersToGrade.length}
               </Badge>
-              {!isMobile && answersToGrade.length > 1 && (
+              {!isMobile && filteredAnswersToGrade.length > 1 && (
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
@@ -572,12 +661,12 @@ export default function AssessPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      setCurrentAnswerIndex(Math.min(answersToGrade.length - 1, currentAnswerIndex + 1))
+                      setCurrentAnswerIndex(Math.min(filteredAnswersToGrade.length - 1, currentAnswerIndex + 1))
                       setSelectedScore(null)
                       setTeacherFeedback("")
                       setShowMobileGrading(false)
                     }}
-                    disabled={currentAnswerIndex === answersToGrade.length - 1}
+                    disabled={currentAnswerIndex === filteredAnswersToGrade.length - 1}
                     className="flex items-center gap-1"
                   >
                     Next
@@ -592,6 +681,25 @@ export default function AssessPage() {
 
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
+          
+          {/* Topic Filter */}
+          {topics.length > 0 && (
+            <Card className="mb-6 shadow-lg border-0 bg-white">
+              <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-t-lg py-3">
+                <CardTitle className="text-slate-800 text-lg">Filter by Topic</CardTitle>
+                <CardDescription className="text-slate-600 text-sm">
+                  Select specific topics to review student answers
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-4">
+                <TopicFilter 
+                  selectedTopics={selectedTopics} 
+                  onTopicChange={handleTopicChange} 
+                  topics={topics} 
+                />
+              </CardContent>
+            </Card>
+          )}
 
           <div ref={cardRef} className="space-y-6">
             <Card className="shadow-lg border-0 bg-white">
@@ -820,7 +928,7 @@ export default function AssessPage() {
               </Card>
             )}
 
-            {isMobile && answersToGrade.length > 1 && (
+            {isMobile && filteredAnswersToGrade.length > 1 && (
               <div className="flex justify-between gap-4 pt-4">
                 <Button
                   variant="outline"
@@ -839,12 +947,12 @@ export default function AssessPage() {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    setCurrentAnswerIndex(Math.min(answersToGrade.length - 1, currentAnswerIndex + 1))
+                    setCurrentAnswerIndex(Math.min(filteredAnswersToGrade.length - 1, currentAnswerIndex + 1))
                     setSelectedScore(null)
                     setTeacherFeedback("")
                     setShowMobileGrading(false)
                   }}
-                  disabled={currentAnswerIndex === answersToGrade.length - 1}
+                  disabled={currentAnswerIndex === filteredAnswersToGrade.length - 1}
                   className="flex-1 py-3"
                 >
                   Next
