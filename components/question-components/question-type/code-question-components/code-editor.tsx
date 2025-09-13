@@ -4,8 +4,6 @@ import CodeMirror from "@uiw/react-codemirror"
 import { python } from "@codemirror/lang-python"
 import { oneDark } from "@codemirror/theme-one-dark"
 import { keymap } from "@codemirror/view"
-import { EditorView } from "@codemirror/view"
-
 interface CodeEditorProps {
   value: string
   onChange: (value: string) => void

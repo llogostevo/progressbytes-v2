@@ -174,7 +174,7 @@ function AssessPageContent() {
 
     // Filter by class if a specific class is selected
     if (selectedClass !== "all") {
-      filtered = filtered.filter((answer) => {
+      filtered = filtered.filter(() => {
         // Check if the student belongs to the selected class
         // This will be handled in the fetchAnswersToGrade function
         return true // For now, we'll filter in the fetch function
