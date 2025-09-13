@@ -52,6 +52,7 @@ import { DynamicIcon } from "@/components/ui/dynamicicon"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
 import { QuestionDifficultyFilter } from "@/components/question-difficulty-filter"
+import { TeacherAssessmentFilter } from "@/components/teacher-assessment-filter"
 
 interface DBTopic {
   id: string
@@ -212,6 +213,7 @@ export default function RevisitPageClient() {
   const tabParam = searchParams.get("tab") as ScoreType | null
   const typeParam = searchParams.get("type")
   const difficultyParam = searchParams.get("difficulty") as string | null
+  const teacherAssessmentParam = searchParams.get("teacherAssessment") as string | null
   const selectedTopics = useMemo(() => searchParams.get("topics")?.split(",") || [], [searchParams])
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -408,7 +410,7 @@ export default function RevisitPageClient() {
   }, [])
 
 
-  // Filter answers by score and type and difficulty
+  // Filter answers by score and type and difficulty and teacher assessment
   const filteredAnswersByScoreAndType = useMemo(() => {
     return filteredAnswers
       .filter((answer) => activeTab === "all" || answer.score === activeTab)
@@ -422,7 +424,24 @@ export default function RevisitPageClient() {
         const q = questions[answer.question_id]
         return String(q?.difficulty).toLowerCase() === difficultyParam.toLowerCase()
       })
-  }, [filteredAnswers, activeTab, typeParam, difficultyParam, questions])
+      .filter((answer) => {
+        if (!teacherAssessmentParam || teacherAssessmentParam === "all") return true
+        
+        const hasTeacherScore = answer.teacher_score !== null
+        const hasTeacherFeedback = answer.teacher_feedback !== null && answer.teacher_feedback.trim() !== ""
+        
+        switch (teacherAssessmentParam) {
+          case "assessed":
+            return hasTeacherScore
+          case "feedback":
+            return hasTeacherFeedback
+          case "not-assessed":
+            return !hasTeacherScore
+          default:
+            return true
+        }
+      })
+  }, [filteredAnswers, activeTab, typeParam, difficultyParam, teacherAssessmentParam, questions])
 
 
   // Group answers by topic
@@ -732,6 +751,29 @@ export default function RevisitPageClient() {
                   />
                 </CardContent>
               </Card>
+
+              {/* Teacher Assessment */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Filter by Teacher Assessment</CardTitle>
+                  <CardDescription>Filter by teacher marking and feedback</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <TeacherAssessmentFilter
+                    selectedAssessment={teacherAssessmentParam}
+                    onAssessmentChange={(assessment: string | null) => {
+                      const params = new URLSearchParams(searchParams.toString())
+                      if (assessment === null) {
+                        params.delete("teacherAssessment")
+                      } else {
+                        params.set("teacherAssessment", assessment)
+                      }
+                      router.push(`?${params.toString()}`)
+                    }}
+                  />
+                </CardContent>
+              </Card>
+
             </div>
           )}
         </div>
