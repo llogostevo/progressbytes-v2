@@ -799,7 +799,7 @@ function AssessPageContent() {
                     Completed Filtered Questions!
                   </h2>
                   <p className="text-slate-600 mb-6 leading-relaxed">
-                    You've completed all the questions in your current filter. Remove filters to see all available questions.
+                    You&apos;ve completed all the questions in your current filter. Remove filters to see all available questions.
                   </p>
                   <Button 
                     onClick={clearAllFilters}
