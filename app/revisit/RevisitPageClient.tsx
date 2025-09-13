@@ -19,6 +19,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+
+import {
+  HoverCard,
+  HoverCardTrigger,
+  HoverCardContent,
+} from "@/components/ui/hover-card"
+
 import { Input } from "@/components/ui/input"
 import type { Answer, Question, ScoreType } from "@/lib/types"
 import {
@@ -32,6 +39,7 @@ import {
   GraduationCap,
   FileText,
   Trash2,
+  MessageSquare,
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -44,6 +52,7 @@ import { DynamicIcon } from "@/components/ui/dynamicicon"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
 import { QuestionDifficultyFilter } from "@/components/question-difficulty-filter"
+import { TeacherAssessmentFilter } from "@/components/teacher-assessment-filter"
 
 interface DBTopic {
   id: string
@@ -101,6 +110,8 @@ type RevisitRow = {
   topic_slug: string | null
   topic_name: string | null
   question: RevisitQuestionPayload
+  teacher_score: ScoreType | null
+  teacher_feedback: string | null
 }
 
 // types for counts
@@ -202,6 +213,7 @@ export default function RevisitPageClient() {
   const tabParam = searchParams.get("tab") as ScoreType | null
   const typeParam = searchParams.get("type")
   const difficultyParam = searchParams.get("difficulty") as string | null
+  const teacherAssessmentParam = searchParams.get("teacherAssessment") as string | null
   const selectedTopics = useMemo(() => searchParams.get("topics")?.split(",") || [], [searchParams])
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -325,7 +337,7 @@ export default function RevisitPageClient() {
       // This calls an RPC from the supabase database
       // access this via function get_revisit_attempts_v2 in supabase database functions
       const { data: rows, error: rpcError } = await supabase
-        .rpc('get_revisit_attempts_v3', {
+        .rpc('get_revisit_attempts_v4', {
           p_user: user.id,
           p_topic_slugs: null,
           p_type: null,
@@ -354,6 +366,8 @@ export default function RevisitPageClient() {
           score: (row.student_score ?? "amber") as ScoreType, // safe default
           submitted_at: row.submitted_at,
           self_assessed: false,                     // see next section
+          teacher_score: row.teacher_score ?? null,
+          teacher_feedback: row.teacher_feedback ?? null,
         })
 
         const q = row.question
@@ -396,7 +410,7 @@ export default function RevisitPageClient() {
   }, [])
 
 
-  // Filter answers by score and type and difficulty
+  // Filter answers by score and type and difficulty and teacher assessment
   const filteredAnswersByScoreAndType = useMemo(() => {
     return filteredAnswers
       .filter((answer) => activeTab === "all" || answer.score === activeTab)
@@ -410,7 +424,22 @@ export default function RevisitPageClient() {
         const q = questions[answer.question_id]
         return String(q?.difficulty).toLowerCase() === difficultyParam.toLowerCase()
       })
-  }, [filteredAnswers, activeTab, typeParam, difficultyParam, questions])
+      .filter((answer) => {
+        if (!teacherAssessmentParam || teacherAssessmentParam === "all") return true
+        
+        const hasTeacherScore = answer.teacher_score !== null
+        const hasTeacherFeedback = answer.teacher_feedback !== null && answer.teacher_feedback.trim() !== ""
+        
+        switch (teacherAssessmentParam) {
+          case "assessed":
+            return hasTeacherScore
+          case "feedback":
+            return hasTeacherFeedback
+          default:
+            return true
+        }
+      })
+  }, [filteredAnswers, activeTab, typeParam, difficultyParam, teacherAssessmentParam, questions])
 
 
   // Group answers by topic
@@ -443,6 +472,15 @@ export default function RevisitPageClient() {
   Object.values(answersByTopic).forEach(list => {
     list.sort((a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime())
   })
+
+  const badgeClassesForScore = (score?: ScoreType | null) =>
+    !score
+      ? "bg-gray-100 hover:bg-gray-200 text-gray-600"
+      : score === "green"
+        ? "bg-emerald-50 hover:bg-emerald-100 text-emerald-700"
+        : score === "amber"
+          ? "bg-amber-50 hover:bg-amber-100 text-amber-700"
+          : "bg-red-50 hover:bg-red-100 text-red-700"
 
   const getScoreLabel = (score: ScoreType) => {
     switch (score) {
@@ -587,8 +625,23 @@ export default function RevisitPageClient() {
 
   // access control
   if (!userCanViewAnswers) {
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+      // Prevent copy (Ctrl+C), paste (Ctrl+V), and cut (Ctrl+X) on the entire page
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'v' || e.key === 'x')) {
+        e.preventDefault()
+      }
+    }
+
+    const handleContextMenu = (e: React.MouseEvent) => {
+      e.preventDefault()
+    }
+
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div
+        className="container mx-auto px-4 py-8 question-page"
+        onKeyDown={handleKeyDown}
+        onContextMenu={handleContextMenu}
+      >
         <div className="max-w-4xl mx-auto">
           <Card>
             <CardHeader>
@@ -610,8 +663,23 @@ export default function RevisitPageClient() {
     )
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Prevent copy (Ctrl+C), paste (Ctrl+V), and cut (Ctrl+X) on the entire page
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'v' || e.key === 'x')) {
+      e.preventDefault()
+    }
+  }
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault()
+  }
+
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div
+      className="container mx-auto px-4 py-8 question-page"
+      onKeyDown={handleKeyDown}
+      onContextMenu={handleContextMenu}
+    >
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
           <div className="flex flex-col md:flex-row justify-between items-center mb-6">
@@ -629,21 +697,21 @@ export default function RevisitPageClient() {
           {userCanAccessFilters && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
               <Card>
-                <CardHeader>
+                <CardHeader className="hidden sm:block">
                   <CardTitle>Filter by Topic</CardTitle>
                   <CardDescription>Select specific topics to review</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-4 sm:pt-6">
                   <TopicFilter selectedTopics={selectedTopics} onTopicChange={handleTopicChange} topics={topics} />
                 </CardContent>
               </Card>
 
               <Card>
-                <CardHeader>
+                <CardHeader className="hidden sm:block">
                   <CardTitle>Filter by Type</CardTitle>
                   <CardDescription>Choose question types to review</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-4 sm:pt-6">
                   <QuestionTypeFilter
                     selectedType={typeParam}
                     onTypeChange={(type: string | null) => {
@@ -661,11 +729,11 @@ export default function RevisitPageClient() {
 
               {/* Difficulty */}
               <Card>
-                <CardHeader>
+                <CardHeader className="hidden sm:block">
                   <CardTitle>Filter by Difficulty</CardTitle>
                   <CardDescription>Choose question difficulty to review</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-4 sm:pt-6">
                   <QuestionDifficultyFilter
                     selectedDifficulty={difficultyParam}
                     availableDifficulty={availableDifficulty}
@@ -681,6 +749,29 @@ export default function RevisitPageClient() {
                   />
                 </CardContent>
               </Card>
+
+              {/* Teacher Assessment */}
+              <Card>
+                <CardHeader className="hidden sm:block">
+                  <CardTitle>Filter by Teacher Assessment</CardTitle>
+                  <CardDescription>Filter by teacher marking and feedback</CardDescription>
+                </CardHeader>
+                <CardContent className="pt-4 sm:pt-6">
+                  <TeacherAssessmentFilter
+                    selectedAssessment={teacherAssessmentParam}
+                    onAssessmentChange={(assessment: string | null) => {
+                      const params = new URLSearchParams(searchParams.toString())
+                      if (assessment === null) {
+                        params.delete("teacherAssessment")
+                      } else {
+                        params.set("teacherAssessment", assessment)
+                      }
+                      router.push(`?${params.toString()}`)
+                    }}
+                  />
+                </CardContent>
+              </Card>
+
             </div>
           )}
         </div>
@@ -825,6 +916,50 @@ export default function RevisitPageClient() {
                                       )}
                                       <span>{!answer.score ? "Not assessed" : getScoreLabel(answer.score)}</span>
                                     </Badge>
+                                    {/* TEACHER ASSESSMENT PILL */}
+                                    {(() => {
+                                      const tScore: ScoreType | null = answer?.teacher_score ?? null
+                                      const tFeedback: string | null = answer?.teacher_feedback ?? null
+                                      const pill = (
+                                        <Badge
+                                          className={`flex items-center gap-1 whitespace-nowrap ${badgeClassesForScore(tScore)}`}
+                                        >
+                                          {/* Icon mirrors colour semantics */}
+                                          {!tScore ? (
+                                            <HelpCircle className="h-4 w-4" />
+                                          ) : tScore === "green" ? (
+                                            <CheckCircle className="h-4 w-4" />
+                                          ) : tScore === "amber" ? (
+                                            <AlertTriangle className="h-4 w-4" />
+                                          ) : (
+                                            <AlertCircle className="h-4 w-4" />
+                                          )}
+                                          <span>
+                                            Teacher{tScore ? `: ${getScoreLabel(tScore)}` : ": Not marked"}
+                                          </span>
+                                          {tFeedback && (
+                                            <MessageSquare className="h-3 w-3 ml-1" />
+                                          )}
+                                        </Badge>
+                                      )
+
+                                      // If there’s feedback, wrap in a HoverCard for preview
+                                      return tFeedback ? (
+                                        <HoverCard>
+                                          <HoverCardTrigger>{pill}</HoverCardTrigger>
+                                          <HoverCardContent className="w-80">
+                                            <div className="space-y-2">
+                                              <p className="text-sm font-medium text-gray-900">Teacher feedback</p>
+                                              <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                                                {tFeedback}
+                                              </p>
+                                            </div>
+                                          </HoverCardContent>
+                                        </HoverCard>
+                                      ) : (
+                                        pill
+                                      )
+                                    })()}
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 font-medium">

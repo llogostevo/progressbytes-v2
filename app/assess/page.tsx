@@ -7,7 +7,16 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/app/providers/AuthProvider"
 import { isTeacher } from "@/lib/access"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { User, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react"
+import { User, AlertCircle, ChevronLeft, ChevronRight, Trash2 } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
 import { createClient } from "@/utils/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -16,7 +25,11 @@ import { GreenButton } from "@/components/question-components/self-assessment/gr
 import { AmberButton } from "@/components/question-components/self-assessment/amber-button"
 import { RedButton } from "@/components/question-components/self-assessment/red-button"
 import { TopicFilter } from "@/components/topic-filter"
-import type { ScoreType } from "@/lib/types"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Filter } from "lucide-react"
+import type { ScoreType, Class } from "@/lib/types"
 import { toast } from "sonner"
 
 // Types for the grading interface
@@ -118,17 +131,65 @@ function AssessPageContent() {
   const [selectedScore, setSelectedScore] = useState<ScoreType | null>(null)
   const [teacherFeedback, setTeacherFeedback] = useState("")
   const [topics, setTopics] = useState<DBTopic[]>([])
+  const [classes, setClasses] = useState<Class[]>([])
+  const [selectedClass, setSelectedClass] = useState<string>("all")
+  const [isLoadingClasses, setIsLoadingClasses] = useState(true)
+  const [students, setStudents] = useState<Array<{ userid: string; email: string; forename: string; lastname: string }>>([])
+  const [selectedStudent, setSelectedStudent] = useState<string | null>(null)
+  const [studentSearch, setStudentSearch] = useState("")
+  const [sortBy, setSortBy] = useState<"forename" | "lastname" | "email">("forename")
+  const [isLoadingStudents, setIsLoadingStudents] = useState(true)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [answerToDelete, setAnswerToDelete] = useState<StudentAnswerForGrading | null>(null)
+  const [deleteConfirmation, setDeleteConfirmation] = useState("")
+  const [isDeleting, setIsDeleting] = useState(false)
   const selectedTopics = useMemo(() => searchParams.get("topics")?.split(",") || [], [searchParams])
 
-  // Memoize filtered answers by topic
-  const filteredAnswersToGrade = useMemo(() => {
-    if (selectedTopics.length === 0) return answersToGrade
+  // Memoize filtered students
+  const filteredStudents = useMemo(() => {
+    return students
+      .filter(student =>
+        student.email.toLowerCase().includes(studentSearch.toLowerCase()) ||
+        (student.forename && student.forename.toLowerCase().includes(studentSearch.toLowerCase())) ||
+        (student.lastname && student.lastname.toLowerCase().includes(studentSearch.toLowerCase()))
+      )
+      .sort((a, b) => {
+        const aValue = a[sortBy] || '';
+        const bValue = b[sortBy] || '';
+        return aValue.localeCompare(bValue, undefined, { sensitivity: 'base' });
+      });
+  }, [students, studentSearch, sortBy])
 
-    return answersToGrade.filter((answer) => {
-      const question = answer.questions
-      return question.topic && selectedTopics.includes(question.topic.slug)
-    })
-  }, [answersToGrade, selectedTopics])
+  // Memoize filtered answers by topic, class, and student
+  const filteredAnswersToGrade = useMemo(() => {
+    let filtered = answersToGrade
+
+    // Filter by topic if topics are selected
+    if (selectedTopics.length > 0) {
+      filtered = filtered.filter((answer) => {
+        const question = answer.questions
+        return question.topic && selectedTopics.includes(question.topic.slug)
+      })
+    }
+
+    // Filter by class if a specific class is selected
+    if (selectedClass !== "all") {
+      filtered = filtered.filter(() => {
+        // Check if the student belongs to the selected class
+        // This will be handled in the fetchAnswersToGrade function
+        return true // For now, we'll filter in the fetch function
+      })
+    }
+
+    // Filter by selected student if one is selected
+    if (selectedStudent) {
+      filtered = filtered.filter((answer) => {
+        return answer.student_id === selectedStudent
+      })
+    }
+
+    return filtered
+  }, [answersToGrade, selectedTopics, selectedClass, selectedStudent])
 
   const [isMobile, setIsMobile] = useState(false)
   const [showMobileGrading, setShowMobileGrading] = useState(false)
@@ -266,6 +327,50 @@ function AssessPageContent() {
     setSwipeColor(null)
   }
 
+  const handleDeleteClick = (answer: StudentAnswerForGrading) => {
+    setAnswerToDelete(answer)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!answerToDelete || deleteConfirmation !== "delete") return
+
+    setIsDeleting(true)
+    try {
+      const { error } = await supabase
+        .from("student_answers")
+        .delete()
+        .eq("id", answerToDelete.id)
+
+      if (error) throw error
+
+      // Update local state
+      setAnswersToGrade((prev) => prev.filter((a) => a.id !== answerToDelete.id))
+      
+      // Adjust current index if needed
+      const newFilteredAnswers = answersToGrade.filter((answer) => {
+        const question = answer.questions
+        return selectedTopics.length === 0 || (question.topic && selectedTopics.includes(question.topic.slug))
+      }).filter((answer) => answer.id !== answerToDelete.id)
+      
+      if (currentAnswerIndex >= newFilteredAnswers.length && newFilteredAnswers.length > 0) {
+        setCurrentAnswerIndex(newFilteredAnswers.length - 1)
+      } else if (newFilteredAnswers.length === 0) {
+        setCurrentAnswerIndex(0)
+      }
+
+      setDeleteDialogOpen(false)
+      setAnswerToDelete(null)
+      setDeleteConfirmation("")
+      toast.success("Student attempt deleted successfully")
+    } catch (error) {
+      console.error("Error deleting answer:", error)
+      toast.error("Failed to delete student attempt")
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   const handleTopicChange = (topics: string[]) => {
     const params = new URLSearchParams(searchParams.toString())
     if (topics.length === 0) {
@@ -275,6 +380,45 @@ function AssessPageContent() {
     }
     router.push(`?${params.toString()}`)
   }
+
+  const clearAllFilters = () => {
+    setSelectedClass("all")
+    setSelectedStudent(null)
+    setStudentSearch("")
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete("topics")
+    router.push(`?${params.toString()}`)
+  }
+
+  // Fetch classes for the teacher
+  const fetchClasses = useCallback(async () => {
+    if (!isTeacher(userType)) return
+
+    setIsLoadingClasses(true)
+    try {
+      // Get current user
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) return
+
+      // Fetch classes where user is the teacher
+      const { data: teacherClasses, error: teacherClassesError } = await supabase
+        .from('classes')
+        .select('*')
+        .eq('teacher_id', user.id)
+
+      if (teacherClassesError) {
+        console.error('Error fetching teaching classes:', teacherClassesError)
+      } else {
+        setClasses(teacherClasses || [])
+      }
+    } catch (error) {
+      console.error('Error fetching classes:', error)
+    } finally {
+      setIsLoadingClasses(false)
+    }
+  }, [userType, supabase])
 
   // Fetch answers that need grading
   const fetchAnswersToGrade = useCallback(async () => {
@@ -288,15 +432,20 @@ function AssessPageContent() {
       } = await supabase.auth.getUser()
       if (!user) return
 
-      // First, get the teacher's classes
-      const { data: classes } = await supabase.from("classes").select("id").eq("teacher_id", user.id)
-
-      if (!classes || classes.length === 0) {
-        setAnswersToGrade([])
-        return
+      // Determine which classes to fetch from
+      let classIds: string[]
+      if (selectedClass === "all") {
+        // Get all teacher's classes
+        const { data: classes } = await supabase.from("classes").select("id").eq("teacher_id", user.id)
+        if (!classes || classes.length === 0) {
+          setAnswersToGrade([])
+          return
+        }
+        classIds = classes.map((c) => c.id)
+      } else {
+        // Use the selected class
+        classIds = [selectedClass]
       }
-
-      const classIds = classes.map((c) => c.id)
 
       // Get students in these classes
       const { data: classMembers } = await supabase
@@ -313,10 +462,28 @@ function AssessPageContent() {
 
       if (!classMembers || classMembers.length === 0) {
         setAnswersToGrade([])
+        setStudents([])
+        setIsLoadingStudents(false)
         return
       }
 
       const studentIds = classMembers.map((m) => m.student_id)
+
+      // Set students for the student selector
+      const uniqueStudents = (classMembers || []).reduce((acc: Array<{ userid: string; email: string; forename: string; lastname: string }>, member) => {
+        const studentData = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles
+        if (studentData && !acc.find(s => s.userid === member.student_id)) {
+          acc.push({
+            userid: member.student_id,
+            email: studentData.email,
+            forename: studentData.forename,
+            lastname: studentData.lastname
+          })
+        }
+        return acc
+      }, [])
+      setStudents(uniqueStudents)
+      setIsLoadingStudents(false)
 
       const { data: answers, error } = await supabase
         .from("student_answers")
@@ -469,16 +636,23 @@ function AssessPageContent() {
     } finally {
       setIsLoading(false)
     }
-  }, [userType, supabase])
+  }, [userType, supabase, selectedClass, selectedStudent])
 
   useEffect(() => {
     // Redirect students to home page
     if (isLoggedIn && userType !== null && !isTeacher(userType)) {
       router.push("/")
     } else if (isLoggedIn && isTeacher(userType)) {
+      fetchClasses()
+    }
+  }, [isLoggedIn, userType, router, fetchClasses])
+
+  useEffect(() => {
+    // Fetch answers when classes are loaded and class selection changes
+    if (isLoggedIn && isTeacher(userType) && !isLoadingClasses) {
       fetchAnswersToGrade()
     }
-  }, [isLoggedIn, userType, router, fetchAnswersToGrade])
+  }, [isLoggedIn, userType, fetchAnswersToGrade, isLoadingClasses])
 
   // Handle grading submission
   const handleGradeAnswer = async (score: ScoreType) => {
@@ -603,21 +777,52 @@ function AssessPageContent() {
     )
   }
 
+  // Check if any filters are applied
+  const hasActiveFilters = selectedTopics.length > 0 || selectedClass !== "all" || selectedStudent !== null
+
   if (filteredAnswersToGrade.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
-        <div className="text-center max-w-md">
-          <div className="bg-white rounded-2xl p-8 shadow-lg">
-            <AlertCircle className="h-16 w-16 text-slate-400 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-slate-800 mb-2">
-              {selectedTopics.length > 0 ? "No Answers Found" : "All Caught Up!"}
-            </h2>
-            <p className="text-slate-600">
-              {selectedTopics.length > 0 
-                ? "No student answers found for the selected topics." 
-                : "There are currently no student answers waiting for your review."}
-            </p>
-          </div>
+        <div className="text-center max-w-lg">
+          <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+            <CardContent className="p-8">
+              {hasActiveFilters ? (
+                <>
+                  <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <div className="w-8 h-8 bg-emerald-600 rounded-full flex items-center justify-center">
+                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  </div>
+                  <h2 className="text-2xl font-bold text-slate-800 mb-3">
+                    Completed Filtered Questions!
+                  </h2>
+                  <p className="text-slate-600 mb-6 leading-relaxed">
+                    You&apos;ve completed all the questions in your current filter. Remove filters to see all available questions.
+                  </p>
+                  <Button 
+                    onClick={clearAllFilters}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors duration-200 shadow-sm hover:shadow-md"
+                  >
+                    Remove Filters & Show All Questions
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <AlertCircle className="h-8 w-8 text-blue-600" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-slate-800 mb-3">
+                    All Caught Up!
+                  </h2>
+                  <p className="text-slate-600 leading-relaxed">
+                    There are currently no student answers waiting for your review.
+                  </p>
+                </>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     )
@@ -682,16 +887,149 @@ function AssessPageContent() {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           
+          {/* Class Filter */}
+          <div className="mb-6">
+            {isLoadingClasses ? (
+              <Skeleton className="h-10 w-[200px]" />
+            ) : classes.length > 0 ? (
+              <Select value={selectedClass} onValueChange={setSelectedClass}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Select a class" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Classes</SelectItem>
+                  {classes.map((classItem) => (
+                    <SelectItem key={classItem.id} value={classItem.id}>
+                      {classItem.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="text-sm text-slate-600">
+                No classes assigned to you yet.
+              </div>
+            )}
+          </div>
+
+          {/* Student Search */}
+          {students.length > 0 && (
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>Filter by Student</CardTitle>
+                <CardDescription>Search and select a specific student to review their answers</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoadingStudents ? (
+                  <Skeleton className="h-10 w-full" />
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-4">
+                      <label htmlFor="student-search" className="text-sm font-medium">Search Student</label>
+                      <input
+                        id="student-search"
+                        type="text"
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        placeholder="Type name or email..."
+                        value={studentSearch}
+                        onChange={e => setStudentSearch(e.target.value)}
+                      />
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="icon" className="h-10 w-10">
+                            <Filter className="h-4 w-4" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-48" align="end">
+                          <div className="space-y-2">
+                            <h4 className="font-medium leading-none">Sort by</h4>
+                            <div className="space-y-1">
+                              <button
+                                className={`w-full text-left px-2 py-1 rounded text-sm transition-colors ${sortBy === 'forename' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+                                  }`}
+                                onClick={() => setSortBy('forename')}
+                              >
+                                Forename
+                              </button>
+                              <button
+                                className={`w-full text-left px-2 py-1 rounded text-sm transition-colors ${sortBy === 'lastname' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+                                  }`}
+                                onClick={() => setSortBy('lastname')}
+                              >
+                                Surname
+                              </button>
+                              <button
+                                className={`w-full text-left px-2 py-1 rounded text-sm transition-colors ${sortBy === 'email' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+                                  }`}
+                                onClick={() => setSortBy('email')}
+                              >
+                                Email
+                              </button>
+                            </div>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <div className="max-h-72 overflow-y-auto border rounded-md divide-y divide-gray-100 bg-white">
+                      {filteredStudents.length === 0 ? (
+                        <div className="py-4 text-center text-muted-foreground">No students found.</div>
+                      ) : (
+                        filteredStudents.map(student => {
+                          const initials = student?.forename?.[0] && student?.lastname?.[0]
+                            ? `${student.forename[0]}${student.lastname[0]}`.toUpperCase()
+                            : (student.email?.[0]?.toUpperCase() || '?');
+                          const fullName = student?.forename && student?.lastname
+                            ? `${student.forename} ${student.lastname}`
+                            : student?.forename || student?.lastname || '';
+                          return (
+                            <button
+                              key={student.userid}
+                              className={`w-full flex items-center gap-3 px-4 py-2 text-left transition-colors focus:outline-none cursor-pointer ${selectedStudent === student.userid ? 'bg-emerald-50 border-l-4 border-emerald-500' : 'hover:bg-gray-50'}`}
+                              onClick={() => setSelectedStudent(selectedStudent === student.userid ? null : student.userid)}
+                            >
+                              <span className="flex items-center justify-center w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 font-bold text-base">
+                                {initials}
+                              </span>
+                              <div className="flex-1 min-w-0">
+                                {fullName && (
+                                  <div className="font-medium text-sm truncate">{fullName}</div>
+                                )}
+                                <div className="text-xs text-muted-foreground truncate">{student.email}</div>
+                              </div>
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                    {selectedStudent && (
+                      <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-md">
+                        <span className="text-sm text-emerald-700">
+                          Showing answers for: <strong>{filteredStudents.find(s => s.userid === selectedStudent)?.forename} {filteredStudents.find(s => s.userid === selectedStudent)?.lastname}</strong>
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelectedStudent(null)}
+                          className="text-emerald-600 hover:text-emerald-700"
+                        >
+                          Clear
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+          
           {/* Topic Filter */}
           {topics.length > 0 && (
-            <Card className="mb-6 shadow-lg border-0 bg-white">
-              <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-t-lg py-3">
-                <CardTitle className="text-slate-800 text-lg">Filter by Topic</CardTitle>
-                <CardDescription className="text-slate-600 text-sm">
-                  Select specific topics to review student answers
-                </CardDescription>
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>Filter by Topic</CardTitle>
+                <CardDescription>Select specific topics to review student answers</CardDescription>
               </CardHeader>
-              <CardContent className="p-4">
+              <CardContent>
                 <TopicFilter 
                   selectedTopics={selectedTopics} 
                   onTopicChange={handleTopicChange} 
@@ -702,14 +1040,14 @@ function AssessPageContent() {
           )}
 
           <div ref={cardRef} className="space-y-6">
-            <Card className="shadow-lg border-0 bg-white">
-              <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-lg py-3">
-                <CardTitle className="flex items-center gap-2 text-slate-800 text-lg">
-                  <User className="h-4 w-4 text-blue-600" />
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
                   Assessment Review
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-4 space-y-6">
+              <CardContent className="space-y-6">
                 {/* Student Information */}
                 <div>
                   <h3 className="text-sm font-semibold text-slate-700 mb-3">Student Details</h3>
@@ -767,8 +1105,8 @@ function AssessPageContent() {
 
             <Card 
               ref={studentAnswerCardRef}
-              className={`border-0 bg-white transition-transform duration-200 ease-out ${
-                isDragging ? "cursor-grabbing shadow-2xl" : "cursor-grab shadow-lg"
+              className={`transition-transform duration-200 ease-out ${
+                isDragging ? "cursor-grabbing shadow-2xl" : "cursor-grab"
               } ${
                 swipeColor === "green" 
                   ? "bg-green-50 border-green-200 shadow-green-200" 
@@ -790,7 +1128,7 @@ function AssessPageContent() {
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
             >
-              <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-t-lg relative py-3">
+              <CardHeader className="relative">
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-slate-800 text-base">Student Answer</CardTitle>
@@ -817,6 +1155,14 @@ function AssessPageContent() {
                         Not assessed
                       </Badge>
                     )}
+                    <Button
+                      onClick={() => handleDeleteClick(currentAnswer)}
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-gray-500 hover:text-red-600 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
                 {isMobile && isDragging && (
@@ -830,7 +1176,7 @@ function AssessPageContent() {
                   </div>
                 )}
               </CardHeader>
-              <CardContent className="p-4 relative">
+              <CardContent className="relative">
                 {/* Swipe Indicators - Mobile Only */}
                 {isMobile && (
                   <>
@@ -870,14 +1216,14 @@ function AssessPageContent() {
 
 
             {(!isMobile || showMobileGrading) && (
-              <Card ref={gradingSectionRef} className="shadow-lg border-0 bg-white">
-                <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 rounded-t-lg py-3">
-                  <CardTitle className="text-slate-800 text-lg">Teacher Assessment</CardTitle>
-                  <CardDescription className="text-slate-600 text-sm">
+              <Card ref={gradingSectionRef}>
+                <CardHeader>
+                  <CardTitle>Teacher Assessment</CardTitle>
+                  <CardDescription>
                     Compare the student&apos;s answer with the model answer and assign a grade
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="p-4">
+                <CardContent>
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <GreenButton isSelected={selectedScore === "green"} onClick={() => setSelectedScore("green")} />
@@ -905,7 +1251,7 @@ function AssessPageContent() {
                         <Button
                           onClick={() => handleGradeAnswer(selectedScore)}
                           disabled={isGrading}
-                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3"
+                          className="flex-1 bg-emerald-600 hover:bg-emerald-700"
                         >
                           {isGrading ? "Saving..." : "Save Grade"}
                         </Button>
@@ -917,7 +1263,6 @@ function AssessPageContent() {
                             if (isMobile) setShowMobileGrading(false)
                           }}
                           disabled={isGrading}
-                          className="border-slate-300 text-slate-700 hover:bg-slate-50"
                         >
                           Cancel
                         </Button>
@@ -963,6 +1308,72 @@ function AssessPageContent() {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold text-gray-900">Delete Student Attempt</DialogTitle>
+            <DialogDescription className="text-gray-500 mt-2">
+              This action cannot be undone. This will permanently delete the student&apos;s attempt for this question.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-6 px-1">
+            <div className="space-y-3">
+              <label htmlFor="delete-confirmation" className="text-sm font-medium text-gray-700 block">
+                Type &quot;delete&quot; to confirm
+              </label>
+              <Input
+                id="delete-confirmation"
+                placeholder="Type &quot;delete&quot; to confirm"
+                value={deleteConfirmation}
+                onChange={(e) => setDeleteConfirmation(e.target.value)}
+                className={`w-full ${deleteConfirmation && deleteConfirmation !== "delete"
+                  ? "border-red-300 focus-visible:ring-red-500"
+                  : ""
+                  }`}
+              />
+              {deleteConfirmation && deleteConfirmation !== "delete" && (
+                <p className="text-sm text-red-500 mt-1">Please type &quot;delete&quot; exactly to confirm</p>
+              )}
+            </div>
+          </div>
+          <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteDialogOpen(false)
+                setAnswerToDelete(null)
+                setDeleteConfirmation("")
+              }}
+              className="mt-2 sm:mt-0"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              disabled={deleteConfirmation !== "delete" || isDeleting}
+              className={`flex items-center gap-2 ${deleteConfirmation === "delete"
+                ? "bg-red-600 hover:bg-red-700 text-white"
+                : "bg-red-100 text-red-400 cursor-not-allowed"
+                }`}
+            >
+              {isDeleting ? (
+                <>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4" />
+                  Delete Attempt
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

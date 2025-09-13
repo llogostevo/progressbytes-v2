@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 
 interface Subtopic {
@@ -15,6 +15,17 @@ interface SubtopicFilterProps {
 
 export function SubtopicFilter({ selectedSubtopics, onSubtopicChange, subtopics, className = "" }: SubtopicFilterProps) {
   const [showSubtopics, setShowSubtopics] = useState(selectedSubtopics.length > 0)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640)
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   const handleAllSubtopicsClick = () => {
     onSubtopicChange([])
@@ -45,18 +56,20 @@ export function SubtopicFilter({ selectedSubtopics, onSubtopicChange, subtopics,
         >
           All Subtopics
         </Button>
-        {!showSubtopics && (
-          <Button
-            variant="outline"
-            onClick={() => setShowSubtopics(true)}
-            size="sm"
-            className="flex-shrink-0"
-          >
-            Show Subtopics
-          </Button>
-        )}
+        <div className="hidden sm:block">
+          {!showSubtopics && (
+            <Button
+              variant="outline"
+              onClick={() => setShowSubtopics(true)}
+              size="sm"
+              className="flex-shrink-0"
+            >
+              Show Subtopics
+            </Button>
+          )}
+        </div>
       </div>
-      {showSubtopics && (
+      {(showSubtopics || isMobile) && (
         <div className="grid grid-cols-3 w-full gap-3">
           {subtopics.map((subtopic) => (
             <Button

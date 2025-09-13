@@ -43,6 +43,17 @@ export function EssayQuestion({
     onSubmit(answer)
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Prevent copy (Ctrl+C), paste (Ctrl+V), and cut (Ctrl+X)
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'v' || e.key === 'x')) {
+      e.preventDefault()
+    }
+  }
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    e.preventDefault()
+  }
+
   const isWordCountValid = wordCount >= minWords && wordCount <= maxWords
 
   return (
@@ -102,6 +113,8 @@ export function EssayQuestion({
         <Textarea
           value={answer}
           onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          onPaste={handlePaste}
           placeholder="Write your essay here..."
           disabled={disabled}
           className="min-h-[300px] font-sans text-base leading-relaxed"

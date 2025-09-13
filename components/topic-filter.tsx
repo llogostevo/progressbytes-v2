@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { DynamicIcon } from "@/components/ui/dynamicicon"
 import {
@@ -47,6 +47,17 @@ function compareTopicNumbers(a?: string, b?: string) {
 
 export function TopicFilter({ selectedTopics, onTopicChange, topics, className = "" }: TopicFilterProps) {
   const [showTopics, setShowTopics] = useState(selectedTopics.length > 0)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640)
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
   
   // Sort all topics by their topic number
   const sortedTopics = [...topics].sort((a, b) => compareTopicNumbers(a.topicnumber, b.topicnumber))
@@ -80,18 +91,20 @@ export function TopicFilter({ selectedTopics, onTopicChange, topics, className =
         >
           All Topics
         </Button>
-        {!showTopics && (
-          <Button
-            variant="outline"
-            onClick={() => setShowTopics(true)}
-            size="sm"
-            className="flex-shrink-0"
-          >
-            Show Topics
-          </Button>
-        )}
+        <div className="hidden sm:block">
+          {!showTopics && (
+            <Button
+              variant="outline"
+              onClick={() => setShowTopics(true)}
+              size="sm"
+              className="flex-shrink-0"
+            >
+              Show Topics
+            </Button>
+          )}
+        </div>
       </div>
-      {showTopics && (
+      {(showTopics || isMobile) && (
         <div className="grid grid-cols-3 w-full gap-3">
           {sortedTopics.map((topic) => (
             <TooltipProvider key={topic.slug}>

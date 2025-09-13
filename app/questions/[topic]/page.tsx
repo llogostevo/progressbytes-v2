@@ -698,6 +698,8 @@ export default function QuestionPage() {
       score: "amber" as ScoreType,
       submitted_at: new Date().toISOString(),
       self_assessed: false,
+      teacher_score: null,
+      teacher_feedback: null,
     }
 
     try {
@@ -743,6 +745,8 @@ export default function QuestionPage() {
           ai_feedback: mockFeedback.feedback,
           score: mockFeedback.score,
           submitted_at: answerData.submitted_at,
+          teacher_score: null,
+          teacher_feedback: null,
         })
       } else {
         // Free logged-in user
@@ -751,6 +755,8 @@ export default function QuestionPage() {
           id: answerData.id,
           student_id: user.id,
           submitted_at: answerData.submitted_at,
+          teacher_score: null,
+          teacher_feedback: null,
         })
       }
 
@@ -867,6 +873,8 @@ export default function QuestionPage() {
         score: isCorrect ? "green" : "red",
         submitted_at: new Date().toISOString(),
         self_assessed: true,
+        teacher_score: null,
+        teacher_feedback: null,
       })
       setSelfAssessmentScore(isCorrect ? "green" : "red")
       return
@@ -898,6 +906,8 @@ export default function QuestionPage() {
         score: isCorrect ? "green" : "red",
         submitted_at: answerData.submitted_at,
         self_assessed: true,
+        teacher_score: null,
+        teacher_feedback: null,
       }
 
       setAnswer(newAnswer)
@@ -920,6 +930,8 @@ export default function QuestionPage() {
         score: isCorrect ? "green" : "red",
         submitted_at: new Date().toISOString(),
         self_assessed: true,
+        teacher_score: null,
+        teacher_feedback: null,
       })
       setSelfAssessmentScore(isCorrect ? "green" : "red")
       return
@@ -951,6 +963,8 @@ export default function QuestionPage() {
         score: isCorrect ? "green" : "red",
         submitted_at: answerData.submitted_at,
         self_assessed: true,
+        teacher_score: null,
+        teacher_feedback: null,
       }
 
       setAnswer(newAnswer)
@@ -977,6 +991,8 @@ export default function QuestionPage() {
         score: isCorrect ? "green" : "red",
         submitted_at: new Date().toISOString(),
         self_assessed: true,
+        teacher_score: null,
+        teacher_feedback: null,
       })
       setSelfAssessmentScore(isCorrect ? "green" : "red")
       return
@@ -1008,6 +1024,8 @@ export default function QuestionPage() {
         score: isCorrect ? "green" : "red",
         submitted_at: answerData.submitted_at,
         self_assessed: true,
+        teacher_score: null,
+        teacher_feedback: null,
       }
 
       setAnswer(newAnswer)
@@ -1032,6 +1050,8 @@ export default function QuestionPage() {
         score: isCorrect ? "green" : "red",
         submitted_at: new Date().toISOString(),
         self_assessed: true,
+        teacher_score: null,
+        teacher_feedback: null,
       })
       setSelfAssessmentScore(isCorrect ? "green" : "red")
       return
@@ -1063,6 +1083,8 @@ export default function QuestionPage() {
         score: isCorrect ? "green" : "red",
         submitted_at: answerData.submitted_at,
         self_assessed: true,
+        teacher_score: null,
+        teacher_feedback: null,
       }
 
       setAnswer(newAnswer)
@@ -1157,8 +1179,23 @@ export default function QuestionPage() {
     )
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Prevent copy (Ctrl+C), paste (Ctrl+V), and cut (Ctrl+X) on the entire page
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'v' || e.key === 'x')) {
+      e.preventDefault()
+    }
+  }
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault()
+  }
+
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div 
+      className="container mx-auto px-4 py-8 question-page" 
+      onKeyDown={handleKeyDown}
+      onContextMenu={handleContextMenu}
+    >
       <div className="max-w-3xl mx-auto">
         <div className="mb-8">
           <Link href="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
@@ -1175,11 +1212,11 @@ export default function QuestionPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
             {/* Subtopic Filter Card */}
             <Card>
-              <CardHeader>
+              <CardHeader className="hidden sm:block">
                 <CardTitle>Filter by Subtopic</CardTitle>
                 <CardDescription>Select one or more subtopics to focus your practice</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-4 sm:pt-6">
                 <SubtopicFilter
                   selectedSubtopics={selectedSubtopics}
                   onSubtopicChange={setSelectedSubtopics}
@@ -1190,11 +1227,11 @@ export default function QuestionPage() {
 
             {/* Question Type Filter Card */}
             <Card>
-              <CardHeader>
+              <CardHeader className="hidden sm:block">
                 <CardTitle>Filter by Type</CardTitle>
                 <CardDescription>Choose question types to practice</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-4 sm:pt-6">
                 <QuestionTypeFilter
                   selectedType={selectedQuestionType}
                   onTypeChange={handleQuestionTypeChange}
@@ -1205,11 +1242,11 @@ export default function QuestionPage() {
 
             {/* Question Difficulty Filter Card */}
             <Card>
-              <CardHeader>
+              <CardHeader className="hidden sm:block">
                 <CardTitle>Filter by Difficulty</CardTitle>
                 <CardDescription>Choose question difficulty to practice</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-4 sm:pt-6">
                 <QuestionDifficultyFilter
                   selectedDifficulty={selectedQuestionDifficulty}
                   onDifficultyChange={handleQuestionDifficultyChange}

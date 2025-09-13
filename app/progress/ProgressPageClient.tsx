@@ -1048,6 +1048,8 @@ export default function ProgressPage() {
           score: answer.student_score as ScoreType,
           submitted_at: answer.submitted_at,
           self_assessed: answer.self_assessed,
+          teacher_score: answer.teacher_score as ScoreType | null,
+          teacher_feedback: answer.teacher_feedback,
         }))
 
         setAnswers(mappedAnswers)
