@@ -587,8 +587,23 @@ export default function RevisitPageClient() {
 
   // access control
   if (!userCanViewAnswers) {
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+      // Prevent copy (Ctrl+C), paste (Ctrl+V), and cut (Ctrl+X) on the entire page
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'v' || e.key === 'x')) {
+        e.preventDefault()
+      }
+    }
+
+    const handleContextMenu = (e: React.MouseEvent) => {
+      e.preventDefault()
+    }
+
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div 
+        className="container mx-auto px-4 py-8 question-page" 
+        onKeyDown={handleKeyDown}
+        onContextMenu={handleContextMenu}
+      >
         <div className="max-w-4xl mx-auto">
           <Card>
             <CardHeader>
@@ -610,8 +625,23 @@ export default function RevisitPageClient() {
     )
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Prevent copy (Ctrl+C), paste (Ctrl+V), and cut (Ctrl+X) on the entire page
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'v' || e.key === 'x')) {
+      e.preventDefault()
+    }
+  }
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault()
+  }
+
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div 
+      className="container mx-auto px-4 py-8 question-page" 
+      onKeyDown={handleKeyDown}
+      onContextMenu={handleContextMenu}
+    >
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
           <div className="flex flex-col md:flex-row justify-between items-center mb-6">
