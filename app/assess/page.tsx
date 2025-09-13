@@ -770,14 +770,12 @@ function AssessPageContent() {
           
           {/* Topic Filter */}
           {topics.length > 0 && (
-            <Card className="mb-6 shadow-lg border-0 bg-white">
-              <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-t-lg py-3">
-                <CardTitle className="text-slate-800 text-lg">Filter by Topic</CardTitle>
-                <CardDescription className="text-slate-600 text-sm">
-                  Select specific topics to review student answers
-                </CardDescription>
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>Filter by Topic</CardTitle>
+                <CardDescription>Select specific topics to review student answers</CardDescription>
               </CardHeader>
-              <CardContent className="p-4">
+              <CardContent>
                 <TopicFilter 
                   selectedTopics={selectedTopics} 
                   onTopicChange={handleTopicChange} 
@@ -788,14 +786,14 @@ function AssessPageContent() {
           )}
 
           <div ref={cardRef} className="space-y-6">
-            <Card className="shadow-lg border-0 bg-white">
-              <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-lg py-3">
-                <CardTitle className="flex items-center gap-2 text-slate-800 text-lg">
-                  <User className="h-4 w-4 text-blue-600" />
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
                   Assessment Review
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-4 space-y-6">
+              <CardContent className="space-y-6">
                 {/* Student Information */}
                 <div>
                   <h3 className="text-sm font-semibold text-slate-700 mb-3">Student Details</h3>
@@ -853,8 +851,8 @@ function AssessPageContent() {
 
             <Card 
               ref={studentAnswerCardRef}
-              className={`border-0 bg-white transition-transform duration-200 ease-out ${
-                isDragging ? "cursor-grabbing shadow-2xl" : "cursor-grab shadow-lg"
+              className={`transition-transform duration-200 ease-out ${
+                isDragging ? "cursor-grabbing shadow-2xl" : "cursor-grab"
               } ${
                 swipeColor === "green" 
                   ? "bg-green-50 border-green-200 shadow-green-200" 
@@ -876,7 +874,7 @@ function AssessPageContent() {
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
             >
-              <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-t-lg relative py-3">
+              <CardHeader className="relative">
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-slate-800 text-base">Student Answer</CardTitle>
@@ -916,7 +914,7 @@ function AssessPageContent() {
                   </div>
                 )}
               </CardHeader>
-              <CardContent className="p-4 relative">
+              <CardContent className="relative">
                 {/* Swipe Indicators - Mobile Only */}
                 {isMobile && (
                   <>
@@ -956,14 +954,14 @@ function AssessPageContent() {
 
 
             {(!isMobile || showMobileGrading) && (
-              <Card ref={gradingSectionRef} className="shadow-lg border-0 bg-white">
-                <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 rounded-t-lg py-3">
-                  <CardTitle className="text-slate-800 text-lg">Teacher Assessment</CardTitle>
-                  <CardDescription className="text-slate-600 text-sm">
+              <Card ref={gradingSectionRef}>
+                <CardHeader>
+                  <CardTitle>Teacher Assessment</CardTitle>
+                  <CardDescription>
                     Compare the student&apos;s answer with the model answer and assign a grade
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="p-4">
+                <CardContent>
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <GreenButton isSelected={selectedScore === "green"} onClick={() => setSelectedScore("green")} />
@@ -991,7 +989,7 @@ function AssessPageContent() {
                         <Button
                           onClick={() => handleGradeAnswer(selectedScore)}
                           disabled={isGrading}
-                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3"
+                          className="flex-1 bg-emerald-600 hover:bg-emerald-700"
                         >
                           {isGrading ? "Saving..." : "Save Grade"}
                         </Button>
@@ -1003,7 +1001,6 @@ function AssessPageContent() {
                             if (isMobile) setShowMobileGrading(false)
                           }}
                           disabled={isGrading}
-                          className="border-slate-300 text-slate-700 hover:bg-slate-50"
                         >
                           Cancel
                         </Button>
