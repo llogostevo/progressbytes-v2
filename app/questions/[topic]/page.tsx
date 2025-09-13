@@ -698,6 +698,8 @@ export default function QuestionPage() {
       score: "amber" as ScoreType,
       submitted_at: new Date().toISOString(),
       self_assessed: false,
+      teacher_score: null,
+      teacher_feedback: null,
     }
 
     try {
@@ -743,6 +745,8 @@ export default function QuestionPage() {
           ai_feedback: mockFeedback.feedback,
           score: mockFeedback.score,
           submitted_at: answerData.submitted_at,
+          teacher_score: null,
+          teacher_feedback: null,
         })
       } else {
         // Free logged-in user
@@ -751,6 +755,8 @@ export default function QuestionPage() {
           id: answerData.id,
           student_id: user.id,
           submitted_at: answerData.submitted_at,
+          teacher_score: null,
+          teacher_feedback: null,
         })
       }
 
@@ -867,6 +873,8 @@ export default function QuestionPage() {
         score: isCorrect ? "green" : "red",
         submitted_at: new Date().toISOString(),
         self_assessed: true,
+        teacher_score: null,
+        teacher_feedback: null,
       })
       setSelfAssessmentScore(isCorrect ? "green" : "red")
       return
@@ -922,6 +930,8 @@ export default function QuestionPage() {
         score: isCorrect ? "green" : "red",
         submitted_at: new Date().toISOString(),
         self_assessed: true,
+        teacher_score: null,
+        teacher_feedback: null,
       })
       setSelfAssessmentScore(isCorrect ? "green" : "red")
       return
@@ -981,6 +991,8 @@ export default function QuestionPage() {
         score: isCorrect ? "green" : "red",
         submitted_at: new Date().toISOString(),
         self_assessed: true,
+        teacher_score: null,
+        teacher_feedback: null,
       })
       setSelfAssessmentScore(isCorrect ? "green" : "red")
       return
@@ -1038,6 +1050,8 @@ export default function QuestionPage() {
         score: isCorrect ? "green" : "red",
         submitted_at: new Date().toISOString(),
         self_assessed: true,
+        teacher_score: null,
+        teacher_feedback: null,
       })
       setSelfAssessmentScore(isCorrect ? "green" : "red")
       return
