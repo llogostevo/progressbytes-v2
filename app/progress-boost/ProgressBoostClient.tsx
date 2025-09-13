@@ -1263,6 +1263,8 @@ export default function ProgressBoostClient() {
         score: mockFeedback.score,
         submitted_at: row.submitted_at,
         self_assessed: false,
+        teacher_score: null,
+        teacher_feedback: null,
       })
     } else {
       // For non-revisionAI users or auto-scored questions
@@ -1275,6 +1277,8 @@ export default function ProgressBoostClient() {
         score: payload.autoScore ?? "amber",
         submitted_at: row.submitted_at,
         self_assessed: payload.autoScore ? true : false,
+        teacher_score: null,
+        teacher_feedback: null,
       })
     }
 
