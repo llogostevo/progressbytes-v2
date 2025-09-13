@@ -156,7 +156,7 @@ export function FillInTheBlankQuestion({ question, onAnswerSelected }: FillInThe
                                 className="flex flex-wrap gap-2 p-4 bg-gray-50 rounded-lg"
                             >
                                 {availableOptions.map((option, index) => (
-                                    <Draggable key={option} draggableId={`option-${option}`} index={index}>
+                                    <Draggable key={`${option}-${index}`} draggableId={`option-${option}-${index}`} index={index}>
                                         {(provided) => (
                                             <div
                                                 ref={provided.innerRef}
