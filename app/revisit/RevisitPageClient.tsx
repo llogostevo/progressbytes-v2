@@ -19,6 +19,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+
+import {
+  HoverCard,
+  HoverCardTrigger,
+  HoverCardContent,
+} from "@/components/ui/hover-card"
+
 import { Input } from "@/components/ui/input"
 import type { Answer, Question, ScoreType } from "@/lib/types"
 import {
@@ -32,6 +39,7 @@ import {
   GraduationCap,
   FileText,
   Trash2,
+  MessageSquare,
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -101,6 +109,8 @@ type RevisitRow = {
   topic_slug: string | null
   topic_name: string | null
   question: RevisitQuestionPayload
+  teacher_score: ScoreType | null
+  teacher_feedback: string | null
 }
 
 // types for counts
@@ -325,7 +335,7 @@ export default function RevisitPageClient() {
       // This calls an RPC from the supabase database
       // access this via function get_revisit_attempts_v2 in supabase database functions
       const { data: rows, error: rpcError } = await supabase
-        .rpc('get_revisit_attempts_v3', {
+        .rpc('get_revisit_attempts_v4', {
           p_user: user.id,
           p_topic_slugs: null,
           p_type: null,
@@ -354,6 +364,8 @@ export default function RevisitPageClient() {
           score: (row.student_score ?? "amber") as ScoreType, // safe default
           submitted_at: row.submitted_at,
           self_assessed: false,                     // see next section
+          teacher_score: row.teacher_score ?? null,
+          teacher_feedback: row.teacher_feedback ?? null,
         })
 
         const q = row.question
@@ -443,6 +455,15 @@ export default function RevisitPageClient() {
   Object.values(answersByTopic).forEach(list => {
     list.sort((a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime())
   })
+
+  const badgeClassesForScore = (score?: ScoreType | null) =>
+    !score
+      ? "bg-gray-100 hover:bg-gray-200 text-gray-600"
+      : score === "green"
+        ? "bg-emerald-50 hover:bg-emerald-100 text-emerald-700"
+        : score === "amber"
+          ? "bg-amber-50 hover:bg-amber-100 text-amber-700"
+          : "bg-red-50 hover:bg-red-100 text-red-700"
 
   const getScoreLabel = (score: ScoreType) => {
     switch (score) {
@@ -599,8 +620,8 @@ export default function RevisitPageClient() {
     }
 
     return (
-      <div 
-        className="container mx-auto px-4 py-8 question-page" 
+      <div
+        className="container mx-auto px-4 py-8 question-page"
         onKeyDown={handleKeyDown}
         onContextMenu={handleContextMenu}
       >
@@ -637,8 +658,8 @@ export default function RevisitPageClient() {
   }
 
   return (
-    <div 
-      className="container mx-auto px-4 py-8 question-page" 
+    <div
+      className="container mx-auto px-4 py-8 question-page"
       onKeyDown={handleKeyDown}
       onContextMenu={handleContextMenu}
     >
@@ -855,6 +876,50 @@ export default function RevisitPageClient() {
                                       )}
                                       <span>{!answer.score ? "Not assessed" : getScoreLabel(answer.score)}</span>
                                     </Badge>
+                                    {/* TEACHER ASSESSMENT PILL */}
+                                    {(() => {
+                                      const tScore: ScoreType | null = answer?.teacher_score ?? null
+                                      const tFeedback: string | null = answer?.teacher_feedback ?? null
+                                      const pill = (
+                                        <Badge
+                                          className={`flex items-center gap-1 whitespace-nowrap ${badgeClassesForScore(tScore)}`}
+                                        >
+                                          {/* Icon mirrors colour semantics */}
+                                          {!tScore ? (
+                                            <HelpCircle className="h-4 w-4" />
+                                          ) : tScore === "green" ? (
+                                            <CheckCircle className="h-4 w-4" />
+                                          ) : tScore === "amber" ? (
+                                            <AlertTriangle className="h-4 w-4" />
+                                          ) : (
+                                            <AlertCircle className="h-4 w-4" />
+                                          )}
+                                          <span>
+                                            Teacher{tScore ? `: ${getScoreLabel(tScore)}` : ": Not marked"}
+                                          </span>
+                                          {tFeedback && (
+                                            <MessageSquare className="h-3 w-3 ml-1" />
+                                          )}
+                                        </Badge>
+                                      )
+
+                                      // If there’s feedback, wrap in a HoverCard for preview
+                                      return tFeedback ? (
+                                        <HoverCard>
+                                          <HoverCardTrigger>{pill}</HoverCardTrigger>
+                                          <HoverCardContent className="w-80">
+                                            <div className="space-y-2">
+                                              <p className="text-sm font-medium text-gray-900">Teacher feedback</p>
+                                              <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                                                {tFeedback}
+                                              </p>
+                                            </div>
+                                          </HoverCardContent>
+                                        </HoverCard>
+                                      ) : (
+                                        pill
+                                      )
+                                    })()}
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 font-medium">

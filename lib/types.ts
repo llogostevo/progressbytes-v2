@@ -36,6 +36,8 @@ export interface Answer {
   score: ScoreType
   submitted_at: string
   self_assessed: boolean
+  teacher_score: ScoreType | null
+  teacher_feedback: string | null
 }
 
 export interface Topic {
