@@ -18,6 +18,8 @@ import { RedButton } from "@/components/question-components/self-assessment/red-
 import { TopicFilter } from "@/components/topic-filter"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Filter } from "lucide-react"
 import type { ScoreType, Class } from "@/lib/types"
 import { toast } from "sonner"
 
@@ -123,9 +125,29 @@ function AssessPageContent() {
   const [classes, setClasses] = useState<Class[]>([])
   const [selectedClass, setSelectedClass] = useState<string>("all")
   const [isLoadingClasses, setIsLoadingClasses] = useState(true)
+  const [students, setStudents] = useState<Array<{ userid: string; email: string; forename: string; lastname: string }>>([])
+  const [selectedStudent, setSelectedStudent] = useState<string | null>(null)
+  const [studentSearch, setStudentSearch] = useState("")
+  const [sortBy, setSortBy] = useState<"forename" | "lastname" | "email">("forename")
+  const [isLoadingStudents, setIsLoadingStudents] = useState(true)
   const selectedTopics = useMemo(() => searchParams.get("topics")?.split(",") || [], [searchParams])
 
-  // Memoize filtered answers by topic and class
+  // Memoize filtered students
+  const filteredStudents = useMemo(() => {
+    return students
+      .filter(student =>
+        student.email.toLowerCase().includes(studentSearch.toLowerCase()) ||
+        (student.forename && student.forename.toLowerCase().includes(studentSearch.toLowerCase())) ||
+        (student.lastname && student.lastname.toLowerCase().includes(studentSearch.toLowerCase()))
+      )
+      .sort((a, b) => {
+        const aValue = a[sortBy] || '';
+        const bValue = b[sortBy] || '';
+        return aValue.localeCompare(bValue, undefined, { sensitivity: 'base' });
+      });
+  }, [students, studentSearch, sortBy])
+
+  // Memoize filtered answers by topic, class, and student
   const filteredAnswersToGrade = useMemo(() => {
     let filtered = answersToGrade
 
@@ -146,8 +168,15 @@ function AssessPageContent() {
       })
     }
 
+    // Filter by selected student if one is selected
+    if (selectedStudent) {
+      filtered = filtered.filter((answer) => {
+        return answer.student_id === selectedStudent
+      })
+    }
+
     return filtered
-  }, [answersToGrade, selectedTopics, selectedClass])
+  }, [answersToGrade, selectedTopics, selectedClass, selectedStudent])
 
   const [isMobile, setIsMobile] = useState(false)
   const [showMobileGrading, setShowMobileGrading] = useState(false)
@@ -367,10 +396,28 @@ function AssessPageContent() {
 
       if (!classMembers || classMembers.length === 0) {
         setAnswersToGrade([])
+        setStudents([])
+        setIsLoadingStudents(false)
         return
       }
 
       const studentIds = classMembers.map((m) => m.student_id)
+
+      // Set students for the student selector
+      const uniqueStudents = (classMembers || []).reduce((acc: Array<{ userid: string; email: string; forename: string; lastname: string }>, member) => {
+        const studentData = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles
+        if (studentData && !acc.find(s => s.userid === member.student_id)) {
+          acc.push({
+            userid: member.student_id,
+            email: studentData.email,
+            forename: studentData.forename,
+            lastname: studentData.lastname
+          })
+        }
+        return acc
+      }, [])
+      setStudents(uniqueStudents)
+      setIsLoadingStudents(false)
 
       const { data: answers, error } = await supabase
         .from("student_answers")
@@ -523,7 +570,7 @@ function AssessPageContent() {
     } finally {
       setIsLoading(false)
     }
-  }, [userType, supabase, selectedClass])
+  }, [userType, supabase, selectedClass, selectedStudent])
 
   useEffect(() => {
     // Redirect students to home page
@@ -767,6 +814,116 @@ function AssessPageContent() {
               </div>
             )}
           </div>
+
+          {/* Student Search */}
+          {students.length > 0 && (
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>Filter by Student</CardTitle>
+                <CardDescription>Search and select a specific student to review their answers</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoadingStudents ? (
+                  <Skeleton className="h-10 w-full" />
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-4">
+                      <label htmlFor="student-search" className="text-sm font-medium">Search Student</label>
+                      <input
+                        id="student-search"
+                        type="text"
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        placeholder="Type name or email..."
+                        value={studentSearch}
+                        onChange={e => setStudentSearch(e.target.value)}
+                      />
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="icon" className="h-10 w-10">
+                            <Filter className="h-4 w-4" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-48" align="end">
+                          <div className="space-y-2">
+                            <h4 className="font-medium leading-none">Sort by</h4>
+                            <div className="space-y-1">
+                              <button
+                                className={`w-full text-left px-2 py-1 rounded text-sm transition-colors ${sortBy === 'forename' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+                                  }`}
+                                onClick={() => setSortBy('forename')}
+                              >
+                                Forename
+                              </button>
+                              <button
+                                className={`w-full text-left px-2 py-1 rounded text-sm transition-colors ${sortBy === 'lastname' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+                                  }`}
+                                onClick={() => setSortBy('lastname')}
+                              >
+                                Surname
+                              </button>
+                              <button
+                                className={`w-full text-left px-2 py-1 rounded text-sm transition-colors ${sortBy === 'email' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+                                  }`}
+                                onClick={() => setSortBy('email')}
+                              >
+                                Email
+                              </button>
+                            </div>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <div className="max-h-72 overflow-y-auto border rounded-md divide-y divide-gray-100 bg-white">
+                      {filteredStudents.length === 0 ? (
+                        <div className="py-4 text-center text-muted-foreground">No students found.</div>
+                      ) : (
+                        filteredStudents.map(student => {
+                          const initials = student?.forename?.[0] && student?.lastname?.[0]
+                            ? `${student.forename[0]}${student.lastname[0]}`.toUpperCase()
+                            : (student.email?.[0]?.toUpperCase() || '?');
+                          const fullName = student?.forename && student?.lastname
+                            ? `${student.forename} ${student.lastname}`
+                            : student?.forename || student?.lastname || '';
+                          return (
+                            <button
+                              key={student.userid}
+                              className={`w-full flex items-center gap-3 px-4 py-2 text-left transition-colors focus:outline-none cursor-pointer ${selectedStudent === student.userid ? 'bg-emerald-50 border-l-4 border-emerald-500' : 'hover:bg-gray-50'}`}
+                              onClick={() => setSelectedStudent(selectedStudent === student.userid ? null : student.userid)}
+                            >
+                              <span className="flex items-center justify-center w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 font-bold text-base">
+                                {initials}
+                              </span>
+                              <div className="flex-1 min-w-0">
+                                {fullName && (
+                                  <div className="font-medium text-sm truncate">{fullName}</div>
+                                )}
+                                <div className="text-xs text-muted-foreground truncate">{student.email}</div>
+                              </div>
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                    {selectedStudent && (
+                      <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-md">
+                        <span className="text-sm text-emerald-700">
+                          Showing answers for: <strong>{filteredStudents.find(s => s.userid === selectedStudent)?.forename} {filteredStudents.find(s => s.userid === selectedStudent)?.lastname}</strong>
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelectedStudent(null)}
+                          className="text-emerald-600 hover:text-emerald-700"
+                        >
+                          Clear
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
           
           {/* Topic Filter */}
           {topics.length > 0 && (
