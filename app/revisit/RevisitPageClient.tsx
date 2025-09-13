@@ -435,8 +435,6 @@ export default function RevisitPageClient() {
             return hasTeacherScore
           case "feedback":
             return hasTeacherFeedback
-          case "not-assessed":
-            return !hasTeacherScore
           default:
             return true
         }

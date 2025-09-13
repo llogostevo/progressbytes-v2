@@ -25,12 +25,6 @@ const assessmentOptions = [
     value: "feedback",
     description: "Questions that have teacher feedback",
     icon: MessageSquare
-  },
-  {
-    label: "Not Assessed",
-    value: "not-assessed",
-    description: "Questions that haven't been marked by a teacher",
-    icon: null
   }
 ]
 
