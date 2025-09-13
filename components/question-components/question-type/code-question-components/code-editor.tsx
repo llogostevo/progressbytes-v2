@@ -3,6 +3,8 @@
 import CodeMirror from "@uiw/react-codemirror"
 import { python } from "@codemirror/lang-python"
 import { oneDark } from "@codemirror/theme-one-dark"
+import { keymap } from "@codemirror/view"
+import { EditorView } from "@codemirror/view"
 
 interface CodeEditorProps {
   value: string
@@ -19,6 +21,34 @@ export function CodeEditor({
   autocomplete = false,
   onAutocompleteChange 
 }: CodeEditorProps) {
+  // Create a keymap that disables copy, paste, and cut operations
+  const disableCopyPasteKeymap = keymap.of([
+    {
+      key: "Mod-c",
+      run: () => true, // Prevent copy
+    },
+    {
+      key: "Mod-v", 
+      run: () => true, // Prevent paste
+    },
+    {
+      key: "Mod-x",
+      run: () => true, // Prevent cut
+    },
+    {
+      key: "Ctrl-c",
+      run: () => true, // Prevent copy (Windows/Linux)
+    },
+    {
+      key: "Ctrl-v",
+      run: () => true, // Prevent paste (Windows/Linux)
+    },
+    {
+      key: "Ctrl-x",
+      run: () => true, // Prevent cut (Windows/Linux)
+    }
+  ])
+
   return (
     <div className="space-y-2">
       <div className="flex items-center space-x-2">
@@ -38,7 +68,7 @@ export function CodeEditor({
           value={value}
           height="300px"
           theme={oneDark}
-          extensions={[python()]}
+          extensions={[python(), disableCopyPasteKeymap]}
           onChange={onChange}
           editable={!disabled}
           basicSetup={{

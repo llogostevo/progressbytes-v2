@@ -1157,8 +1157,23 @@ export default function QuestionPage() {
     )
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Prevent copy (Ctrl+C), paste (Ctrl+V), and cut (Ctrl+X) on the entire page
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'v' || e.key === 'x')) {
+      e.preventDefault()
+    }
+  }
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault()
+  }
+
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div 
+      className="container mx-auto px-4 py-8 question-page" 
+      onKeyDown={handleKeyDown}
+      onContextMenu={handleContextMenu}
+    >
       <div className="max-w-3xl mx-auto">
         <div className="mb-8">
           <Link href="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">

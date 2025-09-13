@@ -100,8 +100,12 @@ export function FillInTheBlankQuestion({ question, onAnswerSelected }: FillInThe
         onAnswerSelected(isCorrect, selectedIndexes)
     }
 
+    const handleContextMenu = (e: React.MouseEvent) => {
+        e.preventDefault()
+    }
+
     return (
-        <div className="space-y-6">
+        <div className="space-y-6" onContextMenu={handleContextMenu}>
             <DragDropContext onDragEnd={handleDragEnd}>
                 <div className="space-y-4">
                     {/* Question text with blanks */}
