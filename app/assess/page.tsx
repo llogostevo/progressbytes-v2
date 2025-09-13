@@ -16,7 +16,9 @@ import { GreenButton } from "@/components/question-components/self-assessment/gr
 import { AmberButton } from "@/components/question-components/self-assessment/amber-button"
 import { RedButton } from "@/components/question-components/self-assessment/red-button"
 import { TopicFilter } from "@/components/topic-filter"
-import type { ScoreType } from "@/lib/types"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Skeleton } from "@/components/ui/skeleton"
+import type { ScoreType, Class } from "@/lib/types"
 import { toast } from "sonner"
 
 // Types for the grading interface
@@ -118,17 +120,34 @@ function AssessPageContent() {
   const [selectedScore, setSelectedScore] = useState<ScoreType | null>(null)
   const [teacherFeedback, setTeacherFeedback] = useState("")
   const [topics, setTopics] = useState<DBTopic[]>([])
+  const [classes, setClasses] = useState<Class[]>([])
+  const [selectedClass, setSelectedClass] = useState<string>("all")
+  const [isLoadingClasses, setIsLoadingClasses] = useState(true)
   const selectedTopics = useMemo(() => searchParams.get("topics")?.split(",") || [], [searchParams])
 
-  // Memoize filtered answers by topic
+  // Memoize filtered answers by topic and class
   const filteredAnswersToGrade = useMemo(() => {
-    if (selectedTopics.length === 0) return answersToGrade
+    let filtered = answersToGrade
 
-    return answersToGrade.filter((answer) => {
-      const question = answer.questions
-      return question.topic && selectedTopics.includes(question.topic.slug)
-    })
-  }, [answersToGrade, selectedTopics])
+    // Filter by topic if topics are selected
+    if (selectedTopics.length > 0) {
+      filtered = filtered.filter((answer) => {
+        const question = answer.questions
+        return question.topic && selectedTopics.includes(question.topic.slug)
+      })
+    }
+
+    // Filter by class if a specific class is selected
+    if (selectedClass !== "all") {
+      filtered = filtered.filter((answer) => {
+        // Check if the student belongs to the selected class
+        // This will be handled in the fetchAnswersToGrade function
+        return true // For now, we'll filter in the fetch function
+      })
+    }
+
+    return filtered
+  }, [answersToGrade, selectedTopics, selectedClass])
 
   const [isMobile, setIsMobile] = useState(false)
   const [showMobileGrading, setShowMobileGrading] = useState(false)
@@ -276,6 +295,36 @@ function AssessPageContent() {
     router.push(`?${params.toString()}`)
   }
 
+  // Fetch classes for the teacher
+  const fetchClasses = useCallback(async () => {
+    if (!isTeacher(userType)) return
+
+    setIsLoadingClasses(true)
+    try {
+      // Get current user
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) return
+
+      // Fetch classes where user is the teacher
+      const { data: teacherClasses, error: teacherClassesError } = await supabase
+        .from('classes')
+        .select('*')
+        .eq('teacher_id', user.id)
+
+      if (teacherClassesError) {
+        console.error('Error fetching teaching classes:', teacherClassesError)
+      } else {
+        setClasses(teacherClasses || [])
+      }
+    } catch (error) {
+      console.error('Error fetching classes:', error)
+    } finally {
+      setIsLoadingClasses(false)
+    }
+  }, [userType, supabase])
+
   // Fetch answers that need grading
   const fetchAnswersToGrade = useCallback(async () => {
     if (!isTeacher(userType)) return
@@ -288,15 +337,20 @@ function AssessPageContent() {
       } = await supabase.auth.getUser()
       if (!user) return
 
-      // First, get the teacher's classes
-      const { data: classes } = await supabase.from("classes").select("id").eq("teacher_id", user.id)
-
-      if (!classes || classes.length === 0) {
-        setAnswersToGrade([])
-        return
+      // Determine which classes to fetch from
+      let classIds: string[]
+      if (selectedClass === "all") {
+        // Get all teacher's classes
+        const { data: classes } = await supabase.from("classes").select("id").eq("teacher_id", user.id)
+        if (!classes || classes.length === 0) {
+          setAnswersToGrade([])
+          return
+        }
+        classIds = classes.map((c) => c.id)
+      } else {
+        // Use the selected class
+        classIds = [selectedClass]
       }
-
-      const classIds = classes.map((c) => c.id)
 
       // Get students in these classes
       const { data: classMembers } = await supabase
@@ -469,16 +523,23 @@ function AssessPageContent() {
     } finally {
       setIsLoading(false)
     }
-  }, [userType, supabase])
+  }, [userType, supabase, selectedClass])
 
   useEffect(() => {
     // Redirect students to home page
     if (isLoggedIn && userType !== null && !isTeacher(userType)) {
       router.push("/")
     } else if (isLoggedIn && isTeacher(userType)) {
+      fetchClasses()
+    }
+  }, [isLoggedIn, userType, router, fetchClasses])
+
+  useEffect(() => {
+    // Fetch answers when classes are loaded and class selection changes
+    if (isLoggedIn && isTeacher(userType) && !isLoadingClasses) {
       fetchAnswersToGrade()
     }
-  }, [isLoggedIn, userType, router, fetchAnswersToGrade])
+  }, [isLoggedIn, userType, fetchAnswersToGrade, isLoadingClasses])
 
   // Handle grading submission
   const handleGradeAnswer = async (score: ScoreType) => {
@@ -681,6 +742,31 @@ function AssessPageContent() {
 
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
+          
+          {/* Class Filter */}
+          <div className="mb-6">
+            {isLoadingClasses ? (
+              <Skeleton className="h-10 w-[200px]" />
+            ) : classes.length > 0 ? (
+              <Select value={selectedClass} onValueChange={setSelectedClass}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Select a class" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Classes</SelectItem>
+                  {classes.map((classItem) => (
+                    <SelectItem key={classItem.id} value={classItem.id}>
+                      {classItem.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="text-sm text-slate-600">
+                No classes assigned to you yet.
+              </div>
+            )}
+          </div>
           
           {/* Topic Filter */}
           {topics.length > 0 && (
