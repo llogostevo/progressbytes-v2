@@ -7,7 +7,16 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/app/providers/AuthProvider"
 import { isTeacher } from "@/lib/access"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { User, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react"
+import { User, AlertCircle, ChevronLeft, ChevronRight, Trash2 } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
 import { createClient } from "@/utils/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -130,6 +139,10 @@ function AssessPageContent() {
   const [studentSearch, setStudentSearch] = useState("")
   const [sortBy, setSortBy] = useState<"forename" | "lastname" | "email">("forename")
   const [isLoadingStudents, setIsLoadingStudents] = useState(true)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [answerToDelete, setAnswerToDelete] = useState<StudentAnswerForGrading | null>(null)
+  const [deleteConfirmation, setDeleteConfirmation] = useState("")
+  const [isDeleting, setIsDeleting] = useState(false)
   const selectedTopics = useMemo(() => searchParams.get("topics")?.split(",") || [], [searchParams])
 
   // Memoize filtered students
@@ -314,6 +327,50 @@ function AssessPageContent() {
     setSwipeColor(null)
   }
 
+  const handleDeleteClick = (answer: StudentAnswerForGrading) => {
+    setAnswerToDelete(answer)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!answerToDelete || deleteConfirmation !== "delete") return
+
+    setIsDeleting(true)
+    try {
+      const { error } = await supabase
+        .from("student_answers")
+        .delete()
+        .eq("id", answerToDelete.id)
+
+      if (error) throw error
+
+      // Update local state
+      setAnswersToGrade((prev) => prev.filter((a) => a.id !== answerToDelete.id))
+      
+      // Adjust current index if needed
+      const newFilteredAnswers = answersToGrade.filter((answer) => {
+        const question = answer.questions
+        return selectedTopics.length === 0 || (question.topic && selectedTopics.includes(question.topic.slug))
+      }).filter((answer) => answer.id !== answerToDelete.id)
+      
+      if (currentAnswerIndex >= newFilteredAnswers.length && newFilteredAnswers.length > 0) {
+        setCurrentAnswerIndex(newFilteredAnswers.length - 1)
+      } else if (newFilteredAnswers.length === 0) {
+        setCurrentAnswerIndex(0)
+      }
+
+      setDeleteDialogOpen(false)
+      setAnswerToDelete(null)
+      setDeleteConfirmation("")
+      toast.success("Student attempt deleted successfully")
+    } catch (error) {
+      console.error("Error deleting answer:", error)
+      toast.error("Failed to delete student attempt")
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   const handleTopicChange = (topics: string[]) => {
     const params = new URLSearchParams(searchParams.toString())
     if (topics.length === 0) {
@@ -321,6 +378,15 @@ function AssessPageContent() {
     } else {
       params.set("topics", topics.join(","))
     }
+    router.push(`?${params.toString()}`)
+  }
+
+  const clearAllFilters = () => {
+    setSelectedClass("all")
+    setSelectedStudent(null)
+    setStudentSearch("")
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete("topics")
     router.push(`?${params.toString()}`)
   }
 
@@ -711,21 +777,52 @@ function AssessPageContent() {
     )
   }
 
+  // Check if any filters are applied
+  const hasActiveFilters = selectedTopics.length > 0 || selectedClass !== "all" || selectedStudent !== null
+
   if (filteredAnswersToGrade.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
-        <div className="text-center max-w-md">
-          <div className="bg-white rounded-2xl p-8 shadow-lg">
-            <AlertCircle className="h-16 w-16 text-slate-400 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-slate-800 mb-2">
-              {selectedTopics.length > 0 ? "No Answers Found" : "All Caught Up!"}
-            </h2>
-            <p className="text-slate-600">
-              {selectedTopics.length > 0 
-                ? "No student answers found for the selected topics." 
-                : "There are currently no student answers waiting for your review."}
-            </p>
-          </div>
+        <div className="text-center max-w-lg">
+          <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+            <CardContent className="p-8">
+              {hasActiveFilters ? (
+                <>
+                  <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <div className="w-8 h-8 bg-emerald-600 rounded-full flex items-center justify-center">
+                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  </div>
+                  <h2 className="text-2xl font-bold text-slate-800 mb-3">
+                    Completed Filtered Questions!
+                  </h2>
+                  <p className="text-slate-600 mb-6 leading-relaxed">
+                    You've completed all the questions in your current filter. Remove filters to see all available questions.
+                  </p>
+                  <Button 
+                    onClick={clearAllFilters}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors duration-200 shadow-sm hover:shadow-md"
+                  >
+                    Remove Filters & Show All Questions
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <AlertCircle className="h-8 w-8 text-blue-600" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-slate-800 mb-3">
+                    All Caught Up!
+                  </h2>
+                  <p className="text-slate-600 leading-relaxed">
+                    There are currently no student answers waiting for your review.
+                  </p>
+                </>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     )
@@ -1058,6 +1155,14 @@ function AssessPageContent() {
                         Not assessed
                       </Badge>
                     )}
+                    <Button
+                      onClick={() => handleDeleteClick(currentAnswer)}
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-gray-500 hover:text-red-600 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
                 {isMobile && isDragging && (
@@ -1203,6 +1308,72 @@ function AssessPageContent() {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold text-gray-900">Delete Student Attempt</DialogTitle>
+            <DialogDescription className="text-gray-500 mt-2">
+              This action cannot be undone. This will permanently delete the student&apos;s attempt for this question.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-6 px-1">
+            <div className="space-y-3">
+              <label htmlFor="delete-confirmation" className="text-sm font-medium text-gray-700 block">
+                Type &quot;delete&quot; to confirm
+              </label>
+              <Input
+                id="delete-confirmation"
+                placeholder="Type &quot;delete&quot; to confirm"
+                value={deleteConfirmation}
+                onChange={(e) => setDeleteConfirmation(e.target.value)}
+                className={`w-full ${deleteConfirmation && deleteConfirmation !== "delete"
+                  ? "border-red-300 focus-visible:ring-red-500"
+                  : ""
+                  }`}
+              />
+              {deleteConfirmation && deleteConfirmation !== "delete" && (
+                <p className="text-sm text-red-500 mt-1">Please type &quot;delete&quot; exactly to confirm</p>
+              )}
+            </div>
+          </div>
+          <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteDialogOpen(false)
+                setAnswerToDelete(null)
+                setDeleteConfirmation("")
+              }}
+              className="mt-2 sm:mt-0"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              disabled={deleteConfirmation !== "delete" || isDeleting}
+              className={`flex items-center gap-2 ${deleteConfirmation === "delete"
+                ? "bg-red-600 hover:bg-red-700 text-white"
+                : "bg-red-100 text-red-400 cursor-not-allowed"
+                }`}
+            >
+              {isDeleting ? (
+                <>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4" />
+                  Delete Attempt
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
