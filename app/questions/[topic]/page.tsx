@@ -898,6 +898,8 @@ export default function QuestionPage() {
         score: isCorrect ? "green" : "red",
         submitted_at: answerData.submitted_at,
         self_assessed: true,
+        teacher_score: null,
+        teacher_feedback: null,
       }
 
       setAnswer(newAnswer)
@@ -951,6 +953,8 @@ export default function QuestionPage() {
         score: isCorrect ? "green" : "red",
         submitted_at: answerData.submitted_at,
         self_assessed: true,
+        teacher_score: null,
+        teacher_feedback: null,
       }
 
       setAnswer(newAnswer)
@@ -1008,6 +1012,8 @@ export default function QuestionPage() {
         score: isCorrect ? "green" : "red",
         submitted_at: answerData.submitted_at,
         self_assessed: true,
+        teacher_score: null,
+        teacher_feedback: null,
       }
 
       setAnswer(newAnswer)
@@ -1063,6 +1069,8 @@ export default function QuestionPage() {
         score: isCorrect ? "green" : "red",
         submitted_at: answerData.submitted_at,
         self_assessed: true,
+        teacher_score: null,
+        teacher_feedback: null,
       }
 
       setAnswer(newAnswer)
