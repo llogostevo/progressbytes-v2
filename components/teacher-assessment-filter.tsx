@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Tooltip,
@@ -30,6 +30,17 @@ const assessmentOptions = [
 
 export function TeacherAssessmentFilter({ selectedAssessment, onAssessmentChange }: TeacherAssessmentFilterProps) {
   const [showAssessment, setShowAssessment] = useState(selectedAssessment !== null)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640)
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   const handleAllAssessmentClick = () => {
     onAssessmentChange(null)
@@ -47,18 +58,20 @@ export function TeacherAssessmentFilter({ selectedAssessment, onAssessmentChange
         >
           All Assessments
         </Button>
-        {!showAssessment && (
-          <Button
-            variant="outline"
-            onClick={() => setShowAssessment(true)}
-            size="sm"
-            className="flex-shrink-0"
-          >
-            Show Assessment Filter
-          </Button>
-        )}
+        <div className="hidden sm:block">
+          {!showAssessment && (
+            <Button
+              variant="outline"
+              onClick={() => setShowAssessment(true)}
+              size="sm"
+              className="flex-shrink-0"
+            >
+              Show Assessment Filter
+            </Button>
+          )}
+        </div>
       </div>
-      {showAssessment && (
+      {(showAssessment || isMobile) && (
         <div className="grid grid-cols-1 w-full gap-3">
           {assessmentOptions.map((option) => {
             const IconComponent = option.icon

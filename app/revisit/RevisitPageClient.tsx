@@ -697,21 +697,21 @@ export default function RevisitPageClient() {
           {userCanAccessFilters && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
               <Card>
-                <CardHeader>
+                <CardHeader className="hidden sm:block">
                   <CardTitle>Filter by Topic</CardTitle>
                   <CardDescription>Select specific topics to review</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-4 sm:pt-6">
                   <TopicFilter selectedTopics={selectedTopics} onTopicChange={handleTopicChange} topics={topics} />
                 </CardContent>
               </Card>
 
               <Card>
-                <CardHeader>
+                <CardHeader className="hidden sm:block">
                   <CardTitle>Filter by Type</CardTitle>
                   <CardDescription>Choose question types to review</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-4 sm:pt-6">
                   <QuestionTypeFilter
                     selectedType={typeParam}
                     onTypeChange={(type: string | null) => {
@@ -729,11 +729,11 @@ export default function RevisitPageClient() {
 
               {/* Difficulty */}
               <Card>
-                <CardHeader>
+                <CardHeader className="hidden sm:block">
                   <CardTitle>Filter by Difficulty</CardTitle>
                   <CardDescription>Choose question difficulty to review</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-4 sm:pt-6">
                   <QuestionDifficultyFilter
                     selectedDifficulty={difficultyParam}
                     availableDifficulty={availableDifficulty}
@@ -752,11 +752,11 @@ export default function RevisitPageClient() {
 
               {/* Teacher Assessment */}
               <Card>
-                <CardHeader>
+                <CardHeader className="hidden sm:block">
                   <CardTitle>Filter by Teacher Assessment</CardTitle>
                   <CardDescription>Filter by teacher marking and feedback</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-4 sm:pt-6">
                   <TeacherAssessmentFilter
                     selectedAssessment={teacherAssessmentParam}
                     onAssessmentChange={(assessment: string | null) => {

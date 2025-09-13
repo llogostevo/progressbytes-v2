@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Tooltip,
@@ -33,6 +33,17 @@ const questionDifficulty = [
 
 export function QuestionDifficultyFilter({ selectedDifficulty, onDifficultyChange, availableDifficulty }: QuestionDifficultyFilterProps) {
   const [showDifficulty, setShowDifficulty] = useState(selectedDifficulty !== null)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640)
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
   
   const filteredQuestionDifficulty = availableDifficulty 
     ? questionDifficulty.filter(difficulty => availableDifficulty.includes(difficulty.value))
@@ -54,18 +65,20 @@ export function QuestionDifficultyFilter({ selectedDifficulty, onDifficultyChang
         >
           All Difficulties
         </Button>
-        {!showDifficulty && (
-          <Button
-            variant="outline"
-            onClick={() => setShowDifficulty(true)}
-            size="sm"
-            className="flex-shrink-0"
-          >
-            Show Difficulty
-          </Button>
-        )}
+        <div className="hidden sm:block">
+          {!showDifficulty && (
+            <Button
+              variant="outline"
+              onClick={() => setShowDifficulty(true)}
+              size="sm"
+              className="flex-shrink-0"
+            >
+              Show Difficulty
+            </Button>
+          )}
+        </div>
       </div>
-      {showDifficulty && (
+      {(showDifficulty || isMobile) && (
         <div className="grid grid-cols-3 w-full gap-3">
           {filteredQuestionDifficulty.map((difficulty) => (
             <TooltipProvider key={difficulty.value}>

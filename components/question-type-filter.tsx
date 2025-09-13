@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Tooltip,
@@ -63,6 +63,17 @@ const questionTypes = [
 
 export function QuestionTypeFilter({ selectedType, onTypeChange, availableTypes }: QuestionTypeFilterProps) {
   const [showTypes, setShowTypes] = useState(selectedType !== null)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640)
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
   
   const filteredQuestionTypes = availableTypes 
     ? questionTypes.filter(type => availableTypes.includes(type.value))
@@ -84,18 +95,20 @@ export function QuestionTypeFilter({ selectedType, onTypeChange, availableTypes 
         >
           All Types
         </Button>
-        {!showTypes && (
-          <Button
-            variant="outline"
-            onClick={() => setShowTypes(true)}
-            size="sm"
-            className="flex-shrink-0"
-          >
-            Show Types
-          </Button>
-        )}
+        <div className="hidden sm:block">
+          {!showTypes && (
+            <Button
+              variant="outline"
+              onClick={() => setShowTypes(true)}
+              size="sm"
+              className="flex-shrink-0"
+            >
+              Show Types
+            </Button>
+          )}
+        </div>
       </div>
-      {showTypes && (
+      {(showTypes || isMobile) && (
         <div className="grid grid-cols-3 w-full gap-3">
           {filteredQuestionTypes.map((type) => (
             <TooltipProvider key={type.value}>
