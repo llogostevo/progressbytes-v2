@@ -675,6 +675,7 @@ function AssessPageContent() {
         .from("student_answers")
         .update({
           teacher_score: score,
+          student_score: score, // Update student_score to match teacher's assessment
           teacher_id: user.id,
           teacher_feedback: teacherFeedback.trim() || null,
         })
