@@ -45,7 +45,7 @@ interface CurriculumSpec {
 interface QuestionType {
   id: string
   name: string
-  icon: any
+  icon: React.ComponentType<{ className?: string }>
   color: string
   enabled: boolean
   quantity: number
@@ -57,7 +57,7 @@ interface GeneratedQuestion {
   question_text: string
   difficulty: string
   explanation: string
-  model_answer: any
+  model_answer: string | string[] | boolean
   options?: string[]
   correctAnswerIndex?: number
   pairs?: { statement: string; match: string }[]

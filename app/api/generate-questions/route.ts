@@ -217,7 +217,7 @@ function getQuestionTypeInstructions(typeId: string): string {
 }
 
 function validateAndTransformQuestions(
-  parsedQuestions: any[],
+  parsedQuestions: unknown[],
   questionTypes: QuestionTypeRequest[]
 ): GeneratedQuestion[] {
   if (!Array.isArray(parsedQuestions)) {
@@ -228,40 +228,48 @@ function validateAndTransformQuestions(
   const typeCounts: { [key: string]: number } = {}
 
   for (const question of parsedQuestions) {
+    // Type guard to ensure question is an object
+    if (typeof question !== 'object' || question === null) {
+      console.warn('Skipping invalid question: not an object', question)
+      continue
+    }
+
+    const questionObj = question as Record<string, unknown>
+    
     // Validate required fields
-    if (!question.id || !question.type || !question.question_text || !question.model_answer) {
+    if (!questionObj.id || !questionObj.type || !questionObj.question_text || !questionObj.model_answer) {
       console.warn('Skipping invalid question:', question)
       continue
     }
 
     // Count questions by type
-    typeCounts[question.type] = (typeCounts[question.type] || 0) + 1
+    typeCounts[String(questionObj.type)] = (typeCounts[String(questionObj.type)] || 0) + 1
 
     // Ensure arrays are properly initialized and handle object model answers
     const transformedQuestion: GeneratedQuestion = {
-      id: question.id,
-      type: question.type,
-      question_text: question.question_text,
-      difficulty: question.difficulty || 'medium',
-      explanation: question.explanation || '',
+      id: String(questionObj.id),
+      type: String(questionObj.type),
+      question_text: String(questionObj.question_text),
+      difficulty: String(questionObj.difficulty || 'medium'),
+      explanation: String(questionObj.explanation || ''),
       // Handle different types of model_answer
       model_answer: (() => {
-        if (typeof question.model_answer === 'object' && question.model_answer !== null) {
+        if (typeof questionObj.model_answer === 'object' && questionObj.model_answer !== null) {
           // If it's an object, convert to string for display
-          return JSON.stringify(question.model_answer)
+          return JSON.stringify(questionObj.model_answer)
         }
-        return question.model_answer
+        return questionObj.model_answer as string | string[] | boolean
       })(),
       // Ensure options is always an array if it exists
-      options: Array.isArray(question.options) ? question.options : (question.options ? [question.options] : []),
+      options: Array.isArray(questionObj.options) ? questionObj.options as string[] : (questionObj.options ? [String(questionObj.options)] : []),
       // Ensure pairs is always an array if it exists
-      pairs: Array.isArray(question.pairs) ? question.pairs : (question.pairs ? [question.pairs] : []),
+      pairs: Array.isArray(questionObj.pairs) ? questionObj.pairs as { statement: string; match: string }[] : (questionObj.pairs ? [questionObj.pairs as { statement: string; match: string }] : []),
       // Copy other properties
-      correctAnswerIndex: question.correctAnswerIndex,
-      model_answer_code: question.model_answer_code,
-      language: question.language,
-      rubric: question.rubric,
-      order_important: question.order_important
+      correctAnswerIndex: typeof questionObj.correctAnswerIndex === 'number' ? questionObj.correctAnswerIndex : undefined,
+      model_answer_code: questionObj.model_answer_code ? String(questionObj.model_answer_code) : undefined,
+      language: questionObj.language ? String(questionObj.language) : undefined,
+      rubric: questionObj.rubric ? String(questionObj.rubric) : undefined,
+      order_important: typeof questionObj.order_important === 'boolean' ? questionObj.order_important : undefined
     }
 
     validQuestions.push(transformedQuestion)
