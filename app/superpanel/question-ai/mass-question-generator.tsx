@@ -267,6 +267,7 @@ export default function MassQuestionGenerator() {
       return
     }
 
+    setIsGenerating(true)
     try {
       const supabase = createClient()
       let successCount = 0
@@ -371,6 +372,8 @@ export default function MassQuestionGenerator() {
     } catch (error) {
       console.error("Error creating questions:", error)
       toast.error("Failed to create questions")
+    } finally {
+      setIsGenerating(false)
     }
   }
 
@@ -598,11 +601,20 @@ export default function MassQuestionGenerator() {
 
                     <Button
                       onClick={generateQuestions}
-                      disabled={enabledTypes.length === 0 || !curriculumSpec.topic}
+                      disabled={enabledTypes.length === 0 || !curriculumSpec.topic || isGenerating}
                       className="w-full"
                     >
-                      <Wand2 className="w-4 h-4 mr-2" />
-                      Generate Questions
+                      {isGenerating ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Wand2 className="w-4 h-4 mr-2" />
+                          Generate Questions
+                        </>
+                      )}
                     </Button>
                   </div>
                 </CardContent>
@@ -652,9 +664,18 @@ export default function MassQuestionGenerator() {
                       <Settings className="w-4 h-4 mr-2" />
                       Modify Settings
                     </Button>
-                    <Button onClick={createAllQuestions} disabled={generatedQuestions.length === 0}>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Create All Questions
+                    <Button onClick={createAllQuestions} disabled={generatedQuestions.length === 0 || isGenerating}>
+                      {isGenerating ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Creating...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="w-4 h-4 mr-2" />
+                          Create All Questions
+                        </>
+                      )}
                     </Button>
                   </div>
                 </CardTitle>
