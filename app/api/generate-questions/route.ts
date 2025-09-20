@@ -277,13 +277,13 @@ function validateAndTransformQuestions(
       options: Array.isArray(questionObj.options) ? questionObj.options as string[] : (questionObj.options ? [String(questionObj.options)] : []),
       // Ensure pairs is always an array if it exists and properly transform pair values
       pairs: Array.isArray(questionObj.pairs) 
-        ? questionObj.pairs.map((pair: any) => ({
+        ? questionObj.pairs.map((pair: Record<string, unknown>) => ({
             statement: String(pair.statement || ""),
             match: String(pair.match || "")
           }))
         : (questionObj.pairs ? [{
-            statement: String((questionObj.pairs as any).statement || ""),
-            match: String((questionObj.pairs as any).match || "")
+            statement: String((questionObj.pairs as Record<string, unknown>).statement || ""),
+            match: String((questionObj.pairs as Record<string, unknown>).match || "")
           }] : []),
       // Copy other properties
       correctAnswerIndex: typeof questionObj.correctAnswerIndex === 'number' ? questionObj.correctAnswerIndex : undefined,
