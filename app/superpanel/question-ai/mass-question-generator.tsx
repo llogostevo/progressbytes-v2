@@ -445,12 +445,19 @@ export default function MassQuestionGenerator() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="examBoard">Exam Board</Label>
-                      <Input
-                        id="examBoard"
-                        placeholder="e.g., AQA, Edexcel, OCR"
+                      <Select
                         value={curriculumSpec.examBoard}
-                        onChange={(e) => handleSpecChange("examBoard", e.target.value)}
-                      />
+                        onValueChange={(value) => handleSpecChange("examBoard", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select exam board" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="OCR">OCR</SelectItem>
+                          <SelectItem value="Edexcel">Edexcel</SelectItem>
+                          <SelectItem value="WJEC">WJEC</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="specHeading">Specification Heading</Label>
@@ -740,6 +747,19 @@ export default function MassQuestionGenerator() {
                           </div>
                         )}
 
+                        {question.pairs && Array.isArray(question.pairs) && question.pairs.length > 0 && (
+                          <div>
+                            <Label className="text-sm font-medium">Matching Pairs:</Label>
+                            <ul className="text-sm mt-1 space-y-1">
+                              {question.pairs.map((pair, idx) => (
+                                <li key={idx} className="p-2 rounded bg-muted">
+                                  <strong>{String(pair.statement || "")}</strong> → {String(pair.match || "")}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
                         <div>
                           <Label className="text-sm font-medium">Model Answer:</Label>
                           <p className="text-sm mt-1 p-3 bg-muted rounded-md">
@@ -943,37 +963,62 @@ export default function MassQuestionGenerator() {
                       </div>
                       <div className="space-y-3">
                         <Label>Correct Answers</Label>
-                        {Array.isArray(editingQuestion.model_answer) && editingQuestion.model_answer.length > 0 &&
-                          editingQuestion.model_answer.map((answer, index) => (
-                            <div key={index} className="flex gap-2">
-                              <Input
-                                value={String(answer || "")}
-                                onChange={(e) => {
-                                  const newAnswers = [...(editingQuestion.model_answer as string[])]
-                                  newAnswers[index] = e.target.value
-                                  setEditingQuestion({ ...editingQuestion, model_answer: newAnswers })
-                                }}
-                                placeholder={`Answer ${index + 1}`}
-                              />
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                onClick={() => {
-                                  const newAnswers = [...(editingQuestion.model_answer as string[])]
-                                  newAnswers.splice(index, 1)
-                                  setEditingQuestion({ ...editingQuestion, model_answer: newAnswers })
-                                }}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          ))}
+                        {/* Initialize model_answer as array if it doesn't exist or isn't an array */}
+                        {(() => {
+                          if (!Array.isArray(editingQuestion.model_answer)) {
+                            setEditingQuestion({
+                              ...editingQuestion,
+                              model_answer: [String(editingQuestion.model_answer || "")]
+                            })
+                            return null
+                          }
+                          return null
+                        })()}
+                        
+                        {/* Always show at least one answer input, or show existing answers */}
+                        {((Array.isArray(editingQuestion.model_answer) && editingQuestion.model_answer.length > 0) 
+                          ? editingQuestion.model_answer 
+                          : [""]
+                        ).map((answer, index) => (
+                          <div key={index} className="flex gap-2">
+                            <Input
+                              value={String(answer || "")}
+                              onChange={(e) => {
+                                const currentAnswers = Array.isArray(editingQuestion.model_answer) 
+                                  ? [...editingQuestion.model_answer] 
+                                  : [String(editingQuestion.model_answer || "")]
+                                currentAnswers[index] = e.target.value
+                                setEditingQuestion({ ...editingQuestion, model_answer: currentAnswers })
+                              }}
+                              placeholder={`Answer ${index + 1}`}
+                            />
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => {
+                                const currentAnswers = Array.isArray(editingQuestion.model_answer) 
+                                  ? [...editingQuestion.model_answer] 
+                                  : [String(editingQuestion.model_answer || "")]
+                                if (currentAnswers.length > 1) {
+                                  currentAnswers.splice(index, 1)
+                                  setEditingQuestion({ ...editingQuestion, model_answer: currentAnswers })
+                                }
+                              }}
+                              disabled={!Array.isArray(editingQuestion.model_answer) || editingQuestion.model_answer.length <= 1}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))}
                         <Button
                           variant="outline"
                           onClick={() => {
+                            const currentAnswers = Array.isArray(editingQuestion.model_answer) 
+                              ? [...editingQuestion.model_answer] 
+                              : [String(editingQuestion.model_answer || "")]
                             setEditingQuestion({
                               ...editingQuestion,
-                              model_answer: [...((editingQuestion.model_answer as string[]) || []), ""],
+                              model_answer: [...currentAnswers, ""],
                             })
                           }}
                         >
@@ -997,14 +1042,32 @@ export default function MassQuestionGenerator() {
                   {editingQuestion.type === "matching" && (
                     <div className="space-y-3">
                       <Label>Matching Pairs</Label>
-                      {editingQuestion.pairs && Array.isArray(editingQuestion.pairs) && editingQuestion.pairs.length > 0 && editingQuestion.pairs.map((pair, index) => (
+                      {/* Initialize pairs if they don't exist */}
+                      {(() => {
+                        if (!editingQuestion.pairs || !Array.isArray(editingQuestion.pairs)) {
+                          setEditingQuestion({
+                            ...editingQuestion,
+                            pairs: [{ statement: "", match: "" }]
+                          })
+                          return null
+                        }
+                        return null
+                      })()}
+                      
+                      {/* Always show at least one pair input, or show existing pairs */}
+                      {((editingQuestion.pairs && Array.isArray(editingQuestion.pairs) && editingQuestion.pairs.length > 0) 
+                        ? editingQuestion.pairs 
+                        : [{ statement: "", match: "" }]
+                      ).map((pair, index) => (
                         <div key={index} className="grid grid-cols-2 gap-2">
                           <Input
                             value={String(pair.statement || "")}
                             onChange={(e) => {
-                              const newPairs = [...(editingQuestion.pairs || [])]
-                              newPairs[index] = { ...pair, statement: e.target.value }
-                              setEditingQuestion({ ...editingQuestion, pairs: newPairs })
+                              const currentPairs = editingQuestion.pairs && Array.isArray(editingQuestion.pairs) 
+                                ? [...editingQuestion.pairs] 
+                                : [{ statement: "", match: "" }]
+                              currentPairs[index] = { ...pair, statement: e.target.value }
+                              setEditingQuestion({ ...editingQuestion, pairs: currentPairs })
                             }}
                             placeholder="Statement"
                           />
@@ -1012,9 +1075,11 @@ export default function MassQuestionGenerator() {
                             <Input
                               value={String(pair.match || "")}
                               onChange={(e) => {
-                                const newPairs = [...(editingQuestion.pairs || [])]
-                                newPairs[index] = { ...pair, match: e.target.value }
-                                setEditingQuestion({ ...editingQuestion, pairs: newPairs })
+                                const currentPairs = editingQuestion.pairs && Array.isArray(editingQuestion.pairs) 
+                                  ? [...editingQuestion.pairs] 
+                                  : [{ statement: "", match: "" }]
+                                currentPairs[index] = { ...pair, match: e.target.value }
+                                setEditingQuestion({ ...editingQuestion, pairs: currentPairs })
                               }}
                               placeholder="Match"
                             />
@@ -1022,10 +1087,15 @@ export default function MassQuestionGenerator() {
                               variant="outline"
                               size="icon"
                               onClick={() => {
-                                const newPairs = [...(editingQuestion.pairs || [])]
-                                newPairs.splice(index, 1)
-                                setEditingQuestion({ ...editingQuestion, pairs: newPairs })
+                                const currentPairs = editingQuestion.pairs && Array.isArray(editingQuestion.pairs) 
+                                  ? [...editingQuestion.pairs] 
+                                  : [{ statement: "", match: "" }]
+                                if (currentPairs.length > 1) {
+                                  currentPairs.splice(index, 1)
+                                  setEditingQuestion({ ...editingQuestion, pairs: currentPairs })
+                                }
                               }}
+                              disabled={!editingQuestion.pairs || !Array.isArray(editingQuestion.pairs) || editingQuestion.pairs.length <= 1}
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -1035,9 +1105,12 @@ export default function MassQuestionGenerator() {
                       <Button
                         variant="outline"
                         onClick={() => {
+                          const currentPairs = editingQuestion.pairs && Array.isArray(editingQuestion.pairs) 
+                            ? [...editingQuestion.pairs] 
+                            : [{ statement: "", match: "" }]
                           setEditingQuestion({
                             ...editingQuestion,
-                            pairs: [...(editingQuestion.pairs || []), { statement: "", match: "" }],
+                            pairs: [...currentPairs, { statement: "", match: "" }],
                           })
                         }}
                       >

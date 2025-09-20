@@ -194,6 +194,19 @@ Please respond with a JSON array of questions in the following format:
     "model_answer": ["Paris"],
     "options": ["Paris", "London", "Berlin", "Madrid"],
     "order_important": false
+  },
+  {
+    "id": "unique-id-3",
+    "type": "matching",
+    "question_text": "Match the terms with their definitions.",
+    "difficulty": "medium",
+    "explanation": "Each term corresponds to its correct definition.",
+    "model_answer": "Sample rate - Number of samples per second, Duration - Length of sound file, Bit depth - Number of bits per sample",
+    "pairs": [
+      {"statement": "Sample rate", "match": "Number of samples per second"},
+      {"statement": "Duration", "match": "Length of sound file"},
+      {"statement": "Bit depth", "match": "Number of bits per sample"}
+    ]
   }
 ]
 
@@ -206,7 +219,7 @@ function getQuestionTypeInstructions(typeId: string): string {
   const instructions = {
     'multiple-choice': 'Create questions with 4 options (A, B, C, D) where only one is correct. Include plausible distractors.',
     'fill-in-the-blank': 'Create questions with blanks to fill. Provide multiple acceptable answers where appropriate.',
-    'matching': 'Create 4-6 pairs of related items to match. Ensure clear relationships between items.',
+    'matching': 'Create 4-6 pairs of related items to match. Use format: "pairs": [{"statement": "Term A", "match": "Definition A"}, {"statement": "Term B", "match": "Definition B"}]. Ensure clear relationships between items.',
     'code': 'Create programming questions with working code examples. Specify the programming language.',
     'true-false': 'Create clear true/false statements. Avoid ambiguous wording.',
     'short-answer': 'Create questions requiring brief written responses (1-3 sentences).',
@@ -262,8 +275,16 @@ function validateAndTransformQuestions(
       })(),
       // Ensure options is always an array if it exists
       options: Array.isArray(questionObj.options) ? questionObj.options as string[] : (questionObj.options ? [String(questionObj.options)] : []),
-      // Ensure pairs is always an array if it exists
-      pairs: Array.isArray(questionObj.pairs) ? questionObj.pairs as { statement: string; match: string }[] : (questionObj.pairs ? [questionObj.pairs as { statement: string; match: string }] : []),
+      // Ensure pairs is always an array if it exists and properly transform pair values
+      pairs: Array.isArray(questionObj.pairs) 
+        ? questionObj.pairs.map((pair: any) => ({
+            statement: String(pair.statement || ""),
+            match: String(pair.match || "")
+          }))
+        : (questionObj.pairs ? [{
+            statement: String((questionObj.pairs as any).statement || ""),
+            match: String((questionObj.pairs as any).match || "")
+          }] : []),
       // Copy other properties
       correctAnswerIndex: typeof questionObj.correctAnswerIndex === 'number' ? questionObj.correctAnswerIndex : undefined,
       model_answer_code: questionObj.model_answer_code ? String(questionObj.model_answer_code) : undefined,
