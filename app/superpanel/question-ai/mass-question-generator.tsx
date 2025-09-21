@@ -142,7 +142,7 @@ export default function MassQuestionGenerator() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [editingQuestion, setEditingQuestion] = useState<GeneratedQuestion | null>(null)
   const [currentStep, setCurrentStep] = useState<"input" | "generate" | "review">("input")
-  const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({})
+  const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({})
 
   const handleSpecChange = (field: keyof CurriculumSpec, value: string) => {
     setCurriculumSpec((prev) => ({ ...prev, [field]: value }))
@@ -175,25 +175,25 @@ export default function MassQuestionGenerator() {
   }
 
   const validateForm = () => {
-    const errors: {[key: string]: string} = {}
-    
+    const errors: { [key: string]: string } = {}
+
     if (!curriculumSpec.topic.trim()) {
       errors.topic = 'Topic is required'
     }
-    
+
     if (!curriculumSpec.subtopicHeading.trim()) {
       errors.subtopicHeading = 'Subtopic heading is required'
     }
-    
+
     if (!curriculumSpec.specificationContent.trim()) {
       errors.specificationContent = 'Specification content is required'
     }
-    
+
     const enabledTypes = questionTypeSettings.filter((type) => type.enabled)
     if (enabledTypes.length === 0) {
       errors.questionTypes = 'At least one question type must be selected'
     }
-    
+
     setValidationErrors(errors)
     return Object.keys(errors).length === 0
   }
@@ -209,7 +209,7 @@ export default function MassQuestionGenerator() {
 
     try {
       const enabledTypes = questionTypeSettings.filter((type) => type.enabled)
-      
+
       const response = await fetch('/api/generate-questions', {
         method: 'POST',
         headers: {
@@ -226,16 +226,39 @@ export default function MassQuestionGenerator() {
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to generate questions')
+        let errorMessage = 'Failed to generate questions'
+
+        try {
+          // Try to parse as JSON first
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorMessage
+        } catch {
+          // If JSON parsing fails, try to get text content
+          try {
+            const errorText = await response.text()
+            errorMessage = errorText || errorMessage
+          } catch {
+            // If both fail, use a generic message based on status
+            if (response.status === 504) {
+              errorMessage = 'Request timed out. The AI service may be busy. Please try again.'
+            } else if (response.status >= 500) {
+              errorMessage = 'Server error occurred. Please try again later.'
+            } else if (response.status >= 400) {
+              errorMessage = 'Invalid request. Please check your input and try again.'
+            }
+          }
+        }
+
+        throw new Error(errorMessage)
       }
 
+
       const data = await response.json()
-      
+
       if (!data.questions || data.questions.length === 0) {
         throw new Error('No questions were generated. Please try again with different parameters.')
       }
-      
+
       setGeneratedQuestions(data.questions)
       setCurrentStep("review")
       toast.success(`Successfully generated ${data.questions.length} questions!`)
@@ -406,20 +429,18 @@ export default function MassQuestionGenerator() {
             ].map(({ step, label, icon: Icon }, index) => (
               <div key={step} className="flex items-center">
                 <div
-                  className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
-                    currentStep === step
+                  className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${currentStep === step
                       ? "bg-primary border-primary text-primary-foreground"
                       : index < ["input", "generate", "review"].indexOf(currentStep)
                         ? "bg-primary border-primary text-primary-foreground"
                         : "bg-card border-border text-muted-foreground"
-                  }`}
+                    }`}
                 >
                   <Icon className="w-5 h-5" />
                 </div>
                 <span
-                  className={`ml-2 text-sm font-medium ${
-                    currentStep === step ? "text-primary" : "text-muted-foreground"
-                  }`}
+                  className={`ml-2 text-sm font-medium ${currentStep === step ? "text-primary" : "text-muted-foreground"
+                    }`}
                 >
                   {label}
                 </span>
@@ -601,7 +622,7 @@ export default function MassQuestionGenerator() {
                       <span className="text-muted-foreground">Total Questions:</span>
                       <span className="font-medium">{totalQuestions}</span>
                     </div>
-                    
+
                     {validationErrors.questionTypes && (
                       <p className="text-red-500 text-sm">{validationErrors.questionTypes}</p>
                     )}
@@ -735,9 +756,8 @@ export default function MassQuestionGenerator() {
                               {question.options.map((option, idx) => (
                                 <li
                                   key={idx}
-                                  className={`p-2 rounded ${
-                                    idx === question.correctAnswerIndex ? "bg-green-50 text-green-700" : "bg-muted"
-                                  }`}
+                                  className={`p-2 rounded ${idx === question.correctAnswerIndex ? "bg-green-50 text-green-700" : "bg-muted"
+                                    }`}
                                 >
                                   {String.fromCharCode(65 + idx)}. {option}
                                   {idx === question.correctAnswerIndex && " ✓"}
@@ -974,18 +994,18 @@ export default function MassQuestionGenerator() {
                           }
                           return null
                         })()}
-                        
+
                         {/* Always show at least one answer input, or show existing answers */}
-                        {((Array.isArray(editingQuestion.model_answer) && editingQuestion.model_answer.length > 0) 
-                          ? editingQuestion.model_answer 
+                        {((Array.isArray(editingQuestion.model_answer) && editingQuestion.model_answer.length > 0)
+                          ? editingQuestion.model_answer
                           : [""]
                         ).map((answer, index) => (
                           <div key={index} className="flex gap-2">
                             <Input
                               value={String(answer || "")}
                               onChange={(e) => {
-                                const currentAnswers = Array.isArray(editingQuestion.model_answer) 
-                                  ? [...editingQuestion.model_answer] 
+                                const currentAnswers = Array.isArray(editingQuestion.model_answer)
+                                  ? [...editingQuestion.model_answer]
                                   : [String(editingQuestion.model_answer || "")]
                                 currentAnswers[index] = e.target.value
                                 setEditingQuestion({ ...editingQuestion, model_answer: currentAnswers })
@@ -996,8 +1016,8 @@ export default function MassQuestionGenerator() {
                               variant="outline"
                               size="icon"
                               onClick={() => {
-                                const currentAnswers = Array.isArray(editingQuestion.model_answer) 
-                                  ? [...editingQuestion.model_answer] 
+                                const currentAnswers = Array.isArray(editingQuestion.model_answer)
+                                  ? [...editingQuestion.model_answer]
                                   : [String(editingQuestion.model_answer || "")]
                                 if (currentAnswers.length > 1) {
                                   currentAnswers.splice(index, 1)
@@ -1013,8 +1033,8 @@ export default function MassQuestionGenerator() {
                         <Button
                           variant="outline"
                           onClick={() => {
-                            const currentAnswers = Array.isArray(editingQuestion.model_answer) 
-                              ? [...editingQuestion.model_answer] 
+                            const currentAnswers = Array.isArray(editingQuestion.model_answer)
+                              ? [...editingQuestion.model_answer]
                               : [String(editingQuestion.model_answer || "")]
                             setEditingQuestion({
                               ...editingQuestion,
@@ -1053,18 +1073,18 @@ export default function MassQuestionGenerator() {
                         }
                         return null
                       })()}
-                      
+
                       {/* Always show at least one pair input, or show existing pairs */}
-                      {((editingQuestion.pairs && Array.isArray(editingQuestion.pairs) && editingQuestion.pairs.length > 0) 
-                        ? editingQuestion.pairs 
+                      {((editingQuestion.pairs && Array.isArray(editingQuestion.pairs) && editingQuestion.pairs.length > 0)
+                        ? editingQuestion.pairs
                         : [{ statement: "", match: "" }]
                       ).map((pair, index) => (
                         <div key={index} className="grid grid-cols-2 gap-2">
                           <Input
                             value={String(pair.statement || "")}
                             onChange={(e) => {
-                              const currentPairs = editingQuestion.pairs && Array.isArray(editingQuestion.pairs) 
-                                ? [...editingQuestion.pairs] 
+                              const currentPairs = editingQuestion.pairs && Array.isArray(editingQuestion.pairs)
+                                ? [...editingQuestion.pairs]
                                 : [{ statement: "", match: "" }]
                               currentPairs[index] = { ...pair, statement: e.target.value }
                               setEditingQuestion({ ...editingQuestion, pairs: currentPairs })
@@ -1075,8 +1095,8 @@ export default function MassQuestionGenerator() {
                             <Input
                               value={String(pair.match || "")}
                               onChange={(e) => {
-                                const currentPairs = editingQuestion.pairs && Array.isArray(editingQuestion.pairs) 
-                                  ? [...editingQuestion.pairs] 
+                                const currentPairs = editingQuestion.pairs && Array.isArray(editingQuestion.pairs)
+                                  ? [...editingQuestion.pairs]
                                   : [{ statement: "", match: "" }]
                                 currentPairs[index] = { ...pair, match: e.target.value }
                                 setEditingQuestion({ ...editingQuestion, pairs: currentPairs })
@@ -1087,8 +1107,8 @@ export default function MassQuestionGenerator() {
                               variant="outline"
                               size="icon"
                               onClick={() => {
-                                const currentPairs = editingQuestion.pairs && Array.isArray(editingQuestion.pairs) 
-                                  ? [...editingQuestion.pairs] 
+                                const currentPairs = editingQuestion.pairs && Array.isArray(editingQuestion.pairs)
+                                  ? [...editingQuestion.pairs]
                                   : [{ statement: "", match: "" }]
                                 if (currentPairs.length > 1) {
                                   currentPairs.splice(index, 1)
@@ -1105,8 +1125,8 @@ export default function MassQuestionGenerator() {
                       <Button
                         variant="outline"
                         onClick={() => {
-                          const currentPairs = editingQuestion.pairs && Array.isArray(editingQuestion.pairs) 
-                            ? [...editingQuestion.pairs] 
+                          const currentPairs = editingQuestion.pairs && Array.isArray(editingQuestion.pairs)
+                            ? [...editingQuestion.pairs]
                             : [{ statement: "", match: "" }]
                           setEditingQuestion({
                             ...editingQuestion,
