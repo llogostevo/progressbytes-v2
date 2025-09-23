@@ -32,6 +32,7 @@ interface AccessLimits {
   maxQuestionsPerDay: number;
   maxQuestionsPerTopic: number;
   canAccessAnalytics: boolean;
+  sponsoredStudents?: number;
 }
 
 // Centralised access limits 
@@ -84,7 +85,7 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     canSkipQuestions: true,
     canAccessAnalytics: false,
     maxClasses: 0,
-    maxStudentsPerClass: 0
+    maxStudentsPerClass: 0,
   },
   teacherBasic: {
     canCreateClass: true,
@@ -96,7 +97,8 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     canSkipQuestions: true,
     canAccessAnalytics: true,
     maxClasses: 1,
-    maxStudentsPerClass: 2
+    maxStudentsPerClass: 2,
+    sponsoredStudents: 0 // can provide free access to students
   },
   teacherPlan: {
     canCreateClass: true,
@@ -108,7 +110,8 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     canSkipQuestions: true,
     canAccessAnalytics: true,
     maxClasses: 1,
-    maxStudentsPerClass: 30
+    maxStudentsPerClass: 30,
+    sponsoredStudents: 30 // can provide free access to students
   },
   teacherPremium: {
     canCreateClass: true,
@@ -120,7 +123,8 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     canSkipQuestions: true,
     canAccessAnalytics: true,
     maxClasses: Infinity,
-    maxStudentsPerClass: 30
+    maxStudentsPerClass: 30,
+    sponsoredStudents: 100 // can provide free access to students
   },
   admin: {
     canCreateClass: true,
