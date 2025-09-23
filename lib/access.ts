@@ -9,7 +9,9 @@
   | 'teacherPlan'       // teacher with paid access (1 class, 10 students)
   | 'teacherPremium'    // paid teacher, multiple classes
   | 'admin'            // internal use only (site owner)
-  | 'studentSponsoredRevision'; // student, sponsored premium
+  | 'studentSponsoredRevision' // student, sponsored premium
+  | 'teacherPlanSponsored' 
+  | 'teacherPremiumSponsored';
 
 
 // User object passed into access functions
@@ -49,7 +51,8 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     canSkipQuestions: false,
     canAccessAnalytics: false,
     maxClasses: 0,
-    maxStudentsPerClass: 0
+    maxStudentsPerClass: 0,
+    showProgressBoost: false
   },
   basic: {
     canCreateClass: false,
@@ -61,7 +64,8 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     canSkipQuestions: false,
     canAccessAnalytics: false,
     maxClasses: 0,
-    maxStudentsPerClass: 0
+    maxStudentsPerClass: 0, 
+    showProgressBoost: false
   },
   revision: {
     canCreateClass: false,
@@ -73,10 +77,23 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     canSkipQuestions: true,
     canAccessAnalytics: false,
     maxClasses: 0,
-    maxStudentsPerClass: 0
+    maxStudentsPerClass: 0,
+    showProgressBoost: true
   },
-  studentSponsoredRevision:{} as AccessLimits, // free sponsored revision plan, set by teachers to be paid for by the school
-  revisionAI: {
+  studentSponsoredRevision:{ // free student sponsored revision plan, set by teachers as part of their paid access plan
+    canCreateClass: false,
+    canViewAnswers: true,
+    canUseAI: false,
+    maxQuestionsPerDay: Infinity,
+    maxQuestionsPerTopic: Infinity,
+    canAccessFilters: true,
+    canSkipQuestions: true,
+    canAccessAnalytics: false,
+    maxClasses: 0,
+    maxStudentsPerClass: 0,
+    showProgressBoost: true
+  } , 
+  revisionAI: { // student ai premium plan with ai feedback
     canCreateClass: false,
     canViewAnswers: true,
     canUseAI: true,
@@ -87,8 +104,9 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     canAccessAnalytics: false,
     maxClasses: 0,
     maxStudentsPerClass: 0,
+    showProgressBoost: true
   },
-  teacherBasic: {
+  teacherBasic: { // teacher basic plan with free access (1 class, 5-10 students)
     canCreateClass: true,
     canViewAnswers: true,
     canUseAI: false,
@@ -99,9 +117,10 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     canAccessAnalytics: true,
     maxClasses: 1,
     maxStudentsPerClass: 30,
-    sponsoredStudents: 0 // can provide free access to students
+    sponsoredStudents: 0, // can provide free access to students
+    showProgressBoost: false
   },
-  teacherPlan: {
+  teacherPlan: { // teacher plan with paid access (1 class, 10 students)
     canCreateClass: true,
     canViewAnswers: true,
     canUseAI: false,
@@ -112,7 +131,22 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     canAccessAnalytics: true,
     maxClasses: 1,
     maxStudentsPerClass: 30,
-    sponsoredStudents: 10 // can provide free access to students
+    sponsoredStudents: 10, // can provide free access to students
+    showProgressBoost: false
+  },
+  teacherPlanSponsored: { // free access plan assigned by admin
+    canCreateClass: true,
+    canViewAnswers: true,
+    canUseAI: false,
+    maxQuestionsPerDay: Infinity,
+    maxQuestionsPerTopic: Infinity,
+    canAccessFilters: true,
+    canSkipQuestions: true,
+    canAccessAnalytics: true,
+    maxClasses: 1,
+    maxStudentsPerClass: 30,
+    sponsoredStudents: 10, // can provide free access to students
+    showProgressBoost: false
   },
   teacherPremium: {
     canCreateClass: true,
@@ -125,7 +159,22 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     canAccessAnalytics: true,
     maxClasses: Infinity,
     maxStudentsPerClass: 30,
-    sponsoredStudents: 30 // can provide free access to students
+    sponsoredStudents: 30, // can provide free access to students
+    showProgressBoost: false
+  },
+  teacherPremiumSponsored: { // free access plan assigned by admin
+    canCreateClass: true,
+    canViewAnswers: true,
+    canUseAI: false,
+    maxQuestionsPerDay: Infinity,
+    maxQuestionsPerTopic: Infinity,
+    canAccessFilters: true,
+    canSkipQuestions: true,
+    canAccessAnalytics: true,
+    maxClasses: 1,
+    maxStudentsPerClass: 30,
+    sponsoredStudents: 30, // can provide free access to students
+    showProgressBoost: false
   },
   admin: {
     canCreateClass: true,
@@ -137,15 +186,11 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     canSkipQuestions: true,
     canAccessAnalytics: true,
     maxClasses: Infinity,
-    maxStudentsPerClass: Infinity
+    maxStudentsPerClass: Infinity,
+    showProgressBoost: false
   }
 };
 
-// set the sponsored access limits
-userAccessLimits.studentSponsoredRevision = {
-  ...userAccessLimits.revision,
-  showProgressBoost: true
-};
 
 // === Helper Functions ===
 
