@@ -89,6 +89,7 @@ interface SupabaseMember {
   student: {
     email: string
     full_name: string
+    user_type: string
   }
 }
 
@@ -106,6 +107,7 @@ interface ProfileRow {
   email: string
   forename: string | null
   lastname: string | null
+  user_type: string | null
 }
 
 
@@ -678,7 +680,7 @@ function SettingsPageContent() {
       // Fetch profiles for these students
       const { data: profiles, error: profilesErr } = await supabase
         .from('profiles')
-        .select('userid, email, forename, lastname')
+        .select('userid, email, forename, lastname, user_type')
         .in('userid', studentIds)
 
       console.log('studentIds:', studentIds)
@@ -708,6 +710,7 @@ function SettingsPageContent() {
           student: {
             email: profile?.email || 'No email found',
             full_name: fullName,
+            user_type: profile?.user_type || 'student',
           },
         }
       }) as SupabaseMember[]
@@ -746,7 +749,7 @@ function SettingsPageContent() {
       // Find user profile
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('userid, email, forename, lastname')
+        .select('userid, email, forename, lastname, user_type')
         .eq('email', trimmed)
         .single()
 
@@ -793,6 +796,7 @@ function SettingsPageContent() {
         student: {
           email: profile.email,
           full_name: `${profile.forename ?? ''} ${profile.lastname ?? ''}`.trim(),
+          user_type: profile.user_type || 'student',
         },
       }
 
@@ -852,7 +856,7 @@ function SettingsPageContent() {
       for (const email of emails) {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('userid, email, forename, lastname')
+          .select('userid, email, forename, lastname, user_type')
           .eq('email', email)
           .maybeSingle()
 
@@ -900,6 +904,7 @@ function SettingsPageContent() {
           student: {
             email: profile.email,
             full_name: `${profile.forename ?? ''} ${profile.lastname ?? ''}`.trim(),
+            user_type: profile.user_type || 'student',
           },
         }
 
@@ -1369,6 +1374,9 @@ function SettingsPageContent() {
                               {member.student.full_name}
                             </p>
                           )}
+                          <p className="text-xs text-muted-foreground capitalize">
+                            {member.student.user_type}
+                          </p>
                           <p className="text-xs text-muted-foreground">
                             Joined {new Date(member.joined_at).toLocaleDateString()}
                           </p>
