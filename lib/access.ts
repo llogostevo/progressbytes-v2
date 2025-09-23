@@ -8,7 +8,9 @@
   | 'teacherBasic'      // teacher with free access (1 class, 5-10 students)
   | 'teacherPlan'       // teacher with paid access (1 class, 10 students)
   | 'teacherPremium'    // paid teacher, multiple classes
-  | 'admin';            // internal use only (site owner)
+  | 'admin'            // internal use only (site owner)
+  | 'studentSponsoredRevision'; // student, sponsored premium
+
 
 // User object passed into access functions
 export interface User {
@@ -71,6 +73,7 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     maxClasses: 0,
     maxStudentsPerClass: 0
   },
+  studentSponsoredRevision:{} as AccessLimits, // free sponsored revision plan, set by teachers to be paid for by the school
   revisionAI: {
     canCreateClass: false,
     canViewAnswers: true,
@@ -130,8 +133,11 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     canAccessAnalytics: true,
     maxClasses: Infinity,
     maxStudentsPerClass: Infinity
-  },
+  }
 };
+
+// set the sponsored access limits
+userAccessLimits.studentSponsoredRevision = userAccessLimits.revision;
 
 // === Helper Functions ===
 
