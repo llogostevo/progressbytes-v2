@@ -220,6 +220,9 @@ export const canAccessAnalytics = (user: User): boolean =>
 export const getMaxStudentsPerClass = (user: User): number =>
   userAccessLimits[user.user_type]?.maxStudentsPerClass ?? 0;
 
+export const getMaxSponsoredStudents = (user: User): number =>
+  userAccessLimits[user.user_type]?.sponsoredStudents ?? 0;
+
 export const canCreateAnotherClass = (
   user: User,
   currentClassCount: number

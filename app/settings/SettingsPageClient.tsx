@@ -9,7 +9,7 @@ import { redirect } from "next/navigation"
 
 
 // import type { Plan } from '@/lib/types';
-import { UserType, userAccessLimits } from "@/lib/access";
+import { UserType, userAccessLimits, getMaxSponsoredStudents } from "@/lib/access";
 import { useAccess } from "@/hooks/useAccess";
 
 
@@ -1353,9 +1353,16 @@ function SettingsPageContent() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h4 className="font-medium">Class Members</h4>
-                  <Badge variant={(selectedClassMembers || []).length >= maxStudentsPerClass ? "destructive" : "secondary"}>
-                    {(selectedClassMembers || []).length} / {maxStudentsPerClass} Students
-                  </Badge>
+                  <div className="flex flex-col items-end space-y-1">
+                    <Badge variant={(selectedClassMembers || []).length >= maxStudentsPerClass ? "destructive" : "secondary"}>
+                      {(selectedClassMembers || []).length} / {maxStudentsPerClass} Students
+                    </Badge>
+                    {userType && getMaxSponsoredStudents({ user_type: userType }) > 0 && (
+                      <Badge variant="outline" className="text-xs">
+                        {(selectedClassMembers || []).filter(member => member.student.user_type === 'studentSponsoredRevision').length} / {getMaxSponsoredStudents({ user_type: userType })} Sponsored
+                      </Badge>
+                    )}
+                  </div>
                 </div>
                 <div className="space-y-2">
                   {(selectedClassMembers || []).map(member => (
