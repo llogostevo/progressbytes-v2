@@ -265,3 +265,43 @@ export const isAdmin = (role: string | null | undefined): boolean => {
 export const canShowProgressBoost = (user: User): boolean => {
   return userAccessLimits[user.user_type]?.showProgressBoost ?? false;
 };
+
+// Helper function to check if user is on a paid plan
+export const isPaidPlan = (user: User): boolean => {
+  const paidPlans: UserType[] = [
+    'revision', 
+    'revisionAI', 
+    'teacherPlan',
+    'teacherPremium', 
+    'admin',
+  ];
+  
+  return paidPlans.includes(user.user_type);
+};
+
+// Helper function to check if user is on a locked plan (cannot be downgraded to free)
+export const isLockedPlan = (user: User): boolean => {
+  const lockedPlans: UserType[] = [
+    'revision',
+    'revisionAI', 
+    'teacherBasic',
+    'teacherPlan',        
+    'teacherPremium', 
+    'admin',
+    'teacherPlanSponsored',
+    'teacherPremiumSponsored' 
+  ];
+  
+  return lockedPlans.includes(user.user_type);
+};
+
+// Helper function to check if user is on a sponsored plan
+export const isSponsoredPlan = (user: User): boolean => {
+  const sponsoredPlans: UserType[] = [
+    'teacherPlanSponsored',
+    'teacherPremiumSponsored',
+    'studentSponsoredRevision'
+  ];
+  
+  return sponsoredPlans.includes(user.user_type);
+};

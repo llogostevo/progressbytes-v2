@@ -9,7 +9,7 @@ import { redirect } from "next/navigation"
 
 
 // import type { Plan } from '@/lib/types';
-import { UserType, userAccessLimits, getMaxSponsoredStudents } from "@/lib/access";
+import { UserType, userAccessLimits, getMaxSponsoredStudents, isLockedPlan } from "@/lib/access";
 import { useAccess } from "@/hooks/useAccess";
 
 
@@ -17,7 +17,7 @@ import { useAccess } from "@/hooks/useAccess";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Book, GraduationCap, School, BookMarked, Library, User, CreditCard, Plus, Copy, Eye, Trash2, Upload, FileText, Download } from "lucide-react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -25,6 +25,7 @@ import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { isTeacher } from "@/lib/access"
 import UpgradePageClient from "./upgrade/UpgradePageClient"
+import { Checkbox } from "@/components/ui/checkbox"
 
 // Initialize Stripe
 // const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
@@ -177,6 +178,8 @@ function SettingsPageContent() {
   const [memberToDelete, setMemberToDelete] = useState<SupabaseMember | null>(null)
   const [isDeletingMember, setIsDeletingMember] = useState(false)
 
+  const { isPaidPlan } = useAccess();
+
 
   // Teacher: add students by email or CSV
   const [addStudentEmail, setAddStudentEmail] = useState("")
@@ -279,7 +282,7 @@ function SettingsPageContent() {
 
   const handleCreateClass = async () => {
     if (!newClassName.trim()) {
-      toast.error('Please enter a class name', { 
+      toast.error('Please enter a class name', {
         duration: 10000,
         closeButton: true
       })
@@ -288,7 +291,7 @@ function SettingsPageContent() {
 
     // Check if user has reached their class limit
     if (userClasses.length >= maxClasses) {
-      toast.error('You have reached your limit of classes, you will need to upgrade to add more classes', { 
+      toast.error('You have reached your limit of classes, you will need to upgrade to add more classes', {
         duration: 10000,
         closeButton: true
       })
@@ -318,13 +321,13 @@ function SettingsPageContent() {
       setUserClasses(prev => [...prev, newClass])
       setCreateClassDialogOpen(false)
       setNewClassName("")
-      toast.success('Class created successfully', { 
+      toast.success('Class created successfully', {
         duration: 10000,
         closeButton: true
       })
     } catch (err) {
       console.error('Error creating class:', err)
-      toast.error('Failed to create class', { 
+      toast.error('Failed to create class', {
         duration: 10000,
         closeButton: true
       })
@@ -336,12 +339,12 @@ function SettingsPageContent() {
   const handleCopyJoinCode = async (code: string) => {
     try {
       await navigator.clipboard.writeText(code)
-      toast.success('Join code copied to clipboard', { 
+      toast.success('Join code copied to clipboard', {
         duration: 10000,
         closeButton: true
       })
     } catch (err) {
-      toast.error('Failed to copy join code: ' + (err as Error).message, { 
+      toast.error('Failed to copy join code: ' + (err as Error).message, {
         duration: 10000,
         closeButton: true
       })
@@ -364,13 +367,13 @@ function SettingsPageContent() {
       setDeleteClassDialogOpen(false)
       setClassToDelete(null)
       setDeleteClassConfirmation("")
-      toast.success('Class deleted successfully', { 
+      toast.success('Class deleted successfully', {
         duration: 10000,
         closeButton: true
       })
     } catch (error) {
       console.error('Error deleting class:', error)
-      toast.error('Failed to delete class', { 
+      toast.error('Failed to delete class', {
         duration: 10000,
         closeButton: true
       })
@@ -381,7 +384,7 @@ function SettingsPageContent() {
 
   const handleJoinClass = async () => {
     if (!joinCode.trim()) {
-      toast.error('Please enter a join code', { 
+      toast.error('Please enter a join code', {
         duration: 10000,
         closeButton: true
       })
@@ -469,13 +472,13 @@ function SettingsPageContent() {
       setStudentClasses(prev => [...prev, newMember])
       setJoinClassDialogOpen(false)
       setJoinCode("")
-      toast.success('Successfully joined class', { 
+      toast.success('Successfully joined class', {
         duration: 10000,
         closeButton: true
       })
     } catch (error) {
       console.error('Error joining class:', error)
-      toast.error(error instanceof Error ? error.message : 'Failed to join class', { 
+      toast.error(error instanceof Error ? error.message : 'Failed to join class', {
         duration: 10000,
         closeButton: true
       })
@@ -506,13 +509,13 @@ function SettingsPageContent() {
       setLeaveClassDialogOpen(false)
       setSelectedMembership(null)
       setLeaveClassConfirmation("")
-      toast.success('Successfully left class', { 
+      toast.success('Successfully left class', {
         duration: 10000,
         closeButton: true
       })
     } catch (error) {
       console.error('Error leaving class:', error)
-      toast.error('Failed to leave class', { 
+      toast.error('Failed to leave class', {
         duration: 10000,
         closeButton: true
       })
@@ -539,24 +542,24 @@ function SettingsPageContent() {
         if (error) throw error
 
         setSelectedClassMembers(prev => (prev || []).filter(m => m.student_id !== memberToDelete.student_id))
-        
+
         // If the current user is the one being removed, update their studentClasses state
         // This ensures real-time updates when a teacher removes the current user from a class
         if (memberToDelete.student_id === user.id) {
-          setStudentClasses(prev => prev.filter(m => 
+          setStudentClasses(prev => prev.filter(m =>
             !(m.class_id === selectedClass.id && m.student_id === user.id)
           ))
         }
-        
+
         setDeleteMemberDialogOpen(false)
         setMemberToDelete(null)
-        toast.success('Student removed from class', { 
+        toast.success('Student removed from class', {
           duration: 10000,
           closeButton: true
         })
       } catch (error) {
         console.error('Error removing student:', error)
-        toast.error('Failed to remove student from class', { 
+        toast.error('Failed to remove student from class', {
           duration: 10000,
           closeButton: true
         })
@@ -592,13 +595,13 @@ function SettingsPageContent() {
 
       setDeleteMemberDialogOpen(false)
       setMemberToDelete(null)
-      toast.success('Student removed from class', { 
+      toast.success('Student removed from class', {
         duration: 10000,
         closeButton: true
       })
     } catch (error) {
       console.error('Error removing student:', error)
-      toast.error('Failed to remove student from class', { 
+      toast.error('Failed to remove student from class', {
         duration: 10000,
         closeButton: true
       })
@@ -614,16 +617,16 @@ function SettingsPageContent() {
     // Calculate available spaces for the selected class
     const currentStudentCount = selectedClassMembers?.length || 0
     const availableSpaces = Math.max(0, maxStudentsPerClass - currentStudentCount)
-    
+
     // Create CSV content with message and sample data
     const message = `# You have ${availableSpaces} place${availableSpaces !== 1 ? 's' : ''} left in the class\n`
     const header = 'email\n'
-    
+
     // Generate sample rows based on available spaces
-    const sampleRows = Array.from({ length: availableSpaces }, (_, index) => 
+    const sampleRows = Array.from({ length: availableSpaces }, (_, index) =>
       `student${index + 1}@example.com`
     )
-    
+
     const csv = message + header + sampleRows.join('\n') + '\n'
 
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
@@ -642,7 +645,7 @@ function SettingsPageContent() {
       const { data: authData } = await supabase.auth.getUser()
       const teacherId = authData?.user?.id
       if (!teacherId) {
-        toast.error('Not authenticated', { 
+        toast.error('Not authenticated', {
           duration: 10000,
           closeButton: true
         })
@@ -663,7 +666,7 @@ function SettingsPageContent() {
 
       if (error) {
         console.error('Error fetching class members:', error)
-        toast.error('Failed to load class members', { 
+        toast.error('Failed to load class members', {
           duration: 10000,
           closeButton: true
         })
@@ -690,7 +693,7 @@ function SettingsPageContent() {
 
       if (profilesErr) {
         console.error('Error fetching profiles:', profilesErr)
-        toast.error('Failed to load student profiles', { 
+        toast.error('Failed to load student profiles', {
           duration: 10000,
           closeButton: true
         })
@@ -717,7 +720,7 @@ function SettingsPageContent() {
       setSelectedClassMembers(membersOnly)
     } catch (e) {
       console.error('Error fetching class members (exception):', e)
-      toast.error('Failed to load class members', { 
+      toast.error('Failed to load class members', {
         duration: 10000,
         closeButton: true
       })
@@ -730,7 +733,7 @@ function SettingsPageContent() {
       setIsAddingStudent(true)
       const trimmed = email.trim().toLowerCase()
       if (!trimmed) {
-        toast.error('Please enter an email', { 
+        toast.error('Please enter an email', {
           duration: 10000,
           closeButton: true
         })
@@ -740,7 +743,7 @@ function SettingsPageContent() {
       // Check if user has reached their student limit for this class
       const currentStudentCount = selectedClassMembers?.length || 0
       if (currentStudentCount >= maxStudentsPerClass) {
-        toast.error('You have reached your limit of students for this class, you will need to upgrade to add more students', { 
+        toast.error('You have reached your limit of students for this class, you will need to upgrade to add more students', {
           duration: 10000,
           closeButton: true
         })
@@ -754,7 +757,7 @@ function SettingsPageContent() {
         .single()
 
       if (profileError || !profile) {
-        toast.error(`Email not recognised: ${trimmed}`, { 
+        toast.error(`Email not recognised: ${trimmed}`, {
           duration: 10000,
           closeButton: true
         })
@@ -770,7 +773,7 @@ function SettingsPageContent() {
         .maybeSingle()
 
       if (existing) {
-        toast.info(`${trimmed} is already in this class`, { 
+        toast.info(`${trimmed} is already in this class`, {
           duration: 10000,
           closeButton: true
         })
@@ -803,14 +806,14 @@ function SettingsPageContent() {
       if (selectedClass?.id === classId) {
         setSelectedClassMembers(prev => ([...(prev || []), normalizedMember]))
       }
-      toast.success(`Added ${profile.email} to class`, { 
+      toast.success(`Added ${profile.email} to class`, {
         duration: 10000,
         closeButton: true
       })
       setAddStudentEmail("")
     } catch (e) {
       console.error('Error adding student:', e)
-      toast.error('Failed to add student', { 
+      toast.error('Failed to add student', {
         duration: 10000,
         closeButton: true
       })
@@ -832,7 +835,7 @@ function SettingsPageContent() {
     try {
       const emails = parseCSVEmails(csvText)
       if (emails.length === 0) {
-        toast.error('No valid emails found in CSV', { 
+        toast.error('No valid emails found in CSV', {
           duration: 10000,
           closeButton: true
         })
@@ -842,7 +845,7 @@ function SettingsPageContent() {
       // Check if user has reached their student limit for this class
       const currentStudentCount = selectedClassMembers?.length || 0
       if (currentStudentCount >= maxStudentsPerClass) {
-        toast.error('You have reached your limit of students for this class, you will need to upgrade to add more students', { 
+        toast.error('You have reached your limit of students for this class, you will need to upgrade to add more students', {
           duration: 10000,
           closeButton: true
         })
@@ -860,9 +863,9 @@ function SettingsPageContent() {
           .eq('email', email)
           .maybeSingle()
 
-        if (!profile) { 
-          failed.push({ email, reason: 'not recognised' }); 
-          continue 
+        if (!profile) {
+          failed.push({ email, reason: 'not recognised' });
+          continue
         }
 
         const { data: existing } = await supabase
@@ -872,9 +875,9 @@ function SettingsPageContent() {
           .eq('student_id', profile.userid)
           .maybeSingle()
 
-        if (existing) { 
-          failed.push({ email, reason: 'already in class' }); 
-          continue 
+        if (existing) {
+          failed.push({ email, reason: 'already in class' });
+          continue
         }
 
         // Check if we've reached the student limit during bulk add
@@ -893,9 +896,9 @@ function SettingsPageContent() {
           .select('student_id, joined_at')
           .single()
 
-        if (joinError) { 
-          failed.push({ email, reason: 'database error' }); 
-          continue 
+        if (joinError) {
+          failed.push({ email, reason: 'database error' });
+          continue
         }
 
         const normalizedMember: SupabaseMember = {
@@ -917,10 +920,10 @@ function SettingsPageContent() {
 
       // Show success toast with added emails
       if (added > 0) {
-        const addedMessage = added === 1 
+        const addedMessage = added === 1
           ? `Added 1 student: ${addedEmails[0]}`
           : `Added ${added} students: ${addedEmails.join(', ')}`
-        toast.success(addedMessage, { 
+        toast.success(addedMessage, {
           duration: 10000,
           closeButton: true
         })
@@ -931,13 +934,13 @@ function SettingsPageContent() {
         const failedMessage = failed.length === 1
           ? `Failed to add ${failed[0].email} (${failed[0].reason})`
           : `Failed to add ${failed.length} students: ${failed.map(f => `${f.email} (${f.reason})`).join(', ')}`
-        toast.error(failedMessage, { 
+        toast.error(failedMessage, {
           duration: 10000,
           closeButton: true
         })
       }
     } catch (e) {
-      toast.error('Bulk add operation failed. Please check you have a valid plan and you have not reached your student limit.' + e, { 
+      toast.error('Bulk add operation failed. Please check you have a valid plan and you have not reached your student limit.' + e, {
         duration: 10000,
         closeButton: true
       })
@@ -1387,6 +1390,62 @@ function SettingsPageContent() {
                           <p className="text-xs text-muted-foreground">
                             Joined {new Date(member.joined_at).toLocaleDateString()}
                           </p>
+                          {isLockedPlan({ user_type: member.student.user_type as UserType }) ? (
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Label className="mt-2 hover:bg-accent/50 flex items-start gap-3 rounded-lg border p-2 w-48 cursor-pointer">
+                                  <Checkbox
+                                    id={`toggle-${member.student_id}`}
+                                    defaultChecked={member.student.user_type === 'studentSponsoredRevision'}
+                                    disabled={true}
+                                    className="data-[state=checked]:border-green-600 data-[state=checked]:bg-green-600 data-[state=checked]:text-white dark:data-[state=checked]:border-green-700 dark:data-[state=checked]:bg-green-700"
+                                  />
+                                  <div className="grid gap-1.5 font-normal">
+                                    <div className="text-sm leading-none font-medium">
+                                      <p className="text-xs text-muted-foreground">
+                                        Current plan locked
+                                      </p>
+                                    </div>
+                                  </div>
+                                </Label>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>Plan Information</DialogTitle>
+                                  <DialogDescription>
+                                    Information about {member.student.email}'s current plan
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4">
+                                  <div className="space-y-2">
+                                    <p className="text-sm font-medium">Current Plan:</p>
+                                    <p className="text-sm text-muted-foreground capitalize">{member.student.user_type}</p>
+                                  </div>
+                                  <div className="space-y-2">
+                                    <p className="text-sm font-medium">Action Required:</p>
+                                    <p className="text-sm text-muted-foreground">
+                                      Please contact {member.student.email} to discuss reverting to a free student revision plan. 
+                                      They will need to downgrade their plan before you can provide free access.
+                                    </p>
+                                  </div>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                          ) : (
+                            <Label className="mt-2 hover:bg-accent/50 flex items-start gap-3 rounded-lg border p-2 w-48 has-[[aria-checked=true]]:border-green-600 has-[[aria-checked=true]]:bg-green-50 dark:has-[[aria-checked=true]]:border-green-900 dark:has-[[aria-checked=true]]:bg-green-950">
+                              <Checkbox
+                                id={`toggle-${member.student_id}`}
+                                defaultChecked={member.student.user_type === 'studentSponsoredRevision'}
+                                disabled={false}
+                                className="data-[state=checked]:border-green-600 data-[state=checked]:bg-green-600 data-[state=checked]:text-white dark:data-[state=checked]:border-green-700 dark:data-[state=checked]:bg-green-700"
+                              />
+                              <div className="grid gap-1.5 font-normal">
+                                <div className="text-sm leading-none font-medium">
+                                  Enable free access
+                                </div>
+                              </div>
+                            </Label>
+                          )}
                         </div>
                       </div>
                       <Button
@@ -1403,6 +1462,7 @@ function SettingsPageContent() {
                     </div>
                   ))}
                 </div>
+
               </div>
 
               {/* Join Code Display */}
@@ -1465,7 +1525,7 @@ function SettingsPageContent() {
                   <h4 className="font-medium">Bulk Add via CSV</h4>
                 </div>
                 <p className="text-sm text-muted-foreground">Upload a CSV file containing a list of email addresses (header optional).</p>
-                
+
                 {(selectedClassMembers || []).length >= maxStudentsPerClass && (
                   <div className="text-center py-2 border border-orange-200 rounded-lg bg-orange-50">
                     <p className="text-sm text-orange-700">You have reached your student limit. Bulk add will be disabled.</p>
@@ -1588,19 +1648,19 @@ function SettingsPageContent() {
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
-                      
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => {
-                                  setSelectedMembership(membership)
-                                  setLeaveClassDialogOpen(true)
-                                }}
-                                title="Leave Class"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            
+
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setSelectedMembership(membership)
+                                setLeaveClassDialogOpen(true)
+                              }}
+                              title="Leave Class"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+
                           </div>
                         </div>
                       </CardContent>
