@@ -178,7 +178,6 @@ function SettingsPageContent() {
   const [memberToDelete, setMemberToDelete] = useState<SupabaseMember | null>(null)
   const [isDeletingMember, setIsDeletingMember] = useState(false)
 
-  const { isPaidPlan } = useAccess();
 
 
   // Teacher: add students by email or CSV
@@ -1413,7 +1412,7 @@ function SettingsPageContent() {
                                 <DialogHeader>
                                   <DialogTitle>Plan Information</DialogTitle>
                                   <DialogDescription>
-                                    Information about {member.student.email}'s current plan
+                                    Information about {member.student.email}&apos;s current plan
                                   </DialogDescription>
                                 </DialogHeader>
                                 <div className="space-y-4">
