@@ -1432,12 +1432,12 @@ function SettingsPageContent() {
                               </DialogContent>
                             </Dialog>
                           ) : (
-                            <Label className="mt-2 hover:bg-accent/50 flex items-start gap-3 rounded-lg border p-2 w-48 has-[[aria-checked=true]]:border-green-600 has-[[aria-checked=true]]:bg-green-50 dark:has-[[aria-checked=true]]:border-green-900 dark:has-[[aria-checked=true]]:bg-green-950">
+                            <Label className="mt-2 hover:bg-accent/50 flex items-start gap-3 rounded-lg border p-2 w-48 cursor-pointer has-[[aria-checked=true]]:border-green-600 has-[[aria-checked=true]]:bg-green-50 dark:has-[[aria-checked=true]]:border-green-900 dark:has-[[aria-checked=true]]:bg-green-950">
                               <Checkbox
                                 id={`toggle-${member.student_id}`}
                                 defaultChecked={member.student.user_type === 'studentSponsoredRevision'}
                                 disabled={false}
-                                className="data-[state=checked]:border-green-600 data-[state=checked]:bg-green-600 data-[state=checked]:text-white dark:data-[state=checked]:border-green-700 dark:data-[state=checked]:bg-green-700"
+                                className="cursor-pointer data-[state=checked]:border-green-600 data-[state=checked]:bg-green-600 data-[state=checked]:text-white dark:data-[state=checked]:border-green-700 dark:data-[state=checked]:bg-green-700"
                               />
                               <div className="grid gap-1.5 font-normal">
                                 <div className="text-sm leading-none font-medium">
