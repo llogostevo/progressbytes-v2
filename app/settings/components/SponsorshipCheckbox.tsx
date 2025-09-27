@@ -32,8 +32,6 @@ export default function SponsorshipCheckbox({
   selectedClassId,
   setSelectedClassMembers,
 }: Props) {
-  // const isSponsored = member.student.user_type === "studentSponsoredRevision";
-  // const [checked, setChecked] = useState<boolean>(isSponsored);
 
   const isSponsoredForThisClass = member.is_sponsored;
   const [checked, setChecked] = useState<boolean>(isSponsoredForThisClass);

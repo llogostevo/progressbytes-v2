@@ -184,6 +184,7 @@ function SettingsPageContent() {
   const [deleteMemberDialogOpen, setDeleteMemberDialogOpen] = useState(false)
   const [memberToDelete, setMemberToDelete] = useState<SupabaseMember | null>(null)
   const [isDeletingMember, setIsDeletingMember] = useState(false)
+  const [sponsoredUsed, setSponsoredUsed] = useState<number>(0)
 
 
 
@@ -1020,6 +1021,20 @@ function SettingsPageContent() {
         }
       }
 
+      if (isTeacherRole) {
+        const { count, error: seatsErr } = await supabase
+          .from('class_members')
+          .select('student_id, class:classes!inner(teacher_id)', { count: 'exact', head: true })
+          .eq('is_sponsored', true)
+          .eq('class.teacher_id', user.id);
+
+        if (!seatsErr && typeof count === 'number') {
+          setSponsoredUsed(count);
+        }
+      }
+
+
+
       // Fetch classes where user is a student (for both students and teachers)
       const { data: memberships, error: membershipsError } = await supabase
         .from('class_members')
@@ -1363,115 +1378,44 @@ function SettingsPageContent() {
                 Class details and management
               </DialogDescription>
             </DialogHeader>
+            <h4 className="font-medium leading-tight">Class Members</h4>
+
             <div className="space-y-6">
               {/* Class Members - Moved to top */}
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium">Class Members</h4>
-                  <div className="flex flex-col items-end space-y-1">
-                    <Badge variant={(selectedClassMembers || []).length >= maxStudentsPerClass ? "destructive" : "secondary"}>
+
+                <div className="flex items-start justify-between gap-3 sm:items-center">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Students capacity (primary, eye-catching) */}
+                    <Badge
+                      variant={(selectedClassMembers || []).length >= maxStudentsPerClass ? "destructive" : "secondary"}
+                      className="text-xs rounded-full px-3 py-1 font-semibold"
+                      title="Students in this class"
+                    >
                       {(selectedClassMembers || []).length} / {maxStudentsPerClass} Students
                     </Badge>
-                    {userType && maxSponsoredSeats > 0 && (
-                      <Badge variant="outline" className="text-xs">
-                        {(selectedClassMembers || []).filter(member => member.student.user_type === 'studentSponsoredRevision').length} / {maxSponsoredSeats} Sponsored
+
+                    {/* Sponsored totals (subtle group) */}
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant="outline"
+                        className="text-xs rounded-full px-3 py-1"
+                        title="Total sponsored across all classes"
+                      >
+                        {sponsoredUsed} / {maxSponsoredSeats} Sponsored (Total)
                       </Badge>
-                    )}
+
+                      <Badge
+                        variant="outline"
+                        className="text-xs rounded-full px-3 py-1 bg-muted/60"
+                        title="Sponsored in this class"
+                      >
+                        {(selectedClassMembers || []).filter(m => m.is_sponsored).length} in this class
+                      </Badge>
+                    </div>
                   </div>
                 </div>
 
-                {/* <div className="space-y-2">
-                  {(selectedClassMembers || []).map(member => (
-                    <div
-                      key={member.student_id}
-                      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="text-sm font-medium">
-                            {member.student.email}
-                          </p>
-                          {member.student.full_name && member.student.full_name.trim().length > 0 && (
-                            <p className="text-xs text-muted-foreground">
-                              {member.student.full_name}
-                            </p>
-                          )}
-                          <p className="text-xs text-muted-foreground capitalize">
-                            {member.student.user_type}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Joined {new Date(member.joined_at).toLocaleDateString()}
-                          </p>
-                          {isLockedPlan({ user_type: member.student.user_type as UserType }) ||
-                            (member.student.user_type === 'studentSponsoredRevision' && !member.is_sponsored) ? (
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Label className="mt-2 flex items-start gap-3 rounded-lg border p-2 w-48 cursor-not-allowed opacity-70">
-                                  <Checkbox
-                                    id={`toggle-${member.student_id}`}
-                                    defaultChecked={member.student.user_type === 'studentSponsoredRevision'}
-                                    disabled
-                                    className="data-[state=checked]:border-green-600 data-[state=checked]:bg-green-600 data-[state=checked]:text-white dark:data-[state=checked]:border-green-700 dark:data-[state=checked]:bg-green-700"
-                                  />
-                                  <div className="grid gap-1.5 font-normal">
-                                    <div className="text-sm leading-none font-medium">
-                                      <p className="text-xs text-muted-foreground">Current plan locked</p>
-                                    </div>
-                                  </div>
-                                </Label>
-                              </DialogTrigger>
-                              <DialogContent className="max-w-lg">
-                                <DialogHeader>
-                                  <DialogTitle>Plan Information</DialogTitle>
-                                  <DialogDescription>
-                                    Information about {member.student.email}&apos;s current plan
-                                  </DialogDescription>
-                                </DialogHeader>
-                                <div className="space-y-4">
-                                  <div className="space-y-2">
-                                    <p className="text-sm font-medium">Current Plan:</p>
-                                    <p className="text-sm text-muted-foreground capitalize">
-                                      {member.student.user_type}
-                                    </p>
-                                  </div>
-                                  <div className="space-y-2">
-                                    <p className="text-sm font-medium">Action Required:</p>
-                                    <p className="text-sm text-muted-foreground">
-                                      {member.student.user_type === 'studentSponsoredRevision' && !member.is_sponsored
-                                        ? `${member.student.email} is already sponsored by another teacher.`
-                                        : `Please contact ${member.student.email} to discuss reverting to a free student plan.`}
-                                    </p>
-                                  </div>
-                                </div>
-                              </DialogContent>
-                            </Dialog>
-                          ) : (
-                            <SponsorshipCheckbox
-                              member={member}
-                              selectedClassId={selectedClass!.id}
-                              setSelectedClassMembers={setSelectedClassMembers}
-                            />
-                          )}
-
-
-
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setMemberToDelete(member)
-                          setDeleteMemberDialogOpen(true)
-                        }}
-                        title="Remove Student"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div> */}
                 {/* THIS IS THE SPONSORSHIP CHECKBOX LOGIC */}
                 <div className="space-y-2">
                   {(selectedClassMembers || []).map((member) => {
