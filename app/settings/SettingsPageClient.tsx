@@ -88,6 +88,7 @@ interface SupabaseMembership {
 interface SupabaseMember {
   student_id: string
   joined_at: string
+  is_sponsored: boolean
   student: {
     email: string
     full_name: string
@@ -98,6 +99,7 @@ interface SupabaseMember {
 interface ClassMemberRow {
   student_id: string
   joined_at: string
+  is_sponsored: boolean
   class: {
     id: string
     teacher_id: string
@@ -663,6 +665,7 @@ function SettingsPageContent() {
         .select(`
           student_id,
           joined_at,
+          is_sponsored,
           class:classes!inner ( id, teacher_id )
         `)
         .eq('class_id', classId)
@@ -714,6 +717,7 @@ function SettingsPageContent() {
         return {
           student_id: m.student_id,
           joined_at: m.joined_at,
+          is_sponsored: m.is_sponsored,
           student: {
             userid: profile?.userid ?? m.student_id,
             email: profile?.email || 'No email found',
@@ -801,6 +805,7 @@ function SettingsPageContent() {
       const normalizedMember: SupabaseMember = {
         student_id: inserted.student_id,
         joined_at: inserted.joined_at,
+        is_sponsored: false,
         student: {
           email: profile.email,
           full_name: `${profile.forename ?? ''} ${profile.lastname ?? ''}`.trim(),
@@ -909,6 +914,7 @@ function SettingsPageContent() {
         const normalizedMember: SupabaseMember = {
           student_id: inserted.student_id,
           joined_at: inserted.joined_at,
+          is_sponsored: false,
           student: {
             email: profile.email,
             full_name: `${profile.forename ?? ''} ${profile.lastname ?? ''}`.trim(),
@@ -1373,7 +1379,8 @@ function SettingsPageContent() {
                     )}
                   </div>
                 </div>
-                <div className="space-y-2">
+
+                {/* <div className="space-y-2">
                   {(selectedClassMembers || []).map(member => (
                     <div
                       key={member.student_id}
@@ -1396,14 +1403,14 @@ function SettingsPageContent() {
                           <p className="text-xs text-muted-foreground">
                             Joined {new Date(member.joined_at).toLocaleDateString()}
                           </p>
-                          {isLockedPlan({ user_type: member.student.user_type as UserType }) ? (
+                          {isLockedPlan({ user_type: member.student.user_type as UserType }) ||
+                            (member.student.user_type === 'studentSponsoredRevision' && !member.is_sponsored) ? (
                             <Dialog>
                               <DialogTrigger asChild>
-                                {/* Same styled wrapper as before, just disabled */}
-                                <Label className="mt-2 hover:bg-accent/50 flex items-start gap-3 rounded-lg border p-2 w-48 cursor-pointer">
+                                <Label className="mt-2 flex items-start gap-3 rounded-lg border p-2 w-48 cursor-not-allowed opacity-70">
                                   <Checkbox
                                     id={`toggle-${member.student_id}`}
-                                    checked={member.student.user_type === 'studentSponsoredRevision'}
+                                    defaultChecked={member.student.user_type === 'studentSponsoredRevision'}
                                     disabled
                                     className="data-[state=checked]:border-green-600 data-[state=checked]:bg-green-600 data-[state=checked]:text-white dark:data-[state=checked]:border-green-700 dark:data-[state=checked]:bg-green-700"
                                   />
@@ -1431,9 +1438,9 @@ function SettingsPageContent() {
                                   <div className="space-y-2">
                                     <p className="text-sm font-medium">Action Required:</p>
                                     <p className="text-sm text-muted-foreground">
-                                      Please contact {member.student.email} to discuss reverting to a free
-                                      student revision plan. They will need to downgrade before you can
-                                      provide free access.
+                                      {member.student.user_type === 'studentSponsoredRevision' && !member.is_sponsored
+                                        ? `${member.student.email} is already sponsored by another teacher.`
+                                        : `Please contact ${member.student.email} to discuss reverting to a free student plan.`}
                                     </p>
                                   </div>
                                 </div>
@@ -1446,6 +1453,7 @@ function SettingsPageContent() {
                               setSelectedClassMembers={setSelectedClassMembers}
                             />
                           )}
+
 
 
                         </div>
@@ -1463,7 +1471,135 @@ function SettingsPageContent() {
                       </Button>
                     </div>
                   ))}
+                </div> */}
+                {/* THIS IS THE SPONSORSHIP CHECKBOX LOGIC */}
+                <div className="space-y-2">
+                  {(selectedClassMembers || []).map((member) => {
+                    const isPlanLocked = isLockedPlan({
+                      user_type: member.student.user_type as UserType,
+                    });
+
+                    // Student has global sponsored plan but this class_members row is NOT sponsored
+                    // ⇒ they must be sponsored by another teacher
+                    const sponsoredElsewhere =
+                      member.student.user_type === "studentSponsoredRevision" &&
+                      !member.is_sponsored;
+
+                    // Teacher can toggle only if NOT locked and NOT sponsored by someone else
+                    const canToggle = !isPlanLocked && !sponsoredElsewhere;
+
+                    return (
+                      <div
+                        key={member.student_id}
+                        className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-sm font-medium">{member.student.email}</p>
+
+                            {member.student.full_name &&
+                              member.student.full_name.trim().length > 0 && (
+                                <p className="text-xs text-muted-foreground">
+                                  {member.student.full_name}
+                                </p>
+                              )}
+
+                            <p className="text-xs text-muted-foreground capitalize">
+                              {member.student.user_type}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Joined {new Date(member.joined_at).toLocaleDateString()}
+                            </p>
+
+                            {!canToggle ? (
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  {/* same look, just disabled */}
+                                  <Label className="mt-2 flex items-start gap-3 rounded-lg border p-2 w-48 cursor-not-allowed opacity-70">
+                                    <Checkbox
+                                      id={`toggle-${member.student_id}`}
+                                      checked={
+                                        member.student.user_type === "studentSponsoredRevision"
+                                      }
+                                      disabled
+                                      className="data-[state=checked]:border-green-600 data-[state=checked]:bg-green-600 data-[state=checked]:text-white dark:data-[state=checked]:border-green-700 dark:data-[state=checked]:bg-green-700"
+                                    />
+                                    <div className="grid gap-1.5 font-normal">
+                                      <div className="text-sm leading-none font-medium">
+                                        <p className="text-xs text-muted-foreground">
+                                          {isPlanLocked
+                                            ? "Current plan locked"
+                                            : "Sponsored by another teacher"}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </Label>
+                                </DialogTrigger>
+
+                                <DialogContent className="max-w-lg">
+                                  <DialogHeader>
+                                    <DialogTitle>Plan Information</DialogTitle>
+                                    <DialogDescription>
+                                      Information about {member.student.email}&apos;s current
+                                      plan
+                                    </DialogDescription>
+                                  </DialogHeader>
+
+                                  <div className="space-y-4">
+                                    <div className="space-y-2">
+                                      <p className="text-sm font-medium">Current Plan:</p>
+                                      <p className="text-sm text-muted-foreground capitalize">
+                                        {member.student.user_type}
+                                      </p>
+                                    </div>
+
+                                    {isPlanLocked ? (
+                                      <div className="space-y-2">
+                                        <p className="text-sm font-medium">Action Required:</p>
+                                        <p className="text-sm text-muted-foreground">
+                                          Please ask {member.student.email} to downgrade to the
+                                          free student plan before you can provide sponsorship.
+                                        </p>
+                                      </div>
+                                    ) : (
+                                      <div className="space-y-2">
+                                        <p className="text-sm font-medium">Already Sponsored:</p>
+                                        <p className="text-sm text-muted-foreground">
+                                          This student is already sponsored by another teacher,
+                                          so you can’t change their sponsorship here.
+                                        </p>
+                                      </div>
+                                    )}
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                            ) : (
+                              <SponsorshipCheckbox
+                                member={member}
+                                selectedClassId={selectedClass!.id}
+                                setSelectedClassMembers={setSelectedClassMembers}
+                              />
+                            )}
+                          </div>
+                        </div>
+
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setMemberToDelete(member)
+                            setDeleteMemberDialogOpen(true)
+                          }}
+                          title="Remove Student"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )
+                  })}
                 </div>
+
 
               </div>
 

@@ -12,6 +12,7 @@ type UserType = string;
 export type SupabaseMember = {
   student_id: string;
   joined_at: string;
+  is_sponsored: boolean;
   student: {
     userid?: string; // optional if you didn’t include it everywhere yet
     email: string;
