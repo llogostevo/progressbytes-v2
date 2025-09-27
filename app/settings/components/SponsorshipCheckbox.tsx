@@ -32,8 +32,11 @@ export default function SponsorshipCheckbox({
   selectedClassId,
   setSelectedClassMembers,
 }: Props) {
-  const isSponsored = member.student.user_type === "studentSponsoredRevision";
-  const [checked, setChecked] = useState<boolean>(isSponsored);
+  // const isSponsored = member.student.user_type === "studentSponsoredRevision";
+  // const [checked, setChecked] = useState<boolean>(isSponsored);
+
+  const isSponsoredForThisClass = member.is_sponsored;
+  const [checked, setChecked] = useState<boolean>(isSponsoredForThisClass);
   const [isPending, startTransition] = useTransition();
 
   const onToggle = (next: boolean) => {
@@ -53,12 +56,12 @@ export default function SponsorshipCheckbox({
           (prev || []).map((m) =>
             m.student_id === member.student_id
               ? {
-                  ...m,
-                  student: {
-                    ...m.student,
-                    user_type: next ? "studentSponsoredRevision" : "basic",
-                  },
-                }
+                ...m,
+                student: {
+                  ...m.student,
+                  user_type: next ? "studentSponsoredRevision" : "basic",
+                },
+              }
               : m
           )
         );
