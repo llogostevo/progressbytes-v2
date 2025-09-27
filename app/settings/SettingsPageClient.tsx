@@ -9,7 +9,7 @@ import { redirect } from "next/navigation"
 
 
 // import type { Plan } from '@/lib/types';
-import { UserType, userAccessLimits, getMaxSponsoredStudents, isLockedPlan } from "@/lib/access";
+import { UserType, userAccessLimits, isLockedPlan } from "@/lib/access";
 import { useAccess } from "@/hooks/useAccess";
 
 
@@ -25,6 +25,7 @@ import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { isTeacher } from "@/lib/access"
 import UpgradePageClient from "./upgrade/UpgradePageClient"
+import SponsorshipCheckbox from "./components/SponsorshipCheckbox"
 import { Checkbox } from "@/components/ui/checkbox"
 
 // Initialize Stripe
@@ -140,12 +141,16 @@ function SettingsSkeleton() {
   )
 }
 
+
+
+
 function SettingsPageContent() {
   const { maxClasses, maxStudentsPerClass } = useAccess()
   const [userType, setUserType] = useState<UserType | null>(null)
   const [userRole, setUserRole] = useState<UserRole | null>(null)
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [userCourses, setUserCourses] = useState<string[]>([])
+  const [maxSponsoredSeats, setMaxSponsoredSeats] = useState<number>(0)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [courseToDelete, setCourseToDelete] = useState<string | null>(null)
   const [deleteConfirmation, setDeleteConfirmation] = useState("")
@@ -710,9 +715,10 @@ function SettingsPageContent() {
           student_id: m.student_id,
           joined_at: m.joined_at,
           student: {
+            userid: profile?.userid ?? m.student_id,
             email: profile?.email || 'No email found',
             full_name: fullName,
-            user_type: profile?.user_type || 'student',
+            user_type: profile?.user_type as UserType || 'basic',
           },
         }
       }) as SupabaseMember[]
@@ -990,6 +996,7 @@ function SettingsPageContent() {
         setUserType(profile?.user_type)
         setUserRole(profile?.role || 'regular')
         setUserCourses(profile?.courses || [])
+        setMaxSponsoredSeats(profile?.max_sponsored_seats || 0)
       }
 
       // Fetch user's classes (use freshly fetched profile type, not state)
@@ -1359,9 +1366,9 @@ function SettingsPageContent() {
                     <Badge variant={(selectedClassMembers || []).length >= maxStudentsPerClass ? "destructive" : "secondary"}>
                       {(selectedClassMembers || []).length} / {maxStudentsPerClass} Students
                     </Badge>
-                    {userType && getMaxSponsoredStudents({ user_type: userType }) > 0 && (
+                    {userType && maxSponsoredSeats > 0 && (
                       <Badge variant="outline" className="text-xs">
-                        {(selectedClassMembers || []).filter(member => member.student.user_type === 'studentSponsoredRevision').length} / {getMaxSponsoredStudents({ user_type: userType })} Sponsored
+                        {(selectedClassMembers || []).filter(member => member.student.user_type === 'studentSponsoredRevision').length} / {maxSponsoredSeats} Sponsored
                       </Badge>
                     )}
                   </div>
@@ -1392,23 +1399,22 @@ function SettingsPageContent() {
                           {isLockedPlan({ user_type: member.student.user_type as UserType }) ? (
                             <Dialog>
                               <DialogTrigger asChild>
+                                {/* Same styled wrapper as before, just disabled */}
                                 <Label className="mt-2 hover:bg-accent/50 flex items-start gap-3 rounded-lg border p-2 w-48 cursor-pointer">
                                   <Checkbox
                                     id={`toggle-${member.student_id}`}
-                                    defaultChecked={member.student.user_type === 'studentSponsoredRevision'}
-                                    disabled={true}
+                                    checked={member.student.user_type === 'studentSponsoredRevision'}
+                                    disabled
                                     className="data-[state=checked]:border-green-600 data-[state=checked]:bg-green-600 data-[state=checked]:text-white dark:data-[state=checked]:border-green-700 dark:data-[state=checked]:bg-green-700"
                                   />
                                   <div className="grid gap-1.5 font-normal">
                                     <div className="text-sm leading-none font-medium">
-                                      <p className="text-xs text-muted-foreground">
-                                        Current plan locked
-                                      </p>
+                                      <p className="text-xs text-muted-foreground">Current plan locked</p>
                                     </div>
                                   </div>
                                 </Label>
                               </DialogTrigger>
-                              <DialogContent>
+                              <DialogContent className="max-w-lg">
                                 <DialogHeader>
                                   <DialogTitle>Plan Information</DialogTitle>
                                   <DialogDescription>
@@ -1418,33 +1424,30 @@ function SettingsPageContent() {
                                 <div className="space-y-4">
                                   <div className="space-y-2">
                                     <p className="text-sm font-medium">Current Plan:</p>
-                                    <p className="text-sm text-muted-foreground capitalize">{member.student.user_type}</p>
+                                    <p className="text-sm text-muted-foreground capitalize">
+                                      {member.student.user_type}
+                                    </p>
                                   </div>
                                   <div className="space-y-2">
                                     <p className="text-sm font-medium">Action Required:</p>
                                     <p className="text-sm text-muted-foreground">
-                                      Please contact {member.student.email} to discuss reverting to a free student revision plan. 
-                                      They will need to downgrade their plan before you can provide free access.
+                                      Please contact {member.student.email} to discuss reverting to a free
+                                      student revision plan. They will need to downgrade before you can
+                                      provide free access.
                                     </p>
                                   </div>
                                 </div>
                               </DialogContent>
                             </Dialog>
                           ) : (
-                            <Label className="mt-2 hover:bg-accent/50 flex items-start gap-3 rounded-lg border p-2 w-48 cursor-pointer has-[[aria-checked=true]]:border-green-600 has-[[aria-checked=true]]:bg-green-50 dark:has-[[aria-checked=true]]:border-green-900 dark:has-[[aria-checked=true]]:bg-green-950">
-                              <Checkbox
-                                id={`toggle-${member.student_id}`}
-                                defaultChecked={member.student.user_type === 'studentSponsoredRevision'}
-                                disabled={false}
-                                className="cursor-pointer data-[state=checked]:border-green-600 data-[state=checked]:bg-green-600 data-[state=checked]:text-white dark:data-[state=checked]:border-green-700 dark:data-[state=checked]:bg-green-700"
-                              />
-                              <div className="grid gap-1.5 font-normal">
-                                <div className="text-sm leading-none font-medium">
-                                  Enable free access
-                                </div>
-                              </div>
-                            </Label>
+                            <SponsorshipCheckbox
+                              member={member}
+                              selectedClassId={selectedClass!.id}
+                              setSelectedClassMembers={setSelectedClassMembers}
+                            />
                           )}
+
+
                         </div>
                       </div>
                       <Button
