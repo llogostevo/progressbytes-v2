@@ -6,6 +6,7 @@ import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { redirect } from "next/navigation"
 // import { loadStripe } from '@stripe/stripe-js'
+import { Users, Gift } from "lucide-react";
 
 
 // import type { Plan } from '@/lib/types';
@@ -531,6 +532,52 @@ function SettingsPageContent() {
     }
   }
 
+  // Helper function to delete a member and maybe unsponsor them
+  async function deleteMemberAndMaybeUnsponsor({
+    classId,
+    studentId,
+  }: {
+    classId: string;
+    studentId: string;
+  }): Promise<{ wasSponsored: boolean }> {
+    // 1) Read current membership to see if it was sponsored (and to be safe, that this class belongs to the current teacher)
+    const { data: membership, error: readErr } = await supabase
+      .from('class_members')
+      .select('is_sponsored, class:classes!inner(teacher_id)')
+      .eq('class_id', classId)
+      .eq('student_id', studentId)
+      .single();
+
+    if (readErr) throw readErr;
+
+    const wasSponsored = !!membership?.is_sponsored;
+
+    // 2) Delete the membership
+    const { error: delErr } = await supabase
+      .from('class_members')
+      .delete()
+      .eq('class_id', classId)
+      .eq('student_id', studentId);
+
+    if (delErr) throw delErr;
+
+    // 3) If this membership was sponsored in THIS class, call your RPC
+    if (wasSponsored) {
+      // Example RPC signature: unsponsor_student(student_id uuid, teacher_id uuid)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not found');
+
+      const { error: rpcErr } = await supabase.rpc('unsponsor_student', {
+        student_id: studentId,
+        teacher_id: user.id,
+      });
+      if (rpcErr) throw rpcErr;
+    }
+    return { wasSponsored };
+
+  }
+
+
   const handleDeleteClassMember = async () => {
 
     // Teacher context: removing from selectedClass dialog
@@ -540,13 +587,14 @@ function SettingsPageContent() {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) throw new Error('User not found')
 
-        const { error } = await supabase
-          .from('class_members')
-          .delete()
-          .eq('class_id', selectedClass.id)
-          .eq('student_id', memberToDelete.student_id)
+        const { wasSponsored } = await deleteMemberAndMaybeUnsponsor({
+          classId: selectedClass.id,
+          studentId: memberToDelete.student_id,
+        });
 
-        if (error) throw error
+        if (wasSponsored) {
+          setSponsoredUsed((x) => Math.max(0, x - 1))
+        }
 
         setSelectedClassMembers(prev => (prev || []).filter(m => m.student_id !== memberToDelete.student_id))
 
@@ -582,13 +630,15 @@ function SettingsPageContent() {
 
     setIsDeletingMember(true)
     try {
-      const { error } = await supabase
-        .from('class_members')
-        .delete()
-        .eq('class_id', selectedMembership.class_id)
-        .eq('student_id', memberToDelete.student_id)
 
-      if (error) throw error
+      const { wasSponsored } = await deleteMemberAndMaybeUnsponsor({
+        classId: selectedMembership.class_id,
+        studentId: memberToDelete.student_id,
+      });
+
+      if (wasSponsored) {
+        setSponsoredUsed((x) => Math.max(0, x - 1))
+      }
 
       if (selectedMembership.members) {
         const updatedMembers = selectedMembership.members.filter(
@@ -1371,7 +1421,7 @@ function SettingsPageContent() {
         {/* Show Join Code Dialog */}
         {/* <Dialog open={showJoinCodeDialogOpen} onOpenChange={setShowJoinCodeDialogOpen}> */}
         <Dialog open={showJoinCodeDialogOpen} onOpenChange={(open) => { setShowJoinCodeDialogOpen(open); if (!open) { setSelectedClass(null); setSelectedClassMembers(null); setAddStudentEmail("") } }}>
-          <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-md lg:max-w-[70vw] max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{selectedClass?.name}</DialogTitle>
               <DialogDescription>
@@ -1381,7 +1431,6 @@ function SettingsPageContent() {
             <h4 className="font-medium leading-tight">Class Members</h4>
 
             <div className="space-y-6">
-              {/* Class Members - Moved to top */}
               <div className="space-y-4">
 
                 <div className="flex items-start justify-between gap-3 sm:items-center">
@@ -1396,23 +1445,27 @@ function SettingsPageContent() {
                     </Badge>
 
                     {/* Sponsored totals (subtle group) */}
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        variant="outline"
-                        className="text-xs rounded-full px-3 py-1"
-                        title="Total sponsored across all classes"
-                      >
-                        {sponsoredUsed} / {maxSponsoredSeats} Sponsored (Total)
-                      </Badge>
+                    <div className="flex items-center gap-2 rounded-sm border border-border/60 bg-background/50 px-2 py-1">
+                      <Gift className="mr-1 h-3.5 w-3.5 text-muted-foreground" />
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant="outline"
+                          className="text-xs rounded-full px-3 py-1"
+                          title="Total sponsored across all classes"
+                        >
+                          {sponsoredUsed} / {maxSponsoredSeats} Sponsored (Total)
+                        </Badge>
 
-                      <Badge
-                        variant="outline"
-                        className="text-xs rounded-full px-3 py-1 bg-muted/60"
-                        title="Sponsored in this class"
-                      >
-                        {(selectedClassMembers || []).filter(m => m.is_sponsored).length} in this class
-                      </Badge>
+                        <Badge
+                          variant="outline"
+                          className="text-xs rounded-full px-3 py-1 bg-muted/60"
+                          title="Sponsored in this class"
+                        >
+                          {(selectedClassMembers || []).filter(m => m.is_sponsored).length} in this class
+                        </Badge>
+                      </div>
                     </div>
+
                   </div>
                 </div>
 
