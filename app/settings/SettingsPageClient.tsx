@@ -56,6 +56,7 @@ interface ClassMember {
   class_id: string
   student_id: string
   joined_at: string
+  is_sponsored: boolean
   class: Class
   members?: {
     student_id: string
@@ -72,6 +73,7 @@ interface SupabaseMembership {
   class_id: string
   student_id: string
   joined_at: string
+  is_sponsored: boolean
   class: {
     id: string
     name: string
@@ -1092,6 +1094,7 @@ function SettingsPageContent() {
           class_id,
           student_id,
           joined_at,
+          is_sponsored,
           class:classes!inner (
             id,
             name,
@@ -1139,6 +1142,7 @@ function SettingsPageContent() {
           class_id: membership.class_id,
           student_id: membership.student_id,
           joined_at: membership.joined_at,
+          is_sponsored: membership.is_sponsored,
           class: {
             id: membership.class.id,
             name: membership.class.name,
@@ -1172,13 +1176,6 @@ function SettingsPageContent() {
       }
     }
 
-    // const fetchPlans = async () => {
-    //   const { data, error } = await supabase
-    //     .from('plans')
-    //     .select('*')
-    //     .order('price', { ascending: true });
-    //   if (!error) setPlans(data || []);
-    // };
 
     fetchUser()
     fetchCourses()
@@ -1186,8 +1183,6 @@ function SettingsPageContent() {
     setIsLoading(false)
   }, [supabase, searchParams, router,])
 
-  // const studentPlans = plans.filter(plan => plan.plan_type === 'student');
-  // const teacherPlans = plans.filter(plan => plan.plan_type === 'teacher');
 
   if (isLoading) {
     return (
@@ -1440,10 +1435,10 @@ function SettingsPageContent() {
                     <Badge
                       variant="secondary"
                       className={`text-xs rounded-full px-3 py-1 font-semibold ${(selectedClassMembers || []).length >= maxStudentsPerClass
-                          ? "bg-red-100 text-red-700 border-red-200"
-                          : (selectedClassMembers || []).length >= maxStudentsPerClass - 1
-                            ? "bg-yellow-100 text-yellow-700 border-yellow-200"
-                            : ""
+                        ? "bg-red-100 text-red-700 border-red-200"
+                        : (selectedClassMembers || []).length >= maxStudentsPerClass - 1
+                          ? "bg-yellow-100 text-yellow-700 border-yellow-200"
+                          : ""
                         }`}
                       title="Students in this class"
                     >
@@ -1736,7 +1731,7 @@ function SettingsPageContent() {
         </Dialog>
 
         {/* Student Class Membership */}
-        {(userType === 'basic' || userType === 'revision' || userType === 'revisionAI' || isTeacher(userType)) && (
+        {userEmail && (
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -1775,6 +1770,11 @@ function SettingsPageContent() {
                               <Badge variant="secondary" className="text-xs">
                                 Joined {new Date(membership.joined_at).toLocaleDateString()}
                               </Badge>
+                              {membership.is_sponsored && (
+                                <Badge variant="outline" className="text-xs text-green-600 border-green-200">
+                                  Sponsored
+                                </Badge>
+                              )}
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">
@@ -2009,6 +2009,13 @@ function SettingsPageContent() {
                     </p>
                     <p className="text-sm text-muted-foreground">
                       <span className="font-medium">Joined:</span> {new Date(selectedMembership.joined_at).toLocaleDateString()}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      <span className="font-medium">Sponsorship Status:</span> {selectedMembership.is_sponsored ? (
+                        <span className="text-green-600 font-medium">Sponsored</span>
+                      ) : (
+                        <span className="text-gray-600">Not Sponsored</span>
+                      )}
                     </p>
                   </div>
                 </div>

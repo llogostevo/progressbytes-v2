@@ -266,6 +266,7 @@ export const canShowProgressBoost = (user: User): boolean => {
   return userAccessLimits[user.user_type]?.showProgressBoost ?? false;
 };
 
+
 // Helper function to check if user is on a paid plan
 export const isPaidPlan = (user: User): boolean => {
   const paidPlans: UserType[] = [
