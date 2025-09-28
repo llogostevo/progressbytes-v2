@@ -1218,18 +1218,11 @@ export default function QuestionPage() {
                 <CardDescription>Select one or more subtopics to focus your practice</CardDescription>
               </CardHeader>
               <CardContent className="pt-4 sm:pt-6">
-                <Tooltip>
-                  <TooltipTrigger asChild>
                     <SubtopicFilter
                       selectedSubtopics={selectedSubtopics}
                       onSubtopicChange={setSelectedSubtopics}
                       subtopics={subtopics}
                     />
-                  </TooltipTrigger>
-                  <TooltipContent className="bg-black/80 text-white">
-                    <p className="text-sm">Select one or more subtopics to focus your practice</p>
-                  </TooltipContent>
-                </Tooltip>
               </CardContent>
             </Card>
 
