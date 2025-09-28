@@ -13,6 +13,9 @@ import {
   User,
   canAccessFilters,
   canAccessAnalytics,
+  isPaidPlan,
+  isLockedPlan,
+  isSponsoredPlan,
 } from '@/lib/access';
 
 interface AccessControl {
@@ -26,6 +29,9 @@ interface AccessControl {
   maxQuestionsPerDay: number;
   maxQuestionsPerTopic: number;
   getAvailableQuestionsForTopic: (topicQuestionCount: number) => number;
+  isPaidPlan: boolean;
+  isLockedPlan: boolean;
+  isSponsoredPlan: boolean;
 }
 
 export function useAccess(): AccessControl {
@@ -45,5 +51,8 @@ export function useAccess(): AccessControl {
     maxQuestionsPerTopic: getMaxQuestionsPerTopic(safeUser),
     getAvailableQuestionsForTopic: (topicQuestionCount: number) => 
       getAvailableQuestionsForTopic(safeUser, topicQuestionCount),
+    isPaidPlan: isPaidPlan(safeUser),
+    isLockedPlan: isLockedPlan(safeUser),
+    isSponsoredPlan: isSponsoredPlan(safeUser),
   };
 }

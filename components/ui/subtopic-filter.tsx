@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
+import { filterOn, filterOff } from "@/components/ui/filter-toasts"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface Subtopic {
   id: string
@@ -21,7 +23,7 @@ export function SubtopicFilter({ selectedSubtopics, onSubtopicChange, subtopics,
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 640)
     }
-    
+
     checkMobile()
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
@@ -33,15 +35,28 @@ export function SubtopicFilter({ selectedSubtopics, onSubtopicChange, subtopics,
   }
 
   const handleSubtopicClick = (subtopicId: string) => {
-    const newSelectedSubtopics = selectedSubtopics.includes(subtopicId)
+    const isCurrentlySelected = selectedSubtopics.includes(subtopicId)
+    const newSelectedSubtopics = isCurrentlySelected
       ? selectedSubtopics.filter(t => t !== subtopicId)
       : [...selectedSubtopics, subtopicId]
-    
-    // If we're deselecting the last subtopic, hide the subtopics
-    if (selectedSubtopics.includes(subtopicId) && newSelectedSubtopics.length === 0) {
-      setShowSubtopics(false)
+
+    // Find the subtopic name for better toast messages
+    const subtopic = subtopics.find(s => s.id === subtopicId)
+    const subtopicName = subtopic?.subtopictitle || subtopicId
+
+    // Show appropriate toast based on action
+    if (isCurrentlySelected) {
+      // Deselecting
+      filterOff(`Deselected: ${subtopicName} `)
+      // If we're deselecting the last subtopic, hide the subtopics
+      if (newSelectedSubtopics.length === 0) {
+        setShowSubtopics(false)
+      }
+    } else {
+      // Selecting
+      filterOn(`Selected: ${subtopicName}`)
     }
-    
+
     onSubtopicChange(newSelectedSubtopics)
   }
 
@@ -72,18 +87,28 @@ export function SubtopicFilter({ selectedSubtopics, onSubtopicChange, subtopics,
       {(showSubtopics || isMobile) && (
         <div className="grid grid-cols-3 w-full gap-3">
           {subtopics.map((subtopic) => (
-            <Button
-              key={subtopic.id}
-              variant={selectedSubtopics.includes(subtopic.id) ? "default" : "outline"}
-              onClick={() => handleSubtopicClick(subtopic.id)}
-              size="sm"
-              className="flex-shrink-0 justify-start text-left h-8 px-2"
-            >
-              <span className="truncate">{subtopic.subtopictitle}</span>
-            </Button>
+            <Tooltip key={subtopic.id}>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={selectedSubtopics.includes(subtopic.id) ? "default" : "outline"}
+                  onClick={() => handleSubtopicClick(subtopic.id)}
+                  size="sm"
+                  className="flex-shrink-0 justify-start text-left h-8 px-2"
+                >
+                  <span className="truncate">{subtopic.subtopictitle}</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="bg-black/80 text-white max-w-xs pointer-events-none" side="top"
+                sideOffset={16}
+                collisionPadding={16}
+              >
+                <p className="text-sm">{subtopic.subtopictitle}</p>
+              </TooltipContent>
+            </Tooltip>
           ))}
         </div>
-      )}
-    </div>
+      )
+      }
+    </div >
   )
 } 

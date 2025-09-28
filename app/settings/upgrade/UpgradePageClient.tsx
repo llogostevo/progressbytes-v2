@@ -6,14 +6,14 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { redirect } from "next/navigation"
 import { loadStripe } from "@stripe/stripe-js"
 import type { Plan } from "@/lib/types"
-import type { UserType } from "@/lib/access"
-import { userAccessLimits } from "@/lib/access"
+import type { UserType, User } from "@/lib/access"
+import { userAccessLimits, isSponsoredPlan } from "@/lib/access"
 import { cleanupExcessResources } from "@/lib/utils"
 
 // UI Components
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { BookOpen, BookOpenCheck, BookOpenText, School } from "lucide-react"
+import { BookOpen, BookOpenCheck, BookOpenText, School, Gift } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 
@@ -23,6 +23,7 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY 
 export default function UpgradePageClient() {
   const [userType, setUserType] = useState<UserType | null>(null)
   const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [isLoadingCheckout, setIsLoadingCheckout] = useState(false)
   const [plans, setPlans] = useState<Plan[]>([])
 
@@ -33,41 +34,41 @@ export default function UpgradePageClient() {
   // Helper function to check if switching to a plan with fewer classes or students
   const checkIfDowngrade = (currentPlan: UserType | null, newPlan: UserType): { isDowngrade: boolean; type?: 'student' | 'teacher' } => {
     if (!currentPlan) return { isDowngrade: false }
-    
+
     const currentLimits = userAccessLimits[currentPlan]
     const newLimits = userAccessLimits[newPlan]
-    
+
     if (!currentLimits || !newLimits) return { isDowngrade: false }
-    
+
     // Check if both plans are teacher plans (have class limits)
     if (currentLimits.maxClasses !== undefined && newLimits.maxClasses !== undefined) {
       // Check if new plan has fewer classes or fewer students per class
-      const isDowngrade = newLimits.maxClasses < currentLimits.maxClasses || 
-             (newLimits.maxStudentsPerClass || 0) < (currentLimits.maxStudentsPerClass || 0)
+      const isDowngrade = newLimits.maxClasses < currentLimits.maxClasses ||
+        (newLimits.maxStudentsPerClass || 0) < (currentLimits.maxStudentsPerClass || 0)
       return { isDowngrade, type: 'teacher' }
     }
-    
+
     // Check if both plans are student plans (no class limits, but have question limits)
     if (currentLimits.maxClasses === undefined && newLimits.maxClasses === undefined) {
       // Check if new plan has fewer questions per day or per topic
       const isDowngrade = newLimits.maxQuestionsPerDay < currentLimits.maxQuestionsPerDay ||
-             newLimits.maxQuestionsPerTopic < currentLimits.maxQuestionsPerTopic
+        newLimits.maxQuestionsPerTopic < currentLimits.maxQuestionsPerTopic
       return { isDowngrade, type: 'student' }
     }
-    
+
     // Check if switching from teacher to student plan (losing class management capabilities)
     if (currentLimits.maxClasses !== undefined && newLimits.maxClasses === undefined) {
       return { isDowngrade: true, type: 'teacher' }
     }
-    
+
     // Check if switching from student to teacher plan (losing unlimited questions)
     if (currentLimits.maxClasses === undefined && newLimits.maxClasses !== undefined) {
       // Only show warning if the teacher plan has limited questions
       const isDowngrade = newLimits.maxQuestionsPerDay < currentLimits.maxQuestionsPerDay ||
-             newLimits.maxQuestionsPerTopic < currentLimits.maxQuestionsPerTopic
+        newLimits.maxQuestionsPerTopic < currentLimits.maxQuestionsPerTopic
       return { isDowngrade, type: 'student' }
     }
-    
+
     return { isDowngrade: false }
   }
 
@@ -76,12 +77,12 @@ export default function UpgradePageClient() {
 
     // Check if this is a downgrade and get the type
     const downgradeInfo = checkIfDowngrade(userType, plan.slug)
-    
+
     if (downgradeInfo.isDowngrade) {
-      const message = downgradeInfo.type === 'student' 
+      const message = downgradeInfo.type === 'student'
         ? "You're switching to a plan with fewer features. This may affect your current setup."
         : "You're switching to a plan with fewer classes or students. You will lose permenant access to your current classes and students if you are above the limits of the selected plan. "
-      
+
       toast.error("Plan Downgrade Warning", {
         description: message,
         action: {
@@ -234,7 +235,7 @@ export default function UpgradePageClient() {
 
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("user_type")
+        .select("user_type, role")
         .eq("userid", user.id)
         .single()
 
@@ -242,6 +243,13 @@ export default function UpgradePageClient() {
         console.error("Error fetching profile:", profileError)
       } else {
         setUserType(profile?.user_type)
+        if (profile?.user_type) {
+          setUser({
+            user_type: profile.user_type,
+            email: user.email || undefined,
+            role: profile.role || 'regular'
+          })
+        }
       }
     }
 
@@ -256,129 +264,158 @@ export default function UpgradePageClient() {
 
   const studentPlans = plans.filter((plan) => plan.plan_type === "student")
   const teacherPlans = plans.filter((plan) => plan.plan_type === "teacher")
+  const isUserSponsored = user ? isSponsoredPlan(user) : false
 
-  
+
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
 
-      {/* Student Plans */}
-      {studentPlans.length > 0 && (
-        <Card id="student-plans" className="mb-8">
-          <CardHeader>
-            <CardTitle>Student Plans</CardTitle>
-            <CardDescription>Choose a student plan that fits your needs</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-6 md:grid-cols-3">
-              {studentPlans.map((plan) => (
-                <Card
-                  key={plan.slug}
-                  className={`relative${userType === plan.slug ? " border-primary" : ""}${plan.active === false ? " opacity-50 pointer-events-none" : ""}`}
-                >
-                  <CardHeader>
-                    {plan.slug === "basic" && <BookOpen className="h-6 w-6 text-muted-foreground mb-2" />}
-                    {plan.slug === "revision" && <BookOpenCheck className="h-6 w-6 text-muted-foreground mb-2" />}
-                    {plan.slug === "revisionAI" && <BookOpenText className="h-6 w-6 text-muted-foreground mb-2" />}
-                    {plan.active === false && (
-                      <Badge className="absolute top-2 right-2 bg-gray-400 text-white">Coming Soon</Badge>
-                    )}
-                    <CardTitle>{plan.name}</CardTitle>
-                    <CardDescription>{plan.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="text-lg font-semibold">
-                        {plan.active ? `£${plan.price} /month` : "Price: TBC"}
-                      </div>
-                      {Array.isArray(plan.features) && plan.features.length > 0 && (
-                        <ul className="list-disc list-inside text-sm text-muted-foreground">
-                          {plan.features.map((feature, idx) => (
-                            <li key={idx}>{feature}</li>
-                          ))}
-                        </ul>
-                      )}
-                      <Button
-                        className="w-full"
-                        variant={userType === plan.slug ? "default" : "outline"}
-                        onClick={() => handlePlanSelect(plan)}
-                        disabled={isLoadingCheckout || !plan.active}
-                      >
-                        {userType === plan.slug
-                          ? "Current Plan"
-                          : !plan.active
-                            ? "Coming Soon"
-                            : isLoadingCheckout
-                              ? "Loading..."
-                              : "Select Plan"}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+        {/* Sponsored Plan Card */}
+        {isUserSponsored && (
+          <Card className="mb-8 border-green-200 bg-green-50">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <Gift className="h-6 w-6 text-green-600" />
+                <div>
+                  <CardTitle className="text-green-800">Sponsored Plan</CardTitle>
+                  <CardDescription className="text-green-700">
+                    You are currently on a sponsored plan
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-green-700 text-sm whitespace-pre-line">
+                {
+                  `Your current plan is sponsored, which means you have access to premium features at no cost.
 
-      {/* Teacher Plans */}
-      {teacherPlans.length > 0 && (
-        <Card id="teacher-plans" className="mb-8">
-          <CardHeader>
-            <CardTitle>Teacher Plans</CardTitle>
-            <CardDescription>Choose a teacher plan that fits your classroom needs</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-6 md:grid-cols-3">
-              {teacherPlans.map((plan) => (
-                <Card
-                  key={plan.slug}
-                  className={`relative${userType === plan.slug ? " border-primary" : ""}${plan.active === false ? " opacity-50 pointer-events-none" : ""}`}
-                >
-                  <CardHeader>
-                    {plan.slug === "teacherBasic" && <School className="h-6 w-6 text-muted-foreground mb-2" />}
-                    {plan.slug === "teacherPremium" && <School className="h-6 w-6 text-primary mb-2" />}
-                    {plan.active === false && (
-                      <Badge className="absolute top-2 right-2 bg-gray-400 text-white">Coming Soon</Badge>
-                    )}
-                    <CardTitle>{plan.name}</CardTitle>
-                    <CardDescription>{plan.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="text-lg font-semibold">
-                        {plan.active ? `£${plan.price} /month` : "Price: TBC"}
-                      </div>
-                      {Array.isArray(plan.features) && plan.features.length > 0 && (
-                        <ul className="list-disc list-inside text-sm text-muted-foreground">
-                          {plan.features.map((feature, idx) => (
-                            <li key={idx}>{feature}</li>
-                          ))}
-                        </ul>
+              Go to the classes section on the settings page to view your joined classes and identify your sponsor. If you have any questions about your plan, contact your sponsor.
+              
+                `}<em>{`NB. If you delete your sponsored class membership, you will lose access to the premium features and revert to a free plan.`
+                }</em>
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Student Plans */}
+        {!isUserSponsored && studentPlans.length > 0 && (
+          <Card id="student-plans" className="mb-8">
+            <CardHeader>
+              <CardTitle>Student Plans</CardTitle>
+              <CardDescription>Choose a student plan that fits your needs</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-6 md:grid-cols-3">
+                {studentPlans.map((plan) => (
+                  <Card
+                    key={plan.slug}
+                    className={`relative${userType === plan.slug ? " border-primary" : ""}${plan.active === false ? " opacity-50 pointer-events-none" : ""}`}
+                  >
+                    <CardHeader>
+                      {plan.slug === "basic" && <BookOpen className="h-6 w-6 text-muted-foreground mb-2" />}
+                      {plan.slug === "revision" && <BookOpenCheck className="h-6 w-6 text-muted-foreground mb-2" />}
+                      {plan.slug === "revisionAI" && <BookOpenText className="h-6 w-6 text-muted-foreground mb-2" />}
+                      {plan.active === false && (
+                        <Badge className="absolute top-2 right-2 bg-gray-400 text-white">Coming Soon</Badge>
                       )}
-                      <Button
-                        className="w-full"
-                        variant={userType === plan.slug ? "default" : "outline"}
-                        onClick={() => handlePlanSelect(plan)}
-                        disabled={isLoadingCheckout || !plan.active}
-                      >
-                        {userType === plan.slug
-                          ? "Current Plan"
-                          : !plan.active
-                            ? "Coming Soon"
-                            : isLoadingCheckout
-                              ? "Loading..."
-                              : "Select Plan"}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                      <CardTitle>{plan.name}</CardTitle>
+                      <CardDescription>{plan.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="text-lg font-semibold">
+                          {plan.active ? `£${plan.price} /month` : "Price: TBC"}
+                        </div>
+                        {Array.isArray(plan.features) && plan.features.length > 0 && (
+                          <ul className="list-disc list-inside text-sm text-muted-foreground">
+                            {plan.features.map((feature, idx) => (
+                              <li key={idx}>{feature}</li>
+                            ))}
+                          </ul>
+                        )}
+                        <Button
+                          className="w-full"
+                          variant={userType === plan.slug ? "default" : "outline"}
+                          onClick={() => handlePlanSelect(plan)}
+                          disabled={isLoadingCheckout || !plan.active}
+                        >
+                          {userType === plan.slug
+                            ? "Current Plan"
+                            : !plan.active
+                              ? "Coming Soon"
+                              : isLoadingCheckout
+                                ? "Loading..."
+                                : "Select Plan"}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Teacher Plans */}
+        {!isUserSponsored && teacherPlans.length > 0 && (
+          <Card id="teacher-plans" className="mb-8">
+            <CardHeader>
+              <CardTitle>Teacher Plans</CardTitle>
+              <CardDescription>Choose a teacher plan that fits your classroom needs</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-6 md:grid-cols-3">
+                {teacherPlans.map((plan) => (
+                  <Card
+                    key={plan.slug}
+                    className={`relative${userType === plan.slug ? " border-primary" : ""}${plan.active === false ? " opacity-50 pointer-events-none" : ""}`}
+                  >
+                    <CardHeader>
+                      {plan.slug === "teacherBasic" && <School className="h-6 w-6 text-muted-foreground mb-2" />}
+                      {plan.slug === "teacherPremium" && <School className="h-6 w-6 text-primary mb-2" />}
+                      {plan.active === false && (
+                        <Badge className="absolute top-2 right-2 bg-gray-400 text-white">Coming Soon</Badge>
+                      )}
+                      <CardTitle>{plan.name}</CardTitle>
+                      <CardDescription>{plan.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="text-lg font-semibold">
+                          {plan.active ? `£${plan.price} /month` : "Price: TBC"}
+                        </div>
+                        {Array.isArray(plan.features) && plan.features.length > 0 && (
+                          <ul className="list-disc list-inside text-sm text-muted-foreground">
+                            {plan.features.map((feature, idx) => (
+                              <li key={idx}>{feature}</li>
+                            ))}
+                          </ul>
+                        )}
+                        <Button
+                          className="w-full"
+                          variant={userType === plan.slug ? "default" : "outline"}
+                          onClick={() => handlePlanSelect(plan)}
+                          disabled={isLoadingCheckout || !plan.active}
+                        >
+                          {userType === plan.slug
+                            ? "Current Plan"
+                            : !plan.active
+                              ? "Coming Soon"
+                              : isLoadingCheckout
+                                ? "Loading..."
+                                : "Select Plan"}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   )

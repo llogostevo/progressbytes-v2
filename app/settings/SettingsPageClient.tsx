@@ -6,10 +6,11 @@ import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { redirect } from "next/navigation"
 // import { loadStripe } from '@stripe/stripe-js'
+import { Users, Gift } from "lucide-react";
 
 
 // import type { Plan } from '@/lib/types';
-import { UserType, userAccessLimits } from "@/lib/access";
+import { UserType, userAccessLimits, isLockedPlan } from "@/lib/access";
 import { useAccess } from "@/hooks/useAccess";
 
 
@@ -17,7 +18,7 @@ import { useAccess } from "@/hooks/useAccess";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Book, GraduationCap, School, BookMarked, Library, User, CreditCard, Plus, Copy, Eye, Trash2, Upload, FileText, Download } from "lucide-react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -25,6 +26,8 @@ import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { isTeacher } from "@/lib/access"
 import UpgradePageClient from "./upgrade/UpgradePageClient"
+import SponsorshipCheckbox from "./components/SponsorshipCheckbox"
+import { Checkbox } from "@/components/ui/checkbox"
 
 // Initialize Stripe
 // const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
@@ -53,6 +56,7 @@ interface ClassMember {
   class_id: string
   student_id: string
   joined_at: string
+  is_sponsored: boolean
   class: Class
   members?: {
     student_id: string
@@ -69,6 +73,7 @@ interface SupabaseMembership {
   class_id: string
   student_id: string
   joined_at: string
+  is_sponsored: boolean
   class: {
     id: string
     name: string
@@ -86,15 +91,18 @@ interface SupabaseMembership {
 interface SupabaseMember {
   student_id: string
   joined_at: string
+  is_sponsored: boolean
   student: {
     email: string
     full_name: string
+    user_type: string
   }
 }
 
 interface ClassMemberRow {
   student_id: string
   joined_at: string
+  is_sponsored: boolean
   class: {
     id: string
     teacher_id: string
@@ -106,6 +114,7 @@ interface ProfileRow {
   email: string
   forename: string | null
   lastname: string | null
+  user_type: string | null
 }
 
 
@@ -137,12 +146,16 @@ function SettingsSkeleton() {
   )
 }
 
+
+
+
 function SettingsPageContent() {
   const { maxClasses, maxStudentsPerClass } = useAccess()
   const [userType, setUserType] = useState<UserType | null>(null)
   const [userRole, setUserRole] = useState<UserRole | null>(null)
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [userCourses, setUserCourses] = useState<string[]>([])
+  const [maxSponsoredSeats, setMaxSponsoredSeats] = useState<number>(0)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [courseToDelete, setCourseToDelete] = useState<string | null>(null)
   const [deleteConfirmation, setDeleteConfirmation] = useState("")
@@ -174,6 +187,8 @@ function SettingsPageContent() {
   const [deleteMemberDialogOpen, setDeleteMemberDialogOpen] = useState(false)
   const [memberToDelete, setMemberToDelete] = useState<SupabaseMember | null>(null)
   const [isDeletingMember, setIsDeletingMember] = useState(false)
+  const [sponsoredUsed, setSponsoredUsed] = useState<number>(0)
+
 
 
   // Teacher: add students by email or CSV
@@ -277,7 +292,7 @@ function SettingsPageContent() {
 
   const handleCreateClass = async () => {
     if (!newClassName.trim()) {
-      toast.error('Please enter a class name', { 
+      toast.error('Please enter a class name', {
         duration: 10000,
         closeButton: true
       })
@@ -286,7 +301,7 @@ function SettingsPageContent() {
 
     // Check if user has reached their class limit
     if (userClasses.length >= maxClasses) {
-      toast.error('You have reached your limit of classes, you will need to upgrade to add more classes', { 
+      toast.error('You have reached your limit of classes, you will need to upgrade to add more classes', {
         duration: 10000,
         closeButton: true
       })
@@ -316,13 +331,13 @@ function SettingsPageContent() {
       setUserClasses(prev => [...prev, newClass])
       setCreateClassDialogOpen(false)
       setNewClassName("")
-      toast.success('Class created successfully', { 
+      toast.success('Class created successfully', {
         duration: 10000,
         closeButton: true
       })
     } catch (err) {
       console.error('Error creating class:', err)
-      toast.error('Failed to create class', { 
+      toast.error('Failed to create class', {
         duration: 10000,
         closeButton: true
       })
@@ -334,12 +349,12 @@ function SettingsPageContent() {
   const handleCopyJoinCode = async (code: string) => {
     try {
       await navigator.clipboard.writeText(code)
-      toast.success('Join code copied to clipboard', { 
+      toast.success('Join code copied to clipboard', {
         duration: 10000,
         closeButton: true
       })
     } catch (err) {
-      toast.error('Failed to copy join code: ' + (err as Error).message, { 
+      toast.error('Failed to copy join code: ' + (err as Error).message, {
         duration: 10000,
         closeButton: true
       })
@@ -362,13 +377,13 @@ function SettingsPageContent() {
       setDeleteClassDialogOpen(false)
       setClassToDelete(null)
       setDeleteClassConfirmation("")
-      toast.success('Class deleted successfully', { 
+      toast.success('Class deleted successfully', {
         duration: 10000,
         closeButton: true
       })
     } catch (error) {
       console.error('Error deleting class:', error)
-      toast.error('Failed to delete class', { 
+      toast.error('Failed to delete class', {
         duration: 10000,
         closeButton: true
       })
@@ -379,7 +394,7 @@ function SettingsPageContent() {
 
   const handleJoinClass = async () => {
     if (!joinCode.trim()) {
-      toast.error('Please enter a join code', { 
+      toast.error('Please enter a join code', {
         duration: 10000,
         closeButton: true
       })
@@ -467,13 +482,13 @@ function SettingsPageContent() {
       setStudentClasses(prev => [...prev, newMember])
       setJoinClassDialogOpen(false)
       setJoinCode("")
-      toast.success('Successfully joined class', { 
+      toast.success('Successfully joined class', {
         duration: 10000,
         closeButton: true
       })
     } catch (error) {
       console.error('Error joining class:', error)
-      toast.error(error instanceof Error ? error.message : 'Failed to join class', { 
+      toast.error(error instanceof Error ? error.message : 'Failed to join class', {
         duration: 10000,
         closeButton: true
       })
@@ -482,42 +497,201 @@ function SettingsPageContent() {
     }
   }
 
+  // const handleLeaveClass = async () => {
+  //   if (!selectedMembership || leaveClassConfirmation !== "Leave") return
+
+  //   setIsLeavingClass(true)
+  //   try {
+  //     const { data: { user } } = await supabase.auth.getUser()
+  //     if (!user) throw new Error('User not found')
+
+  //     const { error } = await supabase
+  //       .from('class_members')
+  //       .delete()
+  //       .eq('class_id', selectedMembership.class_id)
+  //       .eq('student_id', user.id)
+
+  //     if (error) throw error
+
+  //     setStudentClasses(prev => prev.filter(m =>
+  //       !(m.class_id === selectedMembership.class_id && m.student_id === user.id)
+  //     ))
+  //     setLeaveClassDialogOpen(false)
+  //     setSelectedMembership(null)
+  //     setLeaveClassConfirmation("")
+  //     toast.success('Successfully left class', {
+  //       duration: 10000,
+  //       closeButton: true
+  //     })
+  //   } catch (error) {
+  //     console.error('Error leaving class:', error)
+  //     toast.error('Failed to leave class', {
+  //       duration: 10000,
+  //       closeButton: true
+  //     })
+  //   } finally {
+  //     setIsLeavingClass(false)
+  //   }
+  // }
+
+  // const handleLeaveClass = async () => {
+  //   if (!selectedMembership || leaveClassConfirmation !== "Leave") return
+
+  //   setIsLeavingClass(true)
+  //   try {
+  //     const { data: { user } } = await supabase.auth.getUser()
+  //     if (!user) throw new Error('User not found')
+
+  //     // Check if this membership was sponsored before deleting
+  //     const { data: membership, error: readErr } = await supabase
+  //       .from('class_members')
+  //       .select('is_sponsored')
+  //       .eq('class_id', selectedMembership.class_id)
+  //       .eq('student_id', user.id)
+  //       .single();
+
+  //     if (readErr) throw readErr;
+
+  //     const wasSponsored = !!membership?.is_sponsored;
+
+  //     // If this membership was sponsored, call the RPC FIRST (before deleting)
+  //     if (wasSponsored) {
+  //       const { data: rpcData, error: rpcErr } = await supabase.rpc(
+  //         "rpc_student_self_unsponsor",
+  //         { class_id_input: selectedMembership.class_id } // <-- correct arg
+  //       );
+
+  //       if (rpcErr) {
+  //         console.error('RPC unsponsor_student failed:', rpcErr);
+  //         throw rpcErr;
+  //       }
+  //     }
+
+  //     // Now delete the membership (after RPC has handled sponsorship logic)
+  //     const { error } = await supabase
+  //       .from('class_members')
+  //       .delete()
+  //       .eq('class_id', selectedMembership.class_id)
+  //       .eq('student_id', user.id)
+
+  //     if (error) throw error
+
+  //     setStudentClasses(prev => prev.filter(m =>
+  //       !(m.class_id === selectedMembership.class_id && m.student_id === user.id)
+  //     ))
+  //     setLeaveClassDialogOpen(false)
+  //     setSelectedMembership(null)
+  //     setLeaveClassConfirmation("")
+  //     toast.success('Successfully left class', {
+  //       duration: 10000,
+  //       closeButton: true
+  //     })
+  //   } catch (error) {
+  //     console.error('Error leaving class:', error)
+  //     toast.error('Failed to leave class', {
+  //       duration: 10000,
+  //       closeButton: true
+  //     })
+  //   } finally {
+  //     setIsLeavingClass(false)
+  //   }
+  // }
+
+  
   const handleLeaveClass = async () => {
-    if (!selectedMembership || leaveClassConfirmation !== "Leave") return
-
-    setIsLeavingClass(true)
+    if (!selectedMembership || leaveClassConfirmation !== "Leave") return;
+  
+    setIsLeavingClass(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('User not found')
-
-      const { error } = await supabase
-        .from('class_members')
-        .delete()
-        .eq('class_id', selectedMembership.class_id)
-        .eq('student_id', user.id)
-
-      if (error) throw error
-
-      setStudentClasses(prev => prev.filter(m =>
-        !(m.class_id === selectedMembership.class_id && m.student_id === user.id)
-      ))
-      setLeaveClassDialogOpen(false)
-      setSelectedMembership(null)
-      setLeaveClassConfirmation("")
-      toast.success('Successfully left class', { 
-        duration: 10000,
-        closeButton: true
-      })
-    } catch (error) {
-      console.error('Error leaving class:', error)
-      toast.error('Failed to leave class', { 
-        duration: 10000,
-        closeButton: true
-      })
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not found");
+  
+      // One generic: the RETURN type (our function returns a table => array of rows)
+      const { data, error } = await supabase.rpc(
+        "unsponsor_and_leave_class",
+        { class_id_input: selectedMembership.class_id }
+      );
+      if (error) throw error;
+  
+      const result = data?.[0];
+  
+      // Remove from local list
+      setStudentClasses(prev =>
+        prev.filter(m => !(m.class_id === selectedMembership.class_id && m.student_id === user.id))
+      );
+  
+      // Close/reset UI
+      setLeaveClassDialogOpen(false);
+      setSelectedMembership(null);
+      setLeaveClassConfirmation("");
+  
+      // Optional: reflect plan change using result?.final_user_type
+  
+      const msg = result?.was_sponsored_by_this_cls
+        ? (result.still_sponsored_elsewhere
+            ? "Left class. You’re still sponsored elsewhere."
+            : "Left class and sponsorship ended.")
+        : "Left class.";
+      toast.success(msg, { duration: 10000, closeButton: true });
+  
+    } catch (err) {
+      console.error("Error leaving class:", err);
+      toast.error("Failed to leave class", { duration: 10000, closeButton: true });
     } finally {
-      setIsLeavingClass(false)
+      setIsLeavingClass(false);
     }
+  };
+
+
+  // Helper function to delete a member and maybe unsponsor them
+  async function deleteMemberAndMaybeUnsponsor({
+    classId,
+    studentId,
+  }: {
+    classId: string;
+    studentId: string;
+  }): Promise<{ wasSponsored: boolean }> {
+    // 1) Read current membership to see if it was sponsored (and to be safe, that this class belongs to the current teacher)
+    const { data: membership, error: readErr } = await supabase
+      .from('class_members')
+      .select('is_sponsored, class:classes!inner(teacher_id)')
+      .eq('class_id', classId)
+      .eq('student_id', studentId)
+      .single();
+
+    if (readErr) throw readErr;
+
+    const wasSponsored = !!membership?.is_sponsored;
+
+    // 2) If this membership was sponsored, call the RPC FIRST (before deleting)
+    if (wasSponsored) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not found');
+
+      const { error: rpcErr } = await supabase.rpc('unsponsor_student', {
+        student_id_input: studentId,
+        teacher_id_input: user.id,
+        class_id_input: classId,
+      });
+
+      if (rpcErr) {
+        console.error('RPC unsponsor_student failed:', rpcErr);
+        throw rpcErr;
+      }
+    }
+
+    // 3) Now delete the membership (after RPC has handled sponsorship logic)
+    const { error: delErr } = await supabase
+      .from('class_members')
+      .delete()
+      .eq('class_id', classId)
+      .eq('student_id', studentId);
+
+    if (delErr) throw delErr;
+
+    return { wasSponsored };
   }
+
 
   const handleDeleteClassMember = async () => {
 
@@ -528,33 +702,34 @@ function SettingsPageContent() {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) throw new Error('User not found')
 
-        const { error } = await supabase
-          .from('class_members')
-          .delete()
-          .eq('class_id', selectedClass.id)
-          .eq('student_id', memberToDelete.student_id)
+        const { wasSponsored } = await deleteMemberAndMaybeUnsponsor({
+          classId: selectedClass.id,
+          studentId: memberToDelete.student_id,
+        });
 
-        if (error) throw error
+        if (wasSponsored) {
+          setSponsoredUsed((x) => Math.max(0, x - 1))
+        }
 
         setSelectedClassMembers(prev => (prev || []).filter(m => m.student_id !== memberToDelete.student_id))
-        
+
         // If the current user is the one being removed, update their studentClasses state
         // This ensures real-time updates when a teacher removes the current user from a class
         if (memberToDelete.student_id === user.id) {
-          setStudentClasses(prev => prev.filter(m => 
+          setStudentClasses(prev => prev.filter(m =>
             !(m.class_id === selectedClass.id && m.student_id === user.id)
           ))
         }
-        
+
         setDeleteMemberDialogOpen(false)
         setMemberToDelete(null)
-        toast.success('Student removed from class', { 
+        toast.success('Student removed from class', {
           duration: 10000,
           closeButton: true
         })
       } catch (error) {
         console.error('Error removing student:', error)
-        toast.error('Failed to remove student from class', { 
+        toast.error('Failed to remove student from class', {
           duration: 10000,
           closeButton: true
         })
@@ -570,13 +745,15 @@ function SettingsPageContent() {
 
     setIsDeletingMember(true)
     try {
-      const { error } = await supabase
-        .from('class_members')
-        .delete()
-        .eq('class_id', selectedMembership.class_id)
-        .eq('student_id', memberToDelete.student_id)
 
-      if (error) throw error
+      const { wasSponsored } = await deleteMemberAndMaybeUnsponsor({
+        classId: selectedMembership.class_id,
+        studentId: memberToDelete.student_id,
+      });
+
+      if (wasSponsored) {
+        setSponsoredUsed((x) => Math.max(0, x - 1))
+      }
 
       if (selectedMembership.members) {
         const updatedMembers = selectedMembership.members.filter(
@@ -590,13 +767,13 @@ function SettingsPageContent() {
 
       setDeleteMemberDialogOpen(false)
       setMemberToDelete(null)
-      toast.success('Student removed from class', { 
+      toast.success('Student removed from class', {
         duration: 10000,
         closeButton: true
       })
     } catch (error) {
       console.error('Error removing student:', error)
-      toast.error('Failed to remove student from class', { 
+      toast.error('Failed to remove student from class', {
         duration: 10000,
         closeButton: true
       })
@@ -612,16 +789,16 @@ function SettingsPageContent() {
     // Calculate available spaces for the selected class
     const currentStudentCount = selectedClassMembers?.length || 0
     const availableSpaces = Math.max(0, maxStudentsPerClass - currentStudentCount)
-    
+
     // Create CSV content with message and sample data
     const message = `# You have ${availableSpaces} place${availableSpaces !== 1 ? 's' : ''} left in the class\n`
     const header = 'email\n'
-    
+
     // Generate sample rows based on available spaces
-    const sampleRows = Array.from({ length: availableSpaces }, (_, index) => 
+    const sampleRows = Array.from({ length: availableSpaces }, (_, index) =>
       `student${index + 1}@example.com`
     )
-    
+
     const csv = message + header + sampleRows.join('\n') + '\n'
 
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
@@ -640,7 +817,7 @@ function SettingsPageContent() {
       const { data: authData } = await supabase.auth.getUser()
       const teacherId = authData?.user?.id
       if (!teacherId) {
-        toast.error('Not authenticated', { 
+        toast.error('Not authenticated', {
           duration: 10000,
           closeButton: true
         })
@@ -654,6 +831,7 @@ function SettingsPageContent() {
         .select(`
           student_id,
           joined_at,
+          is_sponsored,
           class:classes!inner ( id, teacher_id )
         `)
         .eq('class_id', classId)
@@ -661,7 +839,7 @@ function SettingsPageContent() {
 
       if (error) {
         console.error('Error fetching class members:', error)
-        toast.error('Failed to load class members', { 
+        toast.error('Failed to load class members', {
           duration: 10000,
           closeButton: true
         })
@@ -678,7 +856,7 @@ function SettingsPageContent() {
       // Fetch profiles for these students
       const { data: profiles, error: profilesErr } = await supabase
         .from('profiles')
-        .select('userid, email, forename, lastname')
+        .select('userid, email, forename, lastname, user_type')
         .in('userid', studentIds)
 
       console.log('studentIds:', studentIds)
@@ -688,7 +866,7 @@ function SettingsPageContent() {
 
       if (profilesErr) {
         console.error('Error fetching profiles:', profilesErr)
-        toast.error('Failed to load student profiles', { 
+        toast.error('Failed to load student profiles', {
           duration: 10000,
           closeButton: true
         })
@@ -705,16 +883,19 @@ function SettingsPageContent() {
         return {
           student_id: m.student_id,
           joined_at: m.joined_at,
+          is_sponsored: m.is_sponsored,
           student: {
+            userid: profile?.userid ?? m.student_id,
             email: profile?.email || 'No email found',
             full_name: fullName,
+            user_type: profile?.user_type as UserType || 'basic',
           },
         }
       }) as SupabaseMember[]
       setSelectedClassMembers(membersOnly)
     } catch (e) {
       console.error('Error fetching class members (exception):', e)
-      toast.error('Failed to load class members', { 
+      toast.error('Failed to load class members', {
         duration: 10000,
         closeButton: true
       })
@@ -727,7 +908,7 @@ function SettingsPageContent() {
       setIsAddingStudent(true)
       const trimmed = email.trim().toLowerCase()
       if (!trimmed) {
-        toast.error('Please enter an email', { 
+        toast.error('Please enter an email', {
           duration: 10000,
           closeButton: true
         })
@@ -737,7 +918,7 @@ function SettingsPageContent() {
       // Check if user has reached their student limit for this class
       const currentStudentCount = selectedClassMembers?.length || 0
       if (currentStudentCount >= maxStudentsPerClass) {
-        toast.error('You have reached your limit of students for this class, you will need to upgrade to add more students', { 
+        toast.error('You have reached your limit of students for this class, you will need to upgrade to add more students', {
           duration: 10000,
           closeButton: true
         })
@@ -746,12 +927,12 @@ function SettingsPageContent() {
       // Find user profile
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('userid, email, forename, lastname')
+        .select('userid, email, forename, lastname, user_type')
         .eq('email', trimmed)
         .single()
 
       if (profileError || !profile) {
-        toast.error(`Email not recognised: ${trimmed}`, { 
+        toast.error(`Email not recognised: ${trimmed}`, {
           duration: 10000,
           closeButton: true
         })
@@ -767,7 +948,7 @@ function SettingsPageContent() {
         .maybeSingle()
 
       if (existing) {
-        toast.info(`${trimmed} is already in this class`, { 
+        toast.info(`${trimmed} is already in this class`, {
           duration: 10000,
           closeButton: true
         })
@@ -790,23 +971,25 @@ function SettingsPageContent() {
       const normalizedMember: SupabaseMember = {
         student_id: inserted.student_id,
         joined_at: inserted.joined_at,
+        is_sponsored: false,
         student: {
           email: profile.email,
           full_name: `${profile.forename ?? ''} ${profile.lastname ?? ''}`.trim(),
+          user_type: profile.user_type || 'student',
         },
       }
 
       if (selectedClass?.id === classId) {
         setSelectedClassMembers(prev => ([...(prev || []), normalizedMember]))
       }
-      toast.success(`Added ${profile.email} to class`, { 
+      toast.success(`Added ${profile.email} to class`, {
         duration: 10000,
         closeButton: true
       })
       setAddStudentEmail("")
     } catch (e) {
       console.error('Error adding student:', e)
-      toast.error('Failed to add student', { 
+      toast.error('Failed to add student', {
         duration: 10000,
         closeButton: true
       })
@@ -828,7 +1011,7 @@ function SettingsPageContent() {
     try {
       const emails = parseCSVEmails(csvText)
       if (emails.length === 0) {
-        toast.error('No valid emails found in CSV', { 
+        toast.error('No valid emails found in CSV', {
           duration: 10000,
           closeButton: true
         })
@@ -838,7 +1021,7 @@ function SettingsPageContent() {
       // Check if user has reached their student limit for this class
       const currentStudentCount = selectedClassMembers?.length || 0
       if (currentStudentCount >= maxStudentsPerClass) {
-        toast.error('You have reached your limit of students for this class, you will need to upgrade to add more students', { 
+        toast.error('You have reached your limit of students for this class, you will need to upgrade to add more students', {
           duration: 10000,
           closeButton: true
         })
@@ -852,13 +1035,13 @@ function SettingsPageContent() {
       for (const email of emails) {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('userid, email, forename, lastname')
+          .select('userid, email, forename, lastname, user_type')
           .eq('email', email)
           .maybeSingle()
 
-        if (!profile) { 
-          failed.push({ email, reason: 'not recognised' }); 
-          continue 
+        if (!profile) {
+          failed.push({ email, reason: 'not recognised' });
+          continue
         }
 
         const { data: existing } = await supabase
@@ -868,9 +1051,9 @@ function SettingsPageContent() {
           .eq('student_id', profile.userid)
           .maybeSingle()
 
-        if (existing) { 
-          failed.push({ email, reason: 'already in class' }); 
-          continue 
+        if (existing) {
+          failed.push({ email, reason: 'already in class' });
+          continue
         }
 
         // Check if we've reached the student limit during bulk add
@@ -889,17 +1072,19 @@ function SettingsPageContent() {
           .select('student_id, joined_at')
           .single()
 
-        if (joinError) { 
-          failed.push({ email, reason: 'database error' }); 
-          continue 
+        if (joinError) {
+          failed.push({ email, reason: 'database error' });
+          continue
         }
 
         const normalizedMember: SupabaseMember = {
           student_id: inserted.student_id,
           joined_at: inserted.joined_at,
+          is_sponsored: false,
           student: {
             email: profile.email,
             full_name: `${profile.forename ?? ''} ${profile.lastname ?? ''}`.trim(),
+            user_type: profile.user_type || 'student',
           },
         }
 
@@ -912,10 +1097,10 @@ function SettingsPageContent() {
 
       // Show success toast with added emails
       if (added > 0) {
-        const addedMessage = added === 1 
+        const addedMessage = added === 1
           ? `Added 1 student: ${addedEmails[0]}`
           : `Added ${added} students: ${addedEmails.join(', ')}`
-        toast.success(addedMessage, { 
+        toast.success(addedMessage, {
           duration: 10000,
           closeButton: true
         })
@@ -926,13 +1111,13 @@ function SettingsPageContent() {
         const failedMessage = failed.length === 1
           ? `Failed to add ${failed[0].email} (${failed[0].reason})`
           : `Failed to add ${failed.length} students: ${failed.map(f => `${f.email} (${f.reason})`).join(', ')}`
-        toast.error(failedMessage, { 
+        toast.error(failedMessage, {
           duration: 10000,
           closeButton: true
         })
       }
     } catch (e) {
-      toast.error('Bulk add operation failed. Please check you have a valid plan and you have not reached your student limit.' + e, { 
+      toast.error('Bulk add operation failed. Please check you have a valid plan and you have not reached your student limit.' + e, {
         duration: 10000,
         closeButton: true
       })
@@ -983,6 +1168,7 @@ function SettingsPageContent() {
         setUserType(profile?.user_type)
         setUserRole(profile?.role || 'regular')
         setUserCourses(profile?.courses || [])
+        setMaxSponsoredSeats(profile?.max_sponsored_seats || 0)
       }
 
       // Fetch user's classes (use freshly fetched profile type, not state)
@@ -1000,6 +1186,20 @@ function SettingsPageContent() {
         }
       }
 
+      if (isTeacherRole) {
+        const { count, error: seatsErr } = await supabase
+          .from('class_members')
+          .select('student_id, class:classes!inner(teacher_id)', { count: 'exact', head: true })
+          .eq('is_sponsored', true)
+          .eq('class.teacher_id', user.id);
+
+        if (!seatsErr && typeof count === 'number') {
+          setSponsoredUsed(count);
+        }
+      }
+
+
+
       // Fetch classes where user is a student (for both students and teachers)
       const { data: memberships, error: membershipsError } = await supabase
         .from('class_members')
@@ -1007,6 +1207,7 @@ function SettingsPageContent() {
           class_id,
           student_id,
           joined_at,
+          is_sponsored,
           class:classes!inner (
             id,
             name,
@@ -1054,6 +1255,7 @@ function SettingsPageContent() {
           class_id: membership.class_id,
           student_id: membership.student_id,
           joined_at: membership.joined_at,
+          is_sponsored: membership.is_sponsored,
           class: {
             id: membership.class.id,
             name: membership.class.name,
@@ -1087,13 +1289,6 @@ function SettingsPageContent() {
       }
     }
 
-    // const fetchPlans = async () => {
-    //   const { data, error } = await supabase
-    //     .from('plans')
-    //     .select('*')
-    //     .order('price', { ascending: true });
-    //   if (!error) setPlans(data || []);
-    // };
 
     fetchUser()
     fetchCourses()
@@ -1101,8 +1296,6 @@ function SettingsPageContent() {
     setIsLoading(false)
   }, [supabase, searchParams, router,])
 
-  // const studentPlans = plans.filter(plan => plan.plan_type === 'student');
-  // const teacherPlans = plans.filter(plan => plan.plan_type === 'teacher');
 
   if (isLoading) {
     return (
@@ -1336,58 +1529,189 @@ function SettingsPageContent() {
         {/* Show Join Code Dialog */}
         {/* <Dialog open={showJoinCodeDialogOpen} onOpenChange={setShowJoinCodeDialogOpen}> */}
         <Dialog open={showJoinCodeDialogOpen} onOpenChange={(open) => { setShowJoinCodeDialogOpen(open); if (!open) { setSelectedClass(null); setSelectedClassMembers(null); setAddStudentEmail("") } }}>
-          <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-md lg:max-w-[70vw] max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{selectedClass?.name}</DialogTitle>
               <DialogDescription>
                 Class details and management
               </DialogDescription>
             </DialogHeader>
+            <h4 className="font-medium leading-tight">Class Members</h4>
+
             <div className="space-y-6">
-              {/* Class Members - Moved to top */}
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium">Class Members</h4>
-                  <Badge variant={(selectedClassMembers || []).length >= maxStudentsPerClass ? "destructive" : "secondary"}>
-                    {(selectedClassMembers || []).length} / {maxStudentsPerClass} Students
-                  </Badge>
-                </div>
-                <div className="space-y-2">
-                  {(selectedClassMembers || []).map(member => (
-                    <div
-                      key={member.student_id}
-                      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+
+                <div className="flex items-start justify-between gap-3 sm:items-center">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Students capacity (primary, eye-catching) */}
+                    <Users className="mr-1 h-3.5 w-3.5 text-muted-foreground" />
+                    <Badge
+                      variant="secondary"
+                      className={`text-xs rounded-full px-3 py-1 font-semibold ${(selectedClassMembers || []).length >= maxStudentsPerClass
+                        ? "bg-red-100 text-red-700 border-red-200"
+                        : (selectedClassMembers || []).length >= maxStudentsPerClass - 1
+                          ? "bg-yellow-100 text-yellow-700 border-yellow-200"
+                          : ""
+                        }`}
+                      title="Students in this class"
                     >
-                      <div className="flex items-center space-x-3">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="text-sm font-medium">
-                            {member.student.email}
-                          </p>
-                          {member.student.full_name && member.student.full_name.trim().length > 0 && (
-                            <p className="text-xs text-muted-foreground">
-                              {member.student.full_name}
-                            </p>
-                          )}
-                          <p className="text-xs text-muted-foreground">
-                            Joined {new Date(member.joined_at).toLocaleDateString()}
-                          </p>
-                        </div>
+                      {(selectedClassMembers || []).length} / {maxStudentsPerClass} Students
+                    </Badge>
+
+                    {/* Sponsored totals (subtle group) */}
+                    <div className="flex items-center gap-2 rounded-sm border border-border/60 bg-background/50 px-2 py-1">
+                      <Gift className="mr-1 h-3.5 w-3.5 text-muted-foreground" />
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant="outline"
+                          className="text-xs rounded-full px-3 py-1"
+                          title="Total sponsored across all classes"
+                        >
+                          {sponsoredUsed} / {maxSponsoredSeats} Sponsored (Total)
+                        </Badge>
+
+                        <Badge
+                          variant="outline"
+                          className="text-xs rounded-full px-3 py-1 bg-muted/60"
+                          title="Sponsored in this class"
+                        >
+                          {(selectedClassMembers || []).filter(m => m.is_sponsored).length} in this class
+                        </Badge>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setMemberToDelete(member)
-                          setDeleteMemberDialogOpen(true)
-                        }}
-                        title="Remove Student"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
                     </div>
-                  ))}
+
+                  </div>
                 </div>
+
+                {/* THIS IS THE SPONSORSHIP CHECKBOX LOGIC */}
+                <div className="space-y-2">
+                  {(selectedClassMembers || []).map((member) => {
+                    const isPlanLocked = isLockedPlan({
+                      user_type: member.student.user_type as UserType,
+                    });
+
+                    // Student has global sponsored plan but this class_members row is NOT sponsored
+                    // ⇒ they must be sponsored by another teacher
+                    const sponsoredElsewhere =
+                      member.student.user_type === "studentSponsoredRevision" &&
+                      !member.is_sponsored;
+
+                    // Teacher can toggle only if NOT locked and NOT sponsored by someone else
+                    const canToggle = !isPlanLocked && !sponsoredElsewhere;
+
+                    return (
+                      <div
+                        key={member.student_id}
+                        className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-sm font-medium">{member.student.email}</p>
+
+                            {member.student.full_name &&
+                              member.student.full_name.trim().length > 0 && (
+                                <p className="text-xs text-muted-foreground">
+                                  {member.student.full_name}
+                                </p>
+                              )}
+
+                            <p className="text-xs text-muted-foreground capitalize">
+                              {member.student.user_type}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Joined {new Date(member.joined_at).toLocaleDateString()}
+                            </p>
+
+                            {!canToggle ? (
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  {/* same look, just disabled */}
+                                  <Label className="mt-2 flex items-start gap-3 rounded-lg border p-2 w-48 cursor-not-allowed opacity-70">
+                                    <Checkbox
+                                      id={`toggle-${member.student_id}`}
+                                      checked={
+                                        member.student.user_type === "studentSponsoredRevision"
+                                      }
+                                      disabled
+                                      className="data-[state=checked]:border-green-600 data-[state=checked]:bg-green-600 data-[state=checked]:text-white dark:data-[state=checked]:border-green-700 dark:data-[state=checked]:bg-green-700"
+                                    />
+                                    <div className="grid gap-1.5 font-normal">
+                                      <div className="text-sm leading-none font-medium">
+                                        <p className="text-xs text-muted-foreground">
+                                          {isPlanLocked
+                                            ? "Current plan locked"
+                                            : "Sponsored by another teacher"}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </Label>
+                                </DialogTrigger>
+
+                                <DialogContent className="max-w-lg">
+                                  <DialogHeader>
+                                    <DialogTitle>Plan Information</DialogTitle>
+                                    <DialogDescription>
+                                      Information about {member.student.email}&apos;s current
+                                      plan
+                                    </DialogDescription>
+                                  </DialogHeader>
+
+                                  <div className="space-y-4">
+                                    <div className="space-y-2">
+                                      <p className="text-sm font-medium">Current Plan:</p>
+                                      <p className="text-sm text-muted-foreground capitalize">
+                                        {member.student.user_type}
+                                      </p>
+                                    </div>
+
+                                    {isPlanLocked ? (
+                                      <div className="space-y-2">
+                                        <p className="text-sm font-medium">Action Required:</p>
+                                        <p className="text-sm text-muted-foreground">
+                                          Please ask {member.student.email} to downgrade to the
+                                          free student plan before you can provide sponsorship.
+                                        </p>
+                                      </div>
+                                    ) : (
+                                      <div className="space-y-2">
+                                        <p className="text-sm font-medium">Already Sponsored:</p>
+                                        <p className="text-sm text-muted-foreground">
+                                          This student is already sponsored by another teacher,
+                                          so you can’t change their sponsorship here.
+                                        </p>
+                                      </div>
+                                    )}
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                            ) : (
+                              <SponsorshipCheckbox
+                                member={member}
+                                selectedClassId={selectedClass!.id}
+                                setSelectedClassMembers={setSelectedClassMembers}
+                              />
+                            )}
+                          </div>
+                        </div>
+
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setMemberToDelete(member)
+                            setDeleteMemberDialogOpen(true)
+                          }}
+                          title="Remove Student"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )
+                  })}
+                </div>
+
+
               </div>
 
               {/* Join Code Display */}
@@ -1450,7 +1774,7 @@ function SettingsPageContent() {
                   <h4 className="font-medium">Bulk Add via CSV</h4>
                 </div>
                 <p className="text-sm text-muted-foreground">Upload a CSV file containing a list of email addresses (header optional).</p>
-                
+
                 {(selectedClassMembers || []).length >= maxStudentsPerClass && (
                   <div className="text-center py-2 border border-orange-200 rounded-lg bg-orange-50">
                     <p className="text-sm text-orange-700">You have reached your student limit. Bulk add will be disabled.</p>
@@ -1520,7 +1844,7 @@ function SettingsPageContent() {
         </Dialog>
 
         {/* Student Class Membership */}
-        {(userType === 'basic' || userType === 'revision' || userType === 'revisionAI' || isTeacher(userType)) && (
+        {userEmail && (
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -1559,6 +1883,11 @@ function SettingsPageContent() {
                               <Badge variant="secondary" className="text-xs">
                                 Joined {new Date(membership.joined_at).toLocaleDateString()}
                               </Badge>
+                              {membership.is_sponsored && (
+                                <Badge variant="outline" className="text-xs text-green-600 border-green-200">
+                                  Sponsored
+                                </Badge>
+                              )}
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">
@@ -1573,19 +1902,19 @@ function SettingsPageContent() {
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
-                      
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => {
-                                  setSelectedMembership(membership)
-                                  setLeaveClassDialogOpen(true)
-                                }}
-                                title="Leave Class"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            
+
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setSelectedMembership(membership)
+                                setLeaveClassDialogOpen(true)
+                              }}
+                              title="Leave Class"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+
                           </div>
                         </div>
                       </CardContent>
@@ -1794,6 +2123,13 @@ function SettingsPageContent() {
                     <p className="text-sm text-muted-foreground">
                       <span className="font-medium">Joined:</span> {new Date(selectedMembership.joined_at).toLocaleDateString()}
                     </p>
+                    <p className="text-sm text-muted-foreground">
+                      <span className="font-medium">Sponsorship Status:</span> {selectedMembership.is_sponsored ? (
+                        <span className="text-green-600 font-medium">Sponsored</span>
+                      ) : (
+                        <span className="text-gray-600">Not Sponsored</span>
+                      )}
+                    </p>
                   </div>
                 </div>
               )}
@@ -1827,7 +2163,7 @@ function SettingsPageContent() {
                 <Button
                   className="bg-red-600 hover:bg-red-700 text-white"
                   onClick={handleLeaveClass}
-                  disabled={leaveClassConfirmation !== "delete" || isLeavingClass}
+                  disabled={leaveClassConfirmation !== "Leave" || isLeavingClass}
                 >
                   {isLeavingClass ? "Leaving..." : "Leave Class"}
                 </Button>

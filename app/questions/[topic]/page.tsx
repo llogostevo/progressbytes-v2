@@ -21,7 +21,7 @@ import { CTABanner } from "@/components/cta-banner"
 import { UserLogin } from "@/components/user-login"
 import { User } from "@supabase/supabase-js"
 import { QuestionTypeFilter } from "@/components/question-type-filter"
-import { SubtopicFilter } from "@/components/subtopic-filter"
+import { SubtopicFilter } from "@/components/ui/subtopic-filter"
 import { Skeleton } from "@/components/ui/skeleton"
 import { canAccessFilters, getMaxQuestionsPerTopic, UserType, canSkipQuestions } from "@/lib/access"
 import { QuestionDifficultyFilter } from "@/components/question-difficulty-filter"
@@ -657,7 +657,7 @@ export default function QuestionPage() {
           console.log("Options:", newQuestion.options)
           console.log("Order important:", newQuestion.order_important)
           console.log("=== END DEBUG INFO ===")
-          
+
           if (newQuestion.type === 'true-false') {
             console.log("True/False specific data:", {
               modelAnswer: newQuestion.model_answer,
@@ -1191,8 +1191,8 @@ export default function QuestionPage() {
   }
 
   return (
-    <div 
-      className="container mx-auto px-4 py-8 question-page" 
+    <div
+      className="container mx-auto px-4 py-8 question-page"
       onKeyDown={handleKeyDown}
       onContextMenu={handleContextMenu}
     >
@@ -1217,11 +1217,11 @@ export default function QuestionPage() {
                 <CardDescription>Select one or more subtopics to focus your practice</CardDescription>
               </CardHeader>
               <CardContent className="pt-4 sm:pt-6">
-                <SubtopicFilter
-                  selectedSubtopics={selectedSubtopics}
-                  onSubtopicChange={setSelectedSubtopics}
-                  subtopics={subtopics}
-                />
+                    <SubtopicFilter
+                      selectedSubtopics={selectedSubtopics}
+                      onSubtopicChange={setSelectedSubtopics}
+                      subtopics={subtopics}
+                    />
               </CardContent>
             </Card>
 
@@ -1310,46 +1310,46 @@ export default function QuestionPage() {
               {!answer ? (
                 question.type === "multiple-choice" ? (
                   <MultipleChoiceQuestion
-                  key={question.id}
+                    key={question.id}
                     options={question.options || []}
                     correctAnswerIndex={question.correctAnswerIndex || 0}
                     onAnswerSelected={(...args) => { handleStartAnswering(); handleMultipleChoiceAnswer(...args); }}
                   />
                 ) : question.type === "fill-in-the-blank" ? (
                   <FillInTheBlankQuestion
-                  key={question.id}
+                    key={question.id}
                     question={question}
                     onAnswerSelected={(...args) => { handleStartAnswering(); handleFillInTheBlankAnswer(...args); }}
                   />
                 ) : (question.type === "code" || question.type === "algorithm" || question.type === "sql") ? (
                   <CodeQuestion
-                  key={question.id}
+                    key={question.id}
                     onSubmit={(...args) => { handleStartAnswering(); handleSubmitAnswer(...args); }}
                     disabled={isSubmitting}
                   />
                 ) : question.type === "matching" ? (
                   <MatchingQuestion
-                  key={question.id}
+                    key={question.id}
                     question={question}
                     onSubmit={(...args) => { handleStartAnswering(); handleMatchingAnswer(...args); }}
                     disabled={isSubmitting}
                   />
                 ) : question.type === "true-false" ? (
                   <TrueFalseQuestion
-                  key={question.id}
+                    key={question.id}
                     question={question}
                     onSubmit={(...args) => { handleStartAnswering(); handleTrueFalseAnswer(...args); }}
                     disabled={isSubmitting}
                   />
                 ) : question.type === "text" || question.type === "short-answer" ? (
                   <TextQuestion
-                  key={question.id}
+                    key={question.id}
                     onSubmit={(...args) => { handleStartAnswering(); handleSubmitAnswer(...args); }}
                     disabled={isSubmitting}
                   />
                 ) : question.type === "essay" ? (
                   <EssayQuestion
-                  key={question.id}
+                    key={question.id}
                     onSubmit={(...args) => { handleStartAnswering(); handleSubmitAnswer(...args); }}
                     disabled={isSubmitting}
                     minWords={20}
