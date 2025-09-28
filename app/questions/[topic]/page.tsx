@@ -25,7 +25,6 @@ import { SubtopicFilter } from "@/components/subtopic-filter"
 import { Skeleton } from "@/components/ui/skeleton"
 import { canAccessFilters, getMaxQuestionsPerTopic, UserType, canSkipQuestions } from "@/lib/access"
 import { QuestionDifficultyFilter } from "@/components/question-difficulty-filter"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 // Define types for the database responses
 interface DBQuestion {

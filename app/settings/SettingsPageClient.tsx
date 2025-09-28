@@ -1436,15 +1436,15 @@ function SettingsPageContent() {
                 <div className="flex items-start justify-between gap-3 sm:items-center">
                   <div className="flex flex-wrap items-center gap-2">
                     {/* Students capacity (primary, eye-catching) */}
+                    <Users className="mr-1 h-3.5 w-3.5 text-muted-foreground" />
                     <Badge
                       variant="secondary"
-                      className={`text-xs rounded-full px-3 py-1 font-semibold ${
-                        (selectedClassMembers || []).length >= maxStudentsPerClass 
-                          ? "bg-red-100 text-red-700 border-red-200" 
+                      className={`text-xs rounded-full px-3 py-1 font-semibold ${(selectedClassMembers || []).length >= maxStudentsPerClass
+                          ? "bg-red-100 text-red-700 border-red-200"
                           : (selectedClassMembers || []).length >= maxStudentsPerClass - 1
-                          ? "bg-yellow-100 text-yellow-700 border-yellow-200"
-                          : ""
-                      }`}
+                            ? "bg-yellow-100 text-yellow-700 border-yellow-200"
+                            : ""
+                        }`}
                       title="Students in this class"
                     >
                       {(selectedClassMembers || []).length} / {maxStudentsPerClass} Students
