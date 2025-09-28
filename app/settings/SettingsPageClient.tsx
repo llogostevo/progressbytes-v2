@@ -1437,8 +1437,14 @@ function SettingsPageContent() {
                   <div className="flex flex-wrap items-center gap-2">
                     {/* Students capacity (primary, eye-catching) */}
                     <Badge
-                      variant={(selectedClassMembers || []).length >= maxStudentsPerClass ? "destructive" : "secondary"}
-                      className="text-xs rounded-full px-3 py-1 font-semibold"
+                      variant="secondary"
+                      className={`text-xs rounded-full px-3 py-1 font-semibold ${
+                        (selectedClassMembers || []).length >= maxStudentsPerClass 
+                          ? "bg-red-100 text-red-700 border-red-200" 
+                          : (selectedClassMembers || []).length >= maxStudentsPerClass - 1
+                          ? "bg-yellow-100 text-yellow-700 border-yellow-200"
+                          : ""
+                      }`}
                       title="Students in this class"
                     >
                       {(selectedClassMembers || []).length} / {maxStudentsPerClass} Students
