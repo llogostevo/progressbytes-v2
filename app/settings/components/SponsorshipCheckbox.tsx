@@ -49,12 +49,13 @@ export default function SponsorshipCheckbox({
           enable: next,
         });
 
-        // reflect the new user_type in local state
+        // reflect the new user_type and is_sponsored in local state
         setSelectedClassMembers((prev) =>
           (prev || []).map((m) =>
             m.student_id === member.student_id
               ? {
                 ...m,
+                is_sponsored: next,
                 student: {
                   ...m.student,
                   user_type: next ? "studentSponsoredRevision" : "basic",
