@@ -497,42 +497,151 @@ function SettingsPageContent() {
     }
   }
 
+  // const handleLeaveClass = async () => {
+  //   if (!selectedMembership || leaveClassConfirmation !== "Leave") return
+
+  //   setIsLeavingClass(true)
+  //   try {
+  //     const { data: { user } } = await supabase.auth.getUser()
+  //     if (!user) throw new Error('User not found')
+
+  //     const { error } = await supabase
+  //       .from('class_members')
+  //       .delete()
+  //       .eq('class_id', selectedMembership.class_id)
+  //       .eq('student_id', user.id)
+
+  //     if (error) throw error
+
+  //     setStudentClasses(prev => prev.filter(m =>
+  //       !(m.class_id === selectedMembership.class_id && m.student_id === user.id)
+  //     ))
+  //     setLeaveClassDialogOpen(false)
+  //     setSelectedMembership(null)
+  //     setLeaveClassConfirmation("")
+  //     toast.success('Successfully left class', {
+  //       duration: 10000,
+  //       closeButton: true
+  //     })
+  //   } catch (error) {
+  //     console.error('Error leaving class:', error)
+  //     toast.error('Failed to leave class', {
+  //       duration: 10000,
+  //       closeButton: true
+  //     })
+  //   } finally {
+  //     setIsLeavingClass(false)
+  //   }
+  // }
+
+  // const handleLeaveClass = async () => {
+  //   if (!selectedMembership || leaveClassConfirmation !== "Leave") return
+
+  //   setIsLeavingClass(true)
+  //   try {
+  //     const { data: { user } } = await supabase.auth.getUser()
+  //     if (!user) throw new Error('User not found')
+
+  //     // Check if this membership was sponsored before deleting
+  //     const { data: membership, error: readErr } = await supabase
+  //       .from('class_members')
+  //       .select('is_sponsored')
+  //       .eq('class_id', selectedMembership.class_id)
+  //       .eq('student_id', user.id)
+  //       .single();
+
+  //     if (readErr) throw readErr;
+
+  //     const wasSponsored = !!membership?.is_sponsored;
+
+  //     // If this membership was sponsored, call the RPC FIRST (before deleting)
+  //     if (wasSponsored) {
+  //       const { data: rpcData, error: rpcErr } = await supabase.rpc(
+  //         "rpc_student_self_unsponsor",
+  //         { class_id_input: selectedMembership.class_id } // <-- correct arg
+  //       );
+
+  //       if (rpcErr) {
+  //         console.error('RPC unsponsor_student failed:', rpcErr);
+  //         throw rpcErr;
+  //       }
+  //     }
+
+  //     // Now delete the membership (after RPC has handled sponsorship logic)
+  //     const { error } = await supabase
+  //       .from('class_members')
+  //       .delete()
+  //       .eq('class_id', selectedMembership.class_id)
+  //       .eq('student_id', user.id)
+
+  //     if (error) throw error
+
+  //     setStudentClasses(prev => prev.filter(m =>
+  //       !(m.class_id === selectedMembership.class_id && m.student_id === user.id)
+  //     ))
+  //     setLeaveClassDialogOpen(false)
+  //     setSelectedMembership(null)
+  //     setLeaveClassConfirmation("")
+  //     toast.success('Successfully left class', {
+  //       duration: 10000,
+  //       closeButton: true
+  //     })
+  //   } catch (error) {
+  //     console.error('Error leaving class:', error)
+  //     toast.error('Failed to leave class', {
+  //       duration: 10000,
+  //       closeButton: true
+  //     })
+  //   } finally {
+  //     setIsLeavingClass(false)
+  //   }
+  // }
+
+  
   const handleLeaveClass = async () => {
-    if (!selectedMembership || leaveClassConfirmation !== "Leave") return
-
-    setIsLeavingClass(true)
+    if (!selectedMembership || leaveClassConfirmation !== "Leave") return;
+  
+    setIsLeavingClass(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('User not found')
-
-      const { error } = await supabase
-        .from('class_members')
-        .delete()
-        .eq('class_id', selectedMembership.class_id)
-        .eq('student_id', user.id)
-
-      if (error) throw error
-
-      setStudentClasses(prev => prev.filter(m =>
-        !(m.class_id === selectedMembership.class_id && m.student_id === user.id)
-      ))
-      setLeaveClassDialogOpen(false)
-      setSelectedMembership(null)
-      setLeaveClassConfirmation("")
-      toast.success('Successfully left class', {
-        duration: 10000,
-        closeButton: true
-      })
-    } catch (error) {
-      console.error('Error leaving class:', error)
-      toast.error('Failed to leave class', {
-        duration: 10000,
-        closeButton: true
-      })
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not found");
+  
+      // One generic: the RETURN type (our function returns a table => array of rows)
+      const { data, error } = await supabase.rpc(
+        "unsponsor_and_leave_class",
+        { class_id_input: selectedMembership.class_id }
+      );
+      if (error) throw error;
+  
+      const result = data?.[0];
+  
+      // Remove from local list
+      setStudentClasses(prev =>
+        prev.filter(m => !(m.class_id === selectedMembership.class_id && m.student_id === user.id))
+      );
+  
+      // Close/reset UI
+      setLeaveClassDialogOpen(false);
+      setSelectedMembership(null);
+      setLeaveClassConfirmation("");
+  
+      // Optional: reflect plan change using result?.final_user_type
+  
+      const msg = result?.was_sponsored_by_this_cls
+        ? (result.still_sponsored_elsewhere
+            ? "Left class. You’re still sponsored elsewhere."
+            : "Left class and sponsorship ended.")
+        : "Left class.";
+      toast.success(msg, { duration: 10000, closeButton: true });
+  
+    } catch (err) {
+      console.error("Error leaving class:", err);
+      toast.error("Failed to leave class", { duration: 10000, closeButton: true });
     } finally {
-      setIsLeavingClass(false)
+      setIsLeavingClass(false);
     }
-  }
+  };
+
 
   // Helper function to delete a member and maybe unsponsor them
   async function deleteMemberAndMaybeUnsponsor({
@@ -554,7 +663,24 @@ function SettingsPageContent() {
 
     const wasSponsored = !!membership?.is_sponsored;
 
-    // 2) Delete the membership
+    // 2) If this membership was sponsored, call the RPC FIRST (before deleting)
+    if (wasSponsored) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not found');
+
+      const { error: rpcErr } = await supabase.rpc('unsponsor_student', {
+        student_id_input: studentId,
+        teacher_id_input: user.id,
+        class_id_input: classId,
+      });
+
+      if (rpcErr) {
+        console.error('RPC unsponsor_student failed:', rpcErr);
+        throw rpcErr;
+      }
+    }
+
+    // 3) Now delete the membership (after RPC has handled sponsorship logic)
     const { error: delErr } = await supabase
       .from('class_members')
       .delete()
@@ -563,20 +689,7 @@ function SettingsPageContent() {
 
     if (delErr) throw delErr;
 
-    // 3) If this membership was sponsored in THIS class, call your RPC
-    if (wasSponsored) {
-      // Example RPC signature: unsponsor_student(student_id uuid, teacher_id uuid)
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not found');
-
-      const { error: rpcErr } = await supabase.rpc('unsponsor_student', {
-        student_id: studentId,
-        teacher_id: user.id,
-      });
-      if (rpcErr) throw rpcErr;
-    }
     return { wasSponsored };
-
   }
 
 
@@ -2050,7 +2163,7 @@ function SettingsPageContent() {
                 <Button
                   className="bg-red-600 hover:bg-red-700 text-white"
                   onClick={handleLeaveClass}
-                  disabled={leaveClassConfirmation !== "delete" || isLeavingClass}
+                  disabled={leaveClassConfirmation !== "Leave" || isLeavingClass}
                 >
                   {isLeavingClass ? "Leaving..." : "Leave Class"}
                 </Button>
