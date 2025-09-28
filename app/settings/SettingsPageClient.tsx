@@ -858,6 +858,9 @@ function SettingsPageContent() {
         .from('profiles')
         .select('userid, email, forename, lastname, user_type')
         .in('userid', studentIds)
+        .order('lastname', { ascending: true })
+        .order('forename', { ascending: true })
+        .order('email', { ascending: true })
 
       console.log('studentIds:', studentIds)
       console.log('profiles fetched:', profiles)
@@ -892,7 +895,27 @@ function SettingsPageContent() {
           },
         }
       }) as SupabaseMember[]
-      setSelectedClassMembers(membersOnly)
+      
+      // Sort by lastname, then forename, then email
+      const sortedMembers = membersOnly.sort((a, b) => {
+        const aLast = a.student.full_name.split(' ').pop() || ''
+        const bLast = b.student.full_name.split(' ').pop() || ''
+        const aFirst = a.student.full_name.split(' ')[0] || ''
+        const bFirst = b.student.full_name.split(' ')[0] || ''
+        
+        // Compare last names first
+        if (aLast !== bLast) {
+          return aLast.localeCompare(bLast)
+        }
+        // Then first names
+        if (aFirst !== bFirst) {
+          return aFirst.localeCompare(bFirst)
+        }
+        // Finally email
+        return a.student.email.localeCompare(b.student.email)
+      })
+      
+      setSelectedClassMembers(sortedMembers)
     } catch (e) {
       console.error('Error fetching class members (exception):', e)
       toast.error('Failed to load class members', {
