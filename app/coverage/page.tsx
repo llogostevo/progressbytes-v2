@@ -780,9 +780,11 @@ export default function CoveragePage() {
                                           <Button
                                             variant="ghost"
                                             size="sm"
-                                            onClick={() => handleDeleteCoverage(coverage.id)}
+                                            onClick={(e) => {
+                                              e.stopPropagation()
+                                              handleDeleteCoverage(coverage.id)
+                                            }}
                                             className="h-6 w-6 p-0 hover:bg-red-100"
-                                            onClickCapture={(e) => e.stopPropagation()}
                                           >
                                             <Trash2 className="h-3 w-3" />
                                           </Button>
