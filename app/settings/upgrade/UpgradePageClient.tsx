@@ -291,10 +291,10 @@ export default function UpgradePageClient() {
                 {
                   `Your current plan is sponsored, which means you have access to premium features at no cost.
 
-              Contact your sponsor from the classes below if you have any questions about your plan.
+              Go to the classes section on the settings page to view your joined classes and identify your sponsor. If you have any questions about your plan, contact your sponsor.
               
-              NB. If you delete yoru class membership, you will lose your sponsored access.`
-                }
+                `}<em>{`NB. If you delete your sponsored class membership, you will lose access to the premium features and revert to a free plan.`
+                }</em>
               </p>
             </CardContent>
           </Card>
