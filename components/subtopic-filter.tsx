@@ -86,30 +86,29 @@ export function SubtopicFilter({ selectedSubtopics, onSubtopicChange, subtopics,
       </div>
       {(showSubtopics || isMobile) && (
         <div className="grid grid-cols-3 w-full gap-3">
-          {/* TooltipProvider is used to delay all tooltips from appearing - this overrides the global 
-          delayDuration in the tooltip component */}
-          <TooltipProvider delayDuration={3000}>
-            {subtopics.map((subtopic) => (
-              <Tooltip key={subtopic.id}>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant={selectedSubtopics.includes(subtopic.id) ? "default" : "outline"}
-                    onClick={() => handleSubtopicClick(subtopic.id)}
-                    size="sm"
-                    className="flex-shrink-0 justify-start text-left h-8 px-2"
-                  >
-                    <span className="truncate">{subtopic.subtopictitle}</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent className="bg-black/80 text-white max-w-xs">
-                  <p className="text-sm">{subtopic.subtopictitle}</p>
-                </TooltipContent>
-              </Tooltip>
-            ))}
-          </TooltipProvider>
-
+          {subtopics.map((subtopic) => (
+            <Tooltip key={subtopic.id}>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={selectedSubtopics.includes(subtopic.id) ? "default" : "outline"}
+                  onClick={() => handleSubtopicClick(subtopic.id)}
+                  size="sm"
+                  className="flex-shrink-0 justify-start text-left h-8 px-2"
+                >
+                  <span className="truncate">{subtopic.subtopictitle}</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="bg-black/80 text-white max-w-xs pointer-events-none" side="top"
+                sideOffset={16}
+                collisionPadding={16}
+              >
+                <p className="text-sm">{subtopic.subtopictitle}</p>
+              </TooltipContent>
+            </Tooltip>
+          ))}
         </div>
-      )}
-    </div>
+      )
+      }
+    </div >
   )
 } 
