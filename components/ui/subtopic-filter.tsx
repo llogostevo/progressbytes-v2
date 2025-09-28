@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { filterOn, filterOff } from "@/components/ui/filter-toasts"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface Subtopic {
   id: string
