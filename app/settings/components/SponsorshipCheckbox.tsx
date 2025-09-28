@@ -68,10 +68,11 @@ export default function SponsorshipCheckbox({
           duration: 7000,
           closeButton: true,
         });
-      } catch (err: any) {
+      } catch (err) {
         // rollback UI if server failed
         setChecked(!next);
-        toast.error(err?.message || "Failed to update sponsorship", {
+        const errorMessage = err instanceof Error ? err.message : "Failed to update sponsorship";
+        toast.error(errorMessage, {
           duration: 7000,
           closeButton: true,
         });
