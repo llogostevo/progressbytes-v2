@@ -5,7 +5,8 @@ import { stripe } from '@/utils/stripe/stripe';
 import { supabaseAdmin as supabase } from '@/utils/supabase/admin';
 
 import Stripe from 'stripe';
-import { isTeacher } from '@/lib/access';
+import { isTeacherPlan } from '@/lib/access';
+import { UserType } from '@/lib/access';
 import { cleanupExcessResources } from '@/lib/utils';
 
 
@@ -123,7 +124,7 @@ export async function POST(req: Request) {
           // Determine the appropriate downgrade plan based on current user type
           let downgradePlan = 'basic';
 
-          if (isTeacher(profile.user_type)) {
+          if (isTeacherPlan({ user_type: profile.user_type as UserType })) {
             // If user is a teacher, downgrade to teacherBasic instead of basic
             downgradePlan = 'teacherBasic';
           }

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { stripe } from '@/utils/stripe/stripe'
+import { isPaidPlan } from '@/lib/access'
 
 export async function POST() {
   try {
@@ -39,8 +40,8 @@ export async function POST() {
       )
     }
 
-    // Check if user is currently on a paid plan
-    const isOnPaidPlan = profile.user_type !== 'basic' && profile.user_type !== 'teacherBasic'
+    // Check if user is currently on a paid plan using the helper function
+    const isOnPaidPlan = isPaidPlan({ user_type: profile.user_type })
     
     if (!isOnPaidPlan) {
       return NextResponse.json(

@@ -24,7 +24,7 @@ import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
-import { isTeacher } from "@/lib/access"
+import { isTeacherPlan } from "@/lib/access"
 import UpgradePageClient from "./upgrade/UpgradePageClient"
 import SponsorshipCheckbox from "./components/SponsorshipCheckbox"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -1094,7 +1094,7 @@ function SettingsPageContent() {
       }
 
       // Fetch user's classes (use freshly fetched profile type, not state)
-      const isTeacherRole = isTeacher(profile?.user_type as UserType | null)
+      const isTeacherRole = profile?.user_type && isTeacherPlan({ user_type: profile.user_type as UserType })
       if (isTeacherRole) {
         const { data: classes, error: classesError } = await supabase
           .from('classes')
@@ -1334,7 +1334,7 @@ function SettingsPageContent() {
         </Card> */}
 
         {/* Teacher Class Membership */}
-        {isTeacher(userType) && (
+        {userType && isTeacherPlan({ user_type: userType }) && (
           <Card className="mb-8">
             <CardHeader>
               <div className="flex items-center justify-between">

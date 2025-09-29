@@ -36,6 +36,9 @@ interface AccessLimits {
   canAccessAnalytics: boolean;
   sponsoredStudents?: number;
   showProgressBoost?: boolean;
+  isTeacher: boolean;
+  isPaid: boolean;
+  isSponsored: boolean;
 }
 
 // Centralised access limits 
@@ -52,7 +55,11 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     canAccessAnalytics: false,
     maxClasses: 0,
     maxStudentsPerClass: 0,
-    showProgressBoost: false
+    sponsoredStudents: 0,
+    showProgressBoost: false,
+    isTeacher: false,
+    isPaid: false,
+    isSponsored: false
   },
   basic: {
     canCreateClass: false,
@@ -65,7 +72,11 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     canAccessAnalytics: false,
     maxClasses: 0,
     maxStudentsPerClass: 0, 
-    showProgressBoost: false
+    sponsoredStudents: 0,
+    showProgressBoost: false,
+    isTeacher: false,
+    isPaid: false,
+    isSponsored: false
   },
   revision: {
     canCreateClass: false,
@@ -78,7 +89,11 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     canAccessAnalytics: false,
     maxClasses: 0,
     maxStudentsPerClass: 0,
-    showProgressBoost: true
+    sponsoredStudents: 0,
+    showProgressBoost: true,
+    isTeacher: false,
+    isPaid: true,
+    isSponsored: false
   },
   studentSponsoredRevision:{ // free student sponsored revision plan, set by teachers as part of their paid access plan
     canCreateClass: false,
@@ -91,7 +106,11 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     canAccessAnalytics: false,
     maxClasses: 0,
     maxStudentsPerClass: 0,
-    showProgressBoost: true
+    sponsoredStudents: 0,
+    showProgressBoost: true,
+    isTeacher: false,
+    isPaid: false,
+    isSponsored: true
   } , 
   revisionAI: { // student ai premium plan with ai feedback
     canCreateClass: false,
@@ -104,7 +123,11 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     canAccessAnalytics: false,
     maxClasses: 0,
     maxStudentsPerClass: 0,
-    showProgressBoost: true
+    sponsoredStudents: 0,
+    showProgressBoost: true,
+    isTeacher: false,
+    isPaid: true,
+    isSponsored: false
   },
   teacherBasic: { // teacher basic plan with free access (1 class, 5-10 students)
     canCreateClass: true,
@@ -118,7 +141,10 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     maxClasses: 1,
     maxStudentsPerClass: 30,
     sponsoredStudents: 0, // can provide free access to students
-    showProgressBoost: false
+    showProgressBoost: false,
+    isTeacher: true,
+    isPaid: false,
+    isSponsored: false
   },
   teacherPlan: { // teacher plan with paid access (1 class, 10 students)
     canCreateClass: true,
@@ -132,7 +158,10 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     maxClasses: 1,
     maxStudentsPerClass: 30,
     sponsoredStudents: 10, // can provide free access to students
-    showProgressBoost: false
+    showProgressBoost: false,
+    isTeacher: true,
+    isPaid: true,
+    isSponsored: false
   },
   teacherPlanSponsored: { // free access plan assigned by admin
     canCreateClass: true,
@@ -146,7 +175,10 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     maxClasses: 1,
     maxStudentsPerClass: 30,
     sponsoredStudents: 10, // can provide free access to students
-    showProgressBoost: false
+    showProgressBoost: false,
+    isTeacher: true,
+    isPaid: false,
+    isSponsored: true
   },
   teacherPremium: {
     canCreateClass: true,
@@ -160,7 +192,10 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     maxClasses: Infinity,
     maxStudentsPerClass: 30,
     sponsoredStudents: 30, // can provide free access to students
-    showProgressBoost: false
+    showProgressBoost: false,
+    isTeacher: true,
+    isPaid: true,
+    isSponsored: false
   },
   teacherPremiumSponsored: { // free access plan assigned by admin
     canCreateClass: true,
@@ -174,7 +209,10 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     maxClasses: 1,
     maxStudentsPerClass: 30,
     sponsoredStudents: 30, // can provide free access to students
-    showProgressBoost: false
+    showProgressBoost: false,
+    isTeacher: true,
+    isPaid: false,
+    isSponsored: true
   },
   admin: {
     canCreateClass: true,
@@ -187,7 +225,10 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     canAccessAnalytics: true,
     maxClasses: Infinity,
     maxStudentsPerClass: Infinity,
-    showProgressBoost: false
+    showProgressBoost: false,
+    isTeacher: true,
+    isPaid: true,
+    isSponsored: false
   }
 };
 
@@ -252,8 +293,8 @@ export const canSkipQuestions = (user: User): boolean =>
   userAccessLimits[user.user_type]?.canSkipQuestions ?? false;
 
 // New helper function to check if user is a teacher
-export const isTeacher = (userType: string | null | undefined): boolean => {
-  return userType?.startsWith('teacher') ?? false;
+export const isTeacherPlan = (user: User): boolean => {
+  return userAccessLimits[user.user_type]?.isTeacher ?? false;
 };
 
 // New helper function to check if user is a teacher
@@ -269,15 +310,7 @@ export const canShowProgressBoost = (user: User): boolean => {
 
 // Helper function to check if user is on a paid plan
 export const isPaidPlan = (user: User): boolean => {
-  const paidPlans: UserType[] = [
-    'revision', 
-    'revisionAI', 
-    'teacherPlan',
-    'teacherPremium', 
-    'admin',
-  ];
-  
-  return paidPlans.includes(user.user_type);
+  return userAccessLimits[user.user_type]?.isPaid ?? false;
 };
 
 // Helper function to check if user is on a locked plan (cannot be downgraded to free)
@@ -298,11 +331,5 @@ export const isLockedPlan = (user: User): boolean => {
 
 // Helper function to check if user is on a sponsored plan
 export const isSponsoredPlan = (user: User): boolean => {
-  const sponsoredPlans: UserType[] = [
-    'teacherPlanSponsored',
-    'teacherPremiumSponsored',
-    'studentSponsoredRevision'
-  ];
-  
-  return sponsoredPlans.includes(user.user_type);
+  return userAccessLimits[user.user_type]?.isSponsored ?? false;
 };

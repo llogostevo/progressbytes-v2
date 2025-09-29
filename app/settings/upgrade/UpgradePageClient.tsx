@@ -32,81 +32,508 @@ export default function UpgradePageClient() {
   const searchParams = useSearchParams()
 
   // Helper function to check if switching to a plan with fewer classes or students
-  const checkIfDowngrade = (currentPlan: UserType | null, newPlan: UserType): { isDowngrade: boolean; type?: 'student' | 'teacher' } => {
-    if (!currentPlan) return { isDowngrade: false }
+  // const checkIfDowngrade = (currentPlan: UserType | null, newPlan: UserType): { isDowngrade: boolean; type?: 'student' | 'teacher' } => {
+  //   if (!currentPlan) return { isDowngrade: false }
 
-    const currentLimits = userAccessLimits[currentPlan]
-    const newLimits = userAccessLimits[newPlan]
+  //   const currentLimits = userAccessLimits[currentPlan]
+  //   const newLimits = userAccessLimits[newPlan]
 
-    if (!currentLimits || !newLimits) return { isDowngrade: false }
+  //   if (!currentLimits || !newLimits) return { isDowngrade: false }
 
-    // Check if both plans are teacher plans (have class limits)
-    if (currentLimits.maxClasses !== undefined && newLimits.maxClasses !== undefined) {
-      // Check if new plan has fewer classes or fewer students per class
-      const isDowngrade = newLimits.maxClasses < currentLimits.maxClasses ||
-        (newLimits.maxStudentsPerClass || 0) < (currentLimits.maxStudentsPerClass || 0)
-      return { isDowngrade, type: 'teacher' }
+  //   // Check if both plans are teacher plans (have class limits)
+  //   if (currentLimits.maxClasses !== undefined && newLimits.maxClasses !== undefined) {
+  //     // Check if new plan has fewer classes or fewer students per class
+  //     const isDowngrade = newLimits.maxClasses < currentLimits.maxClasses ||
+  //       (newLimits.maxStudentsPerClass || 0) < (currentLimits.maxStudentsPerClass || 0)
+  //     return { isDowngrade, type: 'teacher' }
+  //   }
+
+  //   // Check if both plans are student plans (no class limits, but have question limits)
+  //   if (currentLimits.maxClasses === undefined && newLimits.maxClasses === undefined) {
+  //     // Check if new plan has fewer questions per day or per topic
+  //     const isDowngrade = newLimits.maxQuestionsPerDay < currentLimits.maxQuestionsPerDay ||
+  //       newLimits.maxQuestionsPerTopic < currentLimits.maxQuestionsPerTopic
+  //     return { isDowngrade, type: 'student' }
+  //   }
+
+  //   // Check if switching from teacher to student plan (losing class management capabilities)
+  //   if (currentLimits.maxClasses !== undefined && newLimits.maxClasses === undefined) {
+  //     return { isDowngrade: true, type: 'teacher' }
+  //   }
+
+  //   // Check if switching from student to teacher plan (losing unlimited questions)
+  //   if (currentLimits.maxClasses === undefined && newLimits.maxClasses !== undefined) {
+  //     // Only show warning if the teacher plan has limited questions
+  //     const isDowngrade = newLimits.maxQuestionsPerDay < currentLimits.maxQuestionsPerDay ||
+  //       newLimits.maxQuestionsPerTopic < currentLimits.maxQuestionsPerTopic
+  //     return { isDowngrade, type: 'student' }
+  //   }
+
+  //   return { isDowngrade: false }
+  // }
+
+
+  type TeacherUsage = {
+    classesCount: number;
+    perClass: Array<{ class_id: string; students: number }>;
+    maxClassSizeObserved: number;
+    sponsoredDistinct: number;
+  };
+
+  type DowngradeViolation =
+    | { code: 'max_classes'; current: number; limit: number }
+    | { code: 'max_students_per_class'; class_id: string; current: number; limit: number }
+    | { code: 'sponsored_students'; current: number; limit: number };
+
+  const normInf = (n: number | undefined) => (n === undefined ? Infinity : n);
+
+  // NEW FETCH TEACHER USAGE FUNCTION
+  async function fetchTeacherUsage(
+    supabase: ReturnType<typeof createClient>,
+    teacherId: string
+  ): Promise<TeacherUsage> {
+    // 1) Get class IDs owned by the teacher
+    const { data: classes, error: clsErr } = await supabase
+      .from('classes')
+      .select('id')
+      .eq('teacher_id', teacherId);
+
+    if (clsErr) throw clsErr;
+
+    const classIds = (classes ?? []).map(c => c.id as string);
+    const classesCount = classIds.length;
+
+    if (classIds.length === 0) {
+      return {
+        classesCount: 0,
+        perClass: [],
+        maxClassSizeObserved: 0,
+        sponsoredDistinct: 0,
+      };
     }
 
-    // Check if both plans are student plans (no class limits, but have question limits)
-    if (currentLimits.maxClasses === undefined && newLimits.maxClasses === undefined) {
-      // Check if new plan has fewer questions per day or per topic
-      const isDowngrade = newLimits.maxQuestionsPerDay < currentLimits.maxQuestionsPerDay ||
-        newLimits.maxQuestionsPerTopic < currentLimits.maxQuestionsPerTopic
-      return { isDowngrade, type: 'student' }
+    // 2) Pull memberships for those classes (class_id, student_id, is_sponsored)
+    //    NOTE: This fetches rows client-side; fine for modest sizes.
+    const { data: members, error: memErr } = await supabase
+      .from('class_members')
+      .select('class_id, student_id, is_sponsored')
+      .in('class_id', classIds);
+
+    if (memErr) throw memErr;
+
+    // 3) Aggregate on the client
+    const perClassMap = new Map<string, Set<string>>();
+    const sponsoredSet = new Set<string>();
+
+    for (const row of members ?? []) {
+      const class_id = row.class_id as string;
+      const student_id = row.student_id as string;
+      if (!perClassMap.has(class_id)) perClassMap.set(class_id, new Set());
+      perClassMap.get(class_id)!.add(student_id);
+      if (row.is_sponsored) sponsoredSet.add(student_id); // distinct across all classes
     }
 
-    // Check if switching from teacher to student plan (losing class management capabilities)
-    if (currentLimits.maxClasses !== undefined && newLimits.maxClasses === undefined) {
-      return { isDowngrade: true, type: 'teacher' }
+    const perClass: Array<{ class_id: string; students: number }> = [];
+    let maxClassSizeObserved = 0;
+
+    for (const [class_id, set] of perClassMap.entries()) {
+      const students = set.size;
+      perClass.push({ class_id, students });
+      if (students > maxClassSizeObserved) maxClassSizeObserved = students;
     }
 
-    // Check if switching from student to teacher plan (losing unlimited questions)
-    if (currentLimits.maxClasses === undefined && newLimits.maxClasses !== undefined) {
-      // Only show warning if the teacher plan has limited questions
-      const isDowngrade = newLimits.maxQuestionsPerDay < currentLimits.maxQuestionsPerDay ||
-        newLimits.maxQuestionsPerTopic < currentLimits.maxQuestionsPerTopic
-      return { isDowngrade, type: 'student' }
-    }
-
-    return { isDowngrade: false }
+    return {
+      classesCount,
+      perClass,
+      maxClassSizeObserved,
+      sponsoredDistinct: sponsoredSet.size,
+    };
   }
+
+  // NEW COMPARE USAGE TO PLAN FUNCTION
+
+  function compareUsageToPlan(
+    usage: TeacherUsage,
+    targetPlan: UserType
+  ): { ok: boolean; violations: DowngradeViolation[] } {
+    const limits = userAccessLimits[targetPlan];
+    const violations: DowngradeViolation[] = [];
+
+    // classes
+    const maxClasses = normInf(limits.maxClasses);
+    if (usage.classesCount > maxClasses) {
+      violations.push({
+        code: 'max_classes',
+        current: usage.classesCount,
+        limit: maxClasses,
+      });
+    }
+
+    // students per class
+    const perClassLimit = normInf(limits.maxStudentsPerClass);
+    if (Number.isFinite(perClassLimit)) {
+      for (const row of usage.perClass) {
+        if (row.students > perClassLimit) {
+          violations.push({
+            code: 'max_students_per_class',
+            class_id: row.class_id,
+            current: row.students,
+            limit: perClassLimit,
+          });
+        }
+      }
+    }
+
+    // sponsored seats (distinct across all teacher classes)
+    const sponsoredLimit = limits.sponsoredStudents ?? 0;
+    if (usage.sponsoredDistinct > sponsoredLimit) {
+      violations.push({
+        code: 'sponsored_students',
+        current: usage.sponsoredDistinct,
+        limit: sponsoredLimit,
+      });
+    }
+
+    return { ok: violations.length === 0, violations };
+  }
+
+
+
+  // NEW CHECK IF DOWNGRADE FUNCTION
+
+  const checkIfDowngrade = (
+    currentPlan: UserType | null,
+    newPlan: UserType
+  ): { isDowngrade: boolean; type?: 'student' | 'teacher'; hardBlock?: boolean } => {
+    if (!currentPlan) return { isDowngrade: false };
+
+    const cur = userAccessLimits[currentPlan];
+    const nxt = userAccessLimits[newPlan];
+
+    // Teacher ↔ Teacher
+    if (cur.isTeacher && nxt.isTeacher) {
+      const isDowngrade =
+        (nxt.maxClasses ?? Infinity) < (cur.maxClasses ?? Infinity) ||
+        (nxt.maxStudentsPerClass ?? Infinity) < (cur.maxStudentsPerClass ?? Infinity) ||
+        (nxt.sponsoredStudents ?? 0) < (cur.sponsoredStudents ?? 0);
+      return { isDowngrade, type: 'teacher', hardBlock: false };
+    }
+
+    // Student ↔ Student
+    if (!cur.isTeacher && !nxt.isTeacher) {
+      const isDowngrade =
+        nxt.maxQuestionsPerDay < cur.maxQuestionsPerDay ||
+        nxt.maxQuestionsPerTopic < cur.maxQuestionsPerTopic;
+      return { isDowngrade, type: 'student', hardBlock: false };
+    }
+
+    // Teacher → Student: always a capability downgrade, **hard block** until clean
+    if (cur.isTeacher && !nxt.isTeacher) {
+      return { isDowngrade: true, type: 'teacher', hardBlock: true };
+    }
+
+    // Student → Teacher: optional warning if Q caps reduce
+    const maybeStudentLoss =
+      !cur.isTeacher && nxt.isTeacher &&
+      (nxt.maxQuestionsPerDay < cur.maxQuestionsPerDay ||
+        nxt.maxQuestionsPerTopic < cur.maxQuestionsPerTopic);
+    return { isDowngrade: maybeStudentLoss, type: maybeStudentLoss ? 'student' : undefined, hardBlock: false };
+  };
+
+
+
+
+  // const handlePlanSelect = async (plan: Plan) => {
+  //   if (!userEmail || plan.slug === userType) return
+
+  //   // Check if this is a downgrade and get the type
+  //   const downgradeInfo = checkIfDowngrade(userType, plan.slug)
+
+  //   if (downgradeInfo.isDowngrade) {
+  //     const message = downgradeInfo.type === 'student'
+  //       ? "You're switching to a plan with fewer features. This may affect your current setup."
+  //       : "You're switching to a plan with fewer classes or students. You will lose permenant access to your current classes and students if you are above the limits of the selected plan. "
+
+  //     toast.error("Plan Downgrade Warning", {
+  //       description: message,
+  //       action: {
+  //         label: "Continue",
+  //         onClick: () => processPlanChange(plan)
+  //       },
+  //       cancel: {
+  //         label: "Cancel",
+  //         onClick: () => {
+  //           toast.info("Your plan hasn't changed")
+  //         }
+  //       },
+  //       duration: Infinity
+  //     })
+  //     return
+  //   }
+
+  //   // If not a downgrade, proceed directly
+  //   processPlanChange(plan)
+  // }
+
+  // const handlePlanSelect = async (plan: Plan) => {
+  //   if (!userEmail || plan.slug === userType) return;
+
+  //   // UI downgrade warning (static, based on plan metadata)
+  //   const downgradeInfo = checkIfDowngrade(userType, plan.slug);
+
+  //   // If teacher-type target, fetch live usage and enforce limits
+  //   if (user && isTeacherPlan({ user_type: plan.slug })) {
+  //     const { data: { user: authUser } } = await supabase.auth.getUser();
+  //     if (!authUser) {
+  //       toast.error("Not signed in");
+  //       return;
+  //     }
+
+  //     try {
+  //       const usage = await fetchTeacherUsage(supabase, authUser.id);
+  //       const { ok, violations } = compareUsageToPlan(usage, plan.slug as UserType);
+
+  //       if (!ok) {
+  //         // Build a friendly message
+  //         const lines = violations.map(v => {
+  //           if (v.code === 'max_classes') {
+  //             return `Classes: ${v.current}, you must be below the limit of ${v.limit}`;
+  //           }
+  //           if (v.code === 'max_students_per_class') {
+  //             return `Class ${v.class_id.slice(0, 6)}… has ${v.current} students, you must be below the limit of ${v.limit}`;
+  //           }
+  //           if (v.code === 'sponsored_students') {
+  //             return `Sponsored students: ${v.current}, you must be below the limit of ${v.limit}`;
+  //           }
+  //           return '';
+  //         }).filter(Boolean);
+
+  //         toast.error("Reduce usage before downgrading", {
+  //           description: lines.join('\n'),
+  //           duration: 12000,
+  //           closeButton: true,
+  //         });
+  //         return; // BLOCK downgrade
+  //       }
+  //     } catch (e) {
+  //       console.error(e);
+  //       toast.error("Couldn’t verify limits. Please try again.");
+  //       return;
+  //     }
+  //   }
+
+  //   // If we get here, either not a teacher target plan or usage is within limits
+  //   if (downgradeInfo.isDowngrade) {
+  //     const message = downgradeInfo.type === 'student'
+  //       ? "You're switching to a plan with fewer features. This may affect your current setup."
+  //       : "You're switching to a plan with fewer classes/students. Ensure you are within limits.";
+
+  //     toast.error("Plan Downgrade Warning", {
+  //       description: message,
+  //       action: { label: "Continue", onClick: () => processPlanChange(plan) },
+  //       cancel: { label: "Cancel", onClick: () => toast.info("Your plan hasn't changed") },
+  //       duration: Infinity
+  //     });
+  //     return;
+  //   }
+
+  //   processPlanChange(plan);
+  // };
+
+  // const handlePlanSelect = async (plan: Plan) => {
+  //   if (!userEmail || plan.slug === userType) return;
+
+  //   const downgradeInfo = checkIfDowngrade(userType, plan.slug);
+
+  //   // If moving to a *student* plan from a *teacher* plan, require zero classes & zero sponsored
+  //   if (downgradeInfo.hardBlock) {
+  //     const { data: { user: authUser } } = await supabase.auth.getUser();
+  //     if (!authUser) {
+  //       toast.error("Not signed in");
+  //       return;
+  //     }
+
+  //     try {
+  //       const usage = await fetchTeacherUsage(supabase, authUser.id);
+  //       const hasAnyClasses = usage.classesCount > 0;
+  //       const hasAnySponsored = usage.sponsoredDistinct > 0;
+
+  //       if (hasAnyClasses || hasAnySponsored) {
+  //         const lines: string[] = [];
+  //         if (hasAnyClasses) lines.push(`• Delete all classes you own (${usage.classesCount}).`);
+  //         if (hasAnySponsored) lines.push(`• Unsponsor all students (${usage.sponsoredDistinct}).`);
+
+  //         toast.error("Clean up required before switching to a student plan", {
+  //           description: lines.join("\n"),
+  //           duration: 12000,
+  //           closeButton: true
+  //         });
+  //         return; // BLOCK — no “Continue”
+  //       }
+  //       // Clean (no classes/sponsorships) → proceed
+  //       processPlanChange(plan);
+  //       return;
+  //     } catch (e) {
+  //       console.error(e);
+  //       toast.error("Couldn&apos;t verify your current usage. Please try again.");
+  //       return;
+  //     }
+  //   }
+
+  //   // For other downgrades: if it’s a teacher target, also enforce within-limits
+  //   if (user && isTeacherPlan({ user_type: plan.slug })) {
+  //     const { data: { user: authUser } } = await supabase.auth.getUser();
+  //     if (!authUser) {
+  //       toast.error("Not signed in");
+  //       return;
+  //     }
+  //     try {
+  //       const usage = await fetchTeacherUsage(supabase, authUser.id);
+  //       const { ok, violations } = compareUsageToPlan(usage, plan.slug as UserType);
+  //       if (!ok) {
+  //         const lines = violations.map(v => {
+  //           if (v.code === 'max_classes') return `• Reduce classes to ${v.limit} (currently ${v.current}).`;
+  //           if (v.code === 'max_students_per_class') return `• Class ${v.class_id.slice(0, 6)}… has ${v.current} students (limit ${v.limit}).`;
+  //           if (v.code === 'sponsored_students') return `• Reduce sponsored students to ${v.limit} (currently ${v.current}).`;
+  //           return '';
+  //         }).filter(Boolean);
+  //         toast.error("Reduce usage before downgrading", {
+  //           description: lines.join("\n"),
+  //           duration: 12000,
+  //           closeButton: true
+  //         });
+  //         return; // BLOCK
+  //       }
+  //     } catch (e) {
+  //       console.error(e);
+  //       toast.error("Couldn&apos;t verify limits. Please try again.");
+  //       return;
+  //     }
+  //   }
+
+  //   // Soft downgrades (student↔student, student→teacher warnings)
+  //   if (downgradeInfo.isDowngrade) {
+  //     const message =
+  //       downgradeInfo.type === 'student'
+  //         ? "You're switching to a plan with fewer features. This may affect your current setup."
+  //         : "You're switching to a plan with fewer classes/students. Ensure you are within limits.";
+  //     toast.error("Plan Downgrade Warning", {
+  //       description: message,
+  //       action: { label: "Continue", onClick: () => processPlanChange(plan) },
+  //       cancel: { label: "Cancel", onClick: () => toast.info("Your plan hasn't changed") },
+  //       duration: Infinity
+  //     });
+  //     return;
+  //   }
+
+  //   processPlanChange(plan);
+  // };
 
   const handlePlanSelect = async (plan: Plan) => {
-    if (!userEmail || plan.slug === userType) return
+    if (!userEmail || plan.slug === userType) return;
 
-    // Check if this is a downgrade and get the type
-    const downgradeInfo = checkIfDowngrade(userType, plan.slug)
+    const isTeacherTarget = plan.plan_type === "teacher";
+    const currentIsTeacher = !!(userType && userAccessLimits[userType]?.isTeacher);
+    const downgradeInfo = checkIfDowngrade(userType, plan.slug);
 
-    if (downgradeInfo.isDowngrade) {
-      const message = downgradeInfo.type === 'student'
-        ? "You're switching to a plan with fewer features. This may affect your current setup."
-        : "You're switching to a plan with fewer classes or students. You will lose permenant access to your current classes and students if you are above the limits of the selected plan. "
+    // 1) Hard block only when moving FROM teacher TO student
+    if (currentIsTeacher && !isTeacherTarget) {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) { toast.error("Not signed in"); return; }
 
-      toast.error("Plan Downgrade Warning", {
-        description: message,
-        action: {
-          label: "Continue",
-          onClick: () => processPlanChange(plan)
-        },
-        cancel: {
-          label: "Cancel",
-          onClick: () => {
-            toast.info("Your plan hasn't changed")
-          }
-        },
-        duration: Infinity
-      })
-      return
+      try {
+        const usage = await fetchTeacherUsage(supabase, authUser.id);
+        const hasAnyClasses = usage.classesCount > 0;
+        const hasAnySponsored = usage.sponsoredDistinct > 0;
+
+        if (hasAnyClasses || hasAnySponsored) {
+          const lines: string[] = [];
+          if (hasAnyClasses) lines.push(`• Delete all classes you own (${usage.classesCount}).`);
+          if (hasAnySponsored) lines.push(`• Unsponsor all students (${usage.sponsoredDistinct}).`);
+
+          toast.error("Clean up required before switching to a student plan", {
+            description: lines.join("\n"),
+            duration: 12000,
+            closeButton: true
+          });
+          return; // BLOCK
+        }
+
+        // Clean → proceed
+        processPlanChange(plan);
+        return;
+      } catch (e) {
+        console.error(e);
+        toast.error("Couldn’t verify your current usage. Please try again.");
+        return;
+      }
     }
 
-    // If not a downgrade, proceed directly
-    processPlanChange(plan)
-  }
+    // 2) Teacher → Teacher: enforce target plan limits (BLOCK if over)
+    let limitsCheckOk: boolean | undefined = undefined;
+    if (isTeacherTarget) {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) { toast.error("Not signed in"); return; }
+
+      try {
+        const usage = await fetchTeacherUsage(supabase, authUser.id);
+        const { ok, violations } = compareUsageToPlan(usage, plan.slug as UserType);
+
+        if (!ok) {
+          const lines = violations.map(v => {
+            if (v.code === 'max_classes') return `• Reduce classes to ${v.limit} (currently ${v.current}).`;
+            if (v.code === 'max_students_per_class') return `• Class ${v.class_id.slice(0, 6)}… has ${v.current} (limit ${v.limit}).`;
+            if (v.code === 'sponsored_students') return `• Reduce sponsored students to ${v.limit} (currently ${v.current}).`;
+            return '';
+          }).filter(Boolean);
+
+          toast.error("Reduce usage before downgrading", {
+            description: lines.join("\n"),
+            duration: 12000,
+            closeButton: true
+          });
+          return; // BLOCK
+        }
+
+        limitsCheckOk = ok; // true
+      } catch (e) {
+        console.error(e);
+        toast.error("Couldn’t verify limits. Please try again.");
+        return;
+      }
+    }
+
+    // 3) Soft warning ONLY if it's a downgrade AND we are within limits (or non-teacher target)
+    if (downgradeInfo.isDowngrade && (limitsCheckOk ?? true)) {
+      toast.error("Plan Downgrade Warning", {
+        description:
+          downgradeInfo.type === 'student'
+            ? "You're switching to a plan with fewer features. This may affect your current setup."
+            : "You're switching to a plan with fewer classes/students. Ensure you are within limits.",
+        action: { label: "Continue", onClick: () => processPlanChange(plan) },
+        cancel: { label: "Cancel", onClick: () => toast.info("Your plan hasn't changed") },
+        duration: Infinity
+      });
+      return;
+    }
+
+    // 4) Everything OK → proceed
+    processPlanChange(plan);
+  };
+
 
   const processPlanChange = async (plan: Plan) => {
     setIsLoadingCheckout(true)
     try {
+      // Check if user is on a sponsored plan
+      if (user && isSponsoredPlan(user)) {
+        toast.error("Sponsored Plan", {
+          description: "You are on a sponsored plan, please contact your sponsor if you wish to change your plan - you will need to ask them to remove your sponsorship.",
+          duration: 5000
+        })
+        setIsLoadingCheckout(false)
+        return
+      }
       // If it's a free plan
       if (plan.price === 0) {
         const {

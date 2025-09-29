@@ -1,6 +1,7 @@
 "use client"
 
-import { isTeacher } from "@/lib/access"
+import { isTeacherPlan } from "@/lib/access"
+import { UserType } from "@/lib/access"
 import { useState, useEffect } from "react"
 import { createClient } from "@/utils/supabase/client"
 import { redirect } from "next/navigation"
@@ -78,7 +79,7 @@ export default function CoveragePage() {
 
       const { data: profile } = await supabase.from("profiles").select("user_type").eq("userid", user.id).single()
 
-      if (!isTeacher(profile?.user_type)) {
+      if (!profile?.user_type || !isTeacherPlan({ user_type: profile.user_type as UserType })) {
         redirect("/")
         return
       }
