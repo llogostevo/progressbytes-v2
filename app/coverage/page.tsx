@@ -1,6 +1,6 @@
 "use client"
 
-import { isTeacherPlan, User } from "@/lib/access"
+import { isTeacherPlan } from "@/lib/access"
 import { UserType } from "@/lib/access"
 import { useState, useEffect } from "react"
 import { createClient } from "@/utils/supabase/client"
