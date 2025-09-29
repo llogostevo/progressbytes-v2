@@ -113,7 +113,7 @@ export default function UpgradePageClient() {
     }
 
     // 2) Pull memberships for those classes (class_id, student_id, is_sponsored)
-    //    NOTE: This fetches rows client-side; fine for modest sizes. See RPC below for scaling.
+    //    NOTE: This fetches rows client-side; fine for modest sizes.
     const { data: members, error: memErr } = await supabase
       .from('class_members')
       .select('class_id, student_id, is_sponsored')
@@ -340,18 +340,106 @@ export default function UpgradePageClient() {
   //   processPlanChange(plan);
   // };
 
+  // const handlePlanSelect = async (plan: Plan) => {
+  //   if (!userEmail || plan.slug === userType) return;
+
+  //   const downgradeInfo = checkIfDowngrade(userType, plan.slug);
+
+  //   // If moving to a *student* plan from a *teacher* plan, require zero classes & zero sponsored
+  //   if (downgradeInfo.hardBlock) {
+  //     const { data: { user: authUser } } = await supabase.auth.getUser();
+  //     if (!authUser) {
+  //       toast.error("Not signed in");
+  //       return;
+  //     }
+
+  //     try {
+  //       const usage = await fetchTeacherUsage(supabase, authUser.id);
+  //       const hasAnyClasses = usage.classesCount > 0;
+  //       const hasAnySponsored = usage.sponsoredDistinct > 0;
+
+  //       if (hasAnyClasses || hasAnySponsored) {
+  //         const lines: string[] = [];
+  //         if (hasAnyClasses) lines.push(`• Delete all classes you own (${usage.classesCount}).`);
+  //         if (hasAnySponsored) lines.push(`• Unsponsor all students (${usage.sponsoredDistinct}).`);
+
+  //         toast.error("Clean up required before switching to a student plan", {
+  //           description: lines.join("\n"),
+  //           duration: 12000,
+  //           closeButton: true
+  //         });
+  //         return; // BLOCK — no “Continue”
+  //       }
+  //       // Clean (no classes/sponsorships) → proceed
+  //       processPlanChange(plan);
+  //       return;
+  //     } catch (e) {
+  //       console.error(e);
+  //       toast.error("Couldn&apos;t verify your current usage. Please try again.");
+  //       return;
+  //     }
+  //   }
+
+  //   // For other downgrades: if it’s a teacher target, also enforce within-limits
+  //   if (user && isTeacherPlan({ user_type: plan.slug })) {
+  //     const { data: { user: authUser } } = await supabase.auth.getUser();
+  //     if (!authUser) {
+  //       toast.error("Not signed in");
+  //       return;
+  //     }
+  //     try {
+  //       const usage = await fetchTeacherUsage(supabase, authUser.id);
+  //       const { ok, violations } = compareUsageToPlan(usage, plan.slug as UserType);
+  //       if (!ok) {
+  //         const lines = violations.map(v => {
+  //           if (v.code === 'max_classes') return `• Reduce classes to ${v.limit} (currently ${v.current}).`;
+  //           if (v.code === 'max_students_per_class') return `• Class ${v.class_id.slice(0, 6)}… has ${v.current} students (limit ${v.limit}).`;
+  //           if (v.code === 'sponsored_students') return `• Reduce sponsored students to ${v.limit} (currently ${v.current}).`;
+  //           return '';
+  //         }).filter(Boolean);
+  //         toast.error("Reduce usage before downgrading", {
+  //           description: lines.join("\n"),
+  //           duration: 12000,
+  //           closeButton: true
+  //         });
+  //         return; // BLOCK
+  //       }
+  //     } catch (e) {
+  //       console.error(e);
+  //       toast.error("Couldn&apos;t verify limits. Please try again.");
+  //       return;
+  //     }
+  //   }
+
+  //   // Soft downgrades (student↔student, student→teacher warnings)
+  //   if (downgradeInfo.isDowngrade) {
+  //     const message =
+  //       downgradeInfo.type === 'student'
+  //         ? "You're switching to a plan with fewer features. This may affect your current setup."
+  //         : "You're switching to a plan with fewer classes/students. Ensure you are within limits.";
+  //     toast.error("Plan Downgrade Warning", {
+  //       description: message,
+  //       action: { label: "Continue", onClick: () => processPlanChange(plan) },
+  //       cancel: { label: "Cancel", onClick: () => toast.info("Your plan hasn't changed") },
+  //       duration: Infinity
+  //     });
+  //     return;
+  //   }
+
+  //   processPlanChange(plan);
+  // };
+
   const handlePlanSelect = async (plan: Plan) => {
     if (!userEmail || plan.slug === userType) return;
 
+    const isTeacherTarget = plan.plan_type === "teacher";
+    const currentIsTeacher = !!(userType && userAccessLimits[userType]?.isTeacher);
     const downgradeInfo = checkIfDowngrade(userType, plan.slug);
 
-    // If moving to a *student* plan from a *teacher* plan, require zero classes & zero sponsored
-    if (downgradeInfo.hardBlock) {
+    // 1) Hard block only when moving FROM teacher TO student
+    if (currentIsTeacher && !isTeacherTarget) {
       const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (!authUser) {
-        toast.error("Not signed in");
-        return;
-      }
+      if (!authUser) { toast.error("Not signed in"); return; }
 
       try {
         const usage = await fetchTeacherUsage(supabase, authUser.id);
@@ -368,35 +456,37 @@ export default function UpgradePageClient() {
             duration: 12000,
             closeButton: true
           });
-          return; // BLOCK — no “Continue”
+          return; // BLOCK
         }
-        // Clean (no classes/sponsorships) → proceed
+
+        // Clean → proceed
         processPlanChange(plan);
         return;
       } catch (e) {
         console.error(e);
-        toast.error("Couldn&apos;t verify your current usage. Please try again.");
+        toast.error("Couldn’t verify your current usage. Please try again.");
         return;
       }
     }
 
-    // For other downgrades: if it’s a teacher target, also enforce within-limits
-    if (user && isTeacherPlan({ user_type: plan.slug })) {
+    // 2) Teacher → Teacher: enforce target plan limits (BLOCK if over)
+    let limitsCheckOk: boolean | undefined = undefined;
+    if (isTeacherTarget) {
       const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (!authUser) {
-        toast.error("Not signed in");
-        return;
-      }
+      if (!authUser) { toast.error("Not signed in"); return; }
+
       try {
         const usage = await fetchTeacherUsage(supabase, authUser.id);
         const { ok, violations } = compareUsageToPlan(usage, plan.slug as UserType);
+
         if (!ok) {
           const lines = violations.map(v => {
             if (v.code === 'max_classes') return `• Reduce classes to ${v.limit} (currently ${v.current}).`;
-            if (v.code === 'max_students_per_class') return `• Class ${v.class_id.slice(0, 6)}… has ${v.current} students (limit ${v.limit}).`;
+            if (v.code === 'max_students_per_class') return `• Class ${v.class_id.slice(0, 6)}… has ${v.current} (limit ${v.limit}).`;
             if (v.code === 'sponsored_students') return `• Reduce sponsored students to ${v.limit} (currently ${v.current}).`;
             return '';
           }).filter(Boolean);
+
           toast.error("Reduce usage before downgrading", {
             description: lines.join("\n"),
             duration: 12000,
@@ -404,21 +494,22 @@ export default function UpgradePageClient() {
           });
           return; // BLOCK
         }
+
+        limitsCheckOk = ok; // true
       } catch (e) {
         console.error(e);
-        toast.error("Couldn&apos;t verify limits. Please try again.");
+        toast.error("Couldn’t verify limits. Please try again.");
         return;
       }
     }
 
-    // Soft downgrades (student↔student, student→teacher warnings)
-    if (downgradeInfo.isDowngrade) {
-      const message =
-        downgradeInfo.type === 'student'
-          ? "You're switching to a plan with fewer features. This may affect your current setup."
-          : "You're switching to a plan with fewer classes/students. Ensure you are within limits.";
+    // 3) Soft warning ONLY if it's a downgrade AND we are within limits (or non-teacher target)
+    if (downgradeInfo.isDowngrade && (limitsCheckOk ?? true)) {
       toast.error("Plan Downgrade Warning", {
-        description: message,
+        description:
+          downgradeInfo.type === 'student'
+            ? "You're switching to a plan with fewer features. This may affect your current setup."
+            : "You're switching to a plan with fewer classes/students. Ensure you are within limits.",
         action: { label: "Continue", onClick: () => processPlanChange(plan) },
         cancel: { label: "Cancel", onClick: () => toast.info("Your plan hasn't changed") },
         duration: Infinity
@@ -426,6 +517,7 @@ export default function UpgradePageClient() {
       return;
     }
 
+    // 4) Everything OK → proceed
     processPlanChange(plan);
   };
 

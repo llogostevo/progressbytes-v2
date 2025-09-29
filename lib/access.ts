@@ -212,7 +212,7 @@ export const userAccessLimits: Record<UserType, AccessLimits> = {
     showProgressBoost: false,
     isTeacher: true,
     isPaid: false,
-    isSponsored: false
+    isSponsored: true
   },
   admin: {
     canCreateClass: true,
