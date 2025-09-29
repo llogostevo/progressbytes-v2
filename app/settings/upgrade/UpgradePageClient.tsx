@@ -7,7 +7,7 @@ import { redirect } from "next/navigation"
 import { loadStripe } from "@stripe/stripe-js"
 import type { Plan } from "@/lib/types"
 import type { UserType, User } from "@/lib/access"
-import { userAccessLimits, isSponsoredPlan, isTeacherPlan } from "@/lib/access"
+import { userAccessLimits, isSponsoredPlan } from "@/lib/access"
 import { cleanupExcessResources } from "@/lib/utils"
 
 // UI Components
