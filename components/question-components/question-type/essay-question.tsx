@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { toast } from "sonner"
 import {
   Dialog,
   DialogContent,
@@ -40,6 +41,14 @@ export function EssayQuestion({
   }
 
   const handleSubmit = () => {
+    // Check if the answer is "idk" (case insensitive)
+    if (answer.toLowerCase().trim() === "idk") {
+      toast.error("Please try to answer the question! Look at the resources provided to help you understand the topic better.", {
+        duration: 5000,
+      })
+      return
+    }
+    
     onSubmit(answer)
   }
 

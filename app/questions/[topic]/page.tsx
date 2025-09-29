@@ -645,26 +645,26 @@ export default function QuestionPage() {
             return
           }
 
-          console.log("=== QUESTION DEBUG INFO ===")
-          console.log("User Type:", userType)
-          console.log("User ID:", user?.id)
-          console.log("Topic ID:", currentTopic?.id)
-          console.log("Raw question data:", newQuestion)
-          console.log("Question ID:", newQuestion.id)
-          console.log("Question type:", newQuestion.type)
-          console.log("Model answer:", newQuestion.model_answer)
-          console.log("Model answer type:", typeof newQuestion.model_answer)
-          console.log("Options:", newQuestion.options)
-          console.log("Order important:", newQuestion.order_important)
-          console.log("=== END DEBUG INFO ===")
+          // console.log("=== QUESTION DEBUG INFO ===")
+          // console.log("User Type:", userType)
+          // console.log("User ID:", user?.id)
+          // console.log("Topic ID:", currentTopic?.id)
+          // console.log("Raw question data:", newQuestion)
+          // console.log("Question ID:", newQuestion.id)
+          // console.log("Question type:", newQuestion.type)
+          // console.log("Model answer:", newQuestion.model_answer)
+          // console.log("Model answer type:", typeof newQuestion.model_answer)
+          // console.log("Options:", newQuestion.options)
+          // console.log("Order important:", newQuestion.order_important)
+          // console.log("=== END DEBUG INFO ===")
 
-          if (newQuestion.type === 'true-false') {
-            console.log("True/False specific data:", {
-              modelAnswer: newQuestion.model_answer,
-              modelAnswerType: typeof newQuestion.model_answer,
-              rawModelAnswer: newQuestion.model_answer
-            })
-          }
+          // if (newQuestion.type === 'true-false') {
+          //   console.log("True/False specific data:", {
+          //     modelAnswer: newQuestion.model_answer,
+          //     modelAnswerType: typeof newQuestion.model_answer,
+          //     rawModelAnswer: newQuestion.model_answer
+          //   })
+          // }
 
           setQuestion(newQuestion)
           setAnswer(null)
