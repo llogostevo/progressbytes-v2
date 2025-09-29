@@ -5,7 +5,7 @@ import type React from "react"
 import { useEffect, useState, useCallback, useRef, useMemo, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/app/providers/AuthProvider"
-import { isTeacher } from "@/lib/access"
+import { isTeacherPlan, UserType } from "@/lib/access"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { User, AlertCircle, ChevronLeft, ChevronRight, Trash2 } from "lucide-react"
 import {
@@ -392,7 +392,7 @@ function AssessPageContent() {
 
   // Fetch classes for the teacher
   const fetchClasses = useCallback(async () => {
-    if (!isTeacher(userType)) return
+    if (!userType || !isTeacherPlan({ user_type: userType as UserType })) return
 
     setIsLoadingClasses(true)
     try {
@@ -422,7 +422,7 @@ function AssessPageContent() {
 
   // Fetch answers that need grading
   const fetchAnswersToGrade = useCallback(async () => {
-    if (!isTeacher(userType)) return
+    if (!userType || !isTeacherPlan({ user_type: userType as UserType })) return
 
     setIsLoading(true)
     try {
@@ -640,16 +640,16 @@ function AssessPageContent() {
 
   useEffect(() => {
     // Redirect students to home page
-    if (isLoggedIn && userType !== null && !isTeacher(userType)) {
+    if (isLoggedIn && userType !== null && !isTeacherPlan({ user_type: userType as UserType })) {
       router.push("/")
-    } else if (isLoggedIn && isTeacher(userType)) {
+    } else if (isLoggedIn && isTeacherPlan({ user_type: userType as UserType })) {
       fetchClasses()
     }
   }, [isLoggedIn, userType, router, fetchClasses])
 
   useEffect(() => {
     // Fetch answers when classes are loaded and class selection changes
-    if (isLoggedIn && isTeacher(userType) && !isLoadingClasses) {
+    if (isLoggedIn && isTeacherPlan({ user_type: userType as UserType }) && !isLoadingClasses) {
       fetchAnswersToGrade()
     }
   }, [isLoggedIn, userType, fetchAnswersToGrade, isLoadingClasses])
@@ -763,9 +763,13 @@ function AssessPageContent() {
   }
 
   // Don't render anything if user is not a teacher
-  if (!isLoggedIn || !isTeacher(userType)) {
+  if (!userType || !isTeacherPlan({ user_type: userType as UserType })) {
     return null
   }
+
+
+
+  
 
   if (isLoading) {
     return (
