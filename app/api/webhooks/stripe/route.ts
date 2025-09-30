@@ -143,6 +143,7 @@ export async function POST(req: Request) {
             .update({
               user_type: downgradePlan,
               plan_end_date: null,
+              max_sponsored_seats: 0
             })
             .eq('userid', profile.userid);
 
@@ -182,6 +183,7 @@ export async function POST(req: Request) {
               .update({
                 user_type: 'basic',
                 plan_end_date: null,
+                max_sponsored: 0
               })
               .eq('userid', profile.userid);
 
