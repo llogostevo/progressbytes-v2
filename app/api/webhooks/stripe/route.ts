@@ -62,7 +62,7 @@ export async function POST(req: Request) {
         // Query the database to get the plan details associated with this price ID
         const { data: plan, error: planError } = await supabase
           .from('plans')
-          .select('slug')
+          .select('slug, sponsoredStudents')
           .eq('stripe_price_id', priceId)
           .single();
 
@@ -86,7 +86,8 @@ export async function POST(req: Request) {
           .from('profiles')
           .update({
             user_type: plan.slug,
-            plan_end_date: periodEnd
+            plan_end_date: periodEnd,
+            max_sponsored_seats: plan.sponsoredStudents
           })
           .eq('userid', userId);
 
