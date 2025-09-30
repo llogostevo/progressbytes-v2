@@ -81,18 +81,24 @@ export async function POST(req: Request) {
         const periodEnd = item.current_period_end
           ? new Date(item.current_period_end * 1000).toISOString()
           : null;
-
-        await supabase
+        console.log('plan', plan);
+        const { error: updateError, data: updatedProfile } = await supabase
           .from('profiles')
           .update({
             user_type: plan.slug,
             plan_end_date: periodEnd,
             max_sponsored_seats: plan.sponsoredStudents
           })
-          .eq('userid', userId);
+          .eq('userid', userId)
+          .select();
 
-        console.log(`Plan updated for user ${userId} from ${profile.user_type} to ${plan.slug}`);
-        
+        if (updateError) {
+          console.error(`Error updating profile for user ${userId}:`, updateError);
+        } else {
+          console.log(`Plan updated for user ${userId} from ${profile.user_type} to ${plan.slug} with max_sponsored_seats: ${plan.sponsoredStudents}`);
+          console.log('updatedProfile', updatedProfile);
+        }
+
         // Clean up excess classes and students for the new plan
         await cleanupExcessResources(supabase, userId, plan.slug);
 
