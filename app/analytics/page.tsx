@@ -512,7 +512,7 @@ export default function AnalyticsPage() {
   // Fetch students for teachers after classes are loaded
   useEffect(() => {
     const fetchTeacherStudents = async () => {
-      if (!currentUserType || !isTeacherPlan({ user_type: currentUserType as UserType }) || classes.length === 0) {
+      if (!currentUserType || !isTeacherPlan({ user_type: currentUserType as UserType } as User) || classes.length === 0) {
         console.log('Not a teacher plan or no classes')
         return
       }
@@ -607,7 +607,7 @@ export default function AnalyticsPage() {
       }
 
       // Fetch classes based on user role
-      if (isTeacherPlan(profile?.user_type as User)) {
+      if (isTeacherPlan({ user_type: profile?.user_type as UserType } as User)) {
         // Fetch classes where user is the teacher
         const { data: teacherClasses, error: teacherClassesError } = await supabase
           .from('classes')
@@ -657,8 +657,8 @@ export default function AnalyticsPage() {
       }
 
       // Fetch students if user is admin or teacher
-      if (isAdmin( profile?.role) || isTeacherPlan(profile?.user_type as User)) {
-        if (isTeacherPlan(profile?.user_type as User)) {
+      if (isAdmin( profile?.role) || isTeacherPlan({ user_type: profile?.user_type as UserType } as User)) {
+        if (isTeacherPlan({ user_type: profile?.user_type as UserType } as User)) {
           // For teachers, we'll fetch students after classes are loaded
           // This will be handled in a separate useEffect
         } else {
@@ -696,7 +696,7 @@ export default function AnalyticsPage() {
 
       // Only set homework loading to false if user is not a teacher
       // For teachers, we'll set it to false after students are loaded
-      if (!isTeacherPlan(profile?.user_type as User)) {
+      if (!isTeacherPlan({ user_type: profile?.user_type as UserType } as User)) {
         setIsLoadingHomework(false)
       }
     }
@@ -785,7 +785,7 @@ export default function AnalyticsPage() {
       return aValue.localeCompare(bValue, undefined, { sensitivity: 'base' });
     });
 
-  if (!currentUserRole || (!isAdmin(currentUserRole) && !isTeacherPlan({ user_type: currentUserType as UserType }))) {
+  if (!currentUserRole || (!isAdmin(currentUserRole) && !isTeacherPlan({ user_type: currentUserType as UserType } as User))) {
         
     return (
       <div className="container mx-auto px-4 py-8">

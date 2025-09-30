@@ -17,14 +17,14 @@ import { useAccess } from "@/hooks/useAccess";
 // UI Components
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Book, GraduationCap, School, BookMarked, Library, User, CreditCard, Plus, Copy, Eye, Trash2, Upload, FileText, Download } from "lucide-react"
+import { Book, GraduationCap, School, BookMarked, Library, User as UserIcon, CreditCard, Plus, Copy, Eye, Trash2, Upload, FileText, Download } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
-import { isTeacherPlan } from "@/lib/access"
+import { isTeacherPlan, User } from "@/lib/access"
 import UpgradePageClient from "./upgrade/UpgradePageClient"
 import SponsorshipCheckbox from "./components/SponsorshipCheckbox"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -1094,7 +1094,7 @@ function SettingsPageContent() {
       }
 
       // Fetch user's classes (use freshly fetched profile type, not state)
-      const isTeacherRole = profile?.user_type && isTeacherPlan({ user_type: profile.user_type as UserType })
+      const isTeacherRole = profile?.user_type && isTeacherPlan({ user_type: profile.user_type as UserType } as User)
       if (isTeacherRole) {
         const { data: classes, error: classesError } = await supabase
           .from('classes')
@@ -1249,7 +1249,7 @@ function SettingsPageContent() {
           <CardContent>
             <div className="space-y-4">
               <div className="flex items-center space-x-4">
-                <User className="h-6 w-6 text-muted-foreground" />
+                <UserIcon className="h-6 w-6 text-muted-foreground" />
                 <div>
                   <h3 className="font-medium">Email</h3>
                   <p className="text-sm text-muted-foreground">{userEmail}</p>
@@ -1334,7 +1334,7 @@ function SettingsPageContent() {
         </Card> */}
 
         {/* Teacher Class Membership */}
-        {userType && isTeacherPlan({ user_type: userType }) && (
+        {userType && isTeacherPlan({ user_type: userType } as User) && (
           <Card className="mb-8">
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -1527,7 +1527,7 @@ function SettingsPageContent() {
                         className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
                       >
                         <div className="flex items-center space-x-3">
-                          <User className="h-4 w-4 text-muted-foreground" />
+                          <UserIcon className="h-4 w-4 text-muted-foreground" />
                           <div>
                             <p className="text-sm font-medium">{member.student.email}</p>
 
@@ -1660,7 +1660,7 @@ function SettingsPageContent() {
               {/* Add Student by Email */}
               <div className="space-y-4 p-4 border border-dashed border-muted-foreground/25 rounded-lg bg-muted/20">
                 <div className="flex items-center space-x-2">
-                  <User className="h-5 w-5 text-muted-foreground" />
+                  <UserIcon className="h-5 w-5 text-muted-foreground" />
                   <h4 className="font-medium">Add Student by Email</h4>
                 </div>
                 {(selectedClassMembers || []).length < maxStudentsPerClass ? (

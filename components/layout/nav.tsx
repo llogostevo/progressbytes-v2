@@ -10,7 +10,7 @@ import { Menu, LogIn, LogOut, BookOpen, BarChart2, Settings, Calendar, Zap, Clip
 import { cn } from "@/lib/utils"
 import type { LucideIcon } from "lucide-react"
 import { useAuth } from "@/app/providers/AuthProvider"
-import { isAdmin, isTeacherPlan, UserType } from "@/lib/access"
+import { isAdmin, isTeacherPlan, User, UserType } from "@/lib/access"
 
 interface NavItem {
   title: string
@@ -39,7 +39,7 @@ export function Nav() {
     { title: "Quizzes", href: "/", icon: BookOpen },
     { title: "Progress", href: "/progress", icon: BarChart2 },
     { title: "Revisit", href: "/revisit", icon: BookOpen },
-    ...(isTeacherPlan({ user_type: userType as UserType })
+    ...(isTeacherPlan({ user_type: userType as UserType } as User)
       ? [
           { title: "Assess", href: "/assess", icon: ClipboardList },
           { title: "Analytics", href: "/analytics", icon: BarChart2 },

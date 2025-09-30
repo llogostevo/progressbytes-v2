@@ -16,6 +16,7 @@ interface Plan {
   daily_question_limit: number | null;
   total_question_limit: number | null;
   has_ai_feedback: boolean;
+  sponsoredStudents?: number;
 }
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -37,7 +38,8 @@ export const plans: Record<string, Plan> = {
     ],
     daily_question_limit: 5,
     total_question_limit: 5,
-    has_ai_feedback: false
+    has_ai_feedback: false,
+    sponsoredStudents: 0
   },
   revision: {
     name: 'Revision Plan',
@@ -53,7 +55,8 @@ export const plans: Record<string, Plan> = {
     ],
     daily_question_limit: null, // unlimited
     total_question_limit: null, // unlimited
-    has_ai_feedback: false
+    has_ai_feedback: false,
+    sponsoredStudents: 0
   },
   revisionAI: {
     name: 'AI Revision Plan',
@@ -70,7 +73,8 @@ export const plans: Record<string, Plan> = {
     ],
     daily_question_limit: null, // unlimited
     total_question_limit: null, // unlimited
-    has_ai_feedback: true
+    has_ai_feedback: true,
+    sponsoredStudents: 0
   },
   teacherBasic: {
     name: 'Teacher Basic',
@@ -81,7 +85,8 @@ export const plans: Record<string, Plan> = {
     features: ['1 class', 'Up to 2 students'],
     daily_question_limit: null,
     total_question_limit: null,
-    has_ai_feedback: false
+    has_ai_feedback: false,
+    sponsoredStudents: 0
   },
   teacherPlan: {
     name: 'Teacher Plan',
@@ -92,7 +97,8 @@ export const plans: Record<string, Plan> = {
     features: ['1 class', 'Up to 10 students'],
     daily_question_limit: null,
     total_question_limit: null,
-    has_ai_feedback: false
+    has_ai_feedback: false,
+    sponsoredStudents: 10
   },
   teacherPremium: {
     name: 'Teacher Premium',
@@ -103,7 +109,8 @@ export const plans: Record<string, Plan> = {
     features: ['Unlimited classes', 'Unlimited students'],
     daily_question_limit: null,
     total_question_limit: null,
-    has_ai_feedback: false
+    has_ai_feedback: false,
+    sponsoredStudents: 30
   }
 };
 
@@ -171,7 +178,8 @@ export async function createStripeProducts() {
           features: plan.features,
           daily_question_limit: plan.daily_question_limit,
           total_question_limit: plan.total_question_limit,
-          has_ai_feedback: plan.has_ai_feedback
+          has_ai_feedback: plan.has_ai_feedback,
+          sponsoredStudents: plan.sponsoredStudents
         });
       continue;
     }
@@ -209,7 +217,8 @@ export async function createStripeProducts() {
         features: plan.features,
         daily_question_limit: plan.daily_question_limit,
         total_question_limit: plan.total_question_limit,
-        has_ai_feedback: plan.has_ai_feedback
+        has_ai_feedback: plan.has_ai_feedback,
+        sponsoredStudents: plan.sponsoredStudents
       });
 
     if (error) {
