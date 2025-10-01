@@ -11,60 +11,8 @@ interface ExtendedQuestion extends Question {
   model_answer_code?: string
 }
 
-// CSV Data types for bulk upload
-interface BaseCSVRow {
-  id: string
-  question_text: string
-  difficulty: string
-  explanation: string
-  model_answer: string
-}
-
-interface MultipleChoiceCSVRow extends BaseCSVRow {
-  option_1: string
-  option_2: string
-  option_3: string
-  option_4: string
-  correct_answer_index: string
-}
-
-interface FillInBlankCSVRow extends BaseCSVRow {
-  correct_answers: string
-  option_1: string
-  option_2: string
-  option_3: string
-  order_important: string
-}
-
-interface MatchingCSVRow extends BaseCSVRow {
-  statement_1: string
-  match_1: string
-  statement_2: string
-  match_2: string
-  statement_3: string
-  match_3: string
-}
-
-interface TrueFalseCSVRow extends BaseCSVRow {
-  correct_answer: string
-}
-
-interface ShortAnswerCSVRow extends BaseCSVRow {
-  keywords: string
-}
-
-interface EssayCSVRow extends BaseCSVRow {
-  rubric: string
-  keywords: string
-}
-
-interface CodeCSVRow extends BaseCSVRow {
-  starter_code: string
-  language: string
-  model_answer_code: string
-}
-
-type CSVRow = MultipleChoiceCSVRow | FillInBlankCSVRow | MatchingCSVRow | TrueFalseCSVRow | ShortAnswerCSVRow | EssayCSVRow | CodeCSVRow
+// CSV Data types for bulk upload - using a flexible record type
+type CSVRow = Record<string, string | string[]>
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
