@@ -12,7 +12,7 @@ interface ExtendedQuestion extends Question {
 }
 
 // CSV Data types for bulk upload - using a flexible record type
-type CSVRow = Record<string, string | string[]>
+// type CSVRow = Record<string, string | string[]>
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
