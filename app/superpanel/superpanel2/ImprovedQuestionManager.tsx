@@ -243,6 +243,20 @@ export default function ImprovedQuestionManager() {
     fetchSubtopics()
   }, [])
 
+  // Auto-resize textarea when editing starts
+  useEffect(() => {
+    if (editingQuestionId) {
+      const textarea = document.getElementById('edit-question-text') as HTMLTextAreaElement
+      if (textarea) {
+        // Small delay to ensure the textarea is rendered
+        setTimeout(() => {
+          textarea.style.height = 'auto'
+          textarea.style.height = textarea.scrollHeight + 'px'
+        }, 10)
+      }
+    }
+  }, [editingQuestionId])
+
   useEffect(() => {
     let filtered = questions
 
@@ -327,7 +341,8 @@ export default function ImprovedQuestionManager() {
             .from("true_false_questions")
             .upsert({
               question_id: questionId,
-              correct_answer: editingAnswer === "true"
+              model_answer: editingAnswer === "true" ? true : false,
+              correct_answer: editingAnswer === "true" ? true : false,
             })
 
           if (tfError) {
@@ -762,9 +777,20 @@ export default function ImprovedQuestionManager() {
                                   onChange={(e) => {
                                     setEditingText(e.target.value)
                                     setHasUnsavedChanges(true)
+                                    // Auto-resize functionality
+                                    const textarea = e.target
+                                    textarea.style.height = 'auto'
+                                    textarea.style.height = textarea.scrollHeight + 'px'
                                   }}
-                                  className="resize-none"
-                                  rows={2}
+                                  onInput={(e) => {
+                                    // Additional auto-resize on input for better handling
+                                    const textarea = e.target as HTMLTextAreaElement
+                                    textarea.style.height = 'auto'
+                                    textarea.style.height = textarea.scrollHeight + 'px'
+                                  }}
+                                  className="resize-y min-h-[2.5rem] overflow-hidden"
+                                  rows={1}
+                                  style={{ height: 'auto' }}
                                 />
                               </div>
 
@@ -937,7 +963,7 @@ export default function ImprovedQuestionManager() {
                               <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                                 <span>ID: {question.id}</span>
                                 <span>Created: {new Date(question.created_at).toLocaleDateString()}</span>
-                                {question.model_answer && (
+                                {(question.model_answer !== null && question.model_answer !== undefined && question.model_answer !== "") && (
                                   <span>
                                     Answer:{" "}
                                     {Array.isArray(question.model_answer)
