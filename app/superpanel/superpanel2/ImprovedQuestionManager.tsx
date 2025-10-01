@@ -193,6 +193,14 @@ export default function ImprovedQuestionManager() {
           })),
         }),
         ...(q.type === "code" && {
+          starter_code: q.code_questions?.starter_code,
+          model_answer: q.code_questions?.model_answer,
+          model_answer_code: q.code_questions?.model_answer_code,
+          language: q.code_questions?.language,
+        }),
+        ...(q.type === "algorithm" && {
+          starter_code: q.code_questions?.starter_code,
+          model_answer: q.code_questions?.model_answer,
           model_answer_code: q.code_questions?.model_answer_code,
           language: q.code_questions?.language,
         }),
@@ -258,6 +266,15 @@ export default function ImprovedQuestionManager() {
         setTimeout(() => {
           textarea.style.height = 'auto'
           textarea.style.height = textarea.scrollHeight + 'px'
+        }, 10)
+      }
+      
+      // Also auto-resize essay answer textarea if it exists
+      const essayTextarea = document.getElementById('edit-essay-answer') as HTMLTextAreaElement
+      if (essayTextarea) {
+        setTimeout(() => {
+          essayTextarea.style.height = 'auto'
+          essayTextarea.style.height = essayTextarea.scrollHeight + 'px'
         }, 10)
       }
     }
@@ -386,6 +403,7 @@ export default function ImprovedQuestionManager() {
           }
           break
         case "code":
+        case "algorithm":
           const { error: codeError } = await supabase
             .from("code_questions")
             .upsert({
@@ -893,7 +911,7 @@ export default function ImprovedQuestionManager() {
                                 </div>
                               )}
 
-                              {(question.type === "short-answer" || question.type === "essay") && (
+                              {question.type === "short-answer" && (
                                 <div className="space-y-2">
                                   <Label htmlFor="edit-answer">Answer</Label>
                                   <Textarea
@@ -906,7 +924,34 @@ export default function ImprovedQuestionManager() {
                                 </div>
                               )}
                               
-                              {question.type === "code" && (
+                              {question.type === "essay" && (
+                                <div className="space-y-2">
+                                  <Label htmlFor="edit-essay-answer">Answer</Label>
+                                  <Textarea
+                                    id="edit-essay-answer"
+                                    value={editingAnswer}
+                                    onChange={(e) => {
+                                      setEditingAnswer(e.target.value)
+                                      setHasUnsavedChanges(true)
+                                      // Auto-resize functionality
+                                      const textarea = e.target
+                                      textarea.style.height = 'auto'
+                                      textarea.style.height = textarea.scrollHeight + 'px'
+                                    }}
+                                    onInput={(e) => {
+                                      const textarea = e.target as HTMLTextAreaElement
+                                      textarea.style.height = 'auto'
+                                      textarea.style.height = textarea.scrollHeight + 'px'
+                                    }}
+                                    className="resize-y min-h-[2.5rem] overflow-hidden"
+                                    rows={1}
+                                    style={{ height: 'auto' }}
+                                    placeholder="Enter the essay answer"
+                                  />
+                                </div>
+                              )}
+                              
+                              {(question.type === "code" || question.type === "algorithm") && (
                                 <div className="space-y-4">
                                   <div className="space-y-2">
                                     <Label htmlFor="starter-code">Starter Code</Label>
