@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils"
 import type { LucideIcon } from "lucide-react"
 import { useAuth } from "@/app/providers/AuthProvider"
 import { isAdmin, isTeacherPlan, User, UserType } from "@/lib/access"
+import { useState } from "react"
 
 interface NavItem {
   title: string
@@ -23,6 +24,7 @@ export function Nav() {
   const router = useRouter()
   const supabase = createClient()
   const { isLoggedIn, userRole, userType, refreshUser } = useAuth() // global context
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const handleAuth = async () => {
     if (isLoggedIn) {
@@ -32,6 +34,7 @@ export function Nav() {
     } else {
       router.push('/login')
     }
+    setIsMobileMenuOpen(false) // Close mobile menu after auth action
   }
 
 
@@ -94,7 +97,7 @@ export function Nav() {
 
             {/* Mobile Nav */}
             <div className="md:hidden">
-                <Sheet>
+                <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                     <SheetTrigger asChild>
                         <Button
                             variant="ghost"
@@ -112,6 +115,7 @@ export function Nav() {
                                     <Link
                                         key={item.href}
                                         href={item.href}
+                                        onClick={() => setIsMobileMenuOpen(false)}
                                         className={cn(
                                             "flex items-center text-sm font-medium transition-colors hover:text-primary",
                                             pathname === item.href
@@ -126,16 +130,16 @@ export function Nav() {
                                 <Button
                                     variant="ghost"
                                     onClick={handleAuth}
-                                    className="flex items-center text-sm font-medium transition-colors hover:text-primary text-foreground/60"
+                                    className="flex items-center mt-4 ml-0.5 text-sm font-medium transition-colors hover:text-primary text-foreground/60 justify-start p-0 h-auto"
                                 >
                                     {isLoggedIn ? (
                                         <>
-                                            <LogOut className="h-4 w-4 mr-2" />
+                                            <LogOut className="h-4 w-4" />
                                             Logout
                                         </>
                                     ) : (
                                         <>
-                                            <LogIn className="h-4 w-4 mr-2" />
+                                            <LogIn className="h-4 w-4" />
                                             Login
                                         </>
                                     )}
