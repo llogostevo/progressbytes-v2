@@ -39,6 +39,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { Checkbox as ShadcnCheckbox } from "@/components/ui/checkbox"
+import { Upload, Download, FileSpreadsheet } from "lucide-react"
 
 const questionTypeIcons = {
   "multiple-choice": List,
@@ -127,7 +128,398 @@ export default function ImprovedQuestionManager() {
   const [expandedTopics, setExpandedTopics] = useState<Set<string>>(new Set())
   const [addingQuestion, setAddingQuestion] = useState<Question | null>(null)
   const [addingSubtopicIds, setAddingSubtopicIds] = useState<string[]>([])
+  const [showBulkUpload, setShowBulkUpload] = useState(false)
+  const [bulkUploadType, setBulkUploadType] = useState<Question["type"]>("multiple-choice")
+  const [bulkUploadFile, setBulkUploadFile] = useState<File | null>(null)
+  const [bulkUploadProgress, setBulkUploadProgress] = useState(0)
+  const [bulkUploadErrors, setBulkUploadErrors] = useState<string[]>([])
   const supabase = createClient()
+
+  // CSV Template Generation Functions
+  const generateCSVTemplate = (questionType: Question["type"]) => {
+    const headers = ["id", "question_text", "difficulty", "explanation", "model_answer"]
+    let csvContent = headers.join(",") + "\n"
+
+    // Add type-specific headers
+    switch (questionType) {
+      case "multiple-choice":
+        csvContent = [
+          "id", "question_text", "difficulty", "explanation",
+          "option_1", "option_2", "option_3", "option_4",
+          "correct_answer_index", "model_answer"
+        ].join(",") + "\n"
+        csvContent += "example_1,What is 2+2?,low,Basic math,2,3,4,5,2,The correct answer is 4\n"
+        break
+      
+      case "fill-in-the-blank":
+        csvContent = [
+          "id", "question_text", "difficulty", "explanation",
+          "correct_answers", "option_1", "option_2", "option_3",
+          "order_important", "model_answer"
+        ].join(",") + "\n"
+        csvContent += "example_1,The capital of France is ___,low,Geography question,\"[Paris, France]\",London,Paris,Berlin,false,Paris is the capital of France\n"
+        break
+      
+      case "matching":
+        csvContent = [
+          "id", "question_text", "difficulty", "explanation",
+          "statement_1", "match_1", "statement_2", "match_2",
+          "statement_3", "match_3", "model_answer"
+        ].join(",") + "\n"
+        csvContent += "example_1,Match the capitals with countries,low,Geography matching,Paris,France,London,UK,Berlin,Germany,Match each capital with its country\n"
+        break
+      
+      case "true-false":
+        csvContent = [
+          "id", "question_text", "difficulty", "explanation",
+          "correct_answer", "model_answer"
+        ].join(",") + "\n"
+        csvContent += "example_1,The sky is blue,low,Basic knowledge,true,The sky appears blue due to light scattering\n"
+        break
+      
+      case "short-answer":
+        csvContent = [
+          "id", "question_text", "difficulty", "explanation",
+          "model_answer", "keywords"
+        ].join(",") + "\n"
+        csvContent += "example_1,What is photosynthesis?,medium,Biology question,The process by which plants convert light energy into chemical energy,\"[photosynthesis, plants, energy, chlorophyll]\"\n"
+        break
+      
+      case "essay":
+        csvContent = [
+          "id", "question_text", "difficulty", "explanation",
+          "model_answer", "rubric", "keywords"
+        ].join(",") + "\n"
+        csvContent += "example_1,Explain the water cycle,high,Environmental science,The water cycle describes how water moves through the Earth's systems through evaporation condensation and precipitation,Should include evaporation condensation precipitation and collection,\"[water cycle, evaporation, precipitation, condensation]\"\n"
+        break
+      
+      case "code":
+      case "sql":
+      case "algorithm":
+        csvContent = [
+          "id", "question_text", "difficulty", "explanation",
+          "starter_code", "model_answer", "language", "model_answer_code"
+        ].join(",") + "\n"
+        csvContent += "example_1,Write a function to add two numbers,medium,Programming basics,# Write your function here,Create a function that takes two parameters and returns their sum,python,def add_numbers(a, b):\n    return a + b\n"
+        break
+    }
+
+    return csvContent
+  }
+
+  const downloadCSVTemplate = (questionType: Question["type"]) => {
+    const csvContent = generateCSVTemplate(questionType)
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `${questionType}-template.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  // CSV Parsing and Bulk Upload Functions
+  const parseCSV = (csvText: string): any[] => {
+    const lines = csvText.split('\n').filter(line => line.trim())
+    if (lines.length < 2) return []
+    
+    const headers = lines[0].split(',').map(h => h.trim())
+    const data = []
+    
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i]
+      const values: string[] = []
+      let current = ''
+      let inQuotes = false
+      
+      // Parse CSV line handling quoted values
+      for (let j = 0; j < line.length; j++) {
+        const char = line[j]
+        if (char === '"') {
+          inQuotes = !inQuotes
+        } else if (char === ',' && !inQuotes) {
+          values.push(current.trim())
+          current = ''
+        } else {
+          current += char
+        }
+      }
+      values.push(current.trim())
+      
+      const row: any = {}
+      headers.forEach((header, index) => {
+        let value = values[index] || ''
+        
+        // Handle array notation for keywords and correct_answers
+        if ((header === 'keywords' || header === 'correct_answers') && value.startsWith('[') && value.endsWith(']')) {
+          value = value.slice(1, -1) // Remove brackets
+          row[header] = value.split(',').map((k: string) => k.trim().replace(/"/g, ''))
+        } else {
+          row[header] = value.replace(/"/g, '') // Remove quotes
+        }
+      })
+      data.push(row)
+    }
+    
+    return data
+  }
+
+  const validateQuestionData = (row: any, index: number): string[] => {
+    const errors: string[] = []
+    
+    if (!row.id || row.id.trim() === '') {
+      errors.push(`Row ${index + 2}: Question ID is required`)
+    }
+    if (!row.question_text || row.question_text.trim() === '') {
+      errors.push(`Row ${index + 2}: Question text is required`)
+    }
+    if (!row.difficulty || !['low', 'medium', 'high'].includes(row.difficulty)) {
+      errors.push(`Row ${index + 2}: Valid difficulty (low/medium/high) is required`)
+    }
+
+    // Type-specific validation
+    switch (bulkUploadType) {
+      case "multiple-choice":
+        const options = [row.option_1, row.option_2, row.option_3, row.option_4].filter(Boolean)
+        if (options.length < 2) {
+          errors.push(`Row ${index + 2}: At least 2 options are required`)
+        }
+        if (!row.correct_answer_index || isNaN(parseInt(row.correct_answer_index))) {
+          errors.push(`Row ${index + 2}: Valid correct answer index is required`)
+        }
+        break
+      
+      case "fill-in-the-blank":
+        if (!row.correct_answers || row.correct_answers.trim() === '') {
+          errors.push(`Row ${index + 2}: Correct answers are required`)
+        }
+        break
+      
+      case "matching":
+        const pairs = []
+        for (let i = 1; i <= 10; i++) {
+          if (row[`statement_${i}`] && row[`match_${i}`]) {
+            pairs.push({ statement: row[`statement_${i}`], match: row[`match_${i}`] })
+          }
+        }
+        if (pairs.length === 0) {
+          errors.push(`Row ${index + 2}: At least one matching pair is required`)
+        }
+        break
+      
+      case "true-false":
+        if (!row.correct_answer || !['true', 'false'].includes(row.correct_answer.toLowerCase())) {
+          errors.push(`Row ${index + 2}: Correct answer must be 'true' or 'false'`)
+        }
+        break
+      
+      case "short-answer":
+      case "essay":
+        if (!row.model_answer || row.model_answer.trim() === '') {
+          errors.push(`Row ${index + 2}: Model answer is required`)
+        }
+        break
+    }
+    
+    return errors
+  }
+
+  const processBulkUpload = async (csvData: any[], subtopicIds: string[]) => {
+    setBulkUploadProgress(0)
+    setBulkUploadErrors([])
+    
+    const errors: string[] = []
+    const questionsToInsert: Question[] = []
+    
+    // Validate all rows first
+    csvData.forEach((row, index) => {
+      const rowErrors = validateQuestionData(row, index)
+      errors.push(...rowErrors)
+      
+      if (rowErrors.length === 0) {
+        const question: Question = {
+          id: row.id,
+          type: bulkUploadType,
+          topic: '', // Will be set from subtopic
+          difficulty: row.difficulty as Question["difficulty"],
+          question_text: row.question_text,
+          explanation: row.explanation || '',
+          created_at: new Date().toISOString(),
+          model_answer: row.model_answer || '',
+        }
+        
+        // Add type-specific data
+        switch (bulkUploadType) {
+          case "multiple-choice":
+            question.options = [row.option_1, row.option_2, row.option_3, row.option_4].filter(Boolean)
+            question.correctAnswerIndex = parseInt(row.correct_answer_index)
+            break
+          
+          case "fill-in-the-blank":
+            question.model_answer = Array.isArray(row.correct_answers) ? row.correct_answers : []
+            question.options = [row.option_1, row.option_2, row.option_3].filter(Boolean)
+            question.order_important = row.order_important === 'true'
+            break
+          
+          case "matching":
+            const pairs = []
+            for (let i = 1; i <= 10; i++) {
+              if (row[`statement_${i}`] && row[`match_${i}`]) {
+                pairs.push({ statement: row[`statement_${i}`], match: row[`match_${i}`] })
+              }
+            }
+            question.pairs = pairs
+            break
+          
+          case "true-false":
+            question.model_answer = row.correct_answer.toLowerCase() === 'true'
+            break
+          
+          case "short-answer":
+          case "essay":
+            question.keywords = Array.isArray(row.keywords) ? row.keywords : []
+            if (bulkUploadType === "essay") {
+              question.rubric = row.rubric || ''
+            }
+            break
+          
+          case "code":
+          case "sql":
+          case "algorithm":
+            (question as ExtendedQuestion).starter_code = row.starter_code || ''
+            ;(question as ExtendedQuestion).language = row.language || 'python'
+            ;(question as ExtendedQuestion).model_answer_code = row.model_answer_code || ''
+            break
+        }
+        
+        questionsToInsert.push(question)
+      }
+    })
+    
+    if (errors.length > 0) {
+      setBulkUploadErrors(errors)
+      toast.error(`Validation failed: ${errors.length} errors found`)
+      return
+    }
+    
+    // Insert questions
+    try {
+      let successCount = 0
+      for (let i = 0; i < questionsToInsert.length; i++) {
+        const question = questionsToInsert[i]
+        
+        // Insert base question
+        const { data: questionData, error: questionError } = await supabase
+          .from("questions")
+          .insert({
+            id: question.id,
+            question_text: question.question_text,
+            explanation: question.explanation,
+            type: question.type,
+            difficulty: question.difficulty,
+          })
+          .select()
+          .single()
+        
+        if (questionError) throw questionError
+        
+        // Insert type-specific data
+        switch (question.type) {
+          case "multiple-choice":
+            await supabase.from("multiple_choice_questions").insert({
+              question_id: questionData.id,
+              options: question.options,
+              correct_answer_index: question.correctAnswerIndex,
+              model_answer: question.model_answer,
+            })
+            break
+          
+          case "fill-in-the-blank":
+            await supabase.from("fill_in_the_blank_questions").insert({
+              question_id: questionData.id,
+              options: question.options,
+              correct_answers: question.model_answer,
+              order_important: question.order_important,
+            })
+            break
+          
+          case "matching":
+            if (question.pairs && question.pairs.length > 0) {
+              await supabase.from("matching_questions").insert(
+                question.pairs.map((pair) => ({
+                  question_id: questionData.id,
+                  statement: pair.statement,
+                  match: pair.match,
+                }))
+              )
+            }
+            break
+          
+          case "true-false":
+            await supabase.from("true_false_questions").insert({
+              question_id: questionData.id,
+              correct_answer: question.model_answer as boolean,
+              model_answer: question.model_answer as boolean,
+            })
+            break
+          
+          case "short-answer":
+            await supabase.from("short_answer_questions").insert({
+              question_id: questionData.id,
+              model_answer: question.model_answer,
+              keywords: question.keywords,
+            })
+            break
+          
+          case "essay":
+            await supabase.from("essay_questions").insert({
+              question_id: questionData.id,
+              model_answer: question.model_answer,
+              keywords: question.keywords,
+              rubric: question.rubric || '',
+            })
+            break
+          
+          case "code":
+          case "sql":
+          case "algorithm":
+            await supabase.from("code_questions").insert({
+              question_id: questionData.id,
+              starter_code: (question as ExtendedQuestion).starter_code,
+              model_answer: question.model_answer,
+              language: (question as ExtendedQuestion).language,
+              model_answer_code: (question as ExtendedQuestion).model_answer_code,
+            })
+            break
+        }
+        
+        // Insert subtopic links
+        if (subtopicIds.length > 0) {
+          await supabase.from("subtopic_question_link").insert(
+            subtopicIds.map((subtopic_id) => ({
+              question_id: questionData.id,
+              subtopic_id,
+            }))
+          )
+        }
+        
+        successCount++
+        setBulkUploadProgress((successCount / questionsToInsert.length) * 100)
+      }
+      
+      await fetchQuestions()
+      toast.success(`Successfully uploaded ${successCount} questions`)
+      setShowBulkUpload(false)
+      setBulkUploadFile(null)
+      setBulkUploadProgress(0)
+      
+    } catch (error) {
+      console.error("Error during bulk upload:", error)
+      toast.error("Failed to upload questions")
+    }
+  }
 
   // Group and order subtopics by topic
   const groupedSubtopics = topics
@@ -930,6 +1322,13 @@ export default function ImprovedQuestionManager() {
                   <SelectItem value="essay">Essay</SelectItem>
                 </SelectContent>
               </Select>
+              <Button 
+                variant="outline"
+                onClick={() => setShowBulkUpload(true)}
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Bulk Upload
+              </Button>
               <Button onClick={() => setAddingQuestion({
                 id: "",
                 type: "multiple-choice",
@@ -1999,6 +2398,173 @@ export default function ImprovedQuestionManager() {
               Delete Question
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Upload Dialog */}
+      <Dialog open={showBulkUpload} onOpenChange={setShowBulkUpload}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileSpreadsheet className="w-5 h-5" />
+              Bulk Upload Questions
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            {/* Step 1: Select Question Type */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Step 1: Select Question Type</h3>
+              <Select value={bulkUploadType} onValueChange={(value) => setBulkUploadType(value as Question["type"])}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select question type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="multiple-choice">Multiple Choice</SelectItem>
+                  <SelectItem value="fill-in-the-blank">Fill in the Blank</SelectItem>
+                  <SelectItem value="matching">Matching</SelectItem>
+                  <SelectItem value="code">Code</SelectItem>
+                  <SelectItem value="sql">SQL</SelectItem>
+                  <SelectItem value="algorithm">Algorithm</SelectItem>
+                  <SelectItem value="true-false">True/False</SelectItem>
+                  <SelectItem value="short-answer">Short Answer</SelectItem>
+                  <SelectItem value="essay">Essay</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Step 2: Download Template */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Step 2: Download Template</h3>
+              <p className="text-sm text-muted-foreground">
+                Download the CSV template for {bulkUploadType} questions to see the required format and example data.
+              </p>
+              <Button 
+                variant="outline" 
+                onClick={() => downloadCSVTemplate(bulkUploadType)}
+                className="w-full"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Download {bulkUploadType} Template
+              </Button>
+            </div>
+
+            {/* Step 3: Upload CSV */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Step 3: Upload CSV File</h3>
+              <div className="space-y-2">
+                <Label htmlFor="csv-upload">CSV File</Label>
+                <Input
+                  id="csv-upload"
+                  type="file"
+                  accept=".csv"
+                  onChange={(e) => setBulkUploadFile(e.target.files?.[0] || null)}
+                />
+                {bulkUploadFile && (
+                  <p className="text-sm text-muted-foreground">
+                    Selected: {bulkUploadFile.name}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Step 4: Select Subtopics */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Step 4: Select Subtopics</h3>
+              <p className="text-sm text-muted-foreground">
+                All uploaded questions will be linked to the selected subtopics.
+              </p>
+              <div className="max-h-48 overflow-y-auto border rounded-md p-3 bg-muted/20">
+                {groupedSubtopics.map((topic) => (
+                  <div key={topic.id} className="mb-3">
+                    <div className="font-medium text-sm mb-2 text-muted-foreground">
+                      {topic.topicnumber} - {topic.name}
+                    </div>
+                    {topic.subtopics.map((sub) => (
+                      <label key={sub.id} className="flex items-center gap-2 mb-1 cursor-pointer">
+                        <ShadcnCheckbox
+                          checked={addingSubtopicIds.includes(sub.id)}
+                          onCheckedChange={(checked: boolean) => {
+                            setAddingSubtopicIds((ids) =>
+                              checked ? [...ids, sub.id] : ids.filter((sid) => sid !== sub.id),
+                            )
+                          }}
+                        />
+                        <span className="text-sm">{sub.subtopictitle}</span>
+                      </label>
+                    ))}
+                  </div>
+                ))}
+              </div>
+              {addingSubtopicIds.length === 0 && (
+                <p className="text-sm text-destructive">At least one subtopic must be selected</p>
+              )}
+            </div>
+
+            {/* Progress and Errors */}
+            {bulkUploadProgress > 0 && (
+              <div className="space-y-2">
+                <Label>Upload Progress</Label>
+                <div className="w-full bg-muted rounded-full h-2">
+                  <div 
+                    className="bg-primary h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${bulkUploadProgress}%` }}
+                  />
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {Math.round(bulkUploadProgress)}% complete
+                </p>
+              </div>
+            )}
+
+            {bulkUploadErrors.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-destructive">Validation Errors</Label>
+                <div className="max-h-32 overflow-y-auto border border-destructive/20 rounded-md p-3 bg-destructive/5">
+                  {bulkUploadErrors.map((error, index) => (
+                    <p key={index} className="text-sm text-destructive">
+                      {error}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => {
+                setShowBulkUpload(false)
+                setBulkUploadFile(null)
+                setBulkUploadProgress(0)
+                setBulkUploadErrors([])
+              }}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={async () => {
+                  if (!bulkUploadFile) {
+                    toast.error("Please select a CSV file")
+                    return
+                  }
+                  if (addingSubtopicIds.length === 0) {
+                    toast.error("Please select at least one subtopic")
+                    return
+                  }
+
+                  const text = await bulkUploadFile.text()
+                  const csvData = parseCSV(text)
+                  
+                  if (csvData.length === 0) {
+                    toast.error("No valid data found in CSV file")
+                    return
+                  }
+
+                  await processBulkUpload(csvData, addingSubtopicIds)
+                }}
+                disabled={!bulkUploadFile || addingSubtopicIds.length === 0}
+              >
+                Upload Questions
+              </Button>
+            </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
