@@ -7,6 +7,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { filterOn, filterOff } from "@/components/ui/filter-toasts"
 
 interface Topic {
   id: string
@@ -68,16 +69,30 @@ export function TopicFilter({ selectedTopics, onTopicChange, topics, className =
   }
 
   const handleTopicClick = (topicSlug: string) => {
-    const newSelectedTopics = selectedTopics.includes(topicSlug)
+    const isCurrentlySelected = selectedTopics.includes(topicSlug)
+    const newSelectedTopics = isCurrentlySelected
       ? selectedTopics.filter(t => t !== topicSlug)
       : [...selectedTopics, topicSlug]
     
+    // Update state immediately for instant UI feedback
+    onTopicChange(newSelectedTopics)
+    
     // If we're deselecting the last topic, hide the topics
-    if (selectedTopics.includes(topicSlug) && newSelectedTopics.length === 0) {
+    if (isCurrentlySelected && newSelectedTopics.length === 0) {
       setShowTopics(false)
     }
     
-    onTopicChange(newSelectedTopics)
+    // Show toast notification asynchronously (non-blocking)
+    const topic = topics.find(t => t.slug === topicSlug)
+    const topicName = topic?.name || topicSlug
+    
+    setTimeout(() => {
+      if (isCurrentlySelected) {
+        filterOff(`Deselected: ${topicName}`)
+      } else {
+        filterOn(`Selected: ${topicName}`)
+      }
+    }, 0)
   }
 
   return (

@@ -525,7 +525,7 @@ export default function RevisitPageClient() {
       params.set("tab", value)
     }
 
-    router.push(`?${params.toString()}`)
+    router.push(`?${params.toString()}`, { scroll: false })
   }
 
   const handleTopicChange = (topics: string[]) => {
@@ -535,7 +535,7 @@ export default function RevisitPageClient() {
     } else {
       params.set("topics", topics.join(","))
     }
-    router.push(`?${params.toString()}`)
+    router.push(`?${params.toString()}`, { scroll: false })
   }
 
   // Calculate counts for each filter
@@ -721,7 +721,7 @@ export default function RevisitPageClient() {
                       } else {
                         params.set("type", type)
                       }
-                      router.push(`?${params.toString()}`)
+                      router.push(`?${params.toString()}`, { scroll: false })
                     }}
                   />
                 </CardContent>
@@ -744,7 +744,7 @@ export default function RevisitPageClient() {
                       } else {
                         params.set("difficulty", difficulty)
                       }
-                      router.push(`?${params.toString()}`)
+                      router.push(`?${params.toString()}`, { scroll: false })
                     }}
                   />
                 </CardContent>
@@ -766,7 +766,7 @@ export default function RevisitPageClient() {
                       } else {
                         params.set("teacherAssessment", assessment)
                       }
-                      router.push(`?${params.toString()}`)
+                      router.push(`?${params.toString()}`, { scroll: false })
                     }}
                   />
                 </CardContent>

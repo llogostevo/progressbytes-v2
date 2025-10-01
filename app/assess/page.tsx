@@ -378,7 +378,7 @@ function AssessPageContent() {
     } else {
       params.set("topics", topics.join(","))
     }
-    router.push(`?${params.toString()}`)
+    router.push(`?${params.toString()}`, { scroll: false })
   }
 
   const clearAllFilters = () => {
@@ -387,7 +387,7 @@ function AssessPageContent() {
     setStudentSearch("")
     const params = new URLSearchParams(searchParams.toString())
     params.delete("topics")
-    router.push(`?${params.toString()}`)
+    router.push(`?${params.toString()}`, { scroll: false })
   }
 
   // Fetch classes for the teacher
