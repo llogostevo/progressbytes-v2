@@ -282,11 +282,17 @@ export default function ImprovedQuestionManager() {
   const handleInlineEdit = (questionId: string, question: Question) => {
     setEditingQuestionId(questionId)
     setEditingText(question.question_text)
-    setEditingAnswer(
-      Array.isArray(question.model_answer)
-        ? question.model_answer.join(", ")
-        : String(question.model_answer || "")
-    )
+    
+    // Handle different answer types properly
+    if (question.type === "true-false") {
+      // For true/false questions, convert boolean to string
+      setEditingAnswer(question.model_answer === true ? "true" : "false")
+    } else if (Array.isArray(question.model_answer)) {
+      setEditingAnswer(question.model_answer.join(", "))
+    } else {
+      setEditingAnswer(String(question.model_answer || ""))
+    }
+    
     setEditingOptions(question.options || [])
     setEditingCorrectIndex(question.correctAnswerIndex || 0)
     setEditingPairs(question.pairs || [])
