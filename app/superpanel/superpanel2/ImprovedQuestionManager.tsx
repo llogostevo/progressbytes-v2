@@ -90,6 +90,12 @@ export default function ImprovedQuestionManager() {
   const [editingOptions, setEditingOptions] = useState<string[]>([])
   const [editingCorrectIndex, setEditingCorrectIndex] = useState(0)
   const [editingPairs, setEditingPairs] = useState<Array<{ statement: string; match: string }>>([])
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
+  const [pendingEditAction, setPendingEditAction] = useState<(() => void) | null>(null)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [questionToDelete, setQuestionToDelete] = useState<Question | null>(null)
+  const [deleteConfirmText, setDeleteConfirmText] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedTopic, setSelectedTopic] = useState<string>("all")
   const [selectedType, setSelectedType] = useState<string>("all")
@@ -263,13 +269,14 @@ export default function ImprovedQuestionManager() {
     setEditingQuestionId(questionId)
     setEditingText(question.question_text)
     setEditingAnswer(
-      Array.isArray(question.model_answer)
-        ? question.model_answer.join(", ")
+      Array.isArray(question.model_answer) 
+        ? question.model_answer.join(", ") 
         : String(question.model_answer || "")
     )
     setEditingOptions(question.options || [])
     setEditingCorrectIndex(question.correctAnswerIndex || 0)
     setEditingPairs(question.pairs || [])
+    setHasUnsavedChanges(false)
   }
 
   const handleSaveInlineEdit = async (questionId: string) => {
@@ -395,6 +402,7 @@ export default function ImprovedQuestionManager() {
       setEditingOptions([])
       setEditingCorrectIndex(0)
       setEditingPairs([])
+      setHasUnsavedChanges(false)
       toast.success("Question updated successfully")
     } catch (error) {
       console.error("Error updating question:", error)
@@ -409,6 +417,80 @@ export default function ImprovedQuestionManager() {
     setEditingOptions([])
     setEditingCorrectIndex(0)
     setEditingPairs([])
+    setHasUnsavedChanges(false)
+  }
+
+  const handleToggleEdit = (questionId: string, question: Question) => {
+    if (editingQuestionId === questionId) {
+      // Currently editing this question - check for unsaved changes
+      if (hasUnsavedChanges) {
+        setPendingEditAction(() => () => handleCancelInlineEdit())
+        setShowConfirmDialog(true)
+      } else {
+        handleCancelInlineEdit()
+      }
+    } else {
+      // Not editing this question - start editing
+      if (editingQuestionId && hasUnsavedChanges) {
+        setPendingEditAction(() => () => handleInlineEdit(questionId, question))
+        setShowConfirmDialog(true)
+      } else {
+        handleInlineEdit(questionId, question)
+      }
+    }
+  }
+
+  const handleConfirmSave = async () => {
+    if (editingQuestionId) {
+      await handleSaveInlineEdit(editingQuestionId)
+    }
+    if (pendingEditAction) {
+      pendingEditAction()
+    }
+    setShowConfirmDialog(false)
+    setPendingEditAction(null)
+  }
+
+  const handleConfirmCancel = () => {
+    if (pendingEditAction) {
+      pendingEditAction()
+    }
+    setShowConfirmDialog(false)
+    setPendingEditAction(null)
+  }
+
+  const handleDeleteClick = (question: Question) => {
+    setQuestionToDelete(question)
+    setDeleteConfirmText("")
+    setShowDeleteDialog(true)
+  }
+
+  const handleDeleteQuestion = async () => {
+    if (!questionToDelete) return
+
+    try {
+      const { error } = await supabase
+        .from("questions")
+        .delete()
+        .eq("id", questionToDelete.id)
+
+      if (error) throw error
+
+      await fetchQuestions()
+      setShowDeleteDialog(false)
+      setQuestionToDelete(null)
+      setDeleteConfirmText("")
+      toast.success("Question deleted successfully")
+    } catch (error) {
+      console.error("Error deleting question:", error)
+      toast.error("Failed to delete question")
+    }
+  }
+
+  const handleCancelDelete = () => {
+    setShowDeleteDialog(false)
+    setQuestionToDelete(null)
+    setDeleteConfirmText("")
   }
 
   const toggleTopic = (topicSlug: string) => {
@@ -677,7 +759,10 @@ export default function ImprovedQuestionManager() {
                                 <Textarea
                                   id="edit-question-text"
                                   value={editingText}
-                                  onChange={(e) => setEditingText(e.target.value)}
+                                  onChange={(e) => {
+                                    setEditingText(e.target.value)
+                                    setHasUnsavedChanges(true)
+                                  }}
                                   className="resize-none"
                                   rows={2}
                                 />
@@ -867,10 +952,20 @@ export default function ImprovedQuestionManager() {
                         </div>
 
                         <div className="flex-shrink-0 flex items-center gap-1">
-                          <Button size="sm" variant="ghost" className="text-muted-foreground hover:text-foreground">
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="text-muted-foreground hover:text-foreground"
+                            onClick={() => handleToggleEdit(question.id, question)}
+                          >
                             <Edit3 className="w-4 h-4" />
                           </Button>
-                          <Button size="sm" variant="ghost" className="text-muted-foreground hover:text-destructive">
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="text-muted-foreground hover:text-destructive"
+                            onClick={() => handleDeleteClick(question)}
+                          >
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
@@ -1011,6 +1106,75 @@ export default function ImprovedQuestionManager() {
               </DialogFooter>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation Dialog for Unsaved Changes */}
+      <Dialog  open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Unsaved Changes</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-muted-foreground">
+              You have unsaved changes. What would you like to do?
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleConfirmCancel}>
+              Discard Changes
+            </Button>
+            <Button onClick={handleConfirmSave}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Question</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-muted-foreground mb-4">
+              Are you sure you want to delete this question? This action cannot be undone.
+            </p>
+            {questionToDelete && (
+              <div className="mb-4 p-3 bg-muted rounded-md">
+                <p className="text-sm font-medium">Question ID: {questionToDelete.id}</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {questionToDelete.question_text.substring(0, 100)}
+                  {questionToDelete.question_text.length > 100 ? "..." : ""}
+                </p>
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="delete-confirm">
+                Type <span className="font-mono bg-muted px-1 rounded">delete</span> to confirm:
+              </Label>
+              <Input
+                id="delete-confirm"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder="Type 'delete' to confirm"
+                className="font-mono"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCancelDelete}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteQuestion}
+              disabled={deleteConfirmText !== "delete"}
+            >
+              Delete Question
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
