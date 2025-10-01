@@ -3,6 +3,13 @@
 import { useState, useEffect } from "react"
 import { createClient } from "@/utils/supabase/client"
 import type { Question } from "@/lib/types"
+
+// Extended Question type for code/algorithm questions
+interface ExtendedQuestion extends Question {
+  starter_code?: string
+  language?: string
+  model_answer_code?: string
+}
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
@@ -321,14 +328,14 @@ export default function ImprovedQuestionManager() {
     setEditingPairs(question.pairs || [])
     setEditingOrderImportant(question.order_important || false)
     setEditingFibOptions(question.options || [])
-    setEditingStarterCode((question as any).starter_code || "")
+    setEditingStarterCode((question as ExtendedQuestion).starter_code || "")
     setEditingModelAnswer(
       Array.isArray(question.model_answer) 
         ? question.model_answer.join(", ") 
         : String(question.model_answer || "")
     )
-    setEditingLanguage((question as any).language || "")
-    setEditingModelAnswerCode((question as any).model_answer_code || "")
+    setEditingLanguage((question as ExtendedQuestion).language || "")
+    setEditingModelAnswerCode((question as ExtendedQuestion).model_answer_code || "")
     setHasUnsavedChanges(false)
   }
 
