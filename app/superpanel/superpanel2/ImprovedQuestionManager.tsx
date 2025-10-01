@@ -86,8 +86,13 @@ export default function ImprovedQuestionManager() {
   const [loading, setLoading] = useState(true)
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null)
   const [editingText, setEditingText] = useState("")
+  const [editingAnswer, setEditingAnswer] = useState("")
+  const [editingOptions, setEditingOptions] = useState<string[]>([])
+  const [editingCorrectIndex, setEditingCorrectIndex] = useState(0)
+  const [editingPairs, setEditingPairs] = useState<Array<{ statement: string; match: string }>>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedTopic, setSelectedTopic] = useState<string>("all")
+  const [selectedType, setSelectedType] = useState<string>("all")
   const [topics, setTopics] = useState<Array<{ id: number; name: string; slug: string; topicnumber: string }>>([])
   const [subtopics, setSubtopics] = useState<
     Array<{
@@ -162,6 +167,7 @@ export default function ImprovedQuestionManager() {
         ...(q.type === "multiple-choice" && {
           options: q.multiple_choice_questions?.options,
           correctAnswerIndex: q.multiple_choice_questions?.correct_answer_index,
+          model_answer: q.multiple_choice_questions?.model_answer || "",
         }),
         ...(q.type === "fill-in-the-blank" && {
           options: q.fill_in_the_blank_questions?.options,
@@ -246,23 +252,149 @@ export default function ImprovedQuestionManager() {
       filtered = filtered.filter((q) => q.topic === selectedTopic)
     }
 
-    setFilteredQuestions(filtered)
-  }, [questions, searchTerm, selectedTopic])
+    if (selectedType !== "all") {
+      filtered = filtered.filter((q) => q.type === selectedType)
+    }
 
-  const handleInlineEdit = (questionId: string, currentText: string) => {
+    setFilteredQuestions(filtered)
+  }, [questions, searchTerm, selectedTopic, selectedType])
+
+  const handleInlineEdit = (questionId: string, question: Question) => {
     setEditingQuestionId(questionId)
-    setEditingText(currentText)
+    setEditingText(question.question_text)
+    setEditingAnswer(
+      Array.isArray(question.model_answer)
+        ? question.model_answer.join(", ")
+        : String(question.model_answer || "")
+    )
+    setEditingOptions(question.options || [])
+    setEditingCorrectIndex(question.correctAnswerIndex || 0)
+    setEditingPairs(question.pairs || [])
   }
 
   const handleSaveInlineEdit = async (questionId: string) => {
     try {
-      const { error } = await supabase.from("questions").update({ question_text: editingText }).eq("id", questionId)
+      const question = questions.find(q => q.id === questionId)
+      if (!question) return
 
-      if (error) throw error
+      // Update the base question
+      const { error: questionError } = await supabase
+        .from("questions")
+        .update({ question_text: editingText })
+        .eq("id", questionId)
+
+      if (questionError) throw questionError
+
+      // Update type-specific answer data
+      switch (question.type) {
+        case "multiple-choice":
+          const { error: mcError } = await supabase
+            .from("multiple_choice_questions")
+            .upsert({
+              question_id: questionId,
+              options: editingOptions,
+              correct_answer_index: editingCorrectIndex,
+              model_answer: editingAnswer
+            })
+          
+          if (mcError) {
+            console.error("Error updating multiple choice question:", mcError)
+            throw mcError
+          }
+          break
+        case "short-answer":
+          const { error: saError } = await supabase
+            .from("short_answer_questions")
+            .upsert({
+              question_id: questionId,
+              model_answer: editingAnswer
+            })
+          
+          if (saError) {
+            console.error("Error updating short answer question:", saError)
+            throw saError
+          }
+          break
+        case "true-false":
+          const { error: tfError } = await supabase
+            .from("true_false_questions")
+            .upsert({
+              question_id: questionId,
+              correct_answer: editingAnswer === "true"
+            })
+          
+          if (tfError) {
+            console.error("Error updating true/false question:", tfError)
+            throw tfError
+          }
+          break
+        case "essay":
+          const { error: essayError } = await supabase
+            .from("essay_questions")
+            .upsert({
+              question_id: questionId,
+              model_answer: editingAnswer
+            })
+          
+          if (essayError) {
+            console.error("Error updating essay question:", essayError)
+            throw essayError
+          }
+          break
+        case "code":
+          const { error: codeError } = await supabase
+            .from("code_questions")
+            .upsert({
+              question_id: questionId,
+              model_answer_code: editingAnswer
+            })
+          
+          if (codeError) {
+            console.error("Error updating code question:", codeError)
+            throw codeError
+          }
+          break
+        case "fill-in-the-blank":
+          const { error: fibError } = await supabase
+            .from("fill_in_the_blank_questions")
+            .upsert({
+              question_id: questionId,
+              correct_answers: editingAnswer.split(",").map(a => a.trim())
+            })
+          
+          if (fibError) {
+            console.error("Error updating fill-in-the-blank question:", fibError)
+            throw fibError
+          }
+          break
+        case "matching":
+          // Delete existing matching pairs and insert new ones
+          await supabase
+            .from("matching_questions")
+            .delete()
+            .eq("question_id", questionId)
+
+          if (editingPairs.length > 0) {
+            await supabase
+              .from("matching_questions")
+              .insert(
+                editingPairs.map(pair => ({
+                  question_id: questionId,
+                  statement: pair.statement,
+                  match: pair.match
+                }))
+              )
+          }
+          break
+      }
 
       await fetchQuestions()
       setEditingQuestionId(null)
       setEditingText("")
+      setEditingAnswer("")
+      setEditingOptions([])
+      setEditingCorrectIndex(0)
+      setEditingPairs([])
       toast.success("Question updated successfully")
     } catch (error) {
       console.error("Error updating question:", error)
@@ -273,6 +405,10 @@ export default function ImprovedQuestionManager() {
   const handleCancelInlineEdit = () => {
     setEditingQuestionId(null)
     setEditingText("")
+    setEditingAnswer("")
+    setEditingOptions([])
+    setEditingCorrectIndex(0)
+    setEditingPairs([])
   }
 
   const toggleTopic = (topicSlug: string) => {
@@ -399,11 +535,10 @@ export default function ImprovedQuestionManager() {
           <div className="space-y-2">
             <button
               onClick={() => setSelectedTopic("all")}
-              className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                selectedTopic === "all"
+              className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${selectedTopic === "all"
                   ? "bg-sidebar-accent text-sidebar-accent-foreground"
                   : "text-sidebar-foreground hover:bg-sidebar-accent/50"
-              }`}
+                }`}
             >
               All Questions ({questions.length})
             </button>
@@ -430,11 +565,10 @@ export default function ImprovedQuestionManager() {
                   <CollapsibleContent className="ml-6 space-y-1">
                     <button
                       onClick={() => setSelectedTopic(topic.slug)}
-                      className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors ${
-                        selectedTopic === topic.slug
+                      className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors ${selectedTopic === topic.slug
                           ? "bg-sidebar-accent text-sidebar-accent-foreground"
                           : "text-muted-foreground hover:bg-sidebar-accent/50"
-                      }`}
+                        }`}
                     >
                       All {topic.name} Questions ({topic.questionCount})
                     </button>
@@ -486,7 +620,7 @@ export default function ImprovedQuestionManager() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <Select value="all">
+              <Select value={selectedType} onValueChange={setSelectedType}>
                 <SelectTrigger className="w-40">
                   <Filter className="w-4 h-4 mr-2" />
                   <SelectValue placeholder="Filter by type" />
@@ -494,8 +628,14 @@ export default function ImprovedQuestionManager() {
                 <SelectContent>
                   <SelectItem value="all">All Types</SelectItem>
                   <SelectItem value="multiple-choice">Multiple Choice</SelectItem>
-                  <SelectItem value="short-answer">Short Answer</SelectItem>
+                  <SelectItem value="fill-in-the-blank">Fill in the Blank</SelectItem>
+                  <SelectItem value="matching">Matching</SelectItem>
                   <SelectItem value="code">Code</SelectItem>
+                  <SelectItem value="sql">SQL</SelectItem>
+                  <SelectItem value="algorithm">Algorithm</SelectItem>
+                  <SelectItem value="true-false">True/False</SelectItem>
+                  <SelectItem value="short-answer">Short Answer</SelectItem>
+                  <SelectItem value="essay">Essay</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -531,13 +671,167 @@ export default function ImprovedQuestionManager() {
 
                         <div className="flex-1 min-w-0">
                           {isEditing ? (
-                            <div className="space-y-2">
-                              <Textarea
-                                value={editingText}
-                                onChange={(e) => setEditingText(e.target.value)}
-                                className="resize-none"
-                                rows={2}
-                              />
+                            <div className="space-y-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="edit-question-text">Question Text</Label>
+                                <Textarea
+                                  id="edit-question-text"
+                                  value={editingText}
+                                  onChange={(e) => setEditingText(e.target.value)}
+                                  className="resize-none"
+                                  rows={2}
+                                />
+                              </div>
+
+                              {/* Answer editing based on question type */}
+                              {question.type === "multiple-choice" && (
+                                <div className="space-y-3">
+                                  <Label>Answer Options</Label>
+                                  {editingOptions.map((option, index) => (
+                                    <div key={index} className="flex gap-2">
+                                      <Input
+                                        value={option}
+                                        onChange={(e) => {
+                                          const newOptions = [...editingOptions]
+                                          newOptions[index] = e.target.value
+                                          setEditingOptions(newOptions)
+                                        }}
+                                        placeholder={`Option ${index + 1}`}
+                                      />
+                                      <Button
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={() => {
+                                          const newOptions = [...editingOptions]
+                                          newOptions.splice(index, 1)
+                                          setEditingOptions(newOptions)
+                                        }}
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </Button>
+                                    </div>
+                                  ))}
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setEditingOptions([...editingOptions, ""])}
+                                  >
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Add Option
+                                  </Button>
+                                  <div className="space-y-2">
+                                    <Label htmlFor="correct-answer">Correct Answer Index</Label>
+                                    <Input
+                                      id="correct-answer"
+                                      type="number"
+                                      min="0"
+                                      max={editingOptions.length - 1}
+                                      value={editingCorrectIndex}
+                                      onChange={(e) => setEditingCorrectIndex(parseInt(e.target.value) || 0)}
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor="model-answer">Model Answer</Label>
+                                    <Textarea
+                                      id="model-answer"
+                                      value={editingAnswer}
+                                      onChange={(e) => setEditingAnswer(e.target.value)}
+                                      rows={2}
+                                      placeholder="Enter the model answer/explanation"
+                                    />
+                                  </div>
+                                </div>
+                              )}
+
+                              {(question.type === "short-answer" || question.type === "essay" || question.type === "code") && (
+                                <div className="space-y-2">
+                                  <Label htmlFor="edit-answer">Answer</Label>
+                                  <Textarea
+                                    id="edit-answer"
+                                    value={editingAnswer}
+                                    onChange={(e) => setEditingAnswer(e.target.value)}
+                                    rows={3}
+                                    placeholder="Enter the answer"
+                                  />
+                                </div>
+                              )}
+
+                              {question.type === "true-false" && (
+                                <div className="space-y-2">
+                                  <Label htmlFor="edit-answer">Correct Answer</Label>
+                                  <Select value={editingAnswer} onValueChange={setEditingAnswer}>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select answer" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="true">True</SelectItem>
+                                      <SelectItem value="false">False</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              )}
+
+                              {question.type === "fill-in-the-blank" && (
+                                <div className="space-y-2">
+                                  <Label htmlFor="edit-answer">Correct Answers (comma-separated)</Label>
+                                  <Input
+                                    id="edit-answer"
+                                    value={editingAnswer}
+                                    onChange={(e) => setEditingAnswer(e.target.value)}
+                                    placeholder="Enter correct answers separated by commas"
+                                  />
+                                </div>
+                              )}
+
+                              {question.type === "matching" && (
+                                <div className="space-y-3">
+                                  <Label>Matching Pairs</Label>
+                                  {editingPairs.map((pair, index) => (
+                                    <div key={index} className="grid grid-cols-2 gap-2">
+                                      <Input
+                                        value={pair.statement}
+                                        onChange={(e) => {
+                                          const newPairs = [...editingPairs]
+                                          newPairs[index] = { ...pair, statement: e.target.value }
+                                          setEditingPairs(newPairs)
+                                        }}
+                                        placeholder="Statement"
+                                      />
+                                      <div className="flex gap-2">
+                                        <Input
+                                          value={pair.match}
+                                          onChange={(e) => {
+                                            const newPairs = [...editingPairs]
+                                            newPairs[index] = { ...pair, match: e.target.value }
+                                            setEditingPairs(newPairs)
+                                          }}
+                                          placeholder="Match"
+                                        />
+                                        <Button
+                                          variant="outline"
+                                          size="icon"
+                                          onClick={() => {
+                                            const newPairs = [...editingPairs]
+                                            newPairs.splice(index, 1)
+                                            setEditingPairs(newPairs)
+                                          }}
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  ))}
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setEditingPairs([...editingPairs, { statement: "", match: "" }])}
+                                  >
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Add Pair
+                                  </Button>
+                                </div>
+                              )}
+
                               <div className="flex items-center gap-2">
                                 <Button size="sm" onClick={() => handleSaveInlineEdit(question.id)}>
                                   <Save className="w-3 h-3 mr-1" />
@@ -552,7 +846,7 @@ export default function ImprovedQuestionManager() {
                           ) : (
                             <div
                               className="cursor-pointer hover:bg-muted/50 p-2 rounded transition-colors"
-                              onClick={() => handleInlineEdit(question.id, question.question_text)}
+                              onClick={() => handleInlineEdit(question.id, question)}
                             >
                               <p className="text-foreground font-medium leading-relaxed">{question.question_text}</p>
                               <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
