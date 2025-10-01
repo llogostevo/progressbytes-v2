@@ -10,6 +10,61 @@ interface ExtendedQuestion extends Question {
   language?: string
   model_answer_code?: string
 }
+
+// CSV Data types for bulk upload
+interface BaseCSVRow {
+  id: string
+  question_text: string
+  difficulty: string
+  explanation: string
+  model_answer: string
+}
+
+interface MultipleChoiceCSVRow extends BaseCSVRow {
+  option_1: string
+  option_2: string
+  option_3: string
+  option_4: string
+  correct_answer_index: string
+}
+
+interface FillInBlankCSVRow extends BaseCSVRow {
+  correct_answers: string
+  option_1: string
+  option_2: string
+  option_3: string
+  order_important: string
+}
+
+interface MatchingCSVRow extends BaseCSVRow {
+  statement_1: string
+  match_1: string
+  statement_2: string
+  match_2: string
+  statement_3: string
+  match_3: string
+}
+
+interface TrueFalseCSVRow extends BaseCSVRow {
+  correct_answer: string
+}
+
+interface ShortAnswerCSVRow extends BaseCSVRow {
+  keywords: string
+}
+
+interface EssayCSVRow extends BaseCSVRow {
+  rubric: string
+  keywords: string
+}
+
+interface CodeCSVRow extends BaseCSVRow {
+  starter_code: string
+  language: string
+  model_answer_code: string
+}
+
+type CSVRow = MultipleChoiceCSVRow | FillInBlankCSVRow | MatchingCSVRow | TrueFalseCSVRow | ShortAnswerCSVRow | EssayCSVRow | CodeCSVRow
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
@@ -221,7 +276,7 @@ export default function ImprovedQuestionManager() {
   }
 
   // CSV Parsing and Bulk Upload Functions
-  const parseCSV = (csvText: string): any[] => {
+  const parseCSV = (csvText: string): Record<string, string | string[]>[] => {
     const lines = csvText.split('\n').filter(line => line.trim())
     if (lines.length < 2) return []
     
@@ -248,7 +303,7 @@ export default function ImprovedQuestionManager() {
       }
       values.push(current.trim())
       
-      const row: any = {}
+      const row: Record<string, string | string[]> = {}
       headers.forEach((header, index) => {
         let value = values[index] || ''
         
@@ -266,16 +321,16 @@ export default function ImprovedQuestionManager() {
     return data
   }
 
-  const validateQuestionData = (row: any, index: number): string[] => {
+  const validateQuestionData = (row: Record<string, string | string[]>, index: number): string[] => {
     const errors: string[] = []
     
-    if (!row.id || row.id.trim() === '') {
+    if (!row.id || String(row.id).trim() === '') {
       errors.push(`Row ${index + 2}: Question ID is required`)
     }
-    if (!row.question_text || row.question_text.trim() === '') {
+    if (!row.question_text || String(row.question_text).trim() === '') {
       errors.push(`Row ${index + 2}: Question text is required`)
     }
-    if (!row.difficulty || !['low', 'medium', 'high'].includes(row.difficulty)) {
+    if (!row.difficulty || !['low', 'medium', 'high'].includes(String(row.difficulty))) {
       errors.push(`Row ${index + 2}: Valid difficulty (low/medium/high) is required`)
     }
 
@@ -286,13 +341,13 @@ export default function ImprovedQuestionManager() {
         if (options.length < 2) {
           errors.push(`Row ${index + 2}: At least 2 options are required`)
         }
-        if (!row.correct_answer_index || isNaN(parseInt(row.correct_answer_index))) {
+        if (!row.correct_answer_index || isNaN(parseInt(String(row.correct_answer_index)))) {
           errors.push(`Row ${index + 2}: Valid correct answer index is required`)
         }
         break
       
       case "fill-in-the-blank":
-        if (!row.correct_answers || row.correct_answers.trim() === '') {
+        if (!row.correct_answers || (Array.isArray(row.correct_answers) ? row.correct_answers.length === 0 : String(row.correct_answers).trim() === '')) {
           errors.push(`Row ${index + 2}: Correct answers are required`)
         }
         break
@@ -301,7 +356,7 @@ export default function ImprovedQuestionManager() {
         const pairs = []
         for (let i = 1; i <= 10; i++) {
           if (row[`statement_${i}`] && row[`match_${i}`]) {
-            pairs.push({ statement: row[`statement_${i}`], match: row[`match_${i}`] })
+            pairs.push({ statement: String(row[`statement_${i}`]), match: String(row[`match_${i}`]) })
           }
         }
         if (pairs.length === 0) {
@@ -310,14 +365,14 @@ export default function ImprovedQuestionManager() {
         break
       
       case "true-false":
-        if (!row.correct_answer || !['true', 'false'].includes(row.correct_answer.toLowerCase())) {
+        if (!row.correct_answer || !['true', 'false'].includes(String(row.correct_answer).toLowerCase())) {
           errors.push(`Row ${index + 2}: Correct answer must be 'true' or 'false'`)
         }
         break
       
       case "short-answer":
       case "essay":
-        if (!row.model_answer || row.model_answer.trim() === '') {
+        if (!row.model_answer || String(row.model_answer).trim() === '') {
           errors.push(`Row ${index + 2}: Model answer is required`)
         }
         break
@@ -326,7 +381,7 @@ export default function ImprovedQuestionManager() {
     return errors
   }
 
-  const processBulkUpload = async (csvData: any[], subtopicIds: string[]) => {
+  const processBulkUpload = async (csvData: Record<string, string | string[]>[], subtopicIds: string[]) => {
     setBulkUploadProgress(0)
     setBulkUploadErrors([])
     
@@ -340,57 +395,57 @@ export default function ImprovedQuestionManager() {
       
       if (rowErrors.length === 0) {
         const question: Question = {
-          id: row.id,
+          id: String(row.id),
           type: bulkUploadType,
           topic: '', // Will be set from subtopic
-          difficulty: row.difficulty as Question["difficulty"],
-          question_text: row.question_text,
-          explanation: row.explanation || '',
+          difficulty: String(row.difficulty) as Question["difficulty"],
+          question_text: String(row.question_text),
+          explanation: String(row.explanation || ''),
           created_at: new Date().toISOString(),
-          model_answer: row.model_answer || '',
+          model_answer: String(row.model_answer || ''),
         }
         
         // Add type-specific data
         switch (bulkUploadType) {
           case "multiple-choice":
-            question.options = [row.option_1, row.option_2, row.option_3, row.option_4].filter(Boolean)
-            question.correctAnswerIndex = parseInt(row.correct_answer_index)
+            question.options = [row.option_1, row.option_2, row.option_3, row.option_4].filter(Boolean) as string[]
+            question.correctAnswerIndex = parseInt(String(row.correct_answer_index))
             break
           
           case "fill-in-the-blank":
             question.model_answer = Array.isArray(row.correct_answers) ? row.correct_answers : []
-            question.options = [row.option_1, row.option_2, row.option_3].filter(Boolean)
-            question.order_important = row.order_important === 'true'
+            question.options = [row.option_1, row.option_2, row.option_3].filter(Boolean) as string[]
+            question.order_important = String(row.order_important) === 'true'
             break
           
           case "matching":
-            const pairs = []
+            const pairs: Array<{ statement: string; match: string }> = []
             for (let i = 1; i <= 10; i++) {
               if (row[`statement_${i}`] && row[`match_${i}`]) {
-                pairs.push({ statement: row[`statement_${i}`], match: row[`match_${i}`] })
+                pairs.push({ statement: String(row[`statement_${i}`]), match: String(row[`match_${i}`]) })
               }
             }
             question.pairs = pairs
             break
           
           case "true-false":
-            question.model_answer = row.correct_answer.toLowerCase() === 'true'
+            question.model_answer = String(row.correct_answer).toLowerCase() === 'true'
             break
           
           case "short-answer":
           case "essay":
             question.keywords = Array.isArray(row.keywords) ? row.keywords : []
             if (bulkUploadType === "essay") {
-              question.rubric = row.rubric || ''
+              question.rubric = String(row.rubric || '')
             }
             break
           
           case "code":
           case "sql":
           case "algorithm":
-            (question as ExtendedQuestion).starter_code = row.starter_code || ''
-            ;(question as ExtendedQuestion).language = row.language || 'python'
-            ;(question as ExtendedQuestion).model_answer_code = row.model_answer_code || ''
+            (question as ExtendedQuestion).starter_code = String(row.starter_code || '')
+            ;(question as ExtendedQuestion).language = String(row.language || 'python')
+            ;(question as ExtendedQuestion).model_answer_code = String(row.model_answer_code || '')
             break
         }
         
