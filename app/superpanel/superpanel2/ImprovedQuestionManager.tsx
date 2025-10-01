@@ -269,8 +269,8 @@ export default function ImprovedQuestionManager() {
     setEditingQuestionId(questionId)
     setEditingText(question.question_text)
     setEditingAnswer(
-      Array.isArray(question.model_answer) 
-        ? question.model_answer.join(", ") 
+      Array.isArray(question.model_answer)
+        ? question.model_answer.join(", ")
         : String(question.model_answer || "")
     )
     setEditingOptions(question.options || [])
@@ -303,7 +303,7 @@ export default function ImprovedQuestionManager() {
               correct_answer_index: editingCorrectIndex,
               model_answer: editingAnswer
             })
-          
+
           if (mcError) {
             console.error("Error updating multiple choice question:", mcError)
             throw mcError
@@ -316,7 +316,7 @@ export default function ImprovedQuestionManager() {
               question_id: questionId,
               model_answer: editingAnswer
             })
-          
+
           if (saError) {
             console.error("Error updating short answer question:", saError)
             throw saError
@@ -329,7 +329,7 @@ export default function ImprovedQuestionManager() {
               question_id: questionId,
               correct_answer: editingAnswer === "true"
             })
-          
+
           if (tfError) {
             console.error("Error updating true/false question:", tfError)
             throw tfError
@@ -342,7 +342,7 @@ export default function ImprovedQuestionManager() {
               question_id: questionId,
               model_answer: editingAnswer
             })
-          
+
           if (essayError) {
             console.error("Error updating essay question:", essayError)
             throw essayError
@@ -355,7 +355,7 @@ export default function ImprovedQuestionManager() {
               question_id: questionId,
               model_answer_code: editingAnswer
             })
-          
+
           if (codeError) {
             console.error("Error updating code question:", codeError)
             throw codeError
@@ -368,7 +368,7 @@ export default function ImprovedQuestionManager() {
               question_id: questionId,
               correct_answers: editingAnswer.split(",").map(a => a.trim())
             })
-          
+
           if (fibError) {
             console.error("Error updating fill-in-the-blank question:", fibError)
             throw fibError
@@ -597,7 +597,7 @@ export default function ImprovedQuestionManager() {
   }
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex max-h-screen bg-background">
       {/* Sidebar */}
       <div className="w-80 bg-sidebar border-r border-sidebar-border flex flex-col">
         <div className="p-6 border-b border-sidebar-border">
@@ -618,8 +618,8 @@ export default function ImprovedQuestionManager() {
             <button
               onClick={() => setSelectedTopic("all")}
               className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${selectedTopic === "all"
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+                ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                : "text-sidebar-foreground hover:bg-sidebar-accent/50"
                 }`}
             >
               All Questions ({questions.length})
@@ -648,8 +648,8 @@ export default function ImprovedQuestionManager() {
                     <button
                       onClick={() => setSelectedTopic(topic.slug)}
                       className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors ${selectedTopic === topic.slug
-                          ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                          : "text-muted-foreground hover:bg-sidebar-accent/50"
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                        : "text-muted-foreground hover:bg-sidebar-accent/50"
                         }`}
                     >
                       All {topic.name} Questions ({topic.questionCount})
@@ -952,17 +952,17 @@ export default function ImprovedQuestionManager() {
                         </div>
 
                         <div className="flex-shrink-0 flex items-center gap-1">
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
+                          <Button
+                            size="sm"
+                            variant="ghost"
                             className="text-muted-foreground hover:text-foreground"
                             onClick={() => handleToggleEdit(question.id, question)}
                           >
                             <Edit3 className="w-4 h-4" />
                           </Button>
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
+                          <Button
+                            size="sm"
+                            variant="ghost"
                             className="text-muted-foreground hover:text-destructive"
                             onClick={() => handleDeleteClick(question)}
                           >
@@ -1110,7 +1110,7 @@ export default function ImprovedQuestionManager() {
       </Dialog>
 
       {/* Confirmation Dialog for Unsaved Changes */}
-      <Dialog  open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Unsaved Changes</DialogTitle>
@@ -1167,8 +1167,8 @@ export default function ImprovedQuestionManager() {
             <Button variant="outline" onClick={handleCancelDelete}>
               Cancel
             </Button>
-            <Button 
-              variant="destructive" 
+            <Button
+              variant="destructive"
               onClick={handleDeleteQuestion}
               disabled={deleteConfirmText !== "delete"}
             >
