@@ -621,20 +621,6 @@ export default function ImprovedQuestionManager() {
     setExpandedTopics(newExpanded)
   }
 
-  const handleAdd = () => {
-    setAddingQuestion({
-      id: "",
-      type: "multiple-choice",
-      topic: "",
-      difficulty: "low",
-      question_text: "",
-      explanation: "",
-      created_at: new Date().toISOString(),
-      model_answer: "",
-      options: [],
-      correctAnswerIndex: 0,
-    })
-  }
 
   const handleSaveNew = async (newQuestion: Question) => {
     // Validation
@@ -651,6 +637,54 @@ export default function ImprovedQuestionManager() {
       return
     }
 
+    // Type-specific validation
+    if (newQuestion.type === "multiple-choice") {
+      if (!newQuestion.options || newQuestion.options.length < 2) {
+        toast.error("Multiple choice questions must have at least 2 options")
+        return
+      }
+      if (newQuestion.options.some(option => option.trim() === "")) {
+        toast.error("All multiple choice options must be filled")
+        return
+      }
+      if (newQuestion.correctAnswerIndex === undefined || newQuestion.correctAnswerIndex < 0 || newQuestion.correctAnswerIndex >= newQuestion.options.length) {
+        toast.error("Valid correct answer index is required")
+        return
+      }
+    }
+
+    if (newQuestion.type === "fill-in-the-blank") {
+      if (!Array.isArray(newQuestion.model_answer) || newQuestion.model_answer.length === 0) {
+        toast.error("Fill-in-the-blank questions must have at least one correct answer")
+        return
+      }
+    }
+
+    if (newQuestion.type === "matching") {
+      if (!newQuestion.pairs || newQuestion.pairs.length === 0) {
+        toast.error("Matching questions must have at least one pair")
+        return
+      }
+      if (newQuestion.pairs.some(pair => pair.statement.trim() === "" || pair.match.trim() === "")) {
+        toast.error("All matching pairs must have both statement and match filled")
+        return
+      }
+    }
+
+    if (newQuestion.type === "true-false") {
+      if (typeof newQuestion.model_answer !== "boolean") {
+        toast.error("True/false questions must have a valid answer")
+        return
+      }
+    }
+
+    if (newQuestion.type === "short-answer" || newQuestion.type === "essay") {
+      if (!newQuestion.model_answer || String(newQuestion.model_answer).trim() === "") {
+        toast.error(`${newQuestion.type === "short-answer" ? "Short answer" : "Essay"} questions must have a model answer`)
+        return
+      }
+    }
+
     try {
       // Insert the base question
       const { data: questionData, error: questionError } = await supabase
@@ -660,6 +694,7 @@ export default function ImprovedQuestionManager() {
           question_text: newQuestion.question_text,
           explanation: newQuestion.explanation,
           type: newQuestion.type,
+          difficulty: newQuestion.difficulty,
         })
         .select()
         .single()
@@ -674,6 +709,43 @@ export default function ImprovedQuestionManager() {
             options: newQuestion.options,
             correct_answer_index: newQuestion.correctAnswerIndex,
             model_answer: newQuestion.model_answer,
+          })
+          break
+        case "fill-in-the-blank":
+          await supabase.from("fill_in_the_blank_questions").insert({
+            question_id: questionData.id,
+            options: newQuestion.options,
+            correct_answers: newQuestion.model_answer,
+            order_important: newQuestion.order_important,
+          })
+          break
+        case "matching":
+          if (newQuestion.pairs && newQuestion.pairs.length > 0) {
+            await supabase.from("matching_questions").insert(
+              newQuestion.pairs.map((pair) => ({
+                question_id: questionData.id,
+                statement: pair.statement,
+                match: pair.match,
+              })),
+            )
+          }
+          break
+        case "code":
+        case "sql":
+        case "algorithm":
+          await supabase.from("code_questions").insert({
+            question_id: questionData.id,
+            starter_code: (newQuestion as ExtendedQuestion).starter_code,
+            model_answer: newQuestion.model_answer,
+            language: (newQuestion as ExtendedQuestion).language,
+            model_answer_code: (newQuestion as ExtendedQuestion).model_answer_code,
+          })
+          break
+        case "true-false":
+          await supabase.from("true_false_questions").insert({
+            question_id: questionData.id,
+            correct_answer: newQuestion.model_answer as boolean,
+            model_answer: newQuestion.model_answer as boolean,
           })
           break
         case "short-answer":
@@ -691,7 +763,6 @@ export default function ImprovedQuestionManager() {
             rubric: newQuestion.rubric || "",
           })
           break
-        // Add other question types as needed
       }
 
       // Insert subtopic links
@@ -806,12 +877,6 @@ export default function ImprovedQuestionManager() {
           </div>
         </div>
 
-        <div className="p-4 border-t border-sidebar-border">
-          <Button onClick={handleAdd} className="w-full">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Question
-          </Button>
-        </div>
       </div>
 
       {/* Main Content */}
@@ -847,6 +912,21 @@ export default function ImprovedQuestionManager() {
                   <SelectItem value="essay">Essay</SelectItem>
                 </SelectContent>
               </Select>
+              <Button onClick={() => setAddingQuestion({
+                id: "",
+                type: "multiple-choice",
+                topic: "",
+                difficulty: "low",
+                question_text: "",
+                explanation: "",
+                created_at: new Date().toISOString(),
+                model_answer: "",
+                options: [],
+                correctAnswerIndex: 0,
+              })}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Question
+              </Button>
             </div>
           </div>
         </div>
@@ -1376,7 +1456,7 @@ export default function ImprovedQuestionManager() {
 
       {/* Add Question Dialog */}
       <Dialog open={!!addingQuestion} onOpenChange={() => setAddingQuestion(null)}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Plus className="w-5 h-5" />
@@ -1385,6 +1465,7 @@ export default function ImprovedQuestionManager() {
           </DialogHeader>
           {addingQuestion && (
             <div className="space-y-6 py-4">
+              {/* Basic Question Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="question-id">Question ID *</Label>
@@ -1396,7 +1477,7 @@ export default function ImprovedQuestionManager() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="question-type">Question Type</Label>
+                  <Label htmlFor="question-type">Question Type *</Label>
                   <Select
                     value={addingQuestion.type}
                     onValueChange={(value) => setAddingQuestion({ ...addingQuestion, type: value as Question["type"] })}
@@ -1406,11 +1487,44 @@ export default function ImprovedQuestionManager() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="multiple-choice">Multiple Choice</SelectItem>
-                      <SelectItem value="short-answer">Short Answer</SelectItem>
+                      <SelectItem value="fill-in-the-blank">Fill in the Blank</SelectItem>
+                      <SelectItem value="matching">Matching</SelectItem>
                       <SelectItem value="code">Code</SelectItem>
+                      <SelectItem value="sql">SQL</SelectItem>
+                      <SelectItem value="algorithm">Algorithm</SelectItem>
                       <SelectItem value="true-false">True/False</SelectItem>
+                      <SelectItem value="short-answer">Short Answer</SelectItem>
+                      <SelectItem value="essay">Essay</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="difficulty">Difficulty</Label>
+                  <Select
+                    value={addingQuestion.difficulty}
+                    onValueChange={(value) => setAddingQuestion({ ...addingQuestion, difficulty: value as Question["difficulty"] })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select difficulty" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="explanation">Explanation (Optional)</Label>
+                  <Input
+                    id="explanation"
+                    value={addingQuestion.explanation || ""}
+                    onChange={(e) => setAddingQuestion({ ...addingQuestion, explanation: e.target.value })}
+                    placeholder="Enter explanation for the question"
+                  />
                 </div>
               </div>
 
@@ -1425,36 +1539,11 @@ export default function ImprovedQuestionManager() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label>Subtopics *</Label>
-                <div className="max-h-48 overflow-y-auto border rounded-md p-3 bg-muted/20">
-                  {groupedSubtopics.map((topic) => (
-                    <div key={topic.id} className="mb-3">
-                      <div className="font-medium text-sm mb-2 text-muted-foreground">
-                        {topic.topicnumber} - {topic.name}
-                      </div>
-                      {topic.subtopics.map((sub) => (
-                        <label key={sub.id} className="flex items-center gap-2 mb-1 cursor-pointer">
-                          <ShadcnCheckbox
-                            checked={addingSubtopicIds.includes(sub.id)}
-                            onCheckedChange={(checked: boolean) => {
-                              setAddingSubtopicIds((ids) =>
-                                checked ? [...ids, sub.id] : ids.filter((sid) => sid !== sub.id),
-                              )
-                            }}
-                          />
-                          <span className="text-sm">{sub.subtopictitle}</span>
-                        </label>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
+              {/* Multiple Choice Options */}
               {addingQuestion.type === "multiple-choice" && (
                 <div className="space-y-4">
-                  <Label>Options</Label>
-                  {addingQuestion.options?.map((option, index) => (
+                  <Label>Answer Options *</Label>
+                  {(addingQuestion.options || []).map((option, index) => (
                     <div key={index} className="flex gap-2">
                       <Input
                         value={option}
@@ -1490,29 +1579,330 @@ export default function ImprovedQuestionManager() {
                     <Plus className="w-4 h-4 mr-2" />
                     Add Option
                   </Button>
+                  <div className="space-y-2">
+                    <Label htmlFor="correct-answer-index">Correct Answer Index *</Label>
+                    <Input
+                      id="correct-answer-index"
+                      type="number"
+                      min="0"
+                      max={(addingQuestion.options || []).length - 1}
+                      value={addingQuestion.correctAnswerIndex || 0}
+                      onChange={(e) => setAddingQuestion({ ...addingQuestion, correctAnswerIndex: parseInt(e.target.value) || 0 })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="model-answer">Model Answer</Label>
+                    <Textarea
+                      id="model-answer"
+                      value={addingQuestion.model_answer as string || ""}
+                      onChange={(e) => setAddingQuestion({ ...addingQuestion, model_answer: e.target.value })}
+                      rows={2}
+                      placeholder="Enter the model answer/explanation"
+                    />
+                  </div>
                 </div>
               )}
 
-              {(addingQuestion.type === "short-answer" || addingQuestion.type === "essay") && (
-                <div className="space-y-2">
-                  <Label htmlFor="new-keywords">Keywords (comma-separated)</Label>
-                  <Input
-                    id="new-keywords"
-                    value={(addingQuestion.keywords || []).join(", ")}
-                    onChange={(e) => {
-                      const keywordsArray = e.target.value
-                        .split(",")
-                        .map(k => k.trim())
-                        .filter(k => k.length > 0)
-                      setAddingQuestion({ ...addingQuestion, keywords: keywordsArray })
-                    }}
-                    placeholder="Enter keywords separated by commas"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Keywords help with automated grading and feedback
-                  </p>
+              {/* Fill in the Blank */}
+              {addingQuestion.type === "fill-in-the-blank" && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="fib-correct-answers">Correct Answers (comma-separated) *</Label>
+                    <Input
+                      id="fib-correct-answers"
+                      value={Array.isArray(addingQuestion.model_answer) ? addingQuestion.model_answer.join(", ") : (addingQuestion.model_answer as string || "")}
+                      onChange={(e) => setAddingQuestion({ ...addingQuestion, model_answer: e.target.value.split(",").map(a => a.trim()) })}
+                      placeholder="Enter correct answers separated by commas"
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <Label>Options</Label>
+                    {(addingQuestion.options || []).map((option, index) => (
+                      <div key={index} className="flex gap-2">
+                        <Input
+                          value={option}
+                          onChange={(e) => {
+                            const newOptions = [...(addingQuestion.options || [])]
+                            newOptions[index] = e.target.value
+                            setAddingQuestion({ ...addingQuestion, options: newOptions })
+                          }}
+                          placeholder={`Option ${index + 1}`}
+                        />
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => {
+                            const newOptions = [...(addingQuestion.options || [])]
+                            newOptions.splice(index, 1)
+                            setAddingQuestion({ ...addingQuestion, options: newOptions })
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setAddingQuestion({
+                          ...addingQuestion,
+                          options: [...(addingQuestion.options || []), ""],
+                        })
+                      }}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Option
+                    </Button>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="fib-order-important"
+                      checked={addingQuestion.order_important || false}
+                      onChange={(e) => setAddingQuestion({ ...addingQuestion, order_important: e.target.checked })}
+                      className="rounded"
+                    />
+                    <Label htmlFor="fib-order-important">Order Important</Label>
+                  </div>
                 </div>
               )}
+
+              {/* Matching */}
+              {addingQuestion.type === "matching" && (
+                <div className="space-y-3">
+                  <Label>Matching Pairs *</Label>
+                  {(addingQuestion.pairs || []).map((pair, index) => (
+                    <div key={index} className="grid grid-cols-2 gap-2">
+                      <Input
+                        value={pair.statement}
+                        onChange={(e) => {
+                          const newPairs = [...(addingQuestion.pairs || [])]
+                          newPairs[index] = { ...pair, statement: e.target.value }
+                          setAddingQuestion({ ...addingQuestion, pairs: newPairs })
+                        }}
+                        placeholder="Statement"
+                      />
+                      <div className="flex gap-2">
+                        <Input
+                          value={pair.match}
+                          onChange={(e) => {
+                            const newPairs = [...(addingQuestion.pairs || [])]
+                            newPairs[index] = { ...pair, match: e.target.value }
+                            setAddingQuestion({ ...addingQuestion, pairs: newPairs })
+                          }}
+                          placeholder="Match"
+                        />
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => {
+                            const newPairs = [...(addingQuestion.pairs || [])]
+                            newPairs.splice(index, 1)
+                            setAddingQuestion({ ...addingQuestion, pairs: newPairs })
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setAddingQuestion({
+                        ...addingQuestion,
+                        pairs: [...(addingQuestion.pairs || []), { statement: "", match: "" }],
+                      })
+                    }}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Pair
+                  </Button>
+                </div>
+              )}
+
+              {/* Code/SQL/Algorithm */}
+              {(addingQuestion.type === "code" || addingQuestion.type === "sql" || addingQuestion.type === "algorithm") && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="starter-code">Starter Code</Label>
+                    <Textarea
+                      id="starter-code"
+                      value={(addingQuestion as ExtendedQuestion).starter_code || ""}
+                      onChange={(e) => setAddingQuestion({ ...addingQuestion, starter_code: e.target.value } as ExtendedQuestion)}
+                      rows={4}
+                      placeholder="Enter starter code"
+                      className="font-mono"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="code-model-answer">Model Answer</Label>
+                    <Textarea
+                      id="code-model-answer"
+                      value={addingQuestion.model_answer as string || ""}
+                      onChange={(e) => setAddingQuestion({ ...addingQuestion, model_answer: e.target.value })}
+                      rows={2}
+                      placeholder="Enter model answer/explanation"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="code-language">Language</Label>
+                    <Select
+                      value={(addingQuestion as ExtendedQuestion).language || ""}
+                      onValueChange={(value) => setAddingQuestion({ ...addingQuestion, language: value } as ExtendedQuestion)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select language" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="python">Python</SelectItem>
+                        <SelectItem value="sql">SQL</SelectItem>
+                        <SelectItem value="javascript">JavaScript</SelectItem>
+                        <SelectItem value="java">Java</SelectItem>
+                        <SelectItem value="cpp">C++</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="model-answer-code">Model Answer Code</Label>
+                    <Textarea
+                      id="model-answer-code"
+                      value={(addingQuestion as ExtendedQuestion).model_answer_code || ""}
+                      onChange={(e) => setAddingQuestion({ ...addingQuestion, model_answer_code: e.target.value } as ExtendedQuestion)}
+                      rows={6}
+                      placeholder="Enter the complete model answer code"
+                      className="font-mono"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* True/False */}
+              {addingQuestion.type === "true-false" && (
+                <div className="space-y-2">
+                  <Label htmlFor="tf-correct-answer">Correct Answer *</Label>
+                  <Select
+                    value={String(addingQuestion.model_answer)}
+                    onValueChange={(value) => setAddingQuestion({ ...addingQuestion, model_answer: value === "true" })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select answer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="true">True</SelectItem>
+                      <SelectItem value="false">False</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Short Answer */}
+              {addingQuestion.type === "short-answer" && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="sa-model-answer">Model Answer *</Label>
+                    <Textarea
+                      id="sa-model-answer"
+                      value={addingQuestion.model_answer as string || ""}
+                      onChange={(e) => setAddingQuestion({ ...addingQuestion, model_answer: e.target.value })}
+                      rows={3}
+                      placeholder="Enter the model answer"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="sa-keywords">Keywords (comma-separated)</Label>
+                    <Input
+                      id="sa-keywords"
+                      value={(addingQuestion.keywords || []).join(", ")}
+                      onChange={(e) => {
+                        const keywordsArray = e.target.value
+                          .split(",")
+                          .map(k => k.trim())
+                          .filter(k => k.length > 0)
+                        setAddingQuestion({ ...addingQuestion, keywords: keywordsArray })
+                      }}
+                      placeholder="Enter keywords separated by commas"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Keywords help with automated grading and feedback
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Essay */}
+              {addingQuestion.type === "essay" && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="essay-model-answer">Model Answer *</Label>
+                    <Textarea
+                      id="essay-model-answer"
+                      value={addingQuestion.model_answer as string || ""}
+                      onChange={(e) => setAddingQuestion({ ...addingQuestion, model_answer: e.target.value })}
+                      rows={4}
+                      placeholder="Enter the model essay answer"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="essay-rubric">Rubric</Label>
+                    <Textarea
+                      id="essay-rubric"
+                      value={addingQuestion.rubric || ""}
+                      onChange={(e) => setAddingQuestion({ ...addingQuestion, rubric: e.target.value })}
+                      rows={3}
+                      placeholder="Enter grading rubric"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="essay-keywords">Keywords (comma-separated)</Label>
+                    <Input
+                      id="essay-keywords"
+                      value={(addingQuestion.keywords || []).join(", ")}
+                      onChange={(e) => {
+                        const keywordsArray = e.target.value
+                          .split(",")
+                          .map(k => k.trim())
+                          .filter(k => k.length > 0)
+                        setAddingQuestion({ ...addingQuestion, keywords: keywordsArray })
+                      }}
+                      placeholder="Enter keywords separated by commas"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Keywords help with automated grading and feedback
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Subtopics Selection */}
+              <div className="space-y-2">
+                <Label>Subtopics *</Label>
+                <div className="max-h-48 overflow-y-auto border rounded-md p-3 bg-muted/20">
+                  {groupedSubtopics.map((topic) => (
+                    <div key={topic.id} className="mb-3">
+                      <div className="font-medium text-sm mb-2 text-muted-foreground">
+                        {topic.topicnumber} - {topic.name}
+                      </div>
+                      {topic.subtopics.map((sub) => (
+                        <label key={sub.id} className="flex items-center gap-2 mb-1 cursor-pointer">
+                          <ShadcnCheckbox
+                            checked={addingSubtopicIds.includes(sub.id)}
+                            onCheckedChange={(checked: boolean) => {
+                              setAddingSubtopicIds((ids) =>
+                                checked ? [...ids, sub.id] : ids.filter((sid) => sid !== sub.id),
+                              )
+                            }}
+                          />
+                          <span className="text-sm">{sub.subtopictitle}</span>
+                        </label>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+                {addingSubtopicIds.length === 0 && (
+                  <p className="text-sm text-destructive">At least one subtopic must be selected</p>
+                )}
+              </div>
 
               <DialogFooter>
                 <Button variant="outline" onClick={() => setAddingQuestion(null)}>
