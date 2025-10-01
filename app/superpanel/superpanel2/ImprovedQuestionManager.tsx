@@ -113,6 +113,7 @@ export default function ImprovedQuestionManager() {
   const [deleteConfirmText, setDeleteConfirmText] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedTopic, setSelectedTopic] = useState<string>("all")
+  const [selectedSubtopic, setSelectedSubtopic] = useState<string | null>(null)
   const [selectedType, setSelectedType] = useState<string>("all")
   const [topics, setTopics] = useState<Array<{ id: number; name: string; slug: string; topicnumber: string }>>([])
   const [subtopics, setSubtopics] = useState<
@@ -306,12 +307,18 @@ export default function ImprovedQuestionManager() {
       filtered = filtered.filter((q) => q.topic === selectedTopic)
     }
 
+    if (selectedSubtopic) {
+      filtered = filtered.filter((q) =>
+        q.subtopic_question_link?.some((link: SubtopicLink) => link.subtopic_id === selectedSubtopic)
+      )
+    }
+
     if (selectedType !== "all") {
       filtered = filtered.filter((q) => q.type === selectedType)
     }
 
     setFilteredQuestions(filtered)
-  }, [questions, searchTerm, selectedTopic, selectedType])
+  }, [questions, searchTerm, selectedTopic, selectedSubtopic, selectedType])
 
   const handleInlineEdit = (questionId: string, question: Question) => {
     setEditingQuestionId(questionId)
@@ -814,8 +821,11 @@ export default function ImprovedQuestionManager() {
         <div className="flex-1 overflow-y-auto p-4">
           <div className="space-y-2">
             <button
-              onClick={() => setSelectedTopic("all")}
-              className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${selectedTopic === "all"
+              onClick={() => {
+                setSelectedTopic("all")
+                setSelectedSubtopic(null)
+              }}
+              className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors cursor-pointer ${selectedTopic === "all" && !selectedSubtopic
                   ? "bg-sidebar-accent text-sidebar-accent-foreground"
                   : "text-sidebar-foreground hover:bg-sidebar-accent/50"
               }`}
@@ -827,10 +837,10 @@ export default function ImprovedQuestionManager() {
               <div key={topic.id} className="space-y-1">
                 <Collapsible open={expandedTopics.has(topic.slug)} onOpenChange={() => toggleTopic(topic.slug)}>
                   <CollapsibleTrigger asChild>
-                    <button className="w-full flex items-center justify-between px-3 py-2 rounded-md text-sm text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors">
-                      <span className="flex items-center gap-2">
+                    <button className="w-full flex items-center justify-between px-3 py-2 rounded-md text-sm text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors cursor-pointer">
+                      <span className="flex items-center gap-2 text-left">
                         <BookOpen className="w-4 h-4" />
-                        {topic.topicnumber} - {topic.name}
+                        <span className="text-left">{topic.topicnumber} - {topic.name}</span>
                         <Badge variant="secondary" className="text-xs">
                           {topic.questionCount}
                         </Badge>
@@ -844,8 +854,11 @@ export default function ImprovedQuestionManager() {
                   </CollapsibleTrigger>
                   <CollapsibleContent className="ml-6 space-y-1">
                     <button
-                      onClick={() => setSelectedTopic(topic.slug)}
-                      className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors ${selectedTopic === topic.slug
+                      onClick={() => {
+                        setSelectedTopic(topic.slug)
+                        setSelectedSubtopic(null)
+                      }}
+                      className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors cursor-pointer ${selectedTopic === topic.slug && !selectedSubtopic
                           ? "bg-sidebar-accent text-sidebar-accent-foreground"
                           : "text-muted-foreground hover:bg-sidebar-accent/50"
                       }`}
@@ -861,10 +874,13 @@ export default function ImprovedQuestionManager() {
                         <button
                           key={subtopic.id}
                           onClick={() => {
-                            // Filter by subtopic - you'd need to implement this logic
                             setSelectedTopic(topic.slug)
+                            setSelectedSubtopic(subtopic.id)
                           }}
-                          className="w-full text-left px-3 py-1.5 rounded-md text-xs text-muted-foreground hover:bg-sidebar-accent/50 transition-colors"
+                          className={`w-full text-left px-3 py-1.5 rounded-md text-xs transition-colors cursor-pointer ${selectedSubtopic === subtopic.id
+                              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                              : "text-muted-foreground hover:bg-sidebar-accent/50"
+                          }`}
                         >
                           {subtopic.subtopictitle} ({subtopicQuestionCount})
                         </button>
@@ -885,7 +901,9 @@ export default function ImprovedQuestionManager() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-semibold text-foreground">
-                {selectedTopic === "all"
+                {selectedSubtopic 
+                  ? subtopics.find((s) => s.id === selectedSubtopic)?.subtopictitle || "Questions"
+                  : selectedTopic === "all"
                   ? "All Questions"
                   : topics.find((t) => t.slug === selectedTopic)?.name || "Questions"}
               </h1>
