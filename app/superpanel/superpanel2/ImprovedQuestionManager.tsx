@@ -103,6 +103,8 @@ export default function ImprovedQuestionManager() {
   const [editingModelAnswer, setEditingModelAnswer] = useState("")
   const [editingLanguage, setEditingLanguage] = useState("")
   const [editingModelAnswerCode, setEditingModelAnswerCode] = useState("")
+  const [editingSubtopicIds, setEditingSubtopicIds] = useState<string[]>([])
+  const [editingKeywords, setEditingKeywords] = useState<string[]>([])
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [pendingEditAction, setPendingEditAction] = useState<(() => void) | null>(null)
@@ -216,10 +218,12 @@ export default function ImprovedQuestionManager() {
         }),
         ...(q.type === "short-answer" && {
           model_answer: q.short_answer_questions?.model_answer,
+          keywords: q.short_answer_questions?.keywords,
         }),
         ...(q.type === "essay" && {
           model_answer: q.essay_questions?.model_answer,
           rubric: q.essay_questions?.rubric,
+          keywords: q.essay_questions?.keywords,
         }),
       }))
 
@@ -336,6 +340,10 @@ export default function ImprovedQuestionManager() {
     )
     setEditingLanguage((question as ExtendedQuestion).language || "")
     setEditingModelAnswerCode((question as ExtendedQuestion).model_answer_code || "")
+    setEditingSubtopicIds(
+      question.subtopic_question_link?.map(link => link.subtopic_id) || []
+    )
+    setEditingKeywords(question.keywords || [])
     setHasUnsavedChanges(false)
   }
 
@@ -343,6 +351,12 @@ export default function ImprovedQuestionManager() {
     try {
       const question = questions.find(q => q.id === questionId)
       if (!question) return
+
+      // Validation: ensure at least one subtopic is selected
+      if (editingSubtopicIds.length === 0) {
+        toast.error("At least one subtopic must be selected")
+        return
+      }
 
       // Update the base question
       const { error: questionError } = await supabase
@@ -374,7 +388,8 @@ export default function ImprovedQuestionManager() {
             .from("short_answer_questions")
             .upsert({
               question_id: questionId,
-              model_answer: editingAnswer
+              model_answer: editingAnswer,
+              keywords: editingKeywords
             })
 
           if (saError) {
@@ -401,7 +416,8 @@ export default function ImprovedQuestionManager() {
             .from("essay_questions")
             .upsert({
               question_id: questionId,
-              model_answer: editingAnswer
+              model_answer: editingAnswer,
+              keywords: editingKeywords
             })
 
           if (essayError) {
@@ -462,6 +478,25 @@ export default function ImprovedQuestionManager() {
           break
       }
 
+      // Update subtopic links
+      // First, delete existing links
+      await supabase
+        .from("subtopic_question_link")
+        .delete()
+        .eq("question_id", questionId)
+
+      // Then insert new links
+      if (editingSubtopicIds.length > 0) {
+        await supabase
+          .from("subtopic_question_link")
+          .insert(
+            editingSubtopicIds.map(subtopicId => ({
+              question_id: questionId,
+              subtopic_id: subtopicId
+            }))
+          )
+      }
+
       await fetchQuestions()
       setEditingQuestionId(null)
       setEditingText("")
@@ -475,6 +510,8 @@ export default function ImprovedQuestionManager() {
       setEditingModelAnswer("")
       setEditingLanguage("")
       setEditingModelAnswerCode("")
+      setEditingSubtopicIds([])
+      setEditingKeywords([])
       setHasUnsavedChanges(false)
       toast.success("Question updated successfully")
     } catch (error) {
@@ -496,6 +533,8 @@ export default function ImprovedQuestionManager() {
     setEditingModelAnswer("")
     setEditingLanguage("")
     setEditingModelAnswerCode("")
+    setEditingSubtopicIds([])
+    setEditingKeywords([])
     setHasUnsavedChanges(false)
   }
 
@@ -641,6 +680,15 @@ export default function ImprovedQuestionManager() {
           await supabase.from("short_answer_questions").insert({
             question_id: questionData.id,
             model_answer: newQuestion.model_answer,
+            keywords: newQuestion.keywords,
+          })
+          break
+        case "essay":
+          await supabase.from("essay_questions").insert({
+            question_id: questionData.id,
+            model_answer: newQuestion.model_answer,
+            keywords: newQuestion.keywords,
+            rubric: newQuestion.rubric || "",
           })
           break
         // Add other question types as needed
@@ -919,42 +967,87 @@ export default function ImprovedQuestionManager() {
                               )}
 
                               {question.type === "short-answer" && (
-                                <div className="space-y-2">
-                                  <Label htmlFor="edit-answer">Answer</Label>
-                                  <Textarea
-                                    id="edit-answer"
-                                    value={editingAnswer}
-                                    onChange={(e) => setEditingAnswer(e.target.value)}
-                                    rows={3}
-                                    placeholder="Enter the answer"
-                                  />
+                                <div className="space-y-4">
+                                  <div className="space-y-2">
+                                    <Label htmlFor="edit-answer">Answer</Label>
+                                    <Textarea
+                                      id="edit-answer"
+                                      value={editingAnswer}
+                                      onChange={(e) => {
+                                        setEditingAnswer(e.target.value)
+                                        setHasUnsavedChanges(true)
+                                      }}
+                                      rows={3}
+                                      placeholder="Enter the answer"
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor="edit-keywords">Keywords (comma-separated)</Label>
+                                    <Input
+                                      id="edit-keywords"
+                                      value={editingKeywords.join(", ")}
+                                      onChange={(e) => {
+                                        const keywordsArray = e.target.value
+                                          .split(",")
+                                          .map(k => k.trim())
+                                          .filter(k => k.length > 0)
+                                        setEditingKeywords(keywordsArray)
+                                        setHasUnsavedChanges(true)
+                                      }}
+                                      placeholder="Enter keywords separated by commas"
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                      Keywords help with automated grading and feedback
+                                    </p>
+                                  </div>
                                 </div>
                               )}
                               
                               {question.type === "essay" && (
-                                <div className="space-y-2">
-                                  <Label htmlFor="edit-essay-answer">Answer</Label>
-                                  <Textarea
-                                    id="edit-essay-answer"
-                                    value={editingAnswer}
-                                    onChange={(e) => {
-                                      setEditingAnswer(e.target.value)
-                                      setHasUnsavedChanges(true)
-                                      // Auto-resize functionality
-                                      const textarea = e.target
-                                      textarea.style.height = 'auto'
-                                      textarea.style.height = textarea.scrollHeight + 'px'
-                                    }}
-                                    onInput={(e) => {
-                                      const textarea = e.target as HTMLTextAreaElement
-                                      textarea.style.height = 'auto'
-                                      textarea.style.height = textarea.scrollHeight + 'px'
-                                    }}
-                                    className="resize-y min-h-[2.5rem] overflow-hidden"
-                                    rows={1}
-                                    style={{ height: 'auto' }}
-                                    placeholder="Enter the essay answer"
-                                  />
+                                <div className="space-y-4">
+                                  <div className="space-y-2">
+                                    <Label htmlFor="edit-essay-answer">Answer</Label>
+                                    <Textarea
+                                      id="edit-essay-answer"
+                                      value={editingAnswer}
+                                      onChange={(e) => {
+                                        setEditingAnswer(e.target.value)
+                                        setHasUnsavedChanges(true)
+                                        // Auto-resize functionality
+                                        const textarea = e.target
+                                        textarea.style.height = 'auto'
+                                        textarea.style.height = textarea.scrollHeight + 'px'
+                                      }}
+                                      onInput={(e) => {
+                                        const textarea = e.target as HTMLTextAreaElement
+                                        textarea.style.height = 'auto'
+                                        textarea.style.height = textarea.scrollHeight + 'px'
+                                      }}
+                                      className="resize-y min-h-[2.5rem] overflow-hidden"
+                                      rows={1}
+                                      style={{ height: 'auto' }}
+                                      placeholder="Enter the essay answer"
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor="edit-essay-keywords">Keywords (comma-separated)</Label>
+                                    <Input
+                                      id="edit-essay-keywords"
+                                      value={editingKeywords.join(", ")}
+                                      onChange={(e) => {
+                                        const keywordsArray = e.target.value
+                                          .split(",")
+                                          .map(k => k.trim())
+                                          .filter(k => k.length > 0)
+                                        setEditingKeywords(keywordsArray)
+                                        setHasUnsavedChanges(true)
+                                      }}
+                                      placeholder="Enter keywords separated by commas"
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                      Keywords help with automated grading and feedback
+                                    </p>
+                                  </div>
                                 </div>
                               )}
                               
@@ -1158,6 +1251,37 @@ export default function ImprovedQuestionManager() {
                                 </div>
                               )}
 
+                              {/* Subtopic Selection */}
+                              <div className="space-y-3">
+                                <Label>Subtopics *</Label>
+                                <div className="max-h-48 overflow-y-auto border rounded-md p-3 bg-muted/20">
+                                  {groupedSubtopics.map((topic) => (
+                                    <div key={topic.id} className="mb-3">
+                                      <div className="font-medium text-sm mb-2 text-muted-foreground">
+                                        {topic.topicnumber} - {topic.name}
+                                      </div>
+                                      {topic.subtopics.map((sub) => (
+                                        <label key={sub.id} className="flex items-center gap-2 mb-1 cursor-pointer">
+                                          <ShadcnCheckbox
+                                            checked={editingSubtopicIds.includes(sub.id)}
+                                            onCheckedChange={(checked: boolean) => {
+                                              setEditingSubtopicIds((ids) =>
+                                                checked ? [...ids, sub.id] : ids.filter((sid) => sid !== sub.id),
+                                              )
+                                              setHasUnsavedChanges(true)
+                                            }}
+                                          />
+                                          <span className="text-sm">{sub.subtopictitle}</span>
+                                        </label>
+                                      ))}
+                                    </div>
+                                  ))}
+                                </div>
+                                {editingSubtopicIds.length === 0 && (
+                                  <p className="text-sm text-destructive">At least one subtopic must be selected</p>
+                                )}
+                              </div>
+
                               <div className="flex items-center gap-2">
                                 <Button size="sm" onClick={() => handleSaveInlineEdit(question.id)}>
                                   <Save className="w-3 h-3 mr-1" />
@@ -1188,6 +1312,36 @@ export default function ImprovedQuestionManager() {
                                   </span>
                                 )}
                               </div>
+                              {/* Show keywords if they exist */}
+                              {question.keywords && question.keywords.length > 0 && (
+                                <div className="mt-2">
+                                  <div className="text-xs text-muted-foreground mb-1">Keywords:</div>
+                                  <div className="flex flex-wrap gap-1">
+                                    {question.keywords.map((keyword, index) => (
+                                      <Badge key={index} variant="outline" className="text-xs">
+                                        {keyword}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              {/* Show current subtopics */}
+                              {question.subtopic_question_link && question.subtopic_question_link.length > 0 && (
+                                <div className="mt-2">
+                                  <div className="text-xs text-muted-foreground mb-1">Subtopics:</div>
+                                  <div className="flex flex-wrap gap-1">
+                                    {question.subtopic_question_link.map((link, index) => {
+                                      const subtopic = subtopics.find(s => s.id === link.subtopic_id)
+                                      const topic = topics.find(t => String(t.id) === subtopic?.topic_id)
+                                      return (
+                                        <Badge key={index} variant="secondary" className="text-xs">
+                                          {topic?.topicnumber} - {subtopic?.subtopictitle}
+                                        </Badge>
+                                      )
+                                    })}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
@@ -1336,6 +1490,27 @@ export default function ImprovedQuestionManager() {
                     <Plus className="w-4 h-4 mr-2" />
                     Add Option
                   </Button>
+                </div>
+              )}
+
+              {(addingQuestion.type === "short-answer" || addingQuestion.type === "essay") && (
+                <div className="space-y-2">
+                  <Label htmlFor="new-keywords">Keywords (comma-separated)</Label>
+                  <Input
+                    id="new-keywords"
+                    value={(addingQuestion.keywords || []).join(", ")}
+                    onChange={(e) => {
+                      const keywordsArray = e.target.value
+                        .split(",")
+                        .map(k => k.trim())
+                        .filter(k => k.length > 0)
+                      setAddingQuestion({ ...addingQuestion, keywords: keywordsArray })
+                    }}
+                    placeholder="Enter keywords separated by commas"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Keywords help with automated grading and feedback
+                  </p>
                 </div>
               )}
 
