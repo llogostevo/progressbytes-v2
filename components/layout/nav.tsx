@@ -130,16 +130,16 @@ export function Nav() {
                                 <Button
                                     variant="ghost"
                                     onClick={handleAuth}
-                                    className="flex items-center text-sm font-medium transition-colors hover:text-primary text-foreground/60"
+                                    className="flex items-center mt-4 ml-0.5 text-sm font-medium transition-colors hover:text-primary text-foreground/60 justify-start p-0 h-auto"
                                 >
                                     {isLoggedIn ? (
                                         <>
-                                            <LogOut className="h-4 w-4 mr-2" />
+                                            <LogOut className="h-4 w-4" />
                                             Logout
                                         </>
                                     ) : (
                                         <>
-                                            <LogIn className="h-4 w-4 mr-2" />
+                                            <LogIn className="h-4 w-4" />
                                             Login
                                         </>
                                     )}
