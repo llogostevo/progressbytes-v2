@@ -92,6 +92,10 @@ export default function ImprovedQuestionManager() {
   const [editingPairs, setEditingPairs] = useState<Array<{ statement: string; match: string }>>([])
   const [editingOrderImportant, setEditingOrderImportant] = useState(false)
   const [editingFibOptions, setEditingFibOptions] = useState<string[]>([])
+  const [editingStarterCode, setEditingStarterCode] = useState("")
+  const [editingModelAnswer, setEditingModelAnswer] = useState("")
+  const [editingLanguage, setEditingLanguage] = useState("")
+  const [editingModelAnswerCode, setEditingModelAnswerCode] = useState("")
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [pendingEditAction, setPendingEditAction] = useState<(() => void) | null>(null)
@@ -300,6 +304,14 @@ export default function ImprovedQuestionManager() {
     setEditingPairs(question.pairs || [])
     setEditingOrderImportant(question.order_important || false)
     setEditingFibOptions(question.options || [])
+    setEditingStarterCode((question as any).starter_code || "")
+    setEditingModelAnswer(
+      Array.isArray(question.model_answer) 
+        ? question.model_answer.join(", ") 
+        : String(question.model_answer || "")
+    )
+    setEditingLanguage((question as any).language || "")
+    setEditingModelAnswerCode((question as any).model_answer_code || "")
     setHasUnsavedChanges(false)
   }
 
@@ -378,7 +390,10 @@ export default function ImprovedQuestionManager() {
             .from("code_questions")
             .upsert({
               question_id: questionId,
-              model_answer_code: editingAnswer
+              starter_code: editingStarterCode,
+              model_answer: editingModelAnswer,
+              language: editingLanguage,
+              model_answer_code: editingModelAnswerCode
             })
 
           if (codeError) {
@@ -431,6 +446,10 @@ export default function ImprovedQuestionManager() {
       setEditingPairs([])
       setEditingOrderImportant(false)
       setEditingFibOptions([])
+      setEditingStarterCode("")
+      setEditingModelAnswer("")
+      setEditingLanguage("")
+      setEditingModelAnswerCode("")
       setHasUnsavedChanges(false)
       toast.success("Question updated successfully")
     } catch (error) {
@@ -448,6 +467,10 @@ export default function ImprovedQuestionManager() {
     setEditingPairs([])
     setEditingOrderImportant(false)
     setEditingFibOptions([])
+    setEditingStarterCode("")
+    setEditingModelAnswer("")
+    setEditingLanguage("")
+    setEditingModelAnswerCode("")
     setHasUnsavedChanges(false)
   }
 
@@ -870,7 +893,7 @@ export default function ImprovedQuestionManager() {
                                 </div>
                               )}
 
-                              {(question.type === "short-answer" || question.type === "essay" || question.type === "code") && (
+                              {(question.type === "short-answer" || question.type === "essay") && (
                                 <div className="space-y-2">
                                   <Label htmlFor="edit-answer">Answer</Label>
                                   <Textarea
@@ -880,6 +903,70 @@ export default function ImprovedQuestionManager() {
                                     rows={3}
                                     placeholder="Enter the answer"
                                   />
+                                </div>
+                              )}
+                              
+                              {question.type === "code" && (
+                                <div className="space-y-4">
+                                  <div className="space-y-2">
+                                    <Label htmlFor="starter-code">Starter Code</Label>
+                                    <Textarea
+                                      id="starter-code"
+                                      value={editingStarterCode}
+                                      onChange={(e) => {
+                                        setEditingStarterCode(e.target.value)
+                                        setHasUnsavedChanges(true)
+                                      }}
+                                      rows={4}
+                                      placeholder="Enter starter code"
+                                      className="font-mono"
+                                    />
+                                  </div>
+                                  
+                                  <div className="space-y-2">
+                                    <Label htmlFor="model-answer">Model Answer</Label>
+                                    <Textarea
+                                      id="model-answer"
+                                      value={editingModelAnswer}
+                                      onChange={(e) => {
+                                        setEditingModelAnswer(e.target.value)
+                                        setHasUnsavedChanges(true)
+                                      }}
+                                      rows={2}
+                                      placeholder="Enter model answer/explanation"
+                                    />
+                                  </div>
+                                  
+                                  <div className="space-y-2">
+                                    <Label htmlFor="language">Language</Label>
+                                    <Select value={editingLanguage} onValueChange={(value) => {
+                                      setEditingLanguage(value)
+                                      setHasUnsavedChanges(true)
+                                    }}>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Select language" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="python">Python</SelectItem>
+                                        <SelectItem value="sql">SQL</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  
+                                  <div className="space-y-2">
+                                    <Label htmlFor="model-answer-code">Model Answer Code</Label>
+                                    <Textarea
+                                      id="model-answer-code"
+                                      value={editingModelAnswerCode}
+                                      onChange={(e) => {
+                                        setEditingModelAnswerCode(e.target.value)
+                                        setHasUnsavedChanges(true)
+                                      }}
+                                      rows={6}
+                                      placeholder="Enter the complete model answer code"
+                                      className="font-mono"
+                                    />
+                                  </div>
                                 </div>
                               )}
 
