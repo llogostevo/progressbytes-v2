@@ -90,6 +90,8 @@ export default function ImprovedQuestionManager() {
   const [editingOptions, setEditingOptions] = useState<string[]>([])
   const [editingCorrectIndex, setEditingCorrectIndex] = useState(0)
   const [editingPairs, setEditingPairs] = useState<Array<{ statement: string; match: string }>>([])
+  const [editingOrderImportant, setEditingOrderImportant] = useState(false)
+  const [editingFibOptions, setEditingFibOptions] = useState<string[]>([])
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [pendingEditAction, setPendingEditAction] = useState<(() => void) | null>(null)
@@ -296,6 +298,8 @@ export default function ImprovedQuestionManager() {
     setEditingOptions(question.options || [])
     setEditingCorrectIndex(question.correctAnswerIndex || 0)
     setEditingPairs(question.pairs || [])
+    setEditingOrderImportant(question.order_important || false)
+    setEditingFibOptions(question.options || [])
     setHasUnsavedChanges(false)
   }
 
@@ -387,7 +391,9 @@ export default function ImprovedQuestionManager() {
             .from("fill_in_the_blank_questions")
             .upsert({
               question_id: questionId,
-              correct_answers: editingAnswer.split(",").map(a => a.trim())
+              correct_answers: editingAnswer.split(",").map(a => a.trim()),
+              order_important: editingOrderImportant,
+              options: editingFibOptions
             })
 
           if (fibError) {
@@ -423,6 +429,8 @@ export default function ImprovedQuestionManager() {
       setEditingOptions([])
       setEditingCorrectIndex(0)
       setEditingPairs([])
+      setEditingOrderImportant(false)
+      setEditingFibOptions([])
       setHasUnsavedChanges(false)
       toast.success("Question updated successfully")
     } catch (error) {
@@ -438,6 +446,8 @@ export default function ImprovedQuestionManager() {
     setEditingOptions([])
     setEditingCorrectIndex(0)
     setEditingPairs([])
+    setEditingOrderImportant(false)
+    setEditingFibOptions([])
     setHasUnsavedChanges(false)
   }
 
@@ -639,9 +649,9 @@ export default function ImprovedQuestionManager() {
             <button
               onClick={() => setSelectedTopic("all")}
               className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${selectedTopic === "all"
-                ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                : "text-sidebar-foreground hover:bg-sidebar-accent/50"
-                }`}
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+              }`}
             >
               All Questions ({questions.length})
             </button>
@@ -669,9 +679,9 @@ export default function ImprovedQuestionManager() {
                     <button
                       onClick={() => setSelectedTopic(topic.slug)}
                       className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors ${selectedTopic === topic.slug
-                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                        : "text-muted-foreground hover:bg-sidebar-accent/50"
-                        }`}
+                          ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                          : "text-muted-foreground hover:bg-sidebar-accent/50"
+                      }`}
                     >
                       All {topic.name} Questions ({topic.questionCount})
                     </button>
@@ -775,11 +785,11 @@ export default function ImprovedQuestionManager() {
                         <div className="flex-1 min-w-0">
                           {isEditing ? (
                             <div className="space-y-4">
-                              <div className="space-y-2">
+                            <div className="space-y-2">
                                 <Label htmlFor="edit-question-text">Question Text</Label>
-                                <Textarea
+                              <Textarea
                                   id="edit-question-text"
-                                  value={editingText}
+                                value={editingText}
                                   onChange={(e) => {
                                     setEditingText(e.target.value)
                                     setHasUnsavedChanges(true)
@@ -853,7 +863,7 @@ export default function ImprovedQuestionManager() {
                                       id="model-answer"
                                       value={editingAnswer}
                                       onChange={(e) => setEditingAnswer(e.target.value)}
-                                      rows={2}
+                                rows={2}
                                       placeholder="Enter the model answer/explanation"
                                     />
                                   </div>
@@ -889,14 +899,74 @@ export default function ImprovedQuestionManager() {
                               )}
 
                               {question.type === "fill-in-the-blank" && (
-                                <div className="space-y-2">
-                                  <Label htmlFor="edit-answer">Correct Answers (comma-separated)</Label>
-                                  <Input
-                                    id="edit-answer"
-                                    value={editingAnswer}
-                                    onChange={(e) => setEditingAnswer(e.target.value)}
-                                    placeholder="Enter correct answers separated by commas"
-                                  />
+                                <div className="space-y-4">
+                                  <div className="space-y-2">
+                                    <Label htmlFor="edit-answer">Correct Answers (comma-separated)</Label>
+                                    <Input
+                                      id="edit-answer"
+                                      value={editingAnswer}
+                                      onChange={(e) => {
+                                        setEditingAnswer(e.target.value)
+                                        setHasUnsavedChanges(true)
+                                      }}
+                                      placeholder="Enter correct answers separated by commas"
+                                    />
+                                  </div>
+                                  
+                                  <div className="space-y-3">
+                                    <Label>Options</Label>
+                                    {editingFibOptions.map((option, index) => (
+                                      <div key={index} className="flex gap-2">
+                                        <Input
+                                          value={option}
+                                          onChange={(e) => {
+                                            const newOptions = [...editingFibOptions]
+                                            newOptions[index] = e.target.value
+                                            setEditingFibOptions(newOptions)
+                                            setHasUnsavedChanges(true)
+                                          }}
+                                          placeholder={`Option ${index + 1}`}
+                                        />
+                                        <Button
+                                          variant="outline"
+                                          size="icon"
+                                          onClick={() => {
+                                            const newOptions = [...editingFibOptions]
+                                            newOptions.splice(index, 1)
+                                            setEditingFibOptions(newOptions)
+                                            setHasUnsavedChanges(true)
+                                          }}
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                      </div>
+                                    ))}
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        setEditingFibOptions([...editingFibOptions, ""])
+                                        setHasUnsavedChanges(true)
+                                      }}
+                                    >
+                                      <Plus className="w-4 h-4 mr-2" />
+                                      Add Option
+                                    </Button>
+                                  </div>
+                                  
+                                  <div className="flex items-center space-x-2">
+                                    <input
+                                      type="checkbox"
+                                      id="order-important"
+                                      checked={editingOrderImportant}
+                                      onChange={(e) => {
+                                        setEditingOrderImportant(e.target.checked)
+                                        setHasUnsavedChanges(true)
+                                      }}
+                                      className="rounded"
+                                    />
+                                    <Label htmlFor="order-important">Order Important</Label>
+                                  </div>
                                 </div>
                               )}
 
