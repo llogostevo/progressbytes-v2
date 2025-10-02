@@ -99,6 +99,7 @@ type RevisitQuestionPayload = {
   language?: string | null
   pairs?: RevisitPair[] | null
   correct_answer?: boolean | null
+  keywords?: string[] | null
 }
 
 type RevisitRow = {
@@ -388,6 +389,7 @@ export default function RevisitPageClient() {
           correct_answer: q.correct_answer ?? undefined,
           // language is optional on your UI type; include if it exists:
           language: q.language ?? undefined,
+          keywords: q.keywords ?? undefined,
         }
       })
 
@@ -988,6 +990,23 @@ export default function RevisitPageClient() {
                                     </pre>
                                   </div>
                                 </div>
+
+                                {/* Keywords Section */}
+                                {(question.type === "short-answer" || question.type === "text" || question.type === "essay") && question.keywords && question.keywords.length > 0 && (
+                                  <div className="p-4 bg-blue-50 border border-blue-100 rounded-md">
+                                    <h3 className="font-medium mb-2 text-blue-800">Keywords to include:</h3>
+                                    <div className="flex flex-wrap gap-2">
+                                      {question.keywords.map((keyword, index) => (
+                                        <span
+                                          key={index}
+                                          className="px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-md"
+                                        >
+                                          {keyword}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             </CardHeader>
 

@@ -19,6 +19,7 @@ export interface Question {
   language?: string
   explanation?: string
   rubric?: string
+  keywords?: string[]
   created_at: string
   pairs?: {
     statement: string
@@ -287,11 +288,13 @@ export interface DbTrueFalseQuestion {
 
 export interface DbShortAnswerQuestion {
   model_answer: string
+  keywords?: string[]
 }
 
 export interface DbEssayQuestion {
   model_answer: string
   rubric: string
+  keywords?: string[]
 }
 
 export interface DbCodeQuestion {

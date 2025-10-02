@@ -11,7 +11,7 @@ import {
   DialogTrigger,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { HelpCircle, Monitor, Gavel } from "lucide-react"
+import { HelpCircle, Monitor, Gavel, Lightbulb } from "lucide-react"
 import EssayGuide from "./essay-guides/EssayGuide"
 import DigitalTechnologyGuide from "./essay-guides/DigitalTechnologyGuide"
 import ComputerScienceLawsGuide from "./essay-guides/ComputerScienceLawsGuide"
@@ -22,6 +22,7 @@ interface EssayQuestionProps {
   disabled?: boolean
   minWords?: number
   maxWords?: number
+  keywords?: string[]
 }
 
 
@@ -29,10 +30,12 @@ export function EssayQuestion({
   onSubmit,
   disabled = false,
   minWords = 100,
-  maxWords = 1000
+  maxWords = 1000,
+  keywords
 }: EssayQuestionProps) {
   const [answer, setAnswer] = useState("")
   const [wordCount, setWordCount] = useState(0)
+  const [showKeywords, setShowKeywords] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value
@@ -115,6 +118,38 @@ export function EssayQuestion({
             </Dialog>
           </div>
       </div>
+      
+      {/* Keywords hint section */}
+      {keywords && keywords.length > 0 && (
+        <div className="space-y-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setShowKeywords(!showKeywords)}
+            className="flex items-center gap-2"
+          >
+            <Lightbulb className="h-4 w-4" />
+            {showKeywords ? "Hide Keywords" : "Reveal Keywords"}
+          </Button>
+          {showKeywords && (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <p className="text-sm text-blue-800 font-medium mb-2">Keywords to include:</p>
+              <div className="flex flex-wrap gap-2">
+                {keywords.map((keyword, index) => (
+                  <span
+                    key={index}
+                    className="px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-md"
+                  >
+                    {keyword}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      
       <Card className="p-4 bg-slate-50">
         {/* <div className="text-sm text-muted-foreground mb-2">
           Word count: {wordCount} / {maxWords} (minimum: {minWords})
