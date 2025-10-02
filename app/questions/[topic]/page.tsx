@@ -1226,11 +1226,11 @@ export default function QuestionPage() {
                 <CardDescription>Select one or more subtopics to focus your practice</CardDescription>
               </CardHeader>
               <CardContent className="pt-4 sm:pt-6">
-                    <SubtopicFilter
-                      selectedSubtopics={selectedSubtopics}
-                      onSubtopicChange={setSelectedSubtopics}
-                      subtopics={subtopics}
-                    />
+                <SubtopicFilter
+                  selectedSubtopics={selectedSubtopics}
+                  onSubtopicChange={setSelectedSubtopics}
+                  subtopics={subtopics}
+                />
               </CardContent>
             </Card>
 
@@ -1313,8 +1313,16 @@ export default function QuestionPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="mb-6">
+              {/* <div className="mb-6">
                 <p className="text-lg whitespace-pre-wrap">{question.question_text}</p>
+              </div> */}
+              <div className="mb-6">
+                <p className="text-lg whitespace-pre-wrap underline decoration-2 decoration-gray-700 underline-offset-6">
+                  {question.type === "fill-in-the-blank"
+                    ? "Fill in the blank, drag the word to its correct position"
+                    : question.question_text
+                  }
+                </p>
               </div>
               {!answer ? (
                 question.type === "multiple-choice" ? (
@@ -1632,7 +1640,7 @@ export default function QuestionPage() {
                           </div>
                         </div>
                       )}
-                      
+
                       <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-md">
                         <h3 className="font-medium mb-2 text-emerald-700">Model Answer:</h3>
                         <div className="space-y-4">

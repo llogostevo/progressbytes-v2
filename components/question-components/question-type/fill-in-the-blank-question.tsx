@@ -18,6 +18,7 @@ export function FillInTheBlankQuestion({ question, onAnswerSelected }: FillInThe
 
     // Split the question text into parts, replacing blanks with placeholders
     const questionParts = question.question_text.split("______")
+
     const blankCount = questionParts.length - 1
 
     const handleDragEnd = (result: DropResult) => {
