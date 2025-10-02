@@ -63,10 +63,12 @@ interface DBQuestion {
   };
   short_answer_questions?: {
     model_answer: string;
+    keywords?: string[];
   };
   essay_questions?: {
     model_answer?: string;
     rubric?: string;
+    keywords?: string[];
   };
 }
 
@@ -154,16 +156,19 @@ function transformQuestion(dbQuestion: DBQuestion, topicName: string): Question 
       language: dbQuestion.code_questions.language
     }),
     ...(dbQuestion.type === 'text' && {
-      model_answer: dbQuestion.short_answer_questions?.model_answer || ''
+      model_answer: dbQuestion.short_answer_questions?.model_answer || '',
+      keywords: dbQuestion.short_answer_questions?.keywords
     }),
     ...(dbQuestion.type === 'essay' && {
-      model_answer: dbQuestion.essay_questions?.model_answer || ''
+      model_answer: dbQuestion.essay_questions?.model_answer || '',
+      keywords: dbQuestion.essay_questions?.keywords
     }),
     ...(dbQuestion.type === 'true-false' && {
       model_answer: dbQuestion.true_false_questions?.correct_answer || false
     }),
     ...(dbQuestion.type === 'short-answer' && {
-      model_answer: dbQuestion.short_answer_questions?.model_answer || ''
+      model_answer: dbQuestion.short_answer_questions?.model_answer || '',
+      keywords: dbQuestion.short_answer_questions?.keywords
     })
   };
 }
@@ -245,11 +250,13 @@ async function getRandomQuestionForTopic(
             model_answer_code
           ),
           short_answer_questions (
-            model_answer
+            model_answer,
+            keywords
           ),
           essay_questions (
             model_answer,
-            rubric
+            rubric,
+            keywords
           )
         )
       )
@@ -399,11 +406,13 @@ async function getQuestionById(questionId: string): Promise<Question | undefined
         model_answer_code
       ),
       short_answer_questions (
-        model_answer
+        model_answer,
+        keywords
       ),
       essay_questions (
         model_answer,
-        rubric
+        rubric,
+        keywords
       )
     `)
     .eq('id', questionId)
@@ -1346,6 +1355,7 @@ export default function QuestionPage() {
                     key={question.id}
                     onSubmit={(...args) => { handleStartAnswering(); handleSubmitAnswer(...args); }}
                     disabled={isSubmitting}
+                    keywords={question.keywords}
                   />
                 ) : question.type === "essay" ? (
                   <EssayQuestion
@@ -1354,6 +1364,7 @@ export default function QuestionPage() {
                     disabled={isSubmitting}
                     minWords={20}
                     maxWords={500}
+                    keywords={question.keywords}
                   />
                 ) : null
               ) : (
@@ -1605,6 +1616,23 @@ export default function QuestionPage() {
                   {/* For free version, show model answer first, then self-assessment */}
                   {answer && (
                     <>
+                      {/* Keywords display for short-answer and essay questions */}
+                      {(question.type === "short-answer" || question.type === "text" || question.type === "essay") && question.keywords && question.keywords.length > 0 && (
+                        <div className="p-4 bg-blue-50 border border-blue-100 rounded-md">
+                          <h3 className="font-medium mb-2 text-blue-800">Keywords to include:</h3>
+                          <div className="flex flex-wrap gap-2">
+                            {question.keywords.map((keyword, index) => (
+                              <span
+                                key={index}
+                                className="px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-md"
+                              >
+                                {keyword}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
                       <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-md">
                         <h3 className="font-medium mb-2 text-emerald-700">Model Answer:</h3>
                         <div className="space-y-4">
@@ -1700,6 +1728,23 @@ export default function QuestionPage() {
                   {userType === "revisionAI" && (
                     <>
                       <FeedbackDisplay answer={answer} />
+
+                      {/* Keywords display for short-answer and essay questions */}
+                      {(question.type === "short-answer" || question.type === "text" || question.type === "essay") && question.keywords && question.keywords.length > 0 && (
+                        <div className="p-4 bg-blue-50 border border-blue-100 rounded-md">
+                          <h3 className="font-medium mb-2 text-blue-800">Keywords to include:</h3>
+                          <div className="flex flex-wrap gap-2">
+                            {question.keywords.map((keyword, index) => (
+                              <span
+                                key={index}
+                                className="px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-md"
+                              >
+                                {keyword}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
                       <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-md">
                         <h3 className="font-medium mb-2 text-emerald-700">Model Answer:</h3>
