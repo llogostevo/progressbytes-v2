@@ -1317,7 +1317,12 @@ export default function QuestionPage() {
                 <p className="text-lg whitespace-pre-wrap">{question.question_text}</p>
               </div> */}
               <div className="mb-6">
-                <p className="text-lg whitespace-pre-wrap underline decoration-2 decoration-gray-700 underline-offset-6">
+                <p
+                  className={`text-lg whitespace-pre-wrap ${question.type === "fill-in-the-blank"
+                      ? "underline decoration-2 decoration-gray-700 underline-offset-6"
+                      : ""
+                    }`}
+                >
                   {question.type === "fill-in-the-blank"
                     ? "Fill in the blank, drag the word to its correct position"
                     : question.question_text
