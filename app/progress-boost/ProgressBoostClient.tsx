@@ -1616,8 +1616,23 @@ export default function ProgressBoostClient() {
     )
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Prevent copy (Ctrl+C), paste (Ctrl+V), and cut (Ctrl+X) on the entire page
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'v' || e.key === 'x')) {
+      e.preventDefault()
+    }
+  }
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault()
+  }
+
   return (
-    <div className="container mx-auto px-4 py-8 max-w-3xl">
+    <div 
+      className="container mx-auto px-4 py-8 max-w-3xl progressboost-page"
+      onKeyDown={handleKeyDown}
+      onContextMenu={handleContextMenu}
+    >
       <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
         <Zap className="h-7 w-7 text-orange-500" />
         ProgressBoost
