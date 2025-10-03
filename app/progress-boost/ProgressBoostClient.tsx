@@ -814,6 +814,7 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Zap, Target, Trophy, RefreshCw, CheckCircle2, XCircle, SkipForward } from "lucide-react"
 import { toast } from "sonner"
+import { BetaBadge } from "@/components/ui/beta-badge"
 
 import type {
   Question,
@@ -1620,7 +1621,7 @@ export default function ProgressBoostClient() {
     <div className="container mx-auto px-4 py-8 max-w-3xl">
       <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
         <Zap className="h-7 w-7 text-orange-500" />
-        ProgressBoost
+        ProgressBoost <BetaBadge />
       </h1>
       <p className="text-muted-foreground mb-6">Weekly spaced repetition practice to reinforce your learning</p>
 

@@ -9,7 +9,7 @@ export const MID_DAYS = 28
 
 export function thisWeekBoundsLondon(): { start: Date; end: Date } {
   const now = new Date()
-  const londonTime = new Date(now.toLocaleString("en-US", { timeZone: "Europe/London" }))
+  const londonTime = new Date(now.toLocaleString("en-GB", { timeZone: "Europe/London" }))
   
   // Get Monday of current week (0 = Sunday, 1 = Monday)
   const dayOfWeek = londonTime.getDay()

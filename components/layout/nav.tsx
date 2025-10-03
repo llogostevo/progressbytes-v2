@@ -12,11 +12,13 @@ import type { LucideIcon } from "lucide-react"
 import { useAuth } from "@/app/providers/AuthProvider"
 import { isAdmin, isTeacherPlan, User, UserType } from "@/lib/access"
 import { useState } from "react"
+import { BetaBadge } from "@/components/ui/beta-badge"
 
 interface NavItem {
   title: string
   href: string
   icon: LucideIcon
+  isBeta: boolean
 }
 
 export function Nav() {
@@ -39,22 +41,22 @@ export function Nav() {
 
 
   const navigationItems: NavItem[] = [
-    { title: "Quizzes", href: "/", icon: BookOpen },
-    { title: "Progress", href: "/progress", icon: BarChart2 },
-    { title: "Revisit", href: "/revisit", icon: BookOpen },
+    { title: "Quizzes", href: "/", icon: BookOpen, isBeta: false },
+    { title: "Progress", href: "/progress", icon: BarChart2, isBeta: false },
+    { title: "Revisit", href: "/revisit", icon: BookOpen, isBeta: false },
     ...(isTeacherPlan({ user_type: userType as UserType } as User)
       ? [
-          { title: "Assess", href: "/assess", icon: ClipboardList },
-          { title: "Analytics", href: "/analytics", icon: BarChart2 },
-          { title: "Coverage", href: "/coverage", icon: Calendar }
+          { title: "Assess", href: "/assess", icon: ClipboardList, isBeta: false },
+          { title: "Analytics", href: "/analytics", icon: BarChart2, isBeta: false },
+          { title: "Coverage", href: "/coverage", icon: Calendar, isBeta: false }
         ]
       : [
-          { title: "ProgressBoost", href: "/progress-boost", icon: Zap }
+          { title: "ProgressBoost", href: "/progress-boost", icon: Zap, isBeta: true }
         ]),
     ...(isAdmin(userRole)
-        ? [{ title: "Admin", href: "/#", icon: BarChart2 }]
+        ? [{ title: "Admin", href: "/#", icon: BarChart2, isBeta: false }]
         : []),
-    { title: "Settings", href: "/settings", icon: Settings },
+    { title: "Settings", href: "/settings", icon: Settings, isBeta: false },
   ]
 
     return (
@@ -74,6 +76,7 @@ export function Nav() {
                     >
                         <item.icon className="h-4 w-4 mr-2" />
                         {item.title}
+                        {item.isBeta && <BetaBadge className="ml-2" size="sm"/>}
                     </Link>
                 ))}
                 <Button
