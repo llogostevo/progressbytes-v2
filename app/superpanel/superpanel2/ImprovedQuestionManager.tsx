@@ -130,6 +130,10 @@ export default function ImprovedQuestionManager() {
   >([])
   const [expandedTopics, setExpandedTopics] = useState<Set<string>>(new Set())
   const [addingQuestion, setAddingQuestion] = useState<Question | null>(null)
+  const [keywordsInputValue, setKeywordsInputValue] = useState("")
+  const [editKeywordsInputValue, setEditKeywordsInputValue] = useState("")
+  const [editEssayKeywordsInputValue, setEditEssayKeywordsInputValue] = useState("")
+  const [saKeywordsInputValue, setSaKeywordsInputValue] = useState("")
   const [addingSubtopicIds, setAddingSubtopicIds] = useState<string[]>([])
   const [showBulkUpload, setShowBulkUpload] = useState(false)
   const [bulkUploadType, setBulkUploadType] = useState<Question["type"]>("multiple-choice")
@@ -137,6 +141,32 @@ export default function ImprovedQuestionManager() {
   const [bulkUploadProgress, setBulkUploadProgress] = useState(0)
   const [bulkUploadErrors, setBulkUploadErrors] = useState<string[]>([])
   const supabase = createClient()
+
+  // Synchronize keywords input value with addingQuestion.keywords
+  useEffect(() => {
+    if (addingQuestion?.keywords) {
+      setKeywordsInputValue(addingQuestion.keywords.join(", "))
+    } else {
+      setKeywordsInputValue("")
+    }
+  }, [addingQuestion?.keywords])
+
+  // Synchronize editing keywords input values
+  useEffect(() => {
+    setEditKeywordsInputValue(editingKeywords.join(", "))
+  }, [editingKeywords])
+
+  useEffect(() => {
+    setEditEssayKeywordsInputValue(editingKeywords.join(", "))
+  }, [editingKeywords])
+
+  useEffect(() => {
+    if (addingQuestion?.keywords) {
+      setSaKeywordsInputValue(addingQuestion.keywords.join(", "))
+    } else {
+      setSaKeywordsInputValue("")
+    }
+  }, [addingQuestion?.keywords])
 
   // CSV Template Generation Functions
   const generateCSVTemplate = (questionType: Question["type"]) => {
@@ -1485,14 +1515,26 @@ export default function ImprovedQuestionManager() {
                                     <Label htmlFor="edit-keywords">Keywords (comma-separated)</Label>
                                     <Input
                                       id="edit-keywords"
-                                      value={editingKeywords.join(", ")}
-                                      onChange={(e) => {
-                                        const keywordsArray = e.target.value
+                                      value={editKeywordsInputValue}
+                                      onChange={(e) => setEditKeywordsInputValue(e.target.value)}
+                                      onBlur={() => {
+                                        const keywordsArray = editKeywordsInputValue
                                           .split(",")
                                           .map(k => k.trim())
                                           .filter(k => k.length > 0)
                                         setEditingKeywords(keywordsArray)
                                         setHasUnsavedChanges(true)
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          e.preventDefault()
+                                          const keywordsArray = editKeywordsInputValue
+                                            .split(",")
+                                            .map(k => k.trim())
+                                            .filter(k => k.length > 0)
+                                          setEditingKeywords(keywordsArray)
+                                          setHasUnsavedChanges(true)
+                                        }
                                       }}
                                       placeholder="Enter keywords separated by commas"
                                     />
@@ -1533,14 +1575,26 @@ export default function ImprovedQuestionManager() {
                                     <Label htmlFor="edit-essay-keywords">Keywords (comma-separated)</Label>
                                     <Input
                                       id="edit-essay-keywords"
-                                      value={editingKeywords.join(", ")}
-                                      onChange={(e) => {
-                                        const keywordsArray = e.target.value
+                                      value={editEssayKeywordsInputValue}
+                                      onChange={(e) => setEditEssayKeywordsInputValue(e.target.value)}
+                                      onBlur={() => {
+                                        const keywordsArray = editEssayKeywordsInputValue
                                           .split(",")
                                           .map(k => k.trim())
                                           .filter(k => k.length > 0)
                                         setEditingKeywords(keywordsArray)
                                         setHasUnsavedChanges(true)
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          e.preventDefault()
+                                          const keywordsArray = editEssayKeywordsInputValue
+                                            .split(",")
+                                            .map(k => k.trim())
+                                            .filter(k => k.length > 0)
+                                          setEditingKeywords(keywordsArray)
+                                          setHasUnsavedChanges(true)
+                                        }
                                       }}
                                       placeholder="Enter keywords separated by commas"
                                     />
@@ -2233,13 +2287,24 @@ export default function ImprovedQuestionManager() {
                     <Label htmlFor="sa-keywords">Keywords (comma-separated)</Label>
                     <Input
                       id="sa-keywords"
-                      value={(addingQuestion.keywords || []).join(", ")}
-                      onChange={(e) => {
-                        const keywordsArray = e.target.value
+                      value={saKeywordsInputValue}
+                      onChange={(e) => setSaKeywordsInputValue(e.target.value)}
+                      onBlur={() => {
+                        const keywordsArray = saKeywordsInputValue
                           .split(",")
                           .map(k => k.trim())
                           .filter(k => k.length > 0)
                         setAddingQuestion({ ...addingQuestion, keywords: keywordsArray })
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          const keywordsArray = saKeywordsInputValue
+                            .split(",")
+                            .map(k => k.trim())
+                            .filter(k => k.length > 0)
+                          setAddingQuestion({ ...addingQuestion, keywords: keywordsArray })
+                        }
                       }}
                       placeholder="Enter keywords separated by commas"
                     />
@@ -2277,13 +2342,24 @@ export default function ImprovedQuestionManager() {
                     <Label htmlFor="essay-keywords">Keywords (comma-separated)</Label>
                     <Input
                       id="essay-keywords"
-                      value={(addingQuestion.keywords || []).join(", ")}
-                      onChange={(e) => {
-                        const keywordsArray = e.target.value
+                      value={keywordsInputValue}
+                      onChange={(e) => setKeywordsInputValue(e.target.value)}
+                      onBlur={() => {
+                        const keywordsArray = keywordsInputValue
                           .split(",")
                           .map(k => k.trim())
                           .filter(k => k.length > 0)
                         setAddingQuestion({ ...addingQuestion, keywords: keywordsArray })
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          const keywordsArray = keywordsInputValue
+                            .split(",")
+                            .map(k => k.trim())
+                            .filter(k => k.length > 0)
+                          setAddingQuestion({ ...addingQuestion, keywords: keywordsArray })
+                        }
                       }}
                       placeholder="Enter keywords separated by commas"
                     />
