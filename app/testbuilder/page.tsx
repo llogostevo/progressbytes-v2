@@ -232,7 +232,9 @@ export default function TestBuilder() {
       // Add title page
       doc.setFontSize(24)
       doc.setFont("helvetica", "bold")
-      doc.text(`Test: ${selectedTopic?.topicnumber} - ${selectedTopic?.name}`, 14, 40)
+      const titleText = `Test: ${selectedTopic?.topicnumber} - ${selectedTopic?.name}`
+      const splitTitle = doc.splitTextToSize(titleText, 180)
+      doc.text(splitTitle, 14, 40)
       
       doc.setFontSize(12)
       doc.setFont("helvetica", "normal")
@@ -491,8 +493,10 @@ export default function TestBuilder() {
         // Answer key title
         doc.setFontSize(20)
         doc.setFont("helvetica", "bold")
-        doc.text("ANSWERS", 14, yPosition)
-        yPosition += 20
+        const answerTitle = "ANSWERS"
+        const splitAnswerTitle = doc.splitTextToSize(answerTitle, 180)
+        doc.text(splitAnswerTitle, 14, yPosition)
+        yPosition += splitAnswerTitle.length * 7.5 + 5
 
         // Generate answers for each question type
         questionTypes.forEach((type) => {
