@@ -98,6 +98,7 @@ export default function ImprovedQuestionManager() {
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null)
   const [editingText, setEditingText] = useState("")
   const [editingAnswer, setEditingAnswer] = useState("")
+  const [editingExplanation, setEditingExplanation] = useState("")
   const [editingOptions, setEditingOptions] = useState<string[]>([])
   const [editingCorrectIndex, setEditingCorrectIndex] = useState(0)
   const [editingPairs, setEditingPairs] = useState<Array<{ statement: string; match: string }>>([])
@@ -211,7 +212,7 @@ export default function ImprovedQuestionManager() {
           "id", "question_text", "difficulty", "explanation",
           "correct_answer", "model_answer"
         ].join(",") + "\n"
-        csvContent += "example_1,The sky is blue,low,Basic knowledge,true,The sky appears blue due to light scattering\n"
+        csvContent += "example_1,ram is volatile,low,Ram loses power when the computer is turned off,true,true\n"
         break
       
       case "short-answer":
@@ -752,6 +753,7 @@ export default function ImprovedQuestionManager() {
   const handleInlineEdit = (questionId: string, question: Question) => {
     setEditingQuestionId(questionId)
     setEditingText(question.question_text)
+    setEditingExplanation(question.explanation || "")
     
     // Handle different answer types properly
     if (question.type === "true-false") {
@@ -799,7 +801,10 @@ export default function ImprovedQuestionManager() {
       // Update the base question
       const { error: questionError } = await supabase
         .from("questions")
-        .update({ question_text: editingText })
+        .update({ 
+          question_text: editingText,
+          explanation: editingExplanation 
+        })
         .eq("id", questionId)
 
       if (questionError) throw questionError
@@ -939,6 +944,7 @@ export default function ImprovedQuestionManager() {
       setEditingQuestionId(null)
       setEditingText("")
       setEditingAnswer("")
+      setEditingExplanation("")
       setEditingOptions([])
       setEditingCorrectIndex(0)
       setEditingPairs([])
@@ -964,6 +970,7 @@ export default function ImprovedQuestionManager() {
     setEditingQuestionId(null)
     setEditingText("")
     setEditingAnswer("")
+    setEditingExplanation("")
     setEditingOptions([])
     setEditingCorrectIndex(0)
     setEditingPairs([])
@@ -1447,6 +1454,20 @@ export default function ImprovedQuestionManager() {
                                 />
                               </div>
 
+                              <div className="space-y-2">
+                                <Label htmlFor="edit-explanation">Explanation</Label>
+                                <Textarea
+                                  id="edit-explanation"
+                                  value={editingExplanation}
+                                  onChange={(e) => {
+                                    setEditingExplanation(e.target.value)
+                                    setHasUnsavedChanges(true)
+                                  }}
+                                  rows={2}
+                                  placeholder="Enter explanation for the question"
+                                />
+                              </div>
+
                               {/* Answer editing based on question type */}
                               {question.type === "multiple-choice" && (
                                 <div className="space-y-3">
@@ -1915,6 +1936,9 @@ export default function ImprovedQuestionManager() {
                               onClick={() => handleInlineEdit(question.id, question)}
                             >
                               <p className="text-foreground font-medium leading-relaxed">{question.question_text}</p>
+                              {question.explanation && (
+                                <p className="text-sm text-muted-foreground mt-1 italic">{question.explanation}</p>
+                              )}
                               <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                                 <span>ID: {question.id}</span>
                                 <span>Created: {new Date(question.created_at).toLocaleDateString()}</span>
