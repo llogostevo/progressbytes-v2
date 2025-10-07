@@ -33,6 +33,7 @@ export default function TestBuilder() {
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
   const [showKeywords, setShowKeywords] = useState(false)
+  const [selectedQuestions, setSelectedQuestions] = useState<Set<string>>(new Set())
   const supabase = createClient()
 
   useEffect(() => {
@@ -44,6 +45,13 @@ export default function TestBuilder() {
       fetchQuestions(selectedTopicId)
     }
   }, [selectedTopicId])
+
+  // Select all questions by default when questions are loaded
+  useEffect(() => {
+    if (questions.length > 0) {
+      setSelectedQuestions(new Set(questions.map(q => q.id)))
+    }
+  }, [questions])
 
   const fetchTopics = async () => {
     try {
@@ -183,9 +191,34 @@ export default function TestBuilder() {
     }
   }
 
+  const handleQuestionToggle = (questionId: string) => {
+    setSelectedQuestions(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(questionId)) {
+        newSet.delete(questionId)
+      } else {
+        newSet.add(questionId)
+      }
+      return newSet
+    })
+  }
+
+  const handleSelectAll = () => {
+    if (selectedQuestions.size === questions.length) {
+      setSelectedQuestions(new Set())
+    } else {
+      setSelectedQuestions(new Set(questions.map(q => q.id)))
+    }
+  }
+
   const generatePDF = () => {
     if (!selectedTopicId || questions.length === 0) {
       toast.error("Please select a topic with questions")
+      return
+    }
+
+    if (selectedQuestions.size === 0) {
+      toast.error("Please select at least one question")
       return
     }
 
@@ -203,7 +236,7 @@ export default function TestBuilder() {
       doc.setFontSize(12)
       doc.setFont("helvetica", "normal")
       doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 60)
-      doc.text(`Total Questions: ${questions.length}`, 14, 75)
+      doc.text(`Total Questions: ${selectedQuestions.size}`, 14, 75)
 
       // Student information fields
       doc.setFontSize(14)
@@ -244,7 +277,7 @@ export default function TestBuilder() {
       
       questionTypes.forEach((type, typeIndex) => {
         const typeQuestions = questions
-          .filter(q => q.type === type)
+          .filter(q => q.type === type && selectedQuestions.has(q.id))
           .sort((a, b) => difficultyOrder[a.difficulty] - difficultyOrder[b.difficulty])
 
         if (typeQuestions.length === 0) return
@@ -522,7 +555,7 @@ export default function TestBuilder() {
               </div>
               <Button
                 onClick={generatePDF}
-                disabled={!selectedTopicId || questions.length === 0 || generating}
+                disabled={!selectedTopicId || selectedQuestions.size === 0 || generating}
               >
                 {generating ? (
                   <>
@@ -559,7 +592,16 @@ export default function TestBuilder() {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Preview</span>
-              <Badge variant="secondary">{questions.length} questions</Badge>
+              <div className="flex items-center gap-4">
+                <Badge variant="secondary">{selectedQuestions.size} of {questions.length} selected</Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSelectAll}
+                >
+                  {selectedQuestions.size === questions.length ? "Deselect All" : "Select All"}
+                </Button>
+              </div>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -586,6 +628,11 @@ export default function TestBuilder() {
                           key={question.id}
                           className="flex items-start gap-3 p-3 bg-muted/30 rounded-md"
                         >
+                          <Checkbox
+                            checked={selectedQuestions.has(question.id)}
+                            onCheckedChange={() => handleQuestionToggle(question.id)}
+                            className="mt-1"
+                          />
                           <Badge
                             variant={
                               question.difficulty === "low"
