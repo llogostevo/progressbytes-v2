@@ -665,7 +665,7 @@ export default function TestBuilder() {
                   <SelectTrigger>
                     <SelectValue placeholder="Choose a topic..." />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-60 overflow-y-auto">
                     {topics.map((topic) => (
                       <SelectItem key={topic.id} value={String(topic.id)}>
                         {topic.topicnumber} - {topic.name}
