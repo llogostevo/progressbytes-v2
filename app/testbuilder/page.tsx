@@ -304,10 +304,10 @@ export default function TestBuilder() {
 
             doc.setFontSize(12)
             doc.setFont("helvetica", "normal")
-            doc.text("Forename: _____________________________", 14, studentInfoY + 20)
+            doc.text("Forename:  _____________________________", 14, studentInfoY + 20) 
             doc.text("Last Name: _____________________________", 14, studentInfoY + 40)
-            doc.text("Year: _____________________________", 14, studentInfoY + 60)
-            doc.text("Teacher: _____________________________", 14, studentInfoY + 80)
+            doc.text("Year:      _____________________________", 14, studentInfoY + 60)
+            doc.text("Teacher:   _____________________________", 14, studentInfoY + 80)
 
             // Start questions on new page
             doc.addPage()
