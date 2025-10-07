@@ -313,6 +313,9 @@ export default function TestBuilder() {
           } else if ((question.type === "code" || question.type === "sql" || question.type === "algorithm") && yPosition > 200) {
             doc.addPage()
             yPosition = 20
+          } else if (question.type === "true-false" && yPosition > 250) {
+            doc.addPage()
+            yPosition = 20
           } else if (yPosition > 260) {
             doc.addPage()
             yPosition = 20
@@ -394,6 +397,37 @@ export default function TestBuilder() {
               yPosition += maxLines * (lineHeight * 1.5) + 2 // 1.5 line spacing
             })
             yPosition += 3
+          }
+
+          if (question.type === "true-false") {
+            // Create a subtle table for True/False questions
+            doc.setFont("helvetica", "normal")
+            doc.setFontSize(10)
+            
+            // Table header
+            doc.setFont("helvetica", "bold")
+            doc.text("Circle your answer:", 18, yPosition)
+            yPosition += 5
+            
+            // Create table with T and F options
+            const tableStartX = 18
+            const tableWidth = 120
+            const rowHeight = 10
+            
+            // Draw table border with thinner lines
+            doc.setLineWidth(0.3)
+            doc.rect(tableStartX, yPosition, tableWidth, rowHeight)
+            
+            // Draw vertical line in the middle
+            doc.line(tableStartX + tableWidth/2, yPosition, tableStartX + tableWidth/2, yPosition + rowHeight)
+            
+            // Add T and F labels with smaller font
+            doc.setFont("helvetica", "bold")
+            doc.setFontSize(10)
+            doc.text("T", tableStartX + tableWidth/4, yPosition + 6)
+            doc.text("F", tableStartX + 3*tableWidth/4, yPosition + 6)
+            
+            yPosition += rowHeight + 3
           }
 
           if (question.type === "code" || question.type === "sql" || question.type === "algorithm") {
@@ -557,7 +591,7 @@ export default function TestBuilder() {
             if (question.type === "multiple-choice" && question.options && question.correctAnswerIndex !== undefined) {
               spaceNeeded += 7.5
             } else if (question.type === "true-false") {
-              spaceNeeded += 7.5
+              spaceNeeded += 5 + 10 + 3 // "Circle your answer:" + table height + spacing
             } else if (question.type === "fill-in-the-blank") {
               spaceNeeded += 7.5
             } else if (question.type === "matching" && question.pairs) {
