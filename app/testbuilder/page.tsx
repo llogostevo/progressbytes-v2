@@ -568,8 +568,8 @@ export default function TestBuilder() {
                 const splitStatement = doc.splitTextToSize(statementText, 170)
                 spaceNeeded += splitStatement.length * 7.5
                 
-                // Match line
-                const matchText = `→ ${pair.match}`
+                // Match line (no arrow)
+                const matchText = pair.match
                 const splitMatch = doc.splitTextToSize(matchText, 160)
                 spaceNeeded += splitMatch.length * 7.5 + 3 // Extra space between pairs
               })
@@ -659,9 +659,9 @@ export default function TestBuilder() {
                 doc.text(splitStatement, 22, yPosition)
                 yPosition += splitStatement.length * 7.5
                 
-                // Match on second line with indentation and arrow
-                doc.setFont("helvetica", "bold")
-                const matchText = `→ ${pair.match}`
+                // Match on second line with indentation (no arrow)
+                doc.setFont("helvetica", "normal")
+                const matchText = pair.match
                 const splitMatch = doc.splitTextToSize(matchText, 160)
                 doc.text(splitMatch, 30, yPosition)
                 yPosition += splitMatch.length * 7.5 + 3 // Extra space between pairs
