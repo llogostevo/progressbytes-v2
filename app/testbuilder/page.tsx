@@ -24,6 +24,8 @@ interface ExtendedQuestion extends Question {
     starter_code?: string
     language?: string
     model_answer_code?: string
+    subtopic?: string
+    subtopic_id?: string
 }
 
 export default function TestBuilder() {
@@ -36,6 +38,7 @@ export default function TestBuilder() {
     const [includeAnswers, setIncludeAnswers] = useState(false)
     const [selectedQuestions, setSelectedQuestions] = useState<Set<string>>(new Set())
     const [open, setOpen] = useState(false)
+    const [orderBy, setOrderBy] = useState<"type" | "subtopic">("type")
     const supabase = createClient()
 
     useEffect(() => {
@@ -93,10 +96,17 @@ export default function TestBuilder() {
                 return
             }
 
-            // Get all questions linked to these subtopics
+            // Get all questions linked to these subtopics with subtopic info
             const { data: linksData, error: linksError } = await supabase
                 .from("subtopic_question_link")
-                .select("question_id")
+                .select(`
+                    question_id,
+                    subtopics!inner(
+                        id,
+                        subtopictitle,
+                        topic_id
+                    )
+                `)
                 .in("subtopic_id", subtopicIds)
 
             if (linksError) throw linksError
@@ -130,11 +140,22 @@ export default function TestBuilder() {
 
             if (error) throw error
 
+            // Create a map of question_id to subtopic info
+            const questionSubtopicMap = new Map()
+            linksData.forEach((link) => {
+                if (!questionSubtopicMap.has(link.question_id)) {
+                    questionSubtopicMap.set(link.question_id, [])
+                }
+                questionSubtopicMap.get(link.question_id).push(link.subtopics)
+            })
+
             const transformedQuestions: ExtendedQuestion[] = data.map((q) => ({
                 id: q.id,
                 type: q.type,
                 difficulty: q.difficulty,
                 topic: "",
+                subtopic: questionSubtopicMap.get(q.id)?.[0]?.subtopictitle || "",
+                subtopic_id: questionSubtopicMap.get(q.id)?.[0]?.id || "",
                 question_text: q.question_text,
                 explanation: q.explanation,
                 created_at: q.created_at,
@@ -292,19 +313,6 @@ export default function TestBuilder() {
             doc.addPage()
             let yPosition = 20
 
-            // Group questions by type in the specified order
-            const questionTypes = [
-                "true-false",
-                "multiple-choice",
-                "matching",
-                "fill-in-the-blank",
-                "short-answer",
-                "essay",
-                "code",
-                "sql",
-                "algorithm",
-            ]
-
             const difficultyOrder: Record<string, number> = {
                 low: 1,
                 medium: 2,
@@ -313,29 +321,43 @@ export default function TestBuilder() {
 
             let firstGroup = true
 
-            questionTypes.forEach((type, typeIndex) => {
-                const typeQuestions = questions
-                    .filter((q) => q.type === type && selectedQuestions.has(q.id))
-                    .sort((a, b) => difficultyOrder[a.difficulty] - difficultyOrder[b.difficulty])
+            if (orderBy === "type") {
+                // Group questions by type in the specified order
+                const questionTypes = [
+                    "true-false",
+                    "multiple-choice",
+                    "matching",
+                    "fill-in-the-blank",
+                    "short-answer",
+                    "essay",
+                    "code",
+                    "sql",
+                    "algorithm",
+                ]
 
-                if (typeQuestions.length === 0) return
+                questionTypes.forEach((type, typeIndex) => {
+                    const typeQuestions = questions
+                        .filter((q) => q.type === type && selectedQuestions.has(q.id))
+                        .sort((a, b) => difficultyOrder[a.difficulty] - difficultyOrder[b.difficulty])
 
-                // Start each new question type group on a new page (except the first group with questions)
-                if (!firstGroup) {
-                    doc.addPage()
-                    yPosition = 20
-                } else if (yPosition > 260) {
-                    doc.addPage()
-                    yPosition = 20
-                }
+                    if (typeQuestions.length === 0) return
 
-                firstGroup = false
+                    // Start each new question type group on a new page (except the first group with questions)
+                    if (!firstGroup) {
+                        doc.addPage()
+                        yPosition = 20
+                    } else if (yPosition > 260) {
+                        doc.addPage()
+                        yPosition = 20
+                    }
 
-                // Section header
-                doc.setFontSize(14)
-                doc.setFont("helvetica", "bold")
-                doc.text(type.toUpperCase().replace(/-/g, " "), 14, yPosition)
-                yPosition += 12 // 1.5 line spacing
+                    firstGroup = false
+
+                    // Section header
+                    doc.setFontSize(14)
+                    doc.setFont("helvetica", "bold")
+                    doc.text(type.toUpperCase().replace(/-/g, " "), 14, yPosition)
+                    yPosition += 12 // 1.5 line spacing
 
                 typeQuestions.forEach((question, index) => {
                     // Check if we need a new page for short answer, essay, code, or algorithm questions
@@ -568,6 +590,284 @@ export default function TestBuilder() {
 
                 yPosition += 5
             })
+            } else {
+                // Group questions by subtopic
+                const subtopicGroups = new Map()
+                
+                questions
+                    .filter((q) => selectedQuestions.has(q.id))
+                    .forEach((question) => {
+                        const subtopicName = question.subtopic || "Unknown Subtopic"
+                        if (!subtopicGroups.has(subtopicName)) {
+                            subtopicGroups.set(subtopicName, [])
+                        }
+                        subtopicGroups.get(subtopicName).push(question)
+                    })
+
+                // Sort subtopics alphabetically
+                const sortedSubtopics = Array.from(subtopicGroups.entries()).sort((a, b) => a[0].localeCompare(b[0]))
+
+                sortedSubtopics.forEach(([subtopicName, subtopicQuestions]) => {
+                    // Sort questions within subtopic by difficulty, then by type
+                    const sortedQuestions = subtopicQuestions.sort((a: ExtendedQuestion, b: ExtendedQuestion) => {
+                        const difficultyDiff = difficultyOrder[a.difficulty] - difficultyOrder[b.difficulty]
+                        if (difficultyDiff !== 0) return difficultyDiff
+                        
+                        const typeOrder = ["true-false", "multiple-choice", "matching", "fill-in-the-blank", "short-answer", "essay", "code", "sql", "algorithm"]
+                        return typeOrder.indexOf(a.type) - typeOrder.indexOf(b.type)
+                    })
+
+                    if (sortedQuestions.length === 0) return
+
+                    // Start each new subtopic group on a new page (except the first group with questions)
+                    if (!firstGroup) {
+                        doc.addPage()
+                        yPosition = 20
+                    } else if (yPosition > 260) {
+                        doc.addPage()
+                        yPosition = 20
+                    }
+
+                    firstGroup = false
+
+                    // Section header
+                    doc.setFontSize(14)
+                    doc.setFont("helvetica", "bold")
+                    doc.text(subtopicName.toUpperCase(), 14, yPosition)
+                    yPosition += 12 // 1.5 line spacing
+
+                    sortedQuestions.forEach((question: ExtendedQuestion, index: number) => {
+                        // Check if we need a new page for short answer, essay, code, or algorithm questions
+                        if (question.type === "short-answer" && yPosition > 200) {
+                            doc.addPage()
+                            yPosition = 20
+                        } else if (question.type === "essay" && yPosition > 50) {
+                            doc.addPage()
+                            yPosition = 20
+                        } else if (
+                            (question.type === "code" || question.type === "sql" || question.type === "algorithm") &&
+                            yPosition > 200
+                        ) {
+                            doc.addPage()
+                            yPosition = 20
+                        } else if (question.type === "true-false" && yPosition > 250) {
+                            doc.addPage()
+                            yPosition = 20
+                        } else if (yPosition > 260) {
+                            doc.addPage()
+                            yPosition = 20
+                        }
+
+                        // Question number and difficulty
+                        doc.setFontSize(10)
+                        doc.setFont("helvetica", "bold")
+                        const questionNum = `Q${index + 1} [${question.difficulty}]`
+                        doc.text(questionNum, 14, yPosition)
+                        yPosition += 9 // 1.5 line spacing
+
+                        // Question text
+                        doc.setFont("helvetica", "normal")
+                        const splitText = doc.splitTextToSize(question.question_text, 180)
+                        doc.text(splitText, 14, yPosition)
+                        yPosition += splitText.length * 7.5 + 3 // 1.5 line spacing
+
+                        // Type-specific content (same as type ordering)
+                        if (question.type === "multiple-choice" && question.options) {
+                            question.options.forEach((option: string, idx: number) => {
+                                if (yPosition > 275) {
+                                    doc.addPage()
+                                    yPosition = 20
+                                }
+                                const optionText = `${String.fromCharCode(65 + idx)}) ${option}`
+                                const splitOption = doc.splitTextToSize(optionText, 170)
+                                doc.text(splitOption, 18, yPosition)
+                                yPosition += splitOption.length * 7.5 // 1.5 line spacing
+                            })
+                            yPosition += 3
+                        }
+
+                        if (question.type === "fill-in-the-blank" && question.options) {
+                            doc.setFont("helvetica", "italic")
+                            doc.text("Options:", 18, yPosition)
+                            yPosition += 7.5 // 1.5 line spacing
+                            question.options.forEach((option: string) => {
+                                if (yPosition > 275) {
+                                    doc.addPage()
+                                    yPosition = 20
+                                }
+                                const optionText = `• ${option}`
+                                const splitOption = doc.splitTextToSize(optionText, 170)
+                                doc.text(splitOption, 22, yPosition)
+                                yPosition += splitOption.length * 7.5 // 1.5 line spacing
+                            })
+                            yPosition += 3
+                        }
+
+                        if (question.type === "matching" && question.pairs) {
+                            doc.setFont("helvetica", "italic")
+                            doc.text("Match the following:", 18, yPosition)
+                            yPosition += 5
+
+                            // Create two columns for matching pairs
+                            const leftColumn = 22
+                            const rightColumn = 110
+                            const lineHeight = 5
+
+                            question.pairs.forEach((pair: { statement: string; match: string }, idx: number) => {
+                                if (yPosition > 270) {
+                                    doc.addPage()
+                                    yPosition = 20
+                                }
+
+                                // Left side - statement
+                                const statementText = `${idx + 1}. ${pair.statement}`
+                                const splitStatement = doc.splitTextToSize(statementText, 80)
+                                doc.text(splitStatement, leftColumn, yPosition)
+
+                                // Right side - match
+                                const matchText = `${String.fromCharCode(65 + idx)}) ${pair.match}`
+                                const splitMatch = doc.splitTextToSize(matchText, 80)
+                                doc.text(splitMatch, rightColumn, yPosition)
+
+                                // Move to next line based on the longer text
+                                const maxLines = Math.max(splitStatement.length, splitMatch.length)
+                                yPosition += maxLines * (lineHeight * 1.5) + 2 // 1.5 line spacing
+                            })
+                            yPosition += 3
+                        }
+
+                        if (question.type === "true-false") {
+                            // Create a subtle table for True/False questions
+                            doc.setFont("helvetica", "normal")
+                            doc.setFontSize(10)
+
+                            // Table header
+                            doc.setFont("helvetica", "bold")
+                            doc.text("Circle your answer:", 18, yPosition)
+                            yPosition += 5
+
+                            // Create table with T and F options
+                            const tableStartX = 18
+                            const tableWidth = 120
+                            const rowHeight = 10
+
+                            // Draw table border with thinner lines
+                            doc.setLineWidth(0.3)
+                            doc.rect(tableStartX, yPosition, tableWidth, rowHeight)
+
+                            // Draw vertical line in the middle
+                            doc.line(tableStartX + tableWidth / 2, yPosition, tableStartX + tableWidth / 2, yPosition + rowHeight)
+
+                            // Add T and F labels with smaller font
+                            doc.setFont("helvetica", "bold")
+                            doc.setFontSize(10)
+                            doc.text("T", tableStartX + tableWidth / 4, yPosition + 6)
+                            doc.text("F", tableStartX + (3 * tableWidth) / 4, yPosition + 6)
+
+                            yPosition += rowHeight + 3
+                        }
+
+                        if (question.type === "code" || question.type === "sql" || question.type === "algorithm") {
+                            if (question.starter_code) {
+                                doc.setFont("courier", "normal")
+                                doc.setFontSize(8)
+                                const codeLines = doc.splitTextToSize(question.starter_code, 170)
+                                codeLines.forEach((line: string) => {
+                                    if (yPosition > 275) {
+                                        doc.addPage()
+                                        yPosition = 20
+                                    }
+                                    doc.text(line, 18, yPosition)
+                                    yPosition += 6 // 1.5 line spacing for code
+                                })
+                                doc.setFontSize(10)
+                                doc.setFont("helvetica", "normal")
+                                yPosition += 3
+                            }
+
+                            // Add writing lines to fill the rest of the page
+                            doc.setFont("helvetica", "normal")
+                            doc.setFontSize(10)
+                            while (yPosition < 280) {
+                                // Fill to near bottom of page
+                                doc.line(18, yPosition, 190, yPosition)
+                                yPosition += 7.5 // 1.5 line spacing
+                            }
+                            yPosition += 5
+                        }
+
+                        // Add writing space for short answer and essay questions
+                        if (question.type === "short-answer") {
+                            // Add 1/4 page of writing space for short answers
+                            // Page break already handled above, but double-check
+                            if (yPosition > 200) {
+                                doc.addPage()
+                                yPosition = 20
+                            }
+
+                            // Show keywords if enabled
+                            if (showKeywords && question.keywords && question.keywords.length > 0) {
+                                doc.setFont("helvetica", "italic")
+                                doc.setFontSize(9)
+                                doc.text("Keywords:", 18, yPosition)
+                                yPosition += 7.5
+                                const keywordsText = question.keywords.join(", ")
+                                const splitKeywords = doc.splitTextToSize(keywordsText, 170)
+                                doc.text(splitKeywords, 18, yPosition)
+                                yPosition += splitKeywords.length * 7.5 + 3
+                            }
+
+                            // Add lines for writing
+                            doc.setFont("helvetica", "normal")
+                            doc.setFontSize(10)
+                            for (let i = 0; i < 10; i++) {
+                                if (yPosition > 270) {
+                                    doc.addPage()
+                                    yPosition = 20
+                                }
+                                doc.line(18, yPosition, 190, yPosition)
+                                yPosition += 7.5 // 1.5 line spacing
+                            }
+                            yPosition += 5
+                        }
+
+                        if (question.type === "essay") {
+                            // Add full page of writing space for essays
+                            // Page break already handled above, but double-check
+                            if (yPosition > 50) {
+                                doc.addPage()
+                                yPosition = 20
+                            }
+
+                            // Show keywords if enabled
+                            if (showKeywords && question.keywords && question.keywords.length > 0) {
+                                doc.setFont("helvetica", "italic")
+                                doc.setFontSize(9)
+                                doc.text("Keywords:", 18, yPosition)
+                                yPosition += 7.5
+                                const keywordsText = question.keywords.join(", ")
+                                const splitKeywords = doc.splitTextToSize(keywordsText, 170)
+                                doc.text(splitKeywords, 18, yPosition)
+                                yPosition += splitKeywords.length * 7.5 + 3
+                            }
+
+                            // Add lines for writing (full page)
+                            doc.setFont("helvetica", "normal")
+                            doc.setFontSize(10)
+                            for (let i = 0; i < 50; i++) {
+                                doc.line(18, yPosition, 190, yPosition)
+                                yPosition += 7.5 // 1.5 line spacing
+                            }
+                            yPosition += 5
+                        }
+
+                        // Add space between questions
+                        yPosition += 5
+                    })
+
+                    yPosition += 5
+                })
+            }
 
             // Add answer key if requested
             if (includeAnswers) {
@@ -813,19 +1113,48 @@ export default function TestBuilder() {
         high: 3,
     }
 
-    const questionsByType = questionTypes.reduce(
-        (acc, type) => {
-            const typeQuestions = questions
-                .filter((q) => q.type === type)
-                .sort((a, b) => difficultyOrder[a.difficulty] - difficultyOrder[b.difficulty])
+    const questionsByType = orderBy === "type" 
+        ? questionTypes.reduce(
+            (acc, type) => {
+                const typeQuestions = questions
+                    .filter((q) => q.type === type)
+                    .sort((a, b) => difficultyOrder[a.difficulty] - difficultyOrder[b.difficulty])
 
-            if (typeQuestions.length > 0) {
-                acc[type] = typeQuestions
-            }
-            return acc
-        },
-        {} as Record<string, ExtendedQuestion[]>,
-    )
+                if (typeQuestions.length > 0) {
+                    acc[type] = typeQuestions
+                }
+                return acc
+            },
+            {} as Record<string, ExtendedQuestion[]>,
+        )
+        : (() => {
+            // Group by subtopic
+            const subtopicGroups = new Map()
+            
+            questions.forEach((question) => {
+                const subtopicName = question.subtopic || "Unknown Subtopic"
+                if (!subtopicGroups.has(subtopicName)) {
+                    subtopicGroups.set(subtopicName, [])
+                }
+                subtopicGroups.get(subtopicName).push(question)
+            })
+
+            // Sort subtopics alphabetically and questions within each subtopic
+            const sortedSubtopics = Array.from(subtopicGroups.entries()).sort((a, b) => a[0].localeCompare(b[0]))
+            
+            return sortedSubtopics.reduce((acc, [subtopicName, subtopicQuestions]) => {
+                const sortedQuestions = subtopicQuestions.sort((a: ExtendedQuestion, b: ExtendedQuestion) => {
+                    const difficultyDiff = difficultyOrder[a.difficulty] - difficultyOrder[b.difficulty]
+                    if (difficultyDiff !== 0) return difficultyDiff
+                    
+                    const typeOrder = ["true-false", "multiple-choice", "matching", "fill-in-the-blank", "short-answer", "essay", "code", "sql", "algorithm"]
+                    return typeOrder.indexOf(a.type) - typeOrder.indexOf(b.type)
+                })
+                
+                acc[subtopicName] = sortedQuestions
+                return acc
+            }, {} as Record<string, ExtendedQuestion[]>)
+        })()
 
     if (loading && topics.length === 0) {
         return (
@@ -967,6 +1296,33 @@ export default function TestBuilder() {
                                     Include answer key at the end of the PDF
                                 </label>
                             </div>
+                            <div className="flex items-center space-x-4">
+                                <label className="text-sm font-medium">Order questions by:</label>
+                                <div className="flex items-center space-x-2">
+                                    <input
+                                        type="radio"
+                                        id="order-type"
+                                        name="orderBy"
+                                        value="type"
+                                        checked={orderBy === "type"}
+                                        onChange={(e) => setOrderBy(e.target.value as "type" | "subtopic")}
+                                        className="h-4 w-4"
+                                    />
+                                    <label htmlFor="order-type" className="text-sm">Question Type</label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <input
+                                        type="radio"
+                                        id="order-subtopic"
+                                        name="orderBy"
+                                        value="subtopic"
+                                        checked={orderBy === "subtopic"}
+                                        onChange={(e) => setOrderBy(e.target.value as "type" | "subtopic")}
+                                        className="h-4 w-4"
+                                    />
+                                    <label htmlFor="order-subtopic" className="text-sm">Subtopic</label>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </CardContent>
@@ -1000,17 +1356,19 @@ export default function TestBuilder() {
                             </div>
                         ) : (
                             <div className="space-y-6">
-                                {questionTypes.map((type) => {
-                                    const typeQuestions = questionsByType[type]
-                                    if (!typeQuestions || typeQuestions.length === 0) return null
+                                {Object.entries(questionsByType).map(([groupName, groupQuestions]) => {
+                                    if (!groupQuestions || groupQuestions.length === 0) return null
 
                                     return (
-                                        <div key={type} className="border-l-4 border-primary pl-4">
-                                            <h3 className="font-semibold text-lg mb-3 capitalize">
-                                                {type.replace(/-/g, " ")} ({typeQuestions.length})
+                                        <div key={groupName} className="border-l-4 border-primary pl-4">
+                                            <h3 className="font-semibold text-lg mb-3">
+                                                {orderBy === "type" 
+                                                    ? `${groupName.replace(/-/g, " ").toUpperCase()} (${groupQuestions.length})`
+                                                    : `${groupName} (${groupQuestions.length})`
+                                                }
                                             </h3>
                                             <div className="space-y-2">
-                                                {typeQuestions.map((question, index) => (
+                                                {groupQuestions.map((question, index) => (
                                                     <div key={question.id} className="flex items-start gap-3 p-3 bg-muted/30 rounded-md">
                                                         <Checkbox
                                                             checked={selectedQuestions.has(question.id)}
@@ -1027,6 +1385,11 @@ export default function TestBuilder() {
                                                         >
                                                             {question.difficulty}
                                                         </Badge>
+                                                        {orderBy === "subtopic" && (
+                                                            <Badge variant="outline" className="mt-1">
+                                                                {question.type.replace(/-/g, " ")}
+                                                            </Badge>
+                                                        )}
                                                         <div className="flex-1">
                                                             <p className="text-sm">
                                                                 <span className="font-medium">Q{index + 1}:</span>{" "}
