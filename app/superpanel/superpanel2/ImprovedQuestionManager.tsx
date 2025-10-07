@@ -1141,6 +1141,7 @@ export default function ImprovedQuestionManager() {
       setShowBulkEditDialog(false)
       setBulkEditSubtopicIds([])
       setBulkEditSubtopicSearch("")
+      setShowOnlySelectedBulkEditSubtopics(false)
       setSelectedQuestionIds(new Set())
       await fetchQuestions()
     } catch (e) {
@@ -1512,6 +1513,16 @@ export default function ImprovedQuestionManager() {
                   size="sm"
                   variant="outline"
                   onClick={() => {
+                    // Collect all unique subtopic IDs from selected questions
+                    const selectedQuestions = questions.filter(q => selectedQuestionIds.has(q.id))
+                    const assignedSubtopicIds = new Set<string>()
+                    selectedQuestions.forEach(q => {
+                      q.subtopic_question_link?.forEach(link => {
+                        assignedSubtopicIds.add(link.subtopic_id)
+                      })
+                    })
+                    setBulkEditSubtopicIds(Array.from(assignedSubtopicIds))
+                    setShowOnlySelectedBulkEditSubtopics(true) // Show only assigned subtopics by default
                     setBulkEditMode("remove")
                     setShowBulkEditDialog(true)
                   }}
@@ -2184,7 +2195,7 @@ export default function ImprovedQuestionManager() {
                 {bulkEditMode === "add" &&
                   `Add the selected subtopics to all ${selectedQuestionIds.size} question(s). Existing subtopics will be kept.`}
                 {bulkEditMode === "remove" &&
-                  `Remove the selected subtopics from all ${selectedQuestionIds.size} question(s). Other subtopics will be kept.`}
+                  `Currently assigned subtopics are shown as checked. Uncheck subtopics to remove them from all ${selectedQuestionIds.size} question(s). Other subtopics will be kept.`}
                 {bulkEditMode === "replace" &&
                   `Replace all subtopics with the selected ones for all ${selectedQuestionIds.size} question(s).`}
               </p>
@@ -2277,6 +2288,7 @@ export default function ImprovedQuestionManager() {
                 setShowBulkEditDialog(false)
                 setBulkEditSubtopicIds([])
                 setBulkEditSubtopicSearch("")
+                setShowOnlySelectedBulkEditSubtopics(false)
               }}
             >
               Cancel
