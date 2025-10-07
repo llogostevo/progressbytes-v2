@@ -147,6 +147,18 @@ export default function ImprovedQuestionManager() {
   const [bulkUploadErrors, setBulkUploadErrors] = useState<string[]>([])
   const supabase = createClient()
 
+
+  // Bulk select
+  const [selectedQuestionIds, setSelectedQuestionIds] = useState<Set<string>>(new Set())
+
+  // Bulk-edit subtopics dialog
+  const [showBulkEditDialog, setShowBulkEditDialog] = useState(false)
+  const [bulkEditMode, setBulkEditMode] = useState<"add" | "remove" | "replace">("add")
+  const [bulkEditSubtopicIds, setBulkEditSubtopicIds] = useState<string[]>([])
+  const [bulkEditSubtopicSearch, setBulkEditSubtopicSearch] = useState("")
+  const [showOnlySelectedBulkEditSubtopics, setShowOnlySelectedBulkEditSubtopics] = useState(false)
+
+
   // Synchronize keywords input value with addingQuestion.keywords
   useEffect(() => {
     if (addingQuestion?.keywords) {
@@ -188,7 +200,7 @@ export default function ImprovedQuestionManager() {
         ].join(",") + "\n"
         csvContent += "example_1,What is 2+2?,low,Basic math,2,3,4,5,2,The correct answer is 4\n"
         break
-      
+
       case "fill-in-the-blank":
         csvContent = [
           "id", "question_text", "difficulty", "explanation",
@@ -197,7 +209,7 @@ export default function ImprovedQuestionManager() {
         ].join(",") + "\n"
         csvContent += "example_1,The capital of France is ___,low,Geography question,\"[Paris, France]\",London,Paris,Berlin,false,Paris is the capital of France\n"
         break
-      
+
       case "matching":
         csvContent = [
           "id", "question_text", "difficulty", "explanation",
@@ -206,7 +218,7 @@ export default function ImprovedQuestionManager() {
         ].join(",") + "\n"
         csvContent += "example_1,Match the capitals with countries,low,Geography matching,Paris,France,London,UK,Berlin,Germany,Match each capital with its country\n"
         break
-      
+
       case "true-false":
         csvContent = [
           "id", "question_text", "difficulty", "explanation",
@@ -214,7 +226,7 @@ export default function ImprovedQuestionManager() {
         ].join(",") + "\n"
         csvContent += "example_1,ram is volatile,low,Ram loses power when the computer is turned off,true,true\n"
         break
-      
+
       case "short-answer":
         csvContent = [
           "id", "question_text", "difficulty", "explanation",
@@ -222,7 +234,7 @@ export default function ImprovedQuestionManager() {
         ].join(",") + "\n"
         csvContent += "example_1,What is photosynthesis?,medium,Biology question,The process by which plants convert light energy into chemical energy,\"[photosynthesis, plants, energy, chlorophyll]\"\n"
         break
-      
+
       case "essay":
         csvContent = [
           "id", "question_text", "difficulty", "explanation",
@@ -230,7 +242,7 @@ export default function ImprovedQuestionManager() {
         ].join(",") + "\n"
         csvContent += "example_1,Explain the water cycle,high,Environmental science,The water cycle describes how water moves through the Earth's systems through evaporation condensation and precipitation,Should include evaporation condensation precipitation and collection,\"[water cycle, evaporation, precipitation, condensation]\"\n"
         break
-      
+
       case "code":
       case "sql":
       case "algorithm":
@@ -262,16 +274,16 @@ export default function ImprovedQuestionManager() {
   const parseCSV = (csvText: string): Record<string, string | string[]>[] => {
     const lines = csvText.split('\n').filter(line => line.trim())
     if (lines.length < 2) return []
-    
+
     const headers = lines[0].split(',').map(h => h.trim())
     const data = []
-    
+
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i]
       const values: string[] = []
       let current = ''
       let inQuotes = false
-      
+
       // Parse CSV line handling quoted values
       for (let j = 0; j < line.length; j++) {
         const char = line[j]
@@ -285,11 +297,11 @@ export default function ImprovedQuestionManager() {
         }
       }
       values.push(current.trim())
-      
+
       const row: Record<string, string | string[]> = {}
       headers.forEach((header, index) => {
         let value = values[index] || ''
-        
+
         // Handle array notation for keywords and correct_answers
         if ((header === 'keywords' || header === 'correct_answers') && value.startsWith('[') && value.endsWith(']')) {
           value = value.slice(1, -1) // Remove brackets
@@ -300,13 +312,13 @@ export default function ImprovedQuestionManager() {
       })
       data.push(row)
     }
-    
+
     return data
   }
 
   const validateQuestionData = (row: Record<string, string | string[]>, index: number): string[] => {
     const errors: string[] = []
-    
+
     if (!row.id || String(row.id).trim() === '') {
       errors.push(`Row ${index + 2}: Question ID is required`)
     }
@@ -328,13 +340,13 @@ export default function ImprovedQuestionManager() {
           errors.push(`Row ${index + 2}: Valid correct answer index is required`)
         }
         break
-      
+
       case "fill-in-the-blank":
         if (!row.correct_answers || (Array.isArray(row.correct_answers) ? row.correct_answers.length === 0 : String(row.correct_answers).trim() === '')) {
           errors.push(`Row ${index + 2}: Correct answers are required`)
         }
         break
-      
+
       case "matching":
         const pairs = []
         for (let i = 1; i <= 10; i++) {
@@ -346,13 +358,13 @@ export default function ImprovedQuestionManager() {
           errors.push(`Row ${index + 2}: At least one matching pair is required`)
         }
         break
-      
+
       case "true-false":
         if (!row.correct_answer || !['true', 'false'].includes(String(row.correct_answer).toLowerCase())) {
           errors.push(`Row ${index + 2}: Correct answer must be 'true' or 'false'`)
         }
         break
-      
+
       case "short-answer":
       case "essay":
         if (!row.model_answer || String(row.model_answer).trim() === '') {
@@ -360,22 +372,22 @@ export default function ImprovedQuestionManager() {
         }
         break
     }
-    
+
     return errors
   }
 
   const processBulkUpload = async (csvData: Record<string, string | string[]>[], subtopicIds: string[]) => {
     setBulkUploadProgress(0)
     setBulkUploadErrors([])
-    
+
     const errors: string[] = []
     const questionsToInsert: Question[] = []
-    
+
     // Validate all rows first
     csvData.forEach((row, index) => {
       const rowErrors = validateQuestionData(row, index)
       errors.push(...rowErrors)
-      
+
       if (rowErrors.length === 0) {
         const question: Question = {
           id: String(row.id),
@@ -387,20 +399,20 @@ export default function ImprovedQuestionManager() {
           created_at: new Date().toISOString(),
           model_answer: String(row.model_answer || ''),
         }
-        
+
         // Add type-specific data
         switch (bulkUploadType) {
           case "multiple-choice":
             question.options = [row.option_1, row.option_2, row.option_3, row.option_4].filter(Boolean) as string[]
             question.correctAnswerIndex = parseInt(String(row.correct_answer_index))
             break
-          
+
           case "fill-in-the-blank":
             question.model_answer = Array.isArray(row.correct_answers) ? row.correct_answers : []
             question.options = [row.option_1, row.option_2, row.option_3].filter(Boolean) as string[]
             question.order_important = String(row.order_important) === 'true'
             break
-          
+
           case "matching":
             const pairs: Array<{ statement: string; match: string }> = []
             for (let i = 1; i <= 10; i++) {
@@ -410,11 +422,11 @@ export default function ImprovedQuestionManager() {
             }
             question.pairs = pairs
             break
-          
+
           case "true-false":
             question.model_answer = String(row.correct_answer).toLowerCase() === 'true'
             break
-          
+
           case "short-answer":
           case "essay":
             question.keywords = Array.isArray(row.keywords) ? row.keywords : []
@@ -422,32 +434,32 @@ export default function ImprovedQuestionManager() {
               question.rubric = String(row.rubric || '')
             }
             break
-          
+
           case "code":
           case "sql":
           case "algorithm":
             (question as ExtendedQuestion).starter_code = String(row.starter_code || '')
-            ;(question as ExtendedQuestion).language = String(row.language || 'python')
-            ;(question as ExtendedQuestion).model_answer_code = String(row.model_answer_code || '')
+              ; (question as ExtendedQuestion).language = String(row.language || 'python')
+              ; (question as ExtendedQuestion).model_answer_code = String(row.model_answer_code || '')
             break
         }
-        
+
         questionsToInsert.push(question)
       }
     })
-    
+
     if (errors.length > 0) {
       setBulkUploadErrors(errors)
       toast.error(`Validation failed: ${errors.length} errors found`)
       return
     }
-    
+
     // Insert questions
     try {
       let successCount = 0
       for (let i = 0; i < questionsToInsert.length; i++) {
         const question = questionsToInsert[i]
-        
+
         // Insert base question
         const { data: questionData, error: questionError } = await supabase
           .from("questions")
@@ -460,9 +472,9 @@ export default function ImprovedQuestionManager() {
           })
           .select()
           .single()
-        
+
         if (questionError) throw questionError
-        
+
         // Insert type-specific data
         switch (question.type) {
           case "multiple-choice":
@@ -473,7 +485,7 @@ export default function ImprovedQuestionManager() {
               model_answer: question.model_answer,
             })
             break
-          
+
           case "fill-in-the-blank":
             await supabase.from("fill_in_the_blank_questions").insert({
               question_id: questionData.id,
@@ -482,7 +494,7 @@ export default function ImprovedQuestionManager() {
               order_important: question.order_important,
             })
             break
-          
+
           case "matching":
             if (question.pairs && question.pairs.length > 0) {
               await supabase.from("matching_questions").insert(
@@ -494,7 +506,7 @@ export default function ImprovedQuestionManager() {
               )
             }
             break
-          
+
           case "true-false":
             await supabase.from("true_false_questions").insert({
               question_id: questionData.id,
@@ -502,7 +514,7 @@ export default function ImprovedQuestionManager() {
               model_answer: question.model_answer as boolean,
             })
             break
-          
+
           case "short-answer":
             await supabase.from("short_answer_questions").insert({
               question_id: questionData.id,
@@ -510,7 +522,7 @@ export default function ImprovedQuestionManager() {
               keywords: question.keywords,
             })
             break
-          
+
           case "essay":
             await supabase.from("essay_questions").insert({
               question_id: questionData.id,
@@ -519,7 +531,7 @@ export default function ImprovedQuestionManager() {
               rubric: question.rubric || '',
             })
             break
-          
+
           case "code":
           case "sql":
           case "algorithm":
@@ -532,7 +544,7 @@ export default function ImprovedQuestionManager() {
             })
             break
         }
-        
+
         // Insert subtopic links
         if (subtopicIds.length > 0) {
           await supabase.from("subtopic_question_link").insert(
@@ -542,17 +554,17 @@ export default function ImprovedQuestionManager() {
             }))
           )
         }
-        
+
         successCount++
         setBulkUploadProgress((successCount / questionsToInsert.length) * 100)
       }
-      
+
       await fetchQuestions()
       toast.success(`Successfully uploaded ${successCount} questions`)
       setShowBulkUpload(false)
       setBulkUploadFile(null)
       setBulkUploadProgress(0)
-      
+
     } catch (error) {
       console.error("Error during bulk upload:", error)
       toast.error("Failed to upload questions")
@@ -710,7 +722,7 @@ export default function ImprovedQuestionManager() {
           textarea.style.height = textarea.scrollHeight + 'px'
         }, 10)
       }
-      
+
       // Also auto-resize essay answer textarea if it exists
       const essayTextarea = document.getElementById('edit-essay-answer') as HTMLTextAreaElement
       if (essayTextarea) {
@@ -754,7 +766,7 @@ export default function ImprovedQuestionManager() {
     setEditingQuestionId(questionId)
     setEditingText(question.question_text)
     setEditingExplanation(question.explanation || "")
-    
+
     // Handle different answer types properly
     if (question.type === "true-false") {
       // For true/false questions, convert boolean to string
@@ -764,7 +776,7 @@ export default function ImprovedQuestionManager() {
     } else {
       setEditingAnswer(String(question.model_answer || ""))
     }
-    
+
     setEditingOptions(question.options || [])
     setEditingCorrectIndex(question.correctAnswerIndex || 0)
     setEditingPairs(question.pairs || [])
@@ -772,8 +784,8 @@ export default function ImprovedQuestionManager() {
     setEditingFibOptions(question.options || [])
     setEditingStarterCode((question as ExtendedQuestion).starter_code || "")
     setEditingModelAnswer(
-      Array.isArray(question.model_answer) 
-        ? question.model_answer.join(", ") 
+      Array.isArray(question.model_answer)
+        ? question.model_answer.join(", ")
         : String(question.model_answer || "")
     )
     setEditingLanguage((question as ExtendedQuestion).language || "")
@@ -801,9 +813,9 @@ export default function ImprovedQuestionManager() {
       // Update the base question
       const { error: questionError } = await supabase
         .from("questions")
-        .update({ 
+        .update({
           question_text: editingText,
-          explanation: editingExplanation 
+          explanation: editingExplanation
         })
         .eq("id", questionId)
 
@@ -1060,6 +1072,85 @@ export default function ImprovedQuestionManager() {
     setDeleteConfirmText("")
   }
 
+  const handleSelectAll = () => {
+    if (selectedQuestionIds.size === filteredQuestions.length) {
+      setSelectedQuestionIds(new Set())
+    } else {
+      setSelectedQuestionIds(new Set(filteredQuestions.map(q => q.id)))
+    }
+  }
+
+  const handleSelectQuestion = (questionId: string) => {
+    const next = new Set(selectedQuestionIds)
+    next.has(questionId) ? next.delete(questionId) : next.add(questionId)
+    setSelectedQuestionIds(next)
+  }
+
+  const handleClearSelection = () => {
+    setSelectedQuestionIds(new Set())
+  }
+
+  const handleBulkEditSubtopics = async () => {
+    if (selectedQuestionIds.size === 0) {
+      toast.error("No questions selected")
+      return
+    }
+    if (bulkEditSubtopicIds.length === 0) {
+      toast.error("Please select at least one subtopic")
+      return
+    }
+
+    try {
+      const selected = questions.filter(q => selectedQuestionIds.has(q.id))
+
+      for (const question of selected) {
+        const currentSubtopicIds = (question.subtopic_question_link?.map(l => l.subtopic_id) ?? []) as string[]
+        let newSubtopicIds: string[] = []
+
+        switch (bulkEditMode) {
+          case "add":
+            newSubtopicIds = Array.from(new Set([...currentSubtopicIds, ...bulkEditSubtopicIds]))
+            break
+          case "remove":
+            newSubtopicIds = currentSubtopicIds.filter(id => !bulkEditSubtopicIds.includes(id))
+            if (newSubtopicIds.length === 0) {
+              toast.error(`Question "${question.question_text.substring(0, 50)}..." must have at least one subtopic`)
+              continue
+            }
+            break
+          case "replace":
+            newSubtopicIds = [...bulkEditSubtopicIds]
+            break
+        }
+
+        // Remove existing links
+        const { error: delErr } = await supabase
+          .from("subtopic_question_link")
+          .delete()
+          .eq("question_id", question.id)
+        if (delErr) throw delErr
+
+        // Insert new links
+        const { error: insErr } = await supabase.from("subtopic_question_link").insert(
+          newSubtopicIds.map(subtopic_id => ({ question_id: question.id, subtopic_id }))
+        )
+        if (insErr) throw insErr
+      }
+
+      toast.success(`Successfully updated ${selectedQuestionIds.size} question(s)`)
+      setShowBulkEditDialog(false)
+      setBulkEditSubtopicIds([])
+      setBulkEditSubtopicSearch("")
+      setSelectedQuestionIds(new Set())
+      await fetchQuestions()
+    } catch (e) {
+      console.error("Error bulk editing subtopics:", e)
+      toast.error("Failed to update subtopics")
+    }
+  }
+
+
+
   const toggleTopic = (topicSlug: string) => {
     const newExpanded = new Set(expandedTopics)
     if (newExpanded.has(topicSlug)) {
@@ -1269,9 +1360,9 @@ export default function ImprovedQuestionManager() {
                 setSelectedSubtopic(null)
               }}
               className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors cursor-pointer ${selectedTopic === "all" && !selectedSubtopic
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent/50"
-              }`}
+                ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+                }`}
             >
               All Questions ({questions.length})
             </button>
@@ -1302,9 +1393,9 @@ export default function ImprovedQuestionManager() {
                         setSelectedSubtopic(null)
                       }}
                       className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors cursor-pointer ${selectedTopic === topic.slug && !selectedSubtopic
-                          ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                          : "text-muted-foreground hover:bg-sidebar-accent/50"
-                      }`}
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                        : "text-muted-foreground hover:bg-sidebar-accent/50"
+                        }`}
                     >
                       All {topic.name} Questions ({topic.questionCount})
                     </button>
@@ -1321,9 +1412,9 @@ export default function ImprovedQuestionManager() {
                             setSelectedSubtopic(subtopic.id)
                           }}
                           className={`w-full text-left px-3 py-1.5 rounded-md text-xs transition-colors cursor-pointer ${selectedSubtopic === subtopic.id
-                              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                              : "text-muted-foreground hover:bg-sidebar-accent/50"
-                          }`}
+                            ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                            : "text-muted-foreground hover:bg-sidebar-accent/50"
+                            }`}
                         >
                           {subtopic.subtopictitle} ({subtopicQuestionCount})
                         </button>
@@ -1344,11 +1435,11 @@ export default function ImprovedQuestionManager() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-semibold text-foreground">
-                {selectedSubtopic 
+                {selectedSubtopic
                   ? subtopics.find((s) => s.id === selectedSubtopic)?.subtopictitle || "Questions"
                   : selectedTopic === "all"
-                  ? "All Questions"
-                  : topics.find((t) => t.slug === selectedTopic)?.name || "Questions"}
+                    ? "All Questions"
+                    : topics.find((t) => t.slug === selectedTopic)?.name || "Questions"}
               </h1>
               <p className="text-muted-foreground">
                 {filteredQuestions.length} question{filteredQuestions.length !== 1 ? "s" : ""}
@@ -1373,7 +1464,7 @@ export default function ImprovedQuestionManager() {
                   <SelectItem value="essay">Essay</SelectItem>
                 </SelectContent>
               </Select>
-              <Button 
+              <Button
                 variant="outline"
                 onClick={() => setShowBulkUpload(true)}
               >
@@ -1395,8 +1486,53 @@ export default function ImprovedQuestionManager() {
                 <Plus className="w-4 h-4 mr-2" />
                 Add Question
               </Button>
+
             </div>
           </div>
+          {selectedQuestionIds.size > 0 && (
+            <div className="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <span className="text-sm font-medium">{selectedQuestionIds.size} question(s) selected</span>
+                <Button size="sm" variant="outline" onClick={handleClearSelection}>
+                  Clear Selection
+                </Button>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setBulkEditMode("add")
+                    setShowBulkEditDialog(true)
+                  }}
+                >
+                  <Plus className="w-3 h-3 mr-1" />
+                  Add Subtopics
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setBulkEditMode("remove")
+                    setShowBulkEditDialog(true)
+                  }}
+                >
+                  <Trash2 className="w-3 h-3 mr-1" />
+                  Remove Subtopics
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setBulkEditMode("replace")
+                    setShowBulkEditDialog(true)
+                  }}
+                >
+                  <Edit3 className="w-3 h-3 mr-1" />
+                  Replace Subtopics
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex-1 overflow-y-auto p-6">
@@ -1410,12 +1546,21 @@ export default function ImprovedQuestionManager() {
             </div>
           ) : (
             <div className="space-y-2">
+              <div className="flex items-center gap-2 mb-4 p-2 bg-muted/30 rounded">
+                <ShadcnCheckbox
+                  checked={selectedQuestionIds.size === filteredQuestions.length && filteredQuestions.length > 0}
+                  onCheckedChange={handleSelectAll}
+                />
+                <span className="text-sm font-medium">Select All ({filteredQuestions.length} questions)</span>
+              </div>
               {filteredQuestions.map((question) => {
                 const IconComponent = questionTypeIcons[question.type as keyof typeof questionTypeIcons]
                 const colorClass = questionTypeColors[question.type as keyof typeof questionTypeColors]
                 const isEditing = editingQuestionId === question.id
 
                 return (
+
+
                   <Card key={question.id} className="hover:shadow-sm transition-shadow">
                     <CardContent className="p-4">
                       <div className="flex items-start gap-4">
@@ -1424,16 +1569,24 @@ export default function ImprovedQuestionManager() {
                             <IconComponent className="w-3 h-3" />
                             {question.type.replace("-", " ")}
                           </Badge>
+                          <div className="flex-shrink-0 pt-1">
+                            <ShadcnCheckbox
+                              checked={selectedQuestionIds.has(question.id)}
+                              onCheckedChange={() => handleSelectQuestion(question.id)}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <span className="text-xs ml-2">Edit Topic</span>
+                          </div>
                         </div>
 
                         <div className="flex-1 min-w-0">
                           {isEditing ? (
                             <div className="space-y-4">
-                            <div className="space-y-2">
+                              <div className="space-y-2">
                                 <Label htmlFor="edit-question-text">Question Text</Label>
-                              <Textarea
+                                <Textarea
                                   id="edit-question-text"
-                                value={editingText}
+                                  value={editingText}
                                   onChange={(e) => {
                                     setEditingText(e.target.value)
                                     setHasUnsavedChanges(true)
@@ -1521,7 +1674,7 @@ export default function ImprovedQuestionManager() {
                                       id="model-answer"
                                       value={editingAnswer}
                                       onChange={(e) => setEditingAnswer(e.target.value)}
-                                rows={2}
+                                      rows={2}
                                       placeholder="Enter the model answer/explanation"
                                     />
                                   </div>
@@ -1576,7 +1729,7 @@ export default function ImprovedQuestionManager() {
                                   </div>
                                 </div>
                               )}
-                              
+
                               {question.type === "essay" && (
                                 <div className="space-y-4">
                                   <div className="space-y-2">
@@ -1636,7 +1789,7 @@ export default function ImprovedQuestionManager() {
                                   </div>
                                 </div>
                               )}
-                              
+
                               {(question.type === "code" || question.type === "algorithm") && (
                                 <div className="space-y-4">
                                   <div className="space-y-2">
@@ -1653,7 +1806,7 @@ export default function ImprovedQuestionManager() {
                                       className="font-mono"
                                     />
                                   </div>
-                                  
+
                                   <div className="space-y-2">
                                     <Label htmlFor="model-answer">Model Answer</Label>
                                     <Textarea
@@ -1667,7 +1820,7 @@ export default function ImprovedQuestionManager() {
                                       placeholder="Enter model answer/explanation"
                                     />
                                   </div>
-                                  
+
                                   <div className="space-y-2">
                                     <Label htmlFor="language">Language</Label>
                                     <Select value={editingLanguage} onValueChange={(value) => {
@@ -1683,7 +1836,7 @@ export default function ImprovedQuestionManager() {
                                       </SelectContent>
                                     </Select>
                                   </div>
-                                  
+
                                   <div className="space-y-2">
                                     <Label htmlFor="model-answer-code">Model Answer Code</Label>
                                     <Textarea
@@ -1730,7 +1883,7 @@ export default function ImprovedQuestionManager() {
                                       placeholder="Enter correct answers separated by commas"
                                     />
                                   </div>
-                                  
+
                                   <div className="space-y-3">
                                     <Label>Options</Label>
                                     {editingFibOptions.map((option, index) => (
@@ -1771,7 +1924,7 @@ export default function ImprovedQuestionManager() {
                                       Add Option
                                     </Button>
                                   </div>
-                                  
+
                                   <div className="flex items-center space-x-2">
                                     <input
                                       type="checkbox"
@@ -1909,10 +2062,10 @@ export default function ImprovedQuestionManager() {
                                       }),
                                     }))
                                     .filter((topic) => topic.subtopics.length > 0).length === 0 && (
-                                    <p className="text-sm text-muted-foreground text-center py-4">
-                                      {showOnlySelectedEditSubtopics ? "No selected subtopics" : "No subtopics match your search"}
-                                    </p>
-                                  )}
+                                      <p className="text-sm text-muted-foreground text-center py-4">
+                                        {showOnlySelectedEditSubtopics ? "No selected subtopics" : "No subtopics match your search"}
+                                      </p>
+                                    )}
                                 </div>
                                 {editingSubtopicIds.length === 0 && (
                                   <p className="text-sm text-destructive">At least one subtopic must be selected</p>
@@ -2013,6 +2166,130 @@ export default function ImprovedQuestionManager() {
           )}
         </div>
       </div>
+
+      {/* bulk edit subtopics dialog */}
+      <Dialog open={showBulkEditDialog} onOpenChange={setShowBulkEditDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {bulkEditMode === "add" && "Add Subtopics to Selected Questions"}
+              {bulkEditMode === "remove" && "Remove Subtopics from Selected Questions"}
+              {bulkEditMode === "replace" && "Replace Subtopics for Selected Questions"}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                {bulkEditMode === "add" &&
+                  `Add the selected subtopics to all ${selectedQuestionIds.size} question(s). Existing subtopics will be kept.`}
+                {bulkEditMode === "remove" &&
+                  `Remove the selected subtopics from all ${selectedQuestionIds.size} question(s). Other subtopics will be kept.`}
+                {bulkEditMode === "replace" &&
+                  `Replace all subtopics with the selected ones for all ${selectedQuestionIds.size} question(s).`}
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <Label>Select Subtopics</Label>
+              <div className="relative mb-2">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input
+                  placeholder="Search subtopics..."
+                  value={bulkEditSubtopicSearch}
+                  onChange={(e) => setBulkEditSubtopicSearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <ShadcnCheckbox
+                    checked={showOnlySelectedBulkEditSubtopics}
+                    onCheckedChange={(checked: boolean) => setShowOnlySelectedBulkEditSubtopics(checked)}
+                  />
+                  <span className="text-sm">Show only selected</span>
+                </label>
+                <span className="text-sm text-muted-foreground">{bulkEditSubtopicIds.length} selected</span>
+              </div>
+
+              <div className="max-h-96 overflow-y-auto border rounded-md p-3 bg-muted/20">
+                {groupedSubtopics
+                  .map((topic) => ({
+                    ...topic,
+                    subtopics: topic.subtopics.filter((sub) => {
+                      const q = bulkEditSubtopicSearch.toLowerCase()
+                      const matches =
+                        q === "" ||
+                        sub.subtopictitle.toLowerCase().includes(q) ||
+                        topic.name.toLowerCase().includes(q) ||
+                        topic.topicnumber.toLowerCase().includes(q)
+                      const selectedOK = !showOnlySelectedBulkEditSubtopics || bulkEditSubtopicIds.includes(sub.id)
+                      return matches && selectedOK
+                    }),
+                  }))
+                  .filter((t) => t.subtopics.length > 0)
+                  .map((topic) => (
+                    <div key={topic.id} className="mb-3">
+                      <div className="font-medium text-sm mb-2 text-muted-foreground">
+                        {topic.topicnumber} - {topic.name}
+                      </div>
+                      {topic.subtopics.map((sub) => (
+                        <label key={sub.id} className="flex items-center gap-2 mb-1 cursor-pointer">
+                          <ShadcnCheckbox
+                            checked={bulkEditSubtopicIds.includes(sub.id)}
+                            onCheckedChange={(checked: boolean) =>
+                              setBulkEditSubtopicIds((ids) => (checked ? [...ids, sub.id] : ids.filter((sid) => sid !== sub.id)))
+                            }
+                          />
+                          <span className="text-sm">{sub.subtopictitle}</span>
+                        </label>
+                      ))}
+                    </div>
+                  ))}
+
+                {groupedSubtopics
+                  .map((topic) => ({
+                    ...topic,
+                    subtopics: topic.subtopics.filter((sub) => {
+                      const q = bulkEditSubtopicSearch.toLowerCase()
+                      const matches =
+                        q === "" ||
+                        sub.subtopictitle.toLowerCase().includes(q) ||
+                        topic.name.toLowerCase().includes(q) ||
+                        topic.topicnumber.toLowerCase().includes(q)
+                      const selectedOK = !showOnlySelectedBulkEditSubtopics || bulkEditSubtopicIds.includes(sub.id)
+                      return matches && selectedOK
+                    }),
+                  }))
+                  .filter((t) => t.subtopics.length > 0).length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      {showOnlySelectedBulkEditSubtopics ? "No selected subtopics" : "No subtopics match your search"}
+                    </p>
+                  )}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowBulkEditDialog(false)
+                setBulkEditSubtopicIds([])
+                setBulkEditSubtopicSearch("")
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleBulkEditSubtopics} disabled={bulkEditSubtopicIds.length === 0}>
+              {bulkEditMode === "add" && "Add Subtopics"}
+              {bulkEditMode === "remove" && "Remove Subtopics"}
+              {bulkEditMode === "replace" && "Replace Subtopics"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       {/* Add Question Dialog */}
       <Dialog open={!!addingQuestion} onOpenChange={() => {
@@ -2530,10 +2807,10 @@ export default function ImprovedQuestionManager() {
                       }),
                     }))
                     .filter((topic) => topic.subtopics.length > 0).length === 0 && (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      {showOnlySelectedAddSubtopics ? "No selected subtopics" : "No subtopics match your search"}
-                    </p>
-                  )}
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        {showOnlySelectedAddSubtopics ? "No selected subtopics" : "No subtopics match your search"}
+                      </p>
+                    )}
                 </div>
                 {addingSubtopicIds.length === 0 && (
                   <p className="text-sm text-destructive">At least one subtopic must be selected</p>
@@ -2660,8 +2937,8 @@ export default function ImprovedQuestionManager() {
               <p className="text-sm text-muted-foreground">
                 Download the CSV template for {bulkUploadType} questions to see the required format and example data.
               </p>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => downloadCSVTemplate(bulkUploadType)}
                 className="w-full"
               >
@@ -2727,7 +3004,7 @@ export default function ImprovedQuestionManager() {
               <div className="space-y-2">
                 <Label>Upload Progress</Label>
                 <div className="w-full bg-muted rounded-full h-2">
-                  <div 
+                  <div
                     className="bg-primary h-2 rounded-full transition-all duration-300"
                     style={{ width: `${bulkUploadProgress}%` }}
                   />
@@ -2760,7 +3037,7 @@ export default function ImprovedQuestionManager() {
               }}>
                 Cancel
               </Button>
-              <Button 
+              <Button
                 onClick={async () => {
                   if (!bulkUploadFile) {
                     toast.error("Please select a CSV file")
@@ -2773,7 +3050,7 @@ export default function ImprovedQuestionManager() {
 
                   const text = await bulkUploadFile.text()
                   const csvData = parseCSV(text)
-                  
+
                   if (csvData.length === 0) {
                     toast.error("No valid data found in CSV file")
                     return
