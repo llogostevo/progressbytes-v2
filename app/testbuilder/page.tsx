@@ -616,22 +616,35 @@ export default function TestBuilder() {
     }
   }
 
-  // Group questions by type for preview
-  const questionsByType = questions.reduce((acc, question) => {
-    if (!acc[question.type]) {
-      acc[question.type] = []
+  // Group questions by type for preview in the same order as PDF
+  const questionTypes = [
+    "true-false",
+    "multiple-choice", 
+    "matching",
+    "fill-in-the-blank",
+    "short-answer",
+    "essay",
+    "code",
+    "sql",
+    "algorithm"
+  ]
+
+  const difficultyOrder: Record<string, number> = {
+    "low": 1,
+    "medium": 2,
+    "high": 3
+  }
+
+  const questionsByType = questionTypes.reduce((acc, type) => {
+    const typeQuestions = questions
+      .filter(q => q.type === type)
+      .sort((a, b) => difficultyOrder[a.difficulty] - difficultyOrder[b.difficulty])
+    
+    if (typeQuestions.length > 0) {
+      acc[type] = typeQuestions
     }
-    acc[question.type].push(question)
     return acc
   }, {} as Record<string, ExtendedQuestion[]>)
-
-  // Sort within each type by difficulty
-  Object.keys(questionsByType).forEach(type => {
-    questionsByType[type].sort((a, b) => {
-      const order: Record<string, number> = { "low": 1, "medium": 2, "high": 3 }
-      return order[a.difficulty] - order[b.difficulty]
-    })
-  })
 
   if (loading && topics.length === 0) {
     return (
@@ -753,46 +766,51 @@ export default function TestBuilder() {
               </div>
             ) : (
               <div className="space-y-6">
-                {Object.entries(questionsByType).map(([type, typeQuestions]) => (
-                  <div key={type} className="border-l-4 border-primary pl-4">
-                    <h3 className="font-semibold text-lg mb-3 capitalize">
-                      {type.replace(/-/g, " ")} ({typeQuestions.length})
-                    </h3>
-                    <div className="space-y-2">
-                      {typeQuestions.map((question, index) => (
-                        <div
-                          key={question.id}
-                          className="flex items-start gap-3 p-3 bg-muted/30 rounded-md"
-                        >
-                          <Checkbox
-                            checked={selectedQuestions.has(question.id)}
-                            onCheckedChange={() => handleQuestionToggle(question.id)}
-                            className="mt-1"
-                          />
-                          <Badge
-                            variant={
-                              question.difficulty === "low"
-                                ? "default"
-                                : question.difficulty === "medium"
-                                ? "secondary"
-                                : "destructive"
-                            }
-                            className="mt-1"
+                {questionTypes.map((type) => {
+                  const typeQuestions = questionsByType[type]
+                  if (!typeQuestions || typeQuestions.length === 0) return null
+                  
+                  return (
+                    <div key={type} className="border-l-4 border-primary pl-4">
+                      <h3 className="font-semibold text-lg mb-3 capitalize">
+                        {type.replace(/-/g, " ")} ({typeQuestions.length})
+                      </h3>
+                      <div className="space-y-2">
+                        {typeQuestions.map((question, index) => (
+                          <div
+                            key={question.id}
+                            className="flex items-start gap-3 p-3 bg-muted/30 rounded-md"
                           >
-                            {question.difficulty}
-                          </Badge>
-                          <div className="flex-1">
-                            <p className="text-sm">
-                              <span className="font-medium">Q{index + 1}:</span>{" "}
-                              {question.question_text.substring(0, 100)}
-                              {question.question_text.length > 100 ? "..." : ""}
-                            </p>
+                            <Checkbox
+                              checked={selectedQuestions.has(question.id)}
+                              onCheckedChange={() => handleQuestionToggle(question.id)}
+                              className="mt-1"
+                            />
+                            <Badge
+                              variant={
+                                question.difficulty === "low"
+                                  ? "default"
+                                  : question.difficulty === "medium"
+                                  ? "secondary"
+                                  : "destructive"
+                              }
+                              className="mt-1"
+                            >
+                              {question.difficulty}
+                            </Badge>
+                            <div className="flex-1">
+                              <p className="text-sm">
+                                <span className="font-medium">Q{index + 1}:</span>{" "}
+                                {question.question_text.substring(0, 100)}
+                                {question.question_text.length > 100 ? "..." : ""}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </CardContent>
