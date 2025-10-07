@@ -533,8 +533,68 @@ export default function TestBuilder() {
           yPosition += 12
 
           typeQuestions.forEach((question, index) => {
+            // Calculate space needed for this question
+            let spaceNeeded = 0
+            
+            // Question number and difficulty
+            spaceNeeded += 9
+            
+            // Question text
+            const splitText = doc.splitTextToSize(question.question_text, 180)
+            spaceNeeded += splitText.length * 7.5 + 3
+            
+            // Keywords (if enabled)
+            if (showKeywords && question.keywords && question.keywords.length > 0) {
+              const keywordsText = question.keywords.join(", ")
+              const splitKeywords = doc.splitTextToSize(keywordsText, 170)
+              spaceNeeded += 7.5 + splitKeywords.length * 7.5 + 3
+            }
+            
+            // Answer section
+            spaceNeeded += 7.5 // "Answer:" label
+            
+            // Answer content based on type
+            if (question.type === "multiple-choice" && question.options && question.correctAnswerIndex !== undefined) {
+              spaceNeeded += 7.5
+            } else if (question.type === "true-false") {
+              spaceNeeded += 7.5
+            } else if (question.type === "fill-in-the-blank") {
+              spaceNeeded += 7.5
+            } else if (question.type === "matching" && question.pairs) {
+              // Calculate space for each matching pair with two-line format
+              question.pairs.forEach((pair) => {
+                // Statement line
+                const statementText = `1. ${pair.statement}`
+                const splitStatement = doc.splitTextToSize(statementText, 170)
+                spaceNeeded += splitStatement.length * 7.5
+                
+                // Match line
+                const matchText = `→ ${pair.match}`
+                const splitMatch = doc.splitTextToSize(matchText, 160)
+                spaceNeeded += splitMatch.length * 7.5 + 3 // Extra space between pairs
+              })
+            } else if (question.type === "short-answer" || question.type === "essay") {
+              const answerText = String(question.model_answer)
+              const splitAnswer = doc.splitTextToSize(answerText, 170)
+              spaceNeeded += splitAnswer.length * 7.5
+            } else if (question.type === "code" || question.type === "sql" || question.type === "algorithm") {
+              if (question.model_answer_code) {
+                const codeLines = doc.splitTextToSize(question.model_answer_code, 170)
+                spaceNeeded += codeLines.length * 6
+              }
+            }
+            
+            // Explanation (if available)
+            if (question.explanation) {
+              const splitExplanation = doc.splitTextToSize(question.explanation, 170)
+              spaceNeeded += 7.5 + splitExplanation.length * 7.5 + 3
+            }
+            
+            // Space between questions
+            spaceNeeded += 5
+            
             // Check if we need a new page
-            if (yPosition > 260) {
+            if (yPosition + spaceNeeded > 280) {
               doc.addPage()
               yPosition = 20
             }
@@ -548,9 +608,20 @@ export default function TestBuilder() {
 
             // Question text
             doc.setFont("helvetica", "normal")
-            const splitText = doc.splitTextToSize(question.question_text, 180)
             doc.text(splitText, 14, yPosition)
             yPosition += splitText.length * 7.5 + 3
+
+            // Show keywords before answer if enabled
+            if (showKeywords && question.keywords && question.keywords.length > 0) {
+              doc.setFont("helvetica", "italic")
+              doc.setFontSize(9)
+              doc.text("Keywords:", 18, yPosition)
+              yPosition += 7.5
+              const keywordsText = question.keywords.join(", ")
+              const splitKeywords = doc.splitTextToSize(keywordsText, 170)
+              doc.text(splitKeywords, 18, yPosition)
+              yPosition += splitKeywords.length * 7.5 + 3
+            }
 
             // Answer based on question type
             doc.setFont("helvetica", "bold")
@@ -581,8 +652,19 @@ export default function TestBuilder() {
 
             if (question.type === "matching" && question.pairs) {
               question.pairs.forEach((pair, idx) => {
-                doc.text(`${idx + 1}. ${pair.statement} → ${pair.match}`, 22, yPosition)
-                yPosition += 7.5
+                // Statement on first line
+                doc.setFont("helvetica", "normal")
+                const statementText = `${idx + 1}. ${pair.statement}`
+                const splitStatement = doc.splitTextToSize(statementText, 170)
+                doc.text(splitStatement, 22, yPosition)
+                yPosition += splitStatement.length * 7.5
+                
+                // Match on second line with indentation and arrow
+                doc.setFont("helvetica", "bold")
+                const matchText = `→ ${pair.match}`
+                const splitMatch = doc.splitTextToSize(matchText, 160)
+                doc.text(splitMatch, 30, yPosition)
+                yPosition += splitMatch.length * 7.5 + 3 // Extra space between pairs
               })
             }
 
@@ -618,19 +700,7 @@ export default function TestBuilder() {
               yPosition += splitExplanation.length * 7.5 + 3
             }
 
-            // Show keywords if enabled
-            if (showKeywords && question.keywords && question.keywords.length > 0) {
-              doc.setFont("helvetica", "italic")
-              doc.setFontSize(9)
-              doc.text("Keywords:", 18, yPosition)
-              yPosition += 7.5
-              const keywordsText = question.keywords.join(", ")
-              const splitKeywords = doc.splitTextToSize(keywordsText, 170)
-              doc.text(splitKeywords, 18, yPosition)
-              yPosition += splitKeywords.length * 7.5 + 3
-            }
-
-            yPosition += 5 // Reduced space between questions
+            yPosition += 3 // Minimal space between questions
           })
 
           yPosition += 5
