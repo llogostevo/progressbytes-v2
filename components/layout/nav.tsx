@@ -73,7 +73,7 @@ export function Nav() {
     return (
         <>
             {/* Desktop Nav */}
-            <nav className="hidden md:flex items-center space-x-1">
+            <nav className="hidden lg:flex items-center space-x-1">
                 {navigationItems.map((item) => (
                     <Link
                         key={item.href}
@@ -147,7 +147,7 @@ export function Nav() {
             </nav>
 
             {/* Mobile Nav */}
-            <div className="md:hidden">
+            <div className="lg:hidden">
                 <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                     <SheetTrigger asChild>
                         <Button
