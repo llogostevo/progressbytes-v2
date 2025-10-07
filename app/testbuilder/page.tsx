@@ -33,6 +33,7 @@ export default function TestBuilder() {
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
   const [showKeywords, setShowKeywords] = useState(false)
+  const [includeAnswers, setIncludeAnswers] = useState(false)
   const [selectedQuestions, setSelectedQuestions] = useState<Set<string>>(new Set())
   const supabase = createClient()
 
@@ -481,6 +482,126 @@ export default function TestBuilder() {
         yPosition += 5
       })
 
+      // Add answer key if requested
+      if (includeAnswers) {
+        // Add answer key page
+        doc.addPage()
+        yPosition = 20
+
+        // Answer key title
+        doc.setFontSize(20)
+        doc.setFont("helvetica", "bold")
+        doc.text("ANSWERS", 14, yPosition)
+        yPosition += 20
+
+        // Generate answers for each question type
+        questionTypes.forEach((type) => {
+          const typeQuestions = questions
+            .filter(q => q.type === type && selectedQuestions.has(q.id))
+            .sort((a, b) => difficultyOrder[a.difficulty] - difficultyOrder[b.difficulty])
+
+          if (typeQuestions.length === 0) return
+
+          // Section header
+          doc.setFontSize(14)
+          doc.setFont("helvetica", "bold")
+          doc.text(type.toUpperCase().replace(/-/g, " "), 14, yPosition)
+          yPosition += 12
+
+          typeQuestions.forEach((question, index) => {
+            // Check if we need a new page
+            if (yPosition > 260) {
+              doc.addPage()
+              yPosition = 20
+            }
+
+            // Question number and difficulty
+            doc.setFontSize(10)
+            doc.setFont("helvetica", "bold")
+            const questionNum = `Q${index + 1} [${question.difficulty}]`
+            doc.text(questionNum, 14, yPosition)
+            yPosition += 9
+
+            // Question text
+            doc.setFont("helvetica", "normal")
+            const splitText = doc.splitTextToSize(question.question_text, 180)
+            doc.text(splitText, 14, yPosition)
+            yPosition += splitText.length * 7.5 + 3
+
+            // Answer based on question type
+            doc.setFont("helvetica", "bold")
+            doc.text("Answer:", 18, yPosition)
+            yPosition += 7.5
+
+            doc.setFont("helvetica", "normal")
+            
+            if (question.type === "multiple-choice" && question.options && question.correctAnswerIndex !== undefined) {
+              const correctAnswer = question.options[question.correctAnswerIndex]
+              doc.text(`${String.fromCharCode(65 + question.correctAnswerIndex)}) ${correctAnswer}`, 22, yPosition)
+              yPosition += 7.5
+            }
+
+            if (question.type === "true-false") {
+              doc.text(question.model_answer === true ? "True" : "False", 22, yPosition)
+              yPosition += 7.5
+            }
+
+            if (question.type === "fill-in-the-blank") {
+              if (Array.isArray(question.model_answer)) {
+                doc.text(question.model_answer.join(", "), 22, yPosition)
+              } else {
+                doc.text(String(question.model_answer), 22, yPosition)
+              }
+              yPosition += 7.5
+            }
+
+            if (question.type === "matching" && question.pairs) {
+              question.pairs.forEach((pair, idx) => {
+                doc.text(`${idx + 1}. ${pair.statement} → ${pair.match}`, 22, yPosition)
+                yPosition += 7.5
+              })
+            }
+
+            if (question.type === "short-answer" || question.type === "essay") {
+              const answerText = String(question.model_answer)
+              const splitAnswer = doc.splitTextToSize(answerText, 170)
+              doc.text(splitAnswer, 22, yPosition)
+              yPosition += splitAnswer.length * 7.5
+            }
+
+            if (question.type === "code" || question.type === "sql" || question.type === "algorithm") {
+              if (question.model_answer_code) {
+                doc.setFont("courier", "normal")
+                doc.setFontSize(8)
+                const codeLines = doc.splitTextToSize(question.model_answer_code, 170)
+                codeLines.forEach((line: string) => {
+                  doc.text(line, 22, yPosition)
+                  yPosition += 6
+                })
+                doc.setFontSize(10)
+                doc.setFont("helvetica", "normal")
+              }
+            }
+
+            // Show keywords if enabled
+            if (showKeywords && question.keywords && question.keywords.length > 0) {
+              doc.setFont("helvetica", "italic")
+              doc.setFontSize(9)
+              doc.text("Keywords:", 18, yPosition)
+              yPosition += 7.5
+              const keywordsText = question.keywords.join(", ")
+              const splitKeywords = doc.splitTextToSize(keywordsText, 170)
+              doc.text(splitKeywords, 18, yPosition)
+              yPosition += splitKeywords.length * 7.5 + 3
+            }
+
+            yPosition += 10 // Space between questions
+          })
+
+          yPosition += 5
+        })
+      }
+
       // Open in new tab
       const pdfBlob = doc.output('blob')
       const pdfUrl = URL.createObjectURL(pdfBlob)
@@ -570,18 +691,33 @@ export default function TestBuilder() {
                 )}
               </Button>
             </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="show-keywords"
-                checked={showKeywords}
-                onCheckedChange={(checked) => setShowKeywords(checked as boolean)}
-              />
-              <label
-                htmlFor="show-keywords"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                Show keywords in PDF (for short answer and essay questions)
-              </label>
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="show-keywords"
+                  checked={showKeywords}
+                  onCheckedChange={(checked) => setShowKeywords(checked as boolean)}
+                />
+                <label
+                  htmlFor="show-keywords"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Show keywords in PDF (for short answer and essay questions)
+                </label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="include-answers"
+                  checked={includeAnswers}
+                  onCheckedChange={(checked) => setIncludeAnswers(checked as boolean)}
+                />
+                <label
+                  htmlFor="include-answers"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Include answer key at the end of the PDF
+                </label>
+              </div>
             </div>
           </div>
         </CardContent>
