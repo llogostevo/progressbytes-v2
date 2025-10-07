@@ -130,13 +130,45 @@ export default function ImprovedQuestionManager() {
   >([])
   const [expandedTopics, setExpandedTopics] = useState<Set<string>>(new Set())
   const [addingQuestion, setAddingQuestion] = useState<Question | null>(null)
+  const [keywordsInputValue, setKeywordsInputValue] = useState("")
+  const [editKeywordsInputValue, setEditKeywordsInputValue] = useState("")
+  const [editEssayKeywordsInputValue, setEditEssayKeywordsInputValue] = useState("")
+  const [saKeywordsInputValue, setSaKeywordsInputValue] = useState("")
   const [addingSubtopicIds, setAddingSubtopicIds] = useState<string[]>([])
+  const [editSubtopicSearch, setEditSubtopicSearch] = useState("")
+  const [addSubtopicSearch, setAddSubtopicSearch] = useState("")
   const [showBulkUpload, setShowBulkUpload] = useState(false)
   const [bulkUploadType, setBulkUploadType] = useState<Question["type"]>("multiple-choice")
   const [bulkUploadFile, setBulkUploadFile] = useState<File | null>(null)
   const [bulkUploadProgress, setBulkUploadProgress] = useState(0)
   const [bulkUploadErrors, setBulkUploadErrors] = useState<string[]>([])
   const supabase = createClient()
+
+  // Synchronize keywords input value with addingQuestion.keywords
+  useEffect(() => {
+    if (addingQuestion?.keywords) {
+      setKeywordsInputValue(addingQuestion.keywords.join(", "))
+    } else {
+      setKeywordsInputValue("")
+    }
+  }, [addingQuestion?.keywords])
+
+  // Synchronize editing keywords input values
+  useEffect(() => {
+    setEditKeywordsInputValue(editingKeywords.join(", "))
+  }, [editingKeywords])
+
+  useEffect(() => {
+    setEditEssayKeywordsInputValue(editingKeywords.join(", "))
+  }, [editingKeywords])
+
+  useEffect(() => {
+    if (addingQuestion?.keywords) {
+      setSaKeywordsInputValue(addingQuestion.keywords.join(", "))
+    } else {
+      setSaKeywordsInputValue("")
+    }
+  }, [addingQuestion?.keywords])
 
   // CSV Template Generation Functions
   const generateCSVTemplate = (questionType: Question["type"]) => {
@@ -746,6 +778,7 @@ export default function ImprovedQuestionManager() {
       question.subtopic_question_link?.map(link => link.subtopic_id) || []
     )
     setEditingKeywords(question.keywords || [])
+    setEditSubtopicSearch("")
     setHasUnsavedChanges(false)
   }
 
@@ -914,6 +947,7 @@ export default function ImprovedQuestionManager() {
       setEditingModelAnswerCode("")
       setEditingSubtopicIds([])
       setEditingKeywords([])
+      setEditSubtopicSearch("")
       setHasUnsavedChanges(false)
       toast.success("Question updated successfully")
     } catch (error) {
@@ -937,6 +971,7 @@ export default function ImprovedQuestionManager() {
     setEditingModelAnswerCode("")
     setEditingSubtopicIds([])
     setEditingKeywords([])
+    setEditSubtopicSearch("")
     setHasUnsavedChanges(false)
   }
 
@@ -1180,6 +1215,7 @@ export default function ImprovedQuestionManager() {
       await fetchQuestions()
       setAddingQuestion(null)
       setAddingSubtopicIds([])
+      setAddSubtopicSearch("")
       toast.success("Question created successfully")
     } catch (error) {
       console.error("Error creating question:", error)
@@ -1485,14 +1521,26 @@ export default function ImprovedQuestionManager() {
                                     <Label htmlFor="edit-keywords">Keywords (comma-separated)</Label>
                                     <Input
                                       id="edit-keywords"
-                                      value={editingKeywords.join(", ")}
-                                      onChange={(e) => {
-                                        const keywordsArray = e.target.value
+                                      value={editKeywordsInputValue}
+                                      onChange={(e) => setEditKeywordsInputValue(e.target.value)}
+                                      onBlur={() => {
+                                        const keywordsArray = editKeywordsInputValue
                                           .split(",")
                                           .map(k => k.trim())
                                           .filter(k => k.length > 0)
                                         setEditingKeywords(keywordsArray)
                                         setHasUnsavedChanges(true)
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          e.preventDefault()
+                                          const keywordsArray = editKeywordsInputValue
+                                            .split(",")
+                                            .map(k => k.trim())
+                                            .filter(k => k.length > 0)
+                                          setEditingKeywords(keywordsArray)
+                                          setHasUnsavedChanges(true)
+                                        }
                                       }}
                                       placeholder="Enter keywords separated by commas"
                                     />
@@ -1533,14 +1581,26 @@ export default function ImprovedQuestionManager() {
                                     <Label htmlFor="edit-essay-keywords">Keywords (comma-separated)</Label>
                                     <Input
                                       id="edit-essay-keywords"
-                                      value={editingKeywords.join(", ")}
-                                      onChange={(e) => {
-                                        const keywordsArray = e.target.value
+                                      value={editEssayKeywordsInputValue}
+                                      onChange={(e) => setEditEssayKeywordsInputValue(e.target.value)}
+                                      onBlur={() => {
+                                        const keywordsArray = editEssayKeywordsInputValue
                                           .split(",")
                                           .map(k => k.trim())
                                           .filter(k => k.length > 0)
                                         setEditingKeywords(keywordsArray)
                                         setHasUnsavedChanges(true)
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          e.preventDefault()
+                                          const keywordsArray = editEssayKeywordsInputValue
+                                            .split(",")
+                                            .map(k => k.trim())
+                                            .filter(k => k.length > 0)
+                                          setEditingKeywords(keywordsArray)
+                                          setHasUnsavedChanges(true)
+                                        }
                                       }}
                                       placeholder="Enter keywords separated by commas"
                                     />
@@ -1754,28 +1814,63 @@ export default function ImprovedQuestionManager() {
                               {/* Subtopic Selection */}
                               <div className="space-y-3">
                                 <Label>Subtopics *</Label>
+                                <div className="relative mb-2">
+                                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                                  <Input
+                                    placeholder="Search subtopics..."
+                                    value={editSubtopicSearch}
+                                    onChange={(e) => setEditSubtopicSearch(e.target.value)}
+                                    className="pl-10"
+                                  />
+                                </div>
                                 <div className="max-h-48 overflow-y-auto border rounded-md p-3 bg-muted/20">
-                                  {groupedSubtopics.map((topic) => (
-                                    <div key={topic.id} className="mb-3">
-                                      <div className="font-medium text-sm mb-2 text-muted-foreground">
-                                        {topic.topicnumber} - {topic.name}
+                                  {groupedSubtopics
+                                    .map((topic) => ({
+                                      ...topic,
+                                      subtopics: topic.subtopics.filter((sub) =>
+                                        editSubtopicSearch === "" ||
+                                        sub.subtopictitle.toLowerCase().includes(editSubtopicSearch.toLowerCase()) ||
+                                        topic.name.toLowerCase().includes(editSubtopicSearch.toLowerCase()) ||
+                                        topic.topicnumber.toLowerCase().includes(editSubtopicSearch.toLowerCase())
+                                      ),
+                                    }))
+                                    .filter((topic) => topic.subtopics.length > 0)
+                                    .map((topic) => (
+                                      <div key={topic.id} className="mb-3">
+                                        <div className="font-medium text-sm mb-2 text-muted-foreground">
+                                          {topic.topicnumber} - {topic.name}
+                                        </div>
+                                        {topic.subtopics.map((sub) => (
+                                          <label key={sub.id} className="flex items-center gap-2 mb-1 cursor-pointer">
+                                            <ShadcnCheckbox
+                                              checked={editingSubtopicIds.includes(sub.id)}
+                                              onCheckedChange={(checked: boolean) => {
+                                                setEditingSubtopicIds((ids) =>
+                                                  checked ? [...ids, sub.id] : ids.filter((sid) => sid !== sub.id),
+                                                )
+                                                setHasUnsavedChanges(true)
+                                              }}
+                                            />
+                                            <span className="text-sm">{sub.subtopictitle}</span>
+                                          </label>
+                                        ))}
                                       </div>
-                                      {topic.subtopics.map((sub) => (
-                                        <label key={sub.id} className="flex items-center gap-2 mb-1 cursor-pointer">
-                                          <ShadcnCheckbox
-                                            checked={editingSubtopicIds.includes(sub.id)}
-                                            onCheckedChange={(checked: boolean) => {
-                                              setEditingSubtopicIds((ids) =>
-                                                checked ? [...ids, sub.id] : ids.filter((sid) => sid !== sub.id),
-                                              )
-                                              setHasUnsavedChanges(true)
-                                            }}
-                                          />
-                                          <span className="text-sm">{sub.subtopictitle}</span>
-                                        </label>
-                                      ))}
-                                    </div>
-                                  ))}
+                                    ))}
+                                  {groupedSubtopics
+                                    .map((topic) => ({
+                                      ...topic,
+                                      subtopics: topic.subtopics.filter((sub) =>
+                                        editSubtopicSearch === "" ||
+                                        sub.subtopictitle.toLowerCase().includes(editSubtopicSearch.toLowerCase()) ||
+                                        topic.name.toLowerCase().includes(editSubtopicSearch.toLowerCase()) ||
+                                        topic.topicnumber.toLowerCase().includes(editSubtopicSearch.toLowerCase())
+                                      ),
+                                    }))
+                                    .filter((topic) => topic.subtopics.length > 0).length === 0 && (
+                                    <p className="text-sm text-muted-foreground text-center py-4">
+                                      No subtopics match your search
+                                    </p>
+                                  )}
                                 </div>
                                 {editingSubtopicIds.length === 0 && (
                                   <p className="text-sm text-destructive">At least one subtopic must be selected</p>
@@ -1875,7 +1970,10 @@ export default function ImprovedQuestionManager() {
       </div>
 
       {/* Add Question Dialog */}
-      <Dialog open={!!addingQuestion} onOpenChange={() => setAddingQuestion(null)}>
+      <Dialog open={!!addingQuestion} onOpenChange={() => {
+        setAddingQuestion(null)
+        setAddSubtopicSearch("")
+      }}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -2233,13 +2331,24 @@ export default function ImprovedQuestionManager() {
                     <Label htmlFor="sa-keywords">Keywords (comma-separated)</Label>
                     <Input
                       id="sa-keywords"
-                      value={(addingQuestion.keywords || []).join(", ")}
-                      onChange={(e) => {
-                        const keywordsArray = e.target.value
+                      value={saKeywordsInputValue}
+                      onChange={(e) => setSaKeywordsInputValue(e.target.value)}
+                      onBlur={() => {
+                        const keywordsArray = saKeywordsInputValue
                           .split(",")
                           .map(k => k.trim())
                           .filter(k => k.length > 0)
                         setAddingQuestion({ ...addingQuestion, keywords: keywordsArray })
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          const keywordsArray = saKeywordsInputValue
+                            .split(",")
+                            .map(k => k.trim())
+                            .filter(k => k.length > 0)
+                          setAddingQuestion({ ...addingQuestion, keywords: keywordsArray })
+                        }
                       }}
                       placeholder="Enter keywords separated by commas"
                     />
@@ -2277,13 +2386,24 @@ export default function ImprovedQuestionManager() {
                     <Label htmlFor="essay-keywords">Keywords (comma-separated)</Label>
                     <Input
                       id="essay-keywords"
-                      value={(addingQuestion.keywords || []).join(", ")}
-                      onChange={(e) => {
-                        const keywordsArray = e.target.value
+                      value={keywordsInputValue}
+                      onChange={(e) => setKeywordsInputValue(e.target.value)}
+                      onBlur={() => {
+                        const keywordsArray = keywordsInputValue
                           .split(",")
                           .map(k => k.trim())
                           .filter(k => k.length > 0)
                         setAddingQuestion({ ...addingQuestion, keywords: keywordsArray })
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          const keywordsArray = keywordsInputValue
+                            .split(",")
+                            .map(k => k.trim())
+                            .filter(k => k.length > 0)
+                          setAddingQuestion({ ...addingQuestion, keywords: keywordsArray })
+                        }
                       }}
                       placeholder="Enter keywords separated by commas"
                     />
@@ -2297,27 +2417,62 @@ export default function ImprovedQuestionManager() {
               {/* Subtopics Selection */}
               <div className="space-y-2">
                 <Label>Subtopics *</Label>
+                <div className="relative mb-2">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                  <Input
+                    placeholder="Search subtopics..."
+                    value={addSubtopicSearch}
+                    onChange={(e) => setAddSubtopicSearch(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
                 <div className="max-h-48 overflow-y-auto border rounded-md p-3 bg-muted/20">
-                  {groupedSubtopics.map((topic) => (
-                    <div key={topic.id} className="mb-3">
-                      <div className="font-medium text-sm mb-2 text-muted-foreground">
-                        {topic.topicnumber} - {topic.name}
+                  {groupedSubtopics
+                    .map((topic) => ({
+                      ...topic,
+                      subtopics: topic.subtopics.filter((sub) =>
+                        addSubtopicSearch === "" ||
+                        sub.subtopictitle.toLowerCase().includes(addSubtopicSearch.toLowerCase()) ||
+                        topic.name.toLowerCase().includes(addSubtopicSearch.toLowerCase()) ||
+                        topic.topicnumber.toLowerCase().includes(addSubtopicSearch.toLowerCase())
+                      ),
+                    }))
+                    .filter((topic) => topic.subtopics.length > 0)
+                    .map((topic) => (
+                      <div key={topic.id} className="mb-3">
+                        <div className="font-medium text-sm mb-2 text-muted-foreground">
+                          {topic.topicnumber} - {topic.name}
+                        </div>
+                        {topic.subtopics.map((sub) => (
+                          <label key={sub.id} className="flex items-center gap-2 mb-1 cursor-pointer">
+                            <ShadcnCheckbox
+                              checked={addingSubtopicIds.includes(sub.id)}
+                              onCheckedChange={(checked: boolean) => {
+                                setAddingSubtopicIds((ids) =>
+                                  checked ? [...ids, sub.id] : ids.filter((sid) => sid !== sub.id),
+                                )
+                              }}
+                            />
+                            <span className="text-sm">{sub.subtopictitle}</span>
+                          </label>
+                        ))}
                       </div>
-                      {topic.subtopics.map((sub) => (
-                        <label key={sub.id} className="flex items-center gap-2 mb-1 cursor-pointer">
-                          <ShadcnCheckbox
-                            checked={addingSubtopicIds.includes(sub.id)}
-                            onCheckedChange={(checked: boolean) => {
-                              setAddingSubtopicIds((ids) =>
-                                checked ? [...ids, sub.id] : ids.filter((sid) => sid !== sub.id),
-                              )
-                            }}
-                          />
-                          <span className="text-sm">{sub.subtopictitle}</span>
-                        </label>
-                      ))}
-                    </div>
-                  ))}
+                    ))}
+                  {groupedSubtopics
+                    .map((topic) => ({
+                      ...topic,
+                      subtopics: topic.subtopics.filter((sub) =>
+                        addSubtopicSearch === "" ||
+                        sub.subtopictitle.toLowerCase().includes(addSubtopicSearch.toLowerCase()) ||
+                        topic.name.toLowerCase().includes(addSubtopicSearch.toLowerCase()) ||
+                        topic.topicnumber.toLowerCase().includes(addSubtopicSearch.toLowerCase())
+                      ),
+                    }))
+                    .filter((topic) => topic.subtopics.length > 0).length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      No subtopics match your search
+                    </p>
+                  )}
                 </div>
                 {addingSubtopicIds.length === 0 && (
                   <p className="text-sm text-destructive">At least one subtopic must be selected</p>
@@ -2325,7 +2480,10 @@ export default function ImprovedQuestionManager() {
               </div>
 
               <DialogFooter>
-                <Button variant="outline" onClick={() => setAddingQuestion(null)}>
+                <Button variant="outline" onClick={() => {
+                  setAddingQuestion(null)
+                  setAddSubtopicSearch("")
+                }}>
                   Cancel
                 </Button>
                 <Button onClick={() => handleSaveNew(addingQuestion)}>Create Question</Button>
