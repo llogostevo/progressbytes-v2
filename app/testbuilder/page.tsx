@@ -1,0 +1,580 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { createClient } from "@/utils/supabase/client"
+import type { Question } from "@/lib/types"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
+import { FileText, Download, Loader2 } from "lucide-react"
+import { toast } from "sonner"
+import jsPDF from "jspdf"
+import autoTable from "jspdf-autotable"
+
+interface Topic {
+  id: number
+  name: string
+  slug: string
+  topicnumber: string
+}
+
+interface ExtendedQuestion extends Question {
+  starter_code?: string
+  language?: string
+  model_answer_code?: string
+}
+
+export default function TestBuilder() {
+  const [topics, setTopics] = useState<Topic[]>([])
+  const [selectedTopicId, setSelectedTopicId] = useState<string>("")
+  const [questions, setQuestions] = useState<ExtendedQuestion[]>([])
+  const [loading, setLoading] = useState(true)
+  const [generating, setGenerating] = useState(false)
+  const supabase = createClient()
+
+  useEffect(() => {
+    fetchTopics()
+  }, [])
+
+  useEffect(() => {
+    if (selectedTopicId) {
+      fetchQuestions(selectedTopicId)
+    }
+  }, [selectedTopicId])
+
+  const fetchTopics = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("topics")
+        .select("id, name, slug, topicnumber")
+        .order("topicnumber", { ascending: true })
+
+      if (error) throw error
+      setTopics(data || [])
+    } catch (error) {
+      console.error("Error fetching topics:", error)
+      toast.error("Failed to load topics")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchQuestions = async (topicId: string) => {
+    setLoading(true)
+    try {
+      // Get all subtopics for this topic
+      const { data: subtopicsData, error: subtopicsError } = await supabase
+        .from("subtopics")
+        .select("id")
+        .eq("topic_id", topicId)
+
+      if (subtopicsError) throw subtopicsError
+      
+      const subtopicIds = subtopicsData.map(s => s.id)
+
+      if (subtopicIds.length === 0) {
+        setQuestions([])
+        return
+      }
+
+      // Get all questions linked to these subtopics
+      const { data: linksData, error: linksError } = await supabase
+        .from("subtopic_question_link")
+        .select("question_id")
+        .in("subtopic_id", subtopicIds)
+
+      if (linksError) throw linksError
+
+      const questionIds = [...new Set(linksData.map(l => l.question_id))]
+
+      if (questionIds.length === 0) {
+        setQuestions([])
+        return
+      }
+
+      // Fetch all questions
+      const { data, error } = await supabase
+        .from("questions")
+        .select(`
+          *,
+          short_answer_questions(*),
+          true_false_questions(*),
+          matching_questions(*),
+          fill_in_the_blank_questions(
+            options,
+            correct_answers,
+            order_important
+          ),
+          code_questions(*),
+          multiple_choice_questions(*),
+          essay_questions(*)
+        `)
+        .in("id", questionIds)
+        .order("difficulty", { ascending: true })
+
+      if (error) throw error
+
+      const transformedQuestions: ExtendedQuestion[] = data.map((q) => ({
+        id: q.id,
+        type: q.type,
+        difficulty: q.difficulty,
+        topic: "",
+        question_text: q.question_text,
+        explanation: q.explanation,
+        created_at: q.created_at,
+        model_answer: q.model_answer || "",
+        ...(q.type === "multiple-choice" && {
+          options: q.multiple_choice_questions?.options,
+          correctAnswerIndex: q.multiple_choice_questions?.correct_answer_index,
+          model_answer: q.multiple_choice_questions?.model_answer || "",
+        }),
+        ...(q.type === "fill-in-the-blank" && {
+          options: q.fill_in_the_blank_questions?.options,
+          order_important: q.fill_in_the_blank_questions?.order_important,
+          model_answer: q.fill_in_the_blank_questions?.correct_answers || [],
+        }),
+        ...(q.type === "matching" && {
+          pairs: q.matching_questions?.map((mq: { statement: string; match: string }) => ({
+            statement: mq.statement,
+            match: mq.match,
+          })),
+        }),
+        ...(q.type === "code" && {
+          starter_code: q.code_questions?.starter_code,
+          model_answer: q.code_questions?.model_answer,
+          model_answer_code: q.code_questions?.model_answer_code,
+          language: q.code_questions?.language,
+        }),
+        ...(q.type === "algorithm" && {
+          starter_code: q.code_questions?.starter_code,
+          model_answer: q.code_questions?.model_answer,
+          model_answer_code: q.code_questions?.model_answer_code,
+          language: q.code_questions?.language,
+        }),
+        ...(q.type === "sql" && {
+          starter_code: q.code_questions?.starter_code,
+          model_answer: q.code_questions?.model_answer,
+          model_answer_code: q.code_questions?.model_answer_code,
+          language: q.code_questions?.language,
+        }),
+        ...(q.type === "true-false" && {
+          model_answer: q.true_false_questions?.correct_answer,
+        }),
+        ...(q.type === "short-answer" && {
+          model_answer: q.short_answer_questions?.model_answer,
+          keywords: q.short_answer_questions?.keywords,
+        }),
+        ...(q.type === "essay" && {
+          model_answer: q.essay_questions?.model_answer,
+          rubric: q.essay_questions?.rubric,
+          keywords: q.essay_questions?.keywords,
+        }),
+      }))
+
+      setQuestions(transformedQuestions)
+    } catch (error) {
+      console.error("Error fetching questions:", error)
+      toast.error("Failed to load questions")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const generatePDF = () => {
+    if (!selectedTopicId || questions.length === 0) {
+      toast.error("Please select a topic with questions")
+      return
+    }
+
+    setGenerating(true)
+
+    try {
+      const selectedTopic = topics.find(t => String(t.id) === selectedTopicId)
+      const doc = new jsPDF()
+
+      // Add title page
+      doc.setFontSize(24)
+      doc.setFont("helvetica", "bold")
+      doc.text(`Test: ${selectedTopic?.topicnumber} - ${selectedTopic?.name}`, 14, 40)
+      
+      doc.setFontSize(12)
+      doc.setFont("helvetica", "normal")
+      doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 60)
+      doc.text(`Total Questions: ${questions.length}`, 14, 75)
+
+      // Student information fields
+      doc.setFontSize(14)
+      doc.setFont("helvetica", "bold")
+      doc.text("Student Information:", 14, 100)
+      
+      doc.setFontSize(12)
+      doc.setFont("helvetica", "normal")
+      doc.text("Forename: _____________________________", 14, 120)
+      doc.text("Last Name: _____________________________", 14, 140)
+      doc.text("Year: _____________________________", 14, 160)
+      doc.text("Teacher: _____________________________", 14, 180)
+
+      // Start questions on new page
+      doc.addPage()
+      let yPosition = 20
+
+      // Group questions by type in the specified order
+      const questionTypes = [
+        "true-false",
+        "multiple-choice", 
+        "matching",
+        "fill-in-the-blank",
+        "short-answer",
+        "essay",
+        "code",
+        "sql",
+        "algorithm"
+      ]
+
+      const difficultyOrder: Record<string, number> = {
+        "low": 1,
+        "medium": 2,
+        "high": 3
+      }
+
+      let firstGroup = true
+      
+      questionTypes.forEach((type, typeIndex) => {
+        const typeQuestions = questions
+          .filter(q => q.type === type)
+          .sort((a, b) => difficultyOrder[a.difficulty] - difficultyOrder[b.difficulty])
+
+        if (typeQuestions.length === 0) return
+
+        // Start each new question type group on a new page (except the first group with questions)
+        if (!firstGroup) {
+          doc.addPage()
+          yPosition = 20
+        } else if (yPosition > 260) {
+          doc.addPage()
+          yPosition = 20
+        }
+        
+        firstGroup = false
+
+        // Section header
+        doc.setFontSize(14)
+        doc.setFont("helvetica", "bold")
+        doc.text(type.toUpperCase().replace(/-/g, " "), 14, yPosition)
+        yPosition += 12 // 1.5 line spacing
+
+        typeQuestions.forEach((question, index) => {
+          // Check if we need a new page for short answer or essay questions
+          if (question.type === "short-answer" && yPosition > 200) {
+            doc.addPage()
+            yPosition = 20
+          } else if (question.type === "essay" && yPosition > 50) {
+            doc.addPage()
+            yPosition = 20
+          } else if (yPosition > 260) {
+            doc.addPage()
+            yPosition = 20
+          }
+
+          // Question number and difficulty
+          doc.setFontSize(10)
+          doc.setFont("helvetica", "bold")
+          const questionNum = `Q${index + 1} [${question.difficulty}]`
+          doc.text(questionNum, 14, yPosition)
+          yPosition += 9 // 1.5 line spacing
+
+          // Question text
+          doc.setFont("helvetica", "normal")
+          const splitText = doc.splitTextToSize(question.question_text, 180)
+          doc.text(splitText, 14, yPosition)
+          yPosition += splitText.length * 7.5 + 3 // 1.5 line spacing
+
+          // Type-specific content
+          if (question.type === "multiple-choice" && question.options) {
+            question.options.forEach((option, idx) => {
+              if (yPosition > 275) {
+                doc.addPage()
+                yPosition = 20
+              }
+              const optionText = `${String.fromCharCode(65 + idx)}) ${option}`
+              const splitOption = doc.splitTextToSize(optionText, 170)
+              doc.text(splitOption, 18, yPosition)
+              yPosition += splitOption.length * 7.5 // 1.5 line spacing
+            })
+            yPosition += 3
+          }
+
+          if (question.type === "fill-in-the-blank" && question.options) {
+            doc.setFont("helvetica", "italic")
+            doc.text("Options:", 18, yPosition)
+            yPosition += 7.5 // 1.5 line spacing
+            question.options.forEach((option) => {
+              if (yPosition > 275) {
+                doc.addPage()
+                yPosition = 20
+              }
+              const optionText = `• ${option}`
+              const splitOption = doc.splitTextToSize(optionText, 170)
+              doc.text(splitOption, 22, yPosition)
+              yPosition += splitOption.length * 7.5 // 1.5 line spacing
+            })
+            yPosition += 3
+          }
+
+          if (question.type === "matching" && question.pairs) {
+            doc.setFont("helvetica", "italic")
+            doc.text("Match the following:", 18, yPosition)
+            yPosition += 5
+            
+            // Create two columns for matching pairs
+            const leftColumn = 22
+            const rightColumn = 110
+            const lineHeight = 5
+            
+            question.pairs.forEach((pair, idx) => {
+              if (yPosition > 270) {
+                doc.addPage()
+                yPosition = 20
+              }
+              
+              // Left side - statement
+              const statementText = `${idx + 1}. ${pair.statement}`
+              const splitStatement = doc.splitTextToSize(statementText, 80)
+              doc.text(splitStatement, leftColumn, yPosition)
+              
+              // Right side - match
+              const matchText = `${String.fromCharCode(65 + idx)}) ${pair.match}`
+              const splitMatch = doc.splitTextToSize(matchText, 80)
+              doc.text(splitMatch, rightColumn, yPosition)
+              
+              // Move to next line based on the longer text
+              const maxLines = Math.max(splitStatement.length, splitMatch.length)
+              yPosition += maxLines * (lineHeight * 1.5) + 2 // 1.5 line spacing
+            })
+            yPosition += 3
+          }
+
+          if (question.type === "code" || question.type === "sql" || question.type === "algorithm") {
+            if (question.starter_code) {
+              doc.setFont("courier", "normal")
+              doc.setFontSize(8)
+              const codeLines = doc.splitTextToSize(question.starter_code, 170)
+              codeLines.forEach((line: string) => {
+                if (yPosition > 275) {
+                  doc.addPage()
+                  yPosition = 20
+                }
+                doc.text(line, 18, yPosition)
+                yPosition += 6 // 1.5 line spacing for code
+              })
+              doc.setFontSize(10)
+              doc.setFont("helvetica", "normal")
+              yPosition += 3
+            }
+          }
+
+          // Add writing space for short answer and essay questions
+          if (question.type === "short-answer") {
+            // Add 1/4 page of writing space for short answers
+            // Page break already handled above, but double-check
+            if (yPosition > 200) {
+              doc.addPage()
+              yPosition = 20
+            }
+            
+            // Add lines for writing
+            doc.setFont("helvetica", "normal")
+            doc.setFontSize(10)
+            for (let i = 0; i < 10; i++) {
+              if (yPosition > 270) {
+                doc.addPage()
+                yPosition = 20
+              }
+              doc.line(18, yPosition, 190, yPosition)
+              yPosition += 7.5 // 1.5 line spacing
+            }
+            yPosition += 5
+          }
+
+          if (question.type === "essay") {
+            // Add full page of writing space for essays
+            // Page break already handled above, but double-check
+            if (yPosition > 50) {
+              doc.addPage()
+              yPosition = 20
+            }
+            
+            // Add lines for writing (full page)
+            doc.setFont("helvetica", "normal")
+            doc.setFontSize(10)
+            for (let i = 0; i < 50; i++) {
+              doc.line(18, yPosition, 190, yPosition)
+              yPosition += 7.5 // 1.5 line spacing
+            }
+            yPosition += 5
+          }
+
+          // Add space between questions
+          yPosition += 5
+        })
+
+        yPosition += 5
+      })
+
+      // Open in new tab
+      const pdfBlob = doc.output('blob')
+      const pdfUrl = URL.createObjectURL(pdfBlob)
+      window.open(pdfUrl, '_blank')
+
+      toast.success("Test PDF generated successfully!")
+    } catch (error) {
+      console.error("Error generating PDF:", error)
+      toast.error("Failed to generate PDF")
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  // Group questions by type for preview
+  const questionsByType = questions.reduce((acc, question) => {
+    if (!acc[question.type]) {
+      acc[question.type] = []
+    }
+    acc[question.type].push(question)
+    return acc
+  }, {} as Record<string, ExtendedQuestion[]>)
+
+  // Sort within each type by difficulty
+  Object.keys(questionsByType).forEach(type => {
+    questionsByType[type].sort((a, b) => {
+      const order: Record<string, number> = { "low": 1, "medium": 2, "high": 3 }
+      return order[a.difficulty] - order[b.difficulty]
+    })
+  })
+
+  if (loading && topics.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="flex items-center gap-2">
+          <Loader2 className="w-6 h-6 animate-spin" />
+          <span>Loading...</span>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="container mx-auto p-6 max-w-6xl">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">Test Builder</h1>
+        <p className="text-muted-foreground">
+          Select a topic to generate a PDF test with all questions grouped by type and sorted by difficulty.
+        </p>
+      </div>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Select Topic</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-4 items-end">
+            <div className="flex-1">
+              <Select value={selectedTopicId} onValueChange={setSelectedTopicId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a topic..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {topics.map((topic) => (
+                    <SelectItem key={topic.id} value={String(topic.id)}>
+                      {topic.topicnumber} - {topic.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              onClick={generatePDF}
+              disabled={!selectedTopicId || questions.length === 0 || generating}
+            >
+              {generating ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4 mr-2" />
+                  Generate PDF
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {selectedTopicId && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Preview</span>
+              <Badge variant="secondary">{questions.length} questions</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-6 h-6 animate-spin" />
+                <span className="ml-2">Loading questions...</span>
+              </div>
+            ) : questions.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>No questions found for this topic</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {Object.entries(questionsByType).map(([type, typeQuestions]) => (
+                  <div key={type} className="border-l-4 border-primary pl-4">
+                    <h3 className="font-semibold text-lg mb-3 capitalize">
+                      {type.replace(/-/g, " ")} ({typeQuestions.length})
+                    </h3>
+                    <div className="space-y-2">
+                      {typeQuestions.map((question, index) => (
+                        <div
+                          key={question.id}
+                          className="flex items-start gap-3 p-3 bg-muted/30 rounded-md"
+                        >
+                          <Badge
+                            variant={
+                              question.difficulty === "low"
+                                ? "default"
+                                : question.difficulty === "medium"
+                                ? "secondary"
+                                : "destructive"
+                            }
+                            className="mt-1"
+                          >
+                            {question.difficulty}
+                          </Badge>
+                          <div className="flex-1">
+                            <p className="text-sm">
+                              <span className="font-medium">Q{index + 1}:</span>{" "}
+                              {question.question_text.substring(0, 100)}
+                              {question.question_text.length > 100 ? "..." : ""}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  )
+}
+
