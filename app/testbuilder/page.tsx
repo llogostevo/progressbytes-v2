@@ -303,11 +303,14 @@ export default function TestBuilder() {
         yPosition += 12 // 1.5 line spacing
 
         typeQuestions.forEach((question, index) => {
-          // Check if we need a new page for short answer or essay questions
+          // Check if we need a new page for short answer, essay, code, or algorithm questions
           if (question.type === "short-answer" && yPosition > 200) {
             doc.addPage()
             yPosition = 20
           } else if (question.type === "essay" && yPosition > 50) {
+            doc.addPage()
+            yPosition = 20
+          } else if ((question.type === "code" || question.type === "sql" || question.type === "algorithm") && yPosition > 200) {
             doc.addPage()
             yPosition = 20
           } else if (yPosition > 260) {
@@ -410,6 +413,15 @@ export default function TestBuilder() {
               doc.setFont("helvetica", "normal")
               yPosition += 3
             }
+
+            // Add writing lines to fill the rest of the page
+            doc.setFont("helvetica", "normal")
+            doc.setFontSize(10)
+            while (yPosition < 280) { // Fill to near bottom of page
+              doc.line(18, yPosition, 190, yPosition)
+              yPosition += 7.5 // 1.5 line spacing
+            }
+            yPosition += 5
           }
 
           // Add writing space for short answer and essay questions
