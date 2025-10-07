@@ -212,7 +212,7 @@ export default function ImprovedQuestionManager() {
           "id", "question_text", "difficulty", "explanation",
           "correct_answer", "model_answer"
         ].join(",") + "\n"
-        csvContent += "example_1,The sky is blue,low,Basic knowledge,true,The sky appears blue due to light scattering\n"
+        csvContent += "example_1,ram is volatile,low,Ram loses power when the computer is turned off,true,true\n"
         break
       
       case "short-answer":
