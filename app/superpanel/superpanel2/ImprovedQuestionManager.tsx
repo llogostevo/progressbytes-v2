@@ -1082,7 +1082,11 @@ export default function ImprovedQuestionManager() {
 
   const handleSelectQuestion = (questionId: string) => {
     const next = new Set(selectedQuestionIds)
-    next.has(questionId) ? next.delete(questionId) : next.add(questionId)
+    if (next.has(questionId)) {
+      next.delete(questionId)
+    } else {
+      next.add(questionId)
+    }
     setSelectedQuestionIds(next)
   }
 

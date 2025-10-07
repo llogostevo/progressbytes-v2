@@ -339,7 +339,7 @@ export default function TestBuilder() {
                     "algorithm",
                 ]
 
-                questionTypes.forEach((type, typeIndex) => {
+                questionTypes.forEach((type) => {
                     const typeQuestions = questions
                         .filter((q) => q.type === type && selectedQuestions.has(q.id))
                         .sort((a, b) => difficultyOrder[a.difficulty] - difficultyOrder[b.difficulty])
