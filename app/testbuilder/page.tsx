@@ -511,12 +511,20 @@ export default function TestBuilder() {
         yPosition += splitAnswerTitle.length * 7.5 + 5
 
         // Generate answers for each question type
+        let firstAnswerGroup = true
         questionTypes.forEach((type) => {
           const typeQuestions = questions
             .filter(q => q.type === type && selectedQuestions.has(q.id))
             .sort((a, b) => difficultyOrder[a.difficulty] - difficultyOrder[b.difficulty])
 
           if (typeQuestions.length === 0) return
+
+          // Start each new question group on a new page (except the first)
+          if (!firstAnswerGroup) {
+            doc.addPage()
+            yPosition = 20
+          }
+          firstAnswerGroup = false
 
           // Section header
           doc.setFontSize(14)
@@ -599,6 +607,17 @@ export default function TestBuilder() {
               }
             }
 
+            // Show explanation if available
+            if (question.explanation) {
+              doc.setFont("helvetica", "bold")
+              doc.text("Explanation:", 18, yPosition)
+              yPosition += 7.5
+              doc.setFont("helvetica", "normal")
+              const splitExplanation = doc.splitTextToSize(question.explanation, 170)
+              doc.text(splitExplanation, 18, yPosition)
+              yPosition += splitExplanation.length * 7.5 + 3
+            }
+
             // Show keywords if enabled
             if (showKeywords && question.keywords && question.keywords.length > 0) {
               doc.setFont("helvetica", "italic")
@@ -611,7 +630,7 @@ export default function TestBuilder() {
               yPosition += splitKeywords.length * 7.5 + 3
             }
 
-            yPosition += 10 // Space between questions
+            yPosition += 5 // Reduced space between questions
           })
 
           yPosition += 5
