@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
 import { FileText, Download, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import jsPDF from "jspdf"
@@ -31,6 +32,7 @@ export default function TestBuilder() {
   const [questions, setQuestions] = useState<ExtendedQuestion[]>([])
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
+  const [showKeywords, setShowKeywords] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -383,6 +385,18 @@ export default function TestBuilder() {
               yPosition = 20
             }
             
+            // Show keywords if enabled
+            if (showKeywords && question.keywords && question.keywords.length > 0) {
+              doc.setFont("helvetica", "italic")
+              doc.setFontSize(9)
+              doc.text("Keywords:", 18, yPosition)
+              yPosition += 7.5
+              const keywordsText = question.keywords.join(", ")
+              const splitKeywords = doc.splitTextToSize(keywordsText, 170)
+              doc.text(splitKeywords, 18, yPosition)
+              yPosition += splitKeywords.length * 7.5 + 3
+            }
+            
             // Add lines for writing
             doc.setFont("helvetica", "normal")
             doc.setFontSize(10)
@@ -403,6 +417,18 @@ export default function TestBuilder() {
             if (yPosition > 50) {
               doc.addPage()
               yPosition = 20
+            }
+            
+            // Show keywords if enabled
+            if (showKeywords && question.keywords && question.keywords.length > 0) {
+              doc.setFont("helvetica", "italic")
+              doc.setFontSize(9)
+              doc.text("Keywords:", 18, yPosition)
+              yPosition += 7.5
+              const keywordsText = question.keywords.join(", ")
+              const splitKeywords = doc.splitTextToSize(keywordsText, 170)
+              doc.text(splitKeywords, 18, yPosition)
+              yPosition += splitKeywords.length * 7.5 + 3
             }
             
             // Add lines for writing (full page)
@@ -478,37 +504,52 @@ export default function TestBuilder() {
           <CardTitle>Select Topic</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4 items-end">
-            <div className="flex-1">
-              <Select value={selectedTopicId} onValueChange={setSelectedTopicId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a topic..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {topics.map((topic) => (
-                    <SelectItem key={topic.id} value={String(topic.id)}>
-                      {topic.topicnumber} - {topic.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="space-y-4">
+            <div className="flex gap-4 items-end">
+              <div className="flex-1">
+                <Select value={selectedTopicId} onValueChange={setSelectedTopicId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a topic..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {topics.map((topic) => (
+                      <SelectItem key={topic.id} value={String(topic.id)}>
+                        {topic.topicnumber} - {topic.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                onClick={generatePDF}
+                disabled={!selectedTopicId || questions.length === 0 || generating}
+              >
+                {generating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4 mr-2" />
+                    Generate PDF
+                  </>
+                )}
+              </Button>
             </div>
-            <Button
-              onClick={generatePDF}
-              disabled={!selectedTopicId || questions.length === 0 || generating}
-            >
-              {generating ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Download className="w-4 h-4 mr-2" />
-                  Generate PDF
-                </>
-              )}
-            </Button>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="show-keywords"
+                checked={showKeywords}
+                onCheckedChange={(checked) => setShowKeywords(checked as boolean)}
+              />
+              <label
+                htmlFor="show-keywords"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Show keywords in PDF (for short answer and essay questions)
+              </label>
+            </div>
           </div>
         </CardContent>
       </Card>
