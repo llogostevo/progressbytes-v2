@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { createClient } from "@/utils/supabase/client"
 import type { Question } from "@/lib/types"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { FileText, Download, Loader2, X, ChevronsUpDown } from "lucide-react"
@@ -12,6 +12,9 @@ import { toast } from "sonner"
 import jsPDF from "jspdf"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { useUser } from "@/hooks/useUser"
+import { isTeacherPlan, User, UserType } from "@/lib/access"
+import Link from "next/link"
 
 interface Topic {
     id: number
@@ -29,6 +32,7 @@ interface ExtendedQuestion extends Question {
 }
 
 export default function TestBuilder() {
+    const { user, loading: userLoading } = useUser()
     const [topics, setTopics] = useState<Topic[]>([])
     const [selectedTopicIds, setSelectedTopicIds] = useState<string[]>([])
     const [questions, setQuestions] = useState<ExtendedQuestion[]>([])
@@ -1155,6 +1159,64 @@ export default function TestBuilder() {
                 return acc
             }, {} as Record<string, ExtendedQuestion[]>)
         })()
+
+    // Show loading state while checking authentication
+    if (userLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="flex items-center gap-2">
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                    <span>Loading...</span>
+                </div>
+            </div>
+        )
+    }
+
+    // Check if user is not logged in
+    if (!user) {
+        return (
+            <div className="container mx-auto p-6 max-w-4xl">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Authentication Required</CardTitle>
+                        <CardDescription>
+                            You need to be logged in to access the Test Builder.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Link href="/login">
+                            <Button className="bg-emerald-600 hover:bg-emerald-700">
+                                Log In
+                            </Button>
+                        </Link>
+                    </CardContent>
+                </Card>
+            </div>
+        )
+    }
+
+    // Check if user is a teacher
+    if (!isTeacherPlan({ user_type: user.user_type as UserType } as User)) {
+        return (
+            <div className="container mx-auto p-6 max-w-4xl">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Access Restricted</CardTitle>
+                        <CardDescription>
+                            The Test Builder is only available to teacher accounts. Please upgrade to a teacher plan to access this feature.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Link href="/settings">
+                            <Button className="bg-emerald-600 hover:bg-emerald-700">
+                                View Teacher Plans
+                            </Button>
+                        </Link>
+                    </CardContent>
+                </Card>
+            </div>
+        )
+    }
 
     if (loading && topics.length === 0) {
         return (
