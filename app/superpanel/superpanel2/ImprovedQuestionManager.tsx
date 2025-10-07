@@ -137,6 +137,8 @@ export default function ImprovedQuestionManager() {
   const [addingSubtopicIds, setAddingSubtopicIds] = useState<string[]>([])
   const [editSubtopicSearch, setEditSubtopicSearch] = useState("")
   const [addSubtopicSearch, setAddSubtopicSearch] = useState("")
+  const [showOnlySelectedEditSubtopics, setShowOnlySelectedEditSubtopics] = useState(false)
+  const [showOnlySelectedAddSubtopics, setShowOnlySelectedAddSubtopics] = useState(false)
   const [showBulkUpload, setShowBulkUpload] = useState(false)
   const [bulkUploadType, setBulkUploadType] = useState<Question["type"]>("multiple-choice")
   const [bulkUploadFile, setBulkUploadFile] = useState<File | null>(null)
@@ -779,6 +781,7 @@ export default function ImprovedQuestionManager() {
     )
     setEditingKeywords(question.keywords || [])
     setEditSubtopicSearch("")
+    setShowOnlySelectedEditSubtopics(false)
     setHasUnsavedChanges(false)
   }
 
@@ -948,6 +951,7 @@ export default function ImprovedQuestionManager() {
       setEditingSubtopicIds([])
       setEditingKeywords([])
       setEditSubtopicSearch("")
+      setShowOnlySelectedEditSubtopics(false)
       setHasUnsavedChanges(false)
       toast.success("Question updated successfully")
     } catch (error) {
@@ -972,6 +976,7 @@ export default function ImprovedQuestionManager() {
     setEditingSubtopicIds([])
     setEditingKeywords([])
     setEditSubtopicSearch("")
+    setShowOnlySelectedEditSubtopics(false)
     setHasUnsavedChanges(false)
   }
 
@@ -1823,16 +1828,30 @@ export default function ImprovedQuestionManager() {
                                     className="pl-10"
                                   />
                                 </div>
+                                <div className="flex items-center justify-between mb-2">
+                                  <label className="flex items-center gap-2 cursor-pointer">
+                                    <ShadcnCheckbox
+                                      checked={showOnlySelectedEditSubtopics}
+                                      onCheckedChange={(checked: boolean) => setShowOnlySelectedEditSubtopics(checked)}
+                                    />
+                                    <span className="text-sm">Show only selected</span>
+                                  </label>
+                                  <span className="text-sm text-muted-foreground">
+                                    {editingSubtopicIds.length} selected
+                                  </span>
+                                </div>
                                 <div className="max-h-48 overflow-y-auto border rounded-md p-3 bg-muted/20">
                                   {groupedSubtopics
                                     .map((topic) => ({
                                       ...topic,
-                                      subtopics: topic.subtopics.filter((sub) =>
-                                        editSubtopicSearch === "" ||
-                                        sub.subtopictitle.toLowerCase().includes(editSubtopicSearch.toLowerCase()) ||
-                                        topic.name.toLowerCase().includes(editSubtopicSearch.toLowerCase()) ||
-                                        topic.topicnumber.toLowerCase().includes(editSubtopicSearch.toLowerCase())
-                                      ),
+                                      subtopics: topic.subtopics.filter((sub) => {
+                                        const matchesSearch = editSubtopicSearch === "" ||
+                                          sub.subtopictitle.toLowerCase().includes(editSubtopicSearch.toLowerCase()) ||
+                                          topic.name.toLowerCase().includes(editSubtopicSearch.toLowerCase()) ||
+                                          topic.topicnumber.toLowerCase().includes(editSubtopicSearch.toLowerCase())
+                                        const matchesSelected = !showOnlySelectedEditSubtopics || editingSubtopicIds.includes(sub.id)
+                                        return matchesSearch && matchesSelected
+                                      }),
                                     }))
                                     .filter((topic) => topic.subtopics.length > 0)
                                     .map((topic) => (
@@ -1859,16 +1878,18 @@ export default function ImprovedQuestionManager() {
                                   {groupedSubtopics
                                     .map((topic) => ({
                                       ...topic,
-                                      subtopics: topic.subtopics.filter((sub) =>
-                                        editSubtopicSearch === "" ||
-                                        sub.subtopictitle.toLowerCase().includes(editSubtopicSearch.toLowerCase()) ||
-                                        topic.name.toLowerCase().includes(editSubtopicSearch.toLowerCase()) ||
-                                        topic.topicnumber.toLowerCase().includes(editSubtopicSearch.toLowerCase())
-                                      ),
+                                      subtopics: topic.subtopics.filter((sub) => {
+                                        const matchesSearch = editSubtopicSearch === "" ||
+                                          sub.subtopictitle.toLowerCase().includes(editSubtopicSearch.toLowerCase()) ||
+                                          topic.name.toLowerCase().includes(editSubtopicSearch.toLowerCase()) ||
+                                          topic.topicnumber.toLowerCase().includes(editSubtopicSearch.toLowerCase())
+                                        const matchesSelected = !showOnlySelectedEditSubtopics || editingSubtopicIds.includes(sub.id)
+                                        return matchesSearch && matchesSelected
+                                      }),
                                     }))
                                     .filter((topic) => topic.subtopics.length > 0).length === 0 && (
                                     <p className="text-sm text-muted-foreground text-center py-4">
-                                      No subtopics match your search
+                                      {showOnlySelectedEditSubtopics ? "No selected subtopics" : "No subtopics match your search"}
                                     </p>
                                   )}
                                 </div>
@@ -2426,16 +2447,30 @@ export default function ImprovedQuestionManager() {
                     className="pl-10"
                   />
                 </div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <ShadcnCheckbox
+                      checked={showOnlySelectedAddSubtopics}
+                      onCheckedChange={(checked: boolean) => setShowOnlySelectedAddSubtopics(checked)}
+                    />
+                    <span className="text-sm">Show only selected</span>
+                  </label>
+                  <span className="text-sm text-muted-foreground">
+                    {addingSubtopicIds.length} selected
+                  </span>
+                </div>
                 <div className="max-h-48 overflow-y-auto border rounded-md p-3 bg-muted/20">
                   {groupedSubtopics
                     .map((topic) => ({
                       ...topic,
-                      subtopics: topic.subtopics.filter((sub) =>
-                        addSubtopicSearch === "" ||
-                        sub.subtopictitle.toLowerCase().includes(addSubtopicSearch.toLowerCase()) ||
-                        topic.name.toLowerCase().includes(addSubtopicSearch.toLowerCase()) ||
-                        topic.topicnumber.toLowerCase().includes(addSubtopicSearch.toLowerCase())
-                      ),
+                      subtopics: topic.subtopics.filter((sub) => {
+                        const matchesSearch = addSubtopicSearch === "" ||
+                          sub.subtopictitle.toLowerCase().includes(addSubtopicSearch.toLowerCase()) ||
+                          topic.name.toLowerCase().includes(addSubtopicSearch.toLowerCase()) ||
+                          topic.topicnumber.toLowerCase().includes(addSubtopicSearch.toLowerCase())
+                        const matchesSelected = !showOnlySelectedAddSubtopics || addingSubtopicIds.includes(sub.id)
+                        return matchesSearch && matchesSelected
+                      }),
                     }))
                     .filter((topic) => topic.subtopics.length > 0)
                     .map((topic) => (
@@ -2461,16 +2496,18 @@ export default function ImprovedQuestionManager() {
                   {groupedSubtopics
                     .map((topic) => ({
                       ...topic,
-                      subtopics: topic.subtopics.filter((sub) =>
-                        addSubtopicSearch === "" ||
-                        sub.subtopictitle.toLowerCase().includes(addSubtopicSearch.toLowerCase()) ||
-                        topic.name.toLowerCase().includes(addSubtopicSearch.toLowerCase()) ||
-                        topic.topicnumber.toLowerCase().includes(addSubtopicSearch.toLowerCase())
-                      ),
+                      subtopics: topic.subtopics.filter((sub) => {
+                        const matchesSearch = addSubtopicSearch === "" ||
+                          sub.subtopictitle.toLowerCase().includes(addSubtopicSearch.toLowerCase()) ||
+                          topic.name.toLowerCase().includes(addSubtopicSearch.toLowerCase()) ||
+                          topic.topicnumber.toLowerCase().includes(addSubtopicSearch.toLowerCase())
+                        const matchesSelected = !showOnlySelectedAddSubtopics || addingSubtopicIds.includes(sub.id)
+                        return matchesSearch && matchesSelected
+                      }),
                     }))
                     .filter((topic) => topic.subtopics.length > 0).length === 0 && (
                     <p className="text-sm text-muted-foreground text-center py-4">
-                      No subtopics match your search
+                      {showOnlySelectedAddSubtopics ? "No selected subtopics" : "No subtopics match your search"}
                     </p>
                   )}
                 </div>
