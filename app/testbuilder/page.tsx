@@ -286,32 +286,40 @@ export default function TestBuilder() {
             doc.setFont("helvetica", "normal")
             doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 60)
 
+            // Student information fields on first page
+            doc.setFontSize(14)
+            doc.setFont("helvetica", "bold")
+            doc.text("Student Information:", 14, 100)
+
+            doc.setFontSize(12)
+            doc.setFont("helvetica", "normal")
+            doc.text("Forename:  _____________________________", 14, 120) 
+            doc.text("Last Name: _____________________________", 14, 140)
+            doc.text("Year:      _____________________________", 14, 160)
+            doc.text("Teacher:   _____________________________", 14, 180)
+
+            // Start second page with topics covered and total questions
+            doc.addPage()
+
             if (selectedTopics.length > 1) {
+                doc.setFontSize(14)
+                doc.setFont("helvetica", "bold")
+                doc.text("Topics Covered:", 14, 20)
                 doc.setFontSize(10)
-                doc.text("Topics covered:", 14, 75)
-                let yPos = 82
+                doc.setFont("helvetica", "normal")
+                let yPos = 30
                 selectedTopics.forEach((topic, idx) => {
                     doc.text(`${idx + 1}. ${topic.topicnumber} - ${topic.name}`, 18, yPos)
                     yPos += 7
                 })
                 doc.setFontSize(12)
-                doc.text(`Total Questions: ${selectedQuestions.size}`, 14, yPos + 5)
+                doc.setFont("helvetica", "bold")
+                doc.text(`Total Questions: ${selectedQuestions.size}`, 14, yPos + 10)
             } else {
-                doc.text(`Total Questions: ${selectedQuestions.size}`, 14, 75)
+                doc.setFontSize(12)
+                doc.setFont("helvetica", "bold")
+                doc.text(`Total Questions: ${selectedQuestions.size}`, 14, 20)
             }
-
-            // Student information fields
-            doc.setFontSize(14)
-            doc.setFont("helvetica", "bold")
-            const studentInfoY = selectedTopics.length > 1 ? 140 : 100
-            doc.text("Student Information:", 14, studentInfoY)
-
-            doc.setFontSize(12)
-            doc.setFont("helvetica", "normal")
-            doc.text("Forename:  _____________________________", 14, studentInfoY + 20) 
-            doc.text("Last Name: _____________________________", 14, studentInfoY + 40)
-            doc.text("Year:      _____________________________", 14, studentInfoY + 60)
-            doc.text("Teacher:   _____________________________", 14, studentInfoY + 80)
 
             // Start questions on new page
             doc.addPage()
@@ -637,8 +645,9 @@ export default function TestBuilder() {
                     // Section header
                     doc.setFontSize(14)
                     doc.setFont("helvetica", "bold")
-                    doc.text(subtopicName.toUpperCase(), 14, yPosition)
-                    yPosition += 12 // 1.5 line spacing
+                    const splitSubtopicName = doc.splitTextToSize(subtopicName.toUpperCase(), 180)
+                    doc.text(splitSubtopicName, 14, yPosition)
+                    yPosition += splitSubtopicName.length * 8 + 4 // 1.5 line spacing
 
                     sortedQuestions.forEach((question: ExtendedQuestion, index: number) => {
                         // Check if we need a new page for short answer, essay, code, or algorithm questions
