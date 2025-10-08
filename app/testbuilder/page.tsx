@@ -286,32 +286,40 @@ export default function TestBuilder() {
             doc.setFont("helvetica", "normal")
             doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 60)
 
+            // Student information fields on first page
+            doc.setFontSize(14)
+            doc.setFont("helvetica", "bold")
+            doc.text("Student Information:", 14, 100)
+
+            doc.setFontSize(12)
+            doc.setFont("helvetica", "normal")
+            doc.text("Forename:  _____________________________", 14, 120) 
+            doc.text("Last Name: _____________________________", 14, 140)
+            doc.text("Year:      _____________________________", 14, 160)
+            doc.text("Teacher:   _____________________________", 14, 180)
+
+            // Start second page with topics covered and total questions
+            doc.addPage()
+
             if (selectedTopics.length > 1) {
+                doc.setFontSize(14)
+                doc.setFont("helvetica", "bold")
+                doc.text("Topics Covered:", 14, 20)
                 doc.setFontSize(10)
-                doc.text("Topics covered:", 14, 75)
-                let yPos = 82
+                doc.setFont("helvetica", "normal")
+                let yPos = 30
                 selectedTopics.forEach((topic, idx) => {
                     doc.text(`${idx + 1}. ${topic.topicnumber} - ${topic.name}`, 18, yPos)
                     yPos += 7
                 })
                 doc.setFontSize(12)
-                doc.text(`Total Questions: ${selectedQuestions.size}`, 14, yPos + 5)
+                doc.setFont("helvetica", "bold")
+                doc.text(`Total Questions: ${selectedQuestions.size}`, 14, yPos + 10)
             } else {
-                doc.text(`Total Questions: ${selectedQuestions.size}`, 14, 75)
+                doc.setFontSize(12)
+                doc.setFont("helvetica", "bold")
+                doc.text(`Total Questions: ${selectedQuestions.size}`, 14, 20)
             }
-
-            // Student information fields
-            doc.setFontSize(14)
-            doc.setFont("helvetica", "bold")
-            const studentInfoY = selectedTopics.length > 1 ? 140 : 100
-            doc.text("Student Information:", 14, studentInfoY)
-
-            doc.setFontSize(12)
-            doc.setFont("helvetica", "normal")
-            doc.text("Forename:  _____________________________", 14, studentInfoY + 20) 
-            doc.text("Last Name: _____________________________", 14, studentInfoY + 40)
-            doc.text("Year:      _____________________________", 14, studentInfoY + 60)
-            doc.text("Teacher:   _____________________________", 14, studentInfoY + 80)
 
             // Start questions on new page
             doc.addPage()
@@ -637,8 +645,9 @@ export default function TestBuilder() {
                     // Section header
                     doc.setFontSize(14)
                     doc.setFont("helvetica", "bold")
-                    doc.text(subtopicName.toUpperCase(), 14, yPosition)
-                    yPosition += 12 // 1.5 line spacing
+                    const splitSubtopicName = doc.splitTextToSize(subtopicName.toUpperCase(), 180)
+                    doc.text(splitSubtopicName, 14, yPosition)
+                    yPosition += splitSubtopicName.length * 8 + 4 // 1.5 line spacing
 
                     sortedQuestions.forEach((question: ExtendedQuestion, index: number) => {
                         // Check if we need a new page for short answer, essay, code, or algorithm questions
@@ -1175,17 +1184,17 @@ export default function TestBuilder() {
     // Check if user is not logged in
     if (!user) {
         return (
-            <div className="container mx-auto p-6 max-w-4xl">
+            <div className="container mx-auto p-3 sm:p-6 max-w-4xl">
                 <Card>
-                    <CardHeader>
-                        <CardTitle>Authentication Required</CardTitle>
-                        <CardDescription>
+                    <CardHeader className="p-4 sm:p-6">
+                        <CardTitle className="text-lg sm:text-xl">Authentication Required</CardTitle>
+                        <CardDescription className="text-sm">
                             You need to be logged in to access the Test Builder.
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-4 sm:p-6">
                         <Link href="/login">
-                            <Button className="bg-emerald-600 hover:bg-emerald-700">
+                            <Button className="bg-emerald-600 hover:bg-emerald-700 w-full sm:w-auto">
                                 Log In
                             </Button>
                         </Link>
@@ -1198,17 +1207,17 @@ export default function TestBuilder() {
     // Check if user is a teacher
     if (!isTeacherPlan({ user_type: user.user_type as UserType } as User)) {
         return (
-            <div className="container mx-auto p-6 max-w-4xl">
+            <div className="container mx-auto p-3 sm:p-6 max-w-4xl">
                 <Card>
-                    <CardHeader>
-                        <CardTitle>Access Restricted</CardTitle>
-                        <CardDescription>
+                    <CardHeader className="p-4 sm:p-6">
+                        <CardTitle className="text-lg sm:text-xl">Access Restricted</CardTitle>
+                        <CardDescription className="text-sm">
                             The Test Builder is only available to teacher accounts. Please upgrade to a teacher plan to access this feature.
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-4 sm:p-6">
                         <Link href="/settings">
-                            <Button className="bg-emerald-600 hover:bg-emerald-700">
+                            <Button className="bg-emerald-600 hover:bg-emerald-700 w-full sm:w-auto">
                                 View Teacher Plans
                             </Button>
                         </Link>
@@ -1230,21 +1239,21 @@ export default function TestBuilder() {
     }
 
     return (
-        <div className="container mx-auto p-6 max-w-6xl">
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold mb-2">Test Builder</h1>
-                <p className="text-muted-foreground">
+        <div className="container mx-auto p-3 sm:p-6 max-w-6xl">
+            <div className="mb-4 sm:mb-8">
+                <h1 className="text-2xl sm:text-3xl font-bold mb-2">Test Builder</h1>
+                <p className="text-sm sm:text-base text-muted-foreground">
                     Select one or more topics to generate a PDF test with questions grouped by type and sorted by difficulty.
                 </p>
             </div>
 
-            <Card className="mb-6">
-                <CardHeader>
-                    <CardTitle>Select Topics</CardTitle>
+            <Card className="mb-4 sm:mb-6">
+                <CardHeader className="p-4 sm:p-6">
+                    <CardTitle className="text-lg sm:text-xl">Select Topics</CardTitle>
                 </CardHeader>
-                <CardContent>
-                    <div className="space-y-4">
-                        <div className="flex gap-4 items-end">
+                <CardContent className="p-4 sm:p-6">
+                    <div className="space-y-3 sm:space-y-4">
+                        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 sm:items-end">
                             <div className="flex-1">
                                 <Popover open={open} onOpenChange={setOpen}>
                                     <PopoverTrigger asChild>
@@ -1260,11 +1269,11 @@ export default function TestBuilder() {
                                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                         </Button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-full p-0" align="start">
+                                    <PopoverContent className="w-[calc(100vw-2rem)] sm:w-full p-0" align="start">
                                         <Command>
-                                            <CommandInput placeholder="Search topics..." />
+                                            <CommandInput placeholder="Search topics..." className="text-sm" />
                                             <CommandList>
-                                                <CommandEmpty>No topics found.</CommandEmpty>
+                                                <CommandEmpty className="text-sm">No topics found.</CommandEmpty>
                                                 <CommandGroup>
                                                     {topics.map((topic) => (
                                                         <CommandItem
@@ -1272,12 +1281,12 @@ export default function TestBuilder() {
                                                             value={`${topic.topicnumber} ${topic.name}`}
                                                             onSelect={() => toggleTopic(String(topic.id))}
                                                         >
-                                                            <div className="flex items-center gap-2 flex-1">
+                                                            <div className="flex items-center gap-2 flex-1 min-w-0">
                                                                 <Checkbox
                                                                     checked={selectedTopicIds.includes(String(topic.id))}
-                                                                    className="pointer-events-none"
+                                                                    className="pointer-events-none flex-shrink-0"
                                                                 />
-                                                                <span className="text-sm">
+                                                                <span className="text-xs sm:text-sm truncate">
                                                                     {topic.topicnumber} - {topic.name}
                                                                 </span>
                                                             </div>
@@ -1292,6 +1301,7 @@ export default function TestBuilder() {
                             <Button
                                 onClick={generatePDF}
                                 disabled={selectedTopicIds.length === 0 || selectedQuestions.size === 0 || generating}
+                                className="w-full sm:w-auto"
                             >
                                 {generating ? (
                                     <>
@@ -1308,19 +1318,19 @@ export default function TestBuilder() {
                         </div>
 
                         {selectedTopicIds.length > 0 && (
-                            <div className="flex flex-wrap gap-2">
+                            <div className="flex flex-wrap gap-1.5 sm:gap-2">
                                 {selectedTopicIds.map((topicId) => {
                                     const topic = topics.find((t) => String(t.id) === topicId)
                                     if (!topic) return null
                                     return (
-                                        <Badge key={topicId} variant="secondary" className="gap-1 pr-1">
-                                            <span>
+                                        <Badge key={topicId} variant="secondary" className="gap-1 pr-1 text-xs sm:text-sm max-w-full">
+                                            <span className="truncate">
                                                 {topic.topicnumber} - {topic.name}
                                             </span>
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                className="h-4 w-4 p-0 hover:bg-transparent"
+                                                className="h-4 w-4 p-0 hover:bg-transparent flex-shrink-0"
                                                 onClick={() => removeTopic(topicId)}
                                             >
                                                 <X className="h-3 w-3" />
@@ -1331,58 +1341,62 @@ export default function TestBuilder() {
                             </div>
                         )}
 
-                        <div className="space-y-3">
-                            <div className="flex items-center space-x-2">
+                        <div className="space-y-2 sm:space-y-3">
+                            <div className="flex items-start space-x-2">
                                 <Checkbox
                                     id="show-keywords"
                                     checked={showKeywords}
                                     onCheckedChange={(checked) => setShowKeywords(checked as boolean)}
+                                    className="mt-0.5"
                                 />
                                 <label
                                     htmlFor="show-keywords"
-                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                    className="text-xs sm:text-sm font-medium leading-tight peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                                 >
                                     Show keywords in PDF (for short answer and essay questions)
                                 </label>
                             </div>
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-start space-x-2">
                                 <Checkbox
                                     id="include-answers"
                                     checked={includeAnswers}
                                     onCheckedChange={(checked) => setIncludeAnswers(checked as boolean)}
+                                    className="mt-0.5"
                                 />
                                 <label
                                     htmlFor="include-answers"
-                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                    className="text-xs sm:text-sm font-medium leading-tight peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                                 >
                                     Include answer key at the end of the PDF
                                 </label>
                             </div>
-                            <div className="flex items-center space-x-4">
-                                <label className="text-sm font-medium">Order questions by:</label>
-                                <div className="flex items-center space-x-2">
-                                    <input
-                                        type="radio"
-                                        id="order-type"
-                                        name="orderBy"
-                                        value="type"
-                                        checked={orderBy === "type"}
-                                        onChange={(e) => setOrderBy(e.target.value as "type" | "subtopic")}
-                                        className="h-4 w-4"
-                                    />
-                                    <label htmlFor="order-type" className="text-sm">Question Type</label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <input
-                                        type="radio"
-                                        id="order-subtopic"
-                                        name="orderBy"
-                                        value="subtopic"
-                                        checked={orderBy === "subtopic"}
-                                        onChange={(e) => setOrderBy(e.target.value as "type" | "subtopic")}
-                                        className="h-4 w-4"
-                                    />
-                                    <label htmlFor="order-subtopic" className="text-sm">Subtopic</label>
+                            <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                                <label className="text-xs sm:text-sm font-medium">Order questions by:</label>
+                                <div className="flex items-center gap-3 sm:gap-4">
+                                    <div className="flex items-center space-x-2">
+                                        <input
+                                            type="radio"
+                                            id="order-type"
+                                            name="orderBy"
+                                            value="type"
+                                            checked={orderBy === "type"}
+                                            onChange={(e) => setOrderBy(e.target.value as "type" | "subtopic")}
+                                            className="h-4 w-4"
+                                        />
+                                        <label htmlFor="order-type" className="text-xs sm:text-sm">Question Type</label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <input
+                                            type="radio"
+                                            id="order-subtopic"
+                                            name="orderBy"
+                                            value="subtopic"
+                                            checked={orderBy === "subtopic"}
+                                            onChange={(e) => setOrderBy(e.target.value as "type" | "subtopic")}
+                                            className="h-4 w-4"
+                                        />
+                                        <label htmlFor="order-subtopic" className="text-xs sm:text-sm">Subtopic</label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1392,20 +1406,20 @@ export default function TestBuilder() {
 
             {selectedTopicIds.length > 0 && (
                 <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center justify-between">
-                            <span>Preview</span>
-                            <div className="flex items-center gap-4">
-                                <Badge variant="secondary">
+                    <CardHeader className="p-4 sm:p-6">
+                        <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <span className="text-lg sm:text-xl">Preview</span>
+                            <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
+                                <Badge variant="secondary" className="text-xs sm:text-sm">
                                     {selectedQuestions.size} of {questions.length} selected
                                 </Badge>
-                                <Button variant="outline" size="sm" onClick={handleSelectAll}>
+                                <Button variant="outline" size="sm" onClick={handleSelectAll} className="text-xs sm:text-sm">
                                     {selectedQuestions.size === questions.length ? "Deselect All" : "Select All"}
                                 </Button>
                             </div>
                         </CardTitle>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-4 sm:p-6">
                         {loading ? (
                             <div className="flex items-center justify-center py-12">
                                 <Loader2 className="w-6 h-6 animate-spin" />
@@ -1417,13 +1431,13 @@ export default function TestBuilder() {
                                 <p>No questions found for the selected topic(s)</p>
                             </div>
                         ) : (
-                            <div className="space-y-6">
+                            <div className="space-y-4 sm:space-y-6">
                                 {Object.entries(questionsByType).map(([groupName, groupQuestions]) => {
                                     if (!groupQuestions || groupQuestions.length === 0) return null
 
                                     return (
-                                        <div key={groupName} className="border-l-4 border-primary pl-4">
-                                            <h3 className="font-semibold text-lg mb-3">
+                                        <div key={groupName} className="border-l-2 sm:border-l-4 border-primary pl-2 sm:pl-4">
+                                            <h3 className="font-semibold text-base sm:text-lg mb-2 sm:mb-3 break-words">
                                                 {orderBy === "type" 
                                                     ? `${groupName.replace(/-/g, " ").toUpperCase()} (${groupQuestions.length})`
                                                     : `${groupName} (${groupQuestions.length})`
@@ -1431,29 +1445,37 @@ export default function TestBuilder() {
                                             </h3>
                                             <div className="space-y-2">
                                                 {groupQuestions.map((question, index) => (
-                                                    <div key={question.id} className="flex items-start gap-3 p-3 bg-muted/30 rounded-md">
-                                                        <Checkbox
-                                                            checked={selectedQuestions.has(question.id)}
-                                                            onCheckedChange={() => handleQuestionToggle(question.id)}
-                                                            className="mt-1"
-                                                        />
-                                                        <Badge
-                                                            className={`mt-1 ${question.difficulty === "low"
-                                                                    ? "bg-green-100 text-green-700 border-green-200 hover:bg-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800"
-                                                                    : question.difficulty === "medium"
-                                                                        ? "bg-yellow-100 text-yellow-700 border-yellow-200 hover:bg-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-300 dark:border-yellow-800"
-                                                                        : "bg-red-100 text-red-700 border-red-200 hover:bg-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800"
-                                                                }`}
-                                                        >
-                                                            {question.difficulty}
-                                                        </Badge>
-                                                        {orderBy === "subtopic" && (
-                                                            <Badge variant="outline" className="mt-1">
-                                                                {question.type.replace(/-/g, " ")}
-                                                            </Badge>
-                                                        )}
-                                                        <div className="flex-1">
-                                                            <p className="text-sm">
+                                                    <div 
+                                                        key={question.id} 
+                                                        className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-3 p-2 sm:p-3 bg-muted/30 rounded-md cursor-pointer hover:bg-muted/50 transition-colors"
+                                                        onClick={() => handleQuestionToggle(question.id)}
+                                                    >
+                                                        <div className="flex items-start gap-2 sm:gap-3">
+                                                            <Checkbox
+                                                                checked={selectedQuestions.has(question.id)}
+                                                                onCheckedChange={() => handleQuestionToggle(question.id)}
+                                                                className="mt-1 flex-shrink-0 pointer-events-none"
+                                                            />
+                                                            <div className="flex flex-wrap items-start gap-1 sm:gap-2">
+                                                                <Badge
+                                                                    className={`mt-1 text-xs flex-shrink-0 ${question.difficulty === "low"
+                                                                            ? "bg-green-100 text-green-700 border-green-200 hover:bg-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800"
+                                                                            : question.difficulty === "medium"
+                                                                                ? "bg-yellow-100 text-yellow-700 border-yellow-200 hover:bg-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-300 dark:border-yellow-800"
+                                                                                : "bg-red-100 text-red-700 border-red-200 hover:bg-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800"
+                                                                        }`}
+                                                                >
+                                                                    {question.difficulty}
+                                                                </Badge>
+                                                                {orderBy === "subtopic" && (
+                                                                    <Badge variant="outline" className="mt-1 text-xs flex-shrink-0">
+                                                                        {question.type.replace(/-/g, " ")}
+                                                                    </Badge>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex-1 min-w-0 sm:mt-1">
+                                                            <p className="text-xs sm:text-sm break-words">
                                                                 <span className="font-medium">Q{index + 1}:</span>{" "}
                                                                 {question.question_text.substring(0, 100)}
                                                                 {question.question_text.length > 100 ? "..." : ""}
