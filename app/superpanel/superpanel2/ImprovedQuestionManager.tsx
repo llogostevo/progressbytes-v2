@@ -205,10 +205,10 @@ export default function ImprovedQuestionManager() {
       case "fill-in-the-blank":
         csvContent = [
           "id", "question_text", "difficulty", "explanation",
-          "correct_answers", "option_1", "option_2", "option_3",
+          "correct_answers", "option_1", "option_2", "option_3", "option_4", "option_5", "option_6", "option_7", "option_8",
           "order_important", "model_answer"
         ].join(",") + "\n"
-        csvContent += "example_1,The capital of France is ___,low,Geography question,\"[Paris, France]\",London,Paris,Berlin,false,Paris is the capital of France\n"
+        csvContent += "example_1,The capital of France is ___,low,Geography question,\"[Paris, France]\",London,Paris,Berlin,Rome,Madrid,Athens,,,false,Paris is the capital of France\n"
         break
 
       case "matching":
@@ -410,7 +410,15 @@ export default function ImprovedQuestionManager() {
 
           case "fill-in-the-blank":
             question.model_answer = Array.isArray(row.correct_answers) ? row.correct_answers : []
-            question.options = [row.option_1, row.option_2, row.option_3].filter(Boolean) as string[]
+            // Dynamically collect all option_X columns
+            const fibOptions: string[] = []
+            for (let i = 1; i <= 20; i++) {
+              const optionKey = `option_${i}`
+              if (row[optionKey] && String(row[optionKey]).trim() !== '') {
+                fibOptions.push(String(row[optionKey]))
+              }
+            }
+            question.options = fibOptions
             question.order_important = String(row.order_important) === 'true'
             break
 
