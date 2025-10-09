@@ -110,6 +110,7 @@ export default function ImprovedQuestionManager() {
   const [editingModelAnswerCode, setEditingModelAnswerCode] = useState("")
   const [editingSubtopicIds, setEditingSubtopicIds] = useState<string[]>([])
   const [editingKeywords, setEditingKeywords] = useState<string[]>([])
+  const [editingDifficulty, setEditingDifficulty] = useState<Question["difficulty"]>("low")
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [pendingEditAction, setPendingEditAction] = useState<(() => void) | null>(null)
@@ -204,10 +205,10 @@ export default function ImprovedQuestionManager() {
       case "fill-in-the-blank":
         csvContent = [
           "id", "question_text", "difficulty", "explanation",
-          "correct_answers", "option_1", "option_2", "option_3",
+          "correct_answers", "option_1", "option_2", "option_3", "option_4", "option_5", "option_6", "option_7", "option_8",
           "order_important", "model_answer"
         ].join(",") + "\n"
-        csvContent += "example_1,The capital of France is ___,low,Geography question,\"[Paris, France]\",London,Paris,Berlin,false,Paris is the capital of France\n"
+        csvContent += "example_1,The capital of France is ___,low,Geography question,\"[Paris, France]\",London,Paris,Berlin,Rome,Madrid,Athens,,,false,Paris is the capital of France\n"
         break
 
       case "matching":
@@ -409,7 +410,15 @@ export default function ImprovedQuestionManager() {
 
           case "fill-in-the-blank":
             question.model_answer = Array.isArray(row.correct_answers) ? row.correct_answers : []
-            question.options = [row.option_1, row.option_2, row.option_3].filter(Boolean) as string[]
+            // Dynamically collect all option_X columns
+            const fibOptions: string[] = []
+            for (let i = 1; i <= 20; i++) {
+              const optionKey = `option_${i}`
+              if (row[optionKey] && String(row[optionKey]).trim() !== '') {
+                fibOptions.push(String(row[optionKey]))
+              }
+            }
+            question.options = fibOptions
             question.order_important = String(row.order_important) === 'true'
             break
 
@@ -794,6 +803,7 @@ export default function ImprovedQuestionManager() {
       question.subtopic_question_link?.map(link => link.subtopic_id) || []
     )
     setEditingKeywords(question.keywords || [])
+    setEditingDifficulty(question.difficulty)
     setEditSubtopicSearch("")
     setShowOnlySelectedEditSubtopics(false)
     setHasUnsavedChanges(false)
@@ -815,7 +825,8 @@ export default function ImprovedQuestionManager() {
         .from("questions")
         .update({
           question_text: editingText,
-          explanation: editingExplanation
+          explanation: editingExplanation,
+          difficulty: editingDifficulty
         })
         .eq("id", questionId)
 
@@ -968,6 +979,7 @@ export default function ImprovedQuestionManager() {
       setEditingModelAnswerCode("")
       setEditingSubtopicIds([])
       setEditingKeywords([])
+      setEditingDifficulty("low")
       setEditSubtopicSearch("")
       setShowOnlySelectedEditSubtopics(false)
       setHasUnsavedChanges(false)
@@ -994,6 +1006,7 @@ export default function ImprovedQuestionManager() {
     setEditingModelAnswerCode("")
     setEditingSubtopicIds([])
     setEditingKeywords([])
+    setEditingDifficulty("low")
     setEditSubtopicSearch("")
     setShowOnlySelectedEditSubtopics(false)
     setHasUnsavedChanges(false)
@@ -1636,6 +1649,26 @@ export default function ImprovedQuestionManager() {
                                 />
                               </div>
 
+                              <div className="space-y-2">
+                                <Label htmlFor="edit-difficulty">Difficulty</Label>
+                                <Select 
+                                  value={editingDifficulty} 
+                                  onValueChange={(value: Question["difficulty"]) => {
+                                    setEditingDifficulty(value)
+                                    setHasUnsavedChanges(true)
+                                  }}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select difficulty" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="low">Low</SelectItem>
+                                    <SelectItem value="medium">Medium</SelectItem>
+                                    <SelectItem value="high">High</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
                               {/* Answer editing based on question type */}
                               {question.type === "multiple-choice" && (
                                 <div className="space-y-3">
@@ -2109,6 +2142,16 @@ export default function ImprovedQuestionManager() {
                               )}
                               <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                                 <span>ID: {question.id}</span>
+                                <Badge 
+                                  variant="outline" 
+                                  className={`text-xs ${
+                                    question.difficulty === 'low' ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300' :
+                                    question.difficulty === 'medium' ? 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-300' :
+                                    'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300'
+                                  }`}
+                                >
+                                  {question.difficulty}
+                                </Badge>
                                 <span>Created: {new Date(question.created_at).toLocaleDateString()}</span>
                                 {(question.model_answer !== null && question.model_answer !== undefined && question.model_answer !== "") && (
                                   <span>
