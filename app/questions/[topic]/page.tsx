@@ -1420,7 +1420,7 @@ export default function QuestionPage() {
               ) : (
                 <div className="space-y-6">
                   {/* display image answer */}
-                  {question.imageAnswer && answer && answer.image_url && (
+                  {answer.image_url && (
                     <div className="p-4 bg-muted rounded-md">
                       <h3 className="font-medium mb-2">Your Drawing Answer:</h3>
                       <img

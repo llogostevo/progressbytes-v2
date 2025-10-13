@@ -100,6 +100,7 @@ type RevisitQuestionPayload = {
   pairs?: RevisitPair[] | null
   correct_answer?: boolean | null
   keywords?: string[] | null
+  image_url?: string | null
 }
 
 type RevisitRow = {
@@ -108,6 +109,7 @@ type RevisitRow = {
   submitted_at: string
   student_score: ScoreType | null
   response_text: string | null
+  image_url: string | null
   topic_slug: string | null
   topic_name: string | null
   question: RevisitQuestionPayload
@@ -338,7 +340,7 @@ export default function RevisitPageClient() {
       // This calls an RPC from the supabase database
       // access this via function get_revisit_attempts_v2 in supabase database functions
       const { data: rows, error: rpcError } = await supabase
-        .rpc('get_revisit_attempts_v4', {
+        .rpc('get_revisit_attempts_v5', {
           p_user: user.id,
           p_topic_slugs: null,
           p_type: null,
@@ -363,7 +365,8 @@ export default function RevisitPageClient() {
           question_id: row.question_id,
           student_id: user.id,
           response_text: row.response_text ?? "",   // normalize null → ""
-          ai_feedback: null,                        // RPC doesn’t return this
+          image_url: row.image_url ?? null,         // include image_url
+          ai_feedback: null,                        // RPC doesn't return this
           score: (row.student_score ?? "amber") as ScoreType, // safe default
           submitted_at: row.submitted_at,
           self_assessed: false,                     // see next section
@@ -390,6 +393,7 @@ export default function RevisitPageClient() {
           // language is optional on your UI type; include if it exists:
           language: q.language ?? undefined,
           keywords: q.keywords ?? undefined,
+          imageAnswer: !!q.image_url,
         }
       })
 
@@ -1156,6 +1160,17 @@ export default function RevisitPageClient() {
                                       </pre>
                                     )}
                                   </div>
+                                  {/* Display submitted image if it exists */}
+                                  {answer.image_url && (
+                                    <div className="mt-3 p-3 bg-gray-50 rounded-md border border-gray-200">
+                                      <h4 className="font-medium mb-2 text-gray-700 text-sm">Your Drawing Answer:</h4>
+                                      <img
+                                        src={answer.image_url}
+                                        alt="Your submitted drawing"
+                                        className="max-w-full h-auto border rounded"
+                                      />
+                                    </div>
+                                  )}
                                 </div>
 
                                 {/* Model Answer Section */}
