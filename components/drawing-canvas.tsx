@@ -14,6 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { toast } from "sonner"
 
 const PencilIcon = () => (
   <svg
@@ -339,7 +340,7 @@ export default function DrawingCanvas({ onSubmit, onCancel, showSubmit = false, 
     }
 
     if (!blob) {
-      alert("Failed to create image")
+      toast.error("Failed to create image")
       return
     }
 
@@ -360,8 +361,6 @@ export default function DrawingCanvas({ onSubmit, onCancel, showSubmit = false, 
     const canvas = canvasRef.current
     if (!canvas || !onSubmit) return
 
-    console.log("[v0] Submit clicked")
-
     const maxFileSize = 50 * 1024 // 50KB in bytes
     let quality = 0.95
     let blob: Blob | null = null
@@ -373,8 +372,6 @@ export default function DrawingCanvas({ onSubmit, onCancel, showSubmit = false, 
 
       if (!blob) break
 
-      console.log("[v0] Blob created with quality", quality, "size:", blob.size)
-
       if (blob.size <= maxFileSize) {
         break
       }
@@ -383,17 +380,13 @@ export default function DrawingCanvas({ onSubmit, onCancel, showSubmit = false, 
     }
 
     if (!blob) {
-      console.log("[v0] Failed to create blob")
-      alert("Failed to create image")
+      toast.error("Failed to create image")
       return
     }
-
-    console.log("[v0] Final blob size:", blob.size, "bytes")
 
     const reader = new FileReader()
     reader.onloadend = () => {
       const dataUrl = reader.result as string
-      console.log("[v0] DataURL created, length:", dataUrl.length)
       onSubmit(dataUrl)
       setHasChanges(false)
     }

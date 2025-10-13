@@ -16,7 +16,7 @@ import { CodeQuestion } from "@/components/question-components/question-type/cod
 import { MatchingQuestion } from "@/components/question-components/question-type/matching-question"
 import { TrueFalseQuestion } from "@/components/question-components/question-type/true-false-question"
 import { EssayQuestion } from "@/components/question-components/question-type/essay-question"
-import DrawingCanvas from "@/components/drawing-canvas"
+// import DrawingCanvas from "@/components/drawing-canvas"
 import { createClient } from "@/utils/supabase/client"
 import { CTABanner } from "@/components/cta-banner"
 import { UserLogin } from "@/components/user-login"
@@ -26,6 +26,9 @@ import { SubtopicFilter } from "@/components/ui/subtopic-filter"
 import { Skeleton } from "@/components/ui/skeleton"
 import { canAccessFilters, getMaxQuestionsPerTopic, UserType, canSkipQuestions } from "@/lib/access"
 import { QuestionDifficultyFilter } from "@/components/question-difficulty-filter"
+import { toast } from "sonner"
+
+import DrawingCanvasUploader from "@/components/DrawingCanvasUploader"
 
 // Define types for the database responses
 interface DBQuestion {
@@ -545,44 +548,8 @@ export default function QuestionPage() {
   const [availableQuestionDifficulty, setAvailableQuestionDifficulty] = useState<string[]>([])
 
   const [hasStartedAnswering, setHasStartedAnswering] = useState(false)
-  const [showCanvas, setShowCanvas] = useState(false)
-  const [canvasImageData, setCanvasImageData] = useState<string | null>(null)
 
-  // const freeUser = currentUser.email === "student@example.com"
 
-  // const supabase = createClient()
-
-  // //TODO: put this into a hook?? or into data.ts??
-  // useEffect(() => {
-  //   const checkHasPaid = async () => {
-  //     const { data: { user } } = await supabase.auth.getUser()
-  //     if (!user) {
-  //       setFreeUser(true)
-  //       setIsLoadingUserType(false)
-  //       return
-  //     }
-
-  //     const { data } = await supabase
-  //       .from('profiles')
-  //       .select('user_type')
-  //       .eq('userid', user.id)
-  //       .single()
-
-  //     if (!data) {
-  //       setUserType("anonymous")
-  //       setUser(user)
-  //       setFreeUser(true)
-  //       setIsLoadingUserType(false)
-  //       return
-  //     }
-
-  //     setUserType(data.user_type)
-  //     setUser(user)
-  //     setFreeUser(false)
-  //     setIsLoadingUserType(false)
-  //   }
-  //   checkHasPaid()
-  // }, [supabase, topicSlug])
 
   // Create a stable supabase client instance
   const supabase = useMemo(() => createClient(), [])
@@ -660,27 +627,6 @@ export default function QuestionPage() {
             return
           }
 
-          // console.log("=== QUESTION DEBUG INFO ===")
-          // console.log("User Type:", userType)
-          // console.log("User ID:", user?.id)
-          // console.log("Topic ID:", currentTopic?.id)
-          // console.log("Raw question data:", newQuestion)
-          // console.log("Question ID:", newQuestion.id)
-          // console.log("Question type:", newQuestion.type)
-          // console.log("Model answer:", newQuestion.model_answer)
-          // console.log("Model answer type:", typeof newQuestion.model_answer)
-          // console.log("Options:", newQuestion.options)
-          // console.log("Order important:", newQuestion.order_important)
-          // console.log("=== END DEBUG INFO ===")
-
-          // if (newQuestion.type === 'true-false') {
-          //   console.log("True/False specific data:", {
-          //     modelAnswer: newQuestion.model_answer,
-          //     modelAnswerType: typeof newQuestion.model_answer,
-          //     rawModelAnswer: newQuestion.model_answer
-          //   })
-          // }
-
           setQuestion(newQuestion)
           setAnswer(null)
           setSelfAssessmentScore(null)
@@ -697,6 +643,73 @@ export default function QuestionPage() {
   }, [topicSlug, isLoadingUserType, userType, freeUser, questionId, selectedQuestionType, selectedSubtopics, selectedQuestionDifficulty])
 
 
+  const handleDrawingUploaded = async ({ url, path }: { url: string; path: string }) => {
+    // Optional: keep a local preview if you still show it elsewhere
+    // setCanvasImageData(url)
+
+    if (question) {
+      if (!user) {
+        // Anonymous: just set a local Answer object so the UI shows it
+        setAnswer({
+          id: "anon",
+          question_id: question.id,
+          student_id: "anon",
+          response_text: "See drawn image",
+          image_url: url,  
+          ai_feedback: null,
+          score: "amber",
+          submitted_at: new Date().toISOString(),
+          self_assessed: false,
+          teacher_score: null,
+          teacher_feedback: null,
+        })
+        return
+      }
+
+      try {
+        // Logged-in: insert an answer row. You can also store `path` in a separate column if you have one.
+        const { data: answerData, error } = await supabase
+          .from("student_answers")
+          .insert({
+            student_id: user.id,
+            question_id: question.id,
+            response_text: "See drawn image", 
+            image_url: url,  
+            self_assessed: false,
+            submitted_at: new Date().toISOString(),
+          })
+          .select()
+          .single()
+
+        if (error) throw error
+
+        setAnswer({
+          id: answerData.id,
+          question_id: question.id,
+          student_id: user.id,
+          response_text: "See drawn image",
+          image_url: url,
+          ai_feedback: null,
+          score: "amber",
+          submitted_at: answerData.submitted_at,
+          self_assessed: false,
+          teacher_score: null,
+          teacher_feedback: null,
+        })
+
+        await supabase.from("user_activity").insert({
+          user_id: user.id,
+          event: "submitted_question",
+          path: `/questions/${topicSlug}`,
+          user_email: user.email,
+        })
+      } catch (e) {
+        console.error("Error saving image answer:", e)
+        toast.error("Could not save your drawing. Please try again.")
+      }
+    }
+  }
+
 
   const handleSubmitAnswer = async (responseText: string) => {
     if (!question) return
@@ -709,6 +722,7 @@ export default function QuestionPage() {
       question_id: question.id,
       student_id: "anon",
       response_text: responseText,
+      image_url: null,
       ai_feedback: null,
       score: "amber" as ScoreType,
       submitted_at: new Date().toISOString(),
@@ -731,6 +745,7 @@ export default function QuestionPage() {
           student_id: user.id,
           question_id: question.id,
           response_text: responseText,
+          image_url: null,
           self_assessed: false,
           submitted_at: new Date().toISOString()
         })
@@ -757,6 +772,7 @@ export default function QuestionPage() {
           ...baseAnswer,
           id: answerData.id,
           student_id: user.id,
+          image_url: null,
           ai_feedback: mockFeedback.feedback,
           score: mockFeedback.score,
           submitted_at: answerData.submitted_at,
@@ -769,6 +785,7 @@ export default function QuestionPage() {
           ...baseAnswer,
           id: answerData.id,
           student_id: user.id,
+          image_url: null,
           submitted_at: answerData.submitted_at,
           teacher_score: null,
           teacher_feedback: null,
@@ -1169,20 +1186,6 @@ export default function QuestionPage() {
     setHasStartedAnswering(true)
   }
 
-  const handleOpenCanvas = () => {
-    setShowCanvas(true)
-  }
-
-  const handleCanvasSubmit = (imageDataUrl: string) => {
-    setCanvasImageData(imageDataUrl)
-    setShowCanvas(false)
-    // Submit the image as an answer
-    handleSubmitAnswer(imageDataUrl)
-  }
-
-  const handleCanvasCancel = () => {
-    setShowCanvas(false)
-  }
 
   if (isLoading) {
     return <QuestionSkeleton />
@@ -1340,8 +1343,8 @@ export default function QuestionPage() {
               <div className="mb-6">
                 <p
                   className={`text-lg whitespace-pre-wrap ${question.type === "fill-in-the-blank"
-                      ? "underline decoration-2 decoration-gray-700 underline-offset-6"
-                      : ""
+                    ? "underline decoration-2 decoration-gray-700 underline-offset-6"
+                    : ""
                     }`}
                 >
                   {question.type === "fill-in-the-blank"
@@ -1350,23 +1353,19 @@ export default function QuestionPage() {
                   }
                 </p>
               </div>
-              {question.imageAnswer && !answer && (
+              {user && question.imageAnswer && !answer && (
                 <div className="mb-4">
-                  <Button
-                    onClick={handleOpenCanvas}
-                    variant="outline"
-                    className="w-full"
-                  >
-                    Draw Your Answer
-                  </Button>
-                  {canvasImageData && (
-                    <div className="mt-4 p-4 border rounded-lg">
-                      <p className="text-sm text-muted-foreground mb-2">Your drawing:</p>
-                      <img src={canvasImageData} alt="Your answer" className="max-w-full h-auto" />
-                    </div>
-                  )}
+                  <DrawingCanvasUploader
+                    bucket="student-answer-images"
+                    pathPrefix={`${user.id}/${question.id}/${Date.now()}`}
+                    isPrivate={false}                           // set true if  bucket is private
+                    // initialUrl={canvasImageData ?? null}     // optional, if you want to seed with an earlier URL
+                    onUploaded={handleDrawingUploaded}
+                    trigger={<span>Draw Your Answer</span>}     // optional button label (component has its own button)
+                  />
                 </div>
               )}
+
               {!answer ? (
                 question.type === "multiple-choice" ? (
                   <MultipleChoiceQuestion
@@ -1420,11 +1419,12 @@ export default function QuestionPage() {
                 ) : null
               ) : (
                 <div className="space-y-6">
-                  {question.imageAnswer && answer && (
+                  {/* display image answer */}
+                  {question.imageAnswer && answer && answer.image_url && (
                     <div className="p-4 bg-muted rounded-md">
                       <h3 className="font-medium mb-2">Your Drawing Answer:</h3>
                       <img
-                        src={answer.response_text}
+                        src={answer.image_url || ""}
                         alt="Your submitted drawing"
                         className="max-w-full h-auto border rounded"
                       />
@@ -1917,14 +1917,6 @@ export default function QuestionPage() {
           </Card>
         )}
       </div>
-      {showCanvas && (
-        <DrawingCanvas
-          onSubmit={handleCanvasSubmit}
-          onCancel={handleCanvasCancel}
-          showSubmit={true}
-          initialImage={canvasImageData}
-        />
-      )}
     </div>
   )
 }
