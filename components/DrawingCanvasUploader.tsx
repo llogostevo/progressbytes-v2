@@ -3,6 +3,7 @@
 
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
+import { Pencil } from "lucide-react"
 import DrawingCanvas from "./drawing-canvas" // <- your canvas component
 import { createClient } from "@/utils/supabase/client" // <- or your own client factory
 
@@ -114,10 +115,11 @@ export default function DrawingCanvasUploader({
       {!showCanvas && (
         <button
           type="button"
-          className="inline-flex items-center rounded-md border px-3 py-2 text-sm hover:bg-accent"
+          className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-accent cursor-pointer"
           onClick={() => setShowCanvas(true)}
           disabled={uploading}
         >
+          <Pencil className="h-4 w-4" />
           {trigger ?? (previewUrl ? "Edit drawing" : "Add drawing")}
         </button>
       )}
