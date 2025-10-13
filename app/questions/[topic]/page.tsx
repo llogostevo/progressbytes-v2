@@ -643,7 +643,7 @@ export default function QuestionPage() {
   }, [topicSlug, isLoadingUserType, userType, freeUser, questionId, selectedQuestionType, selectedSubtopics, selectedQuestionDifficulty])
 
 
-  const handleDrawingUploaded = async ({ url, path }: { url: string; path: string }) => {
+  const handleDrawingUploaded = async ({ url }: { url: string; path: string }) => {
     // Optional: keep a local preview if you still show it elsewhere
     // setCanvasImageData(url)
 
