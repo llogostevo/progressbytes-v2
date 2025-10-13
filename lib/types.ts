@@ -21,6 +21,7 @@ export interface Question {
   rubric?: string
   keywords?: string[]
   created_at: string
+  imageAnswer?: boolean
   pairs?: {
     statement: string
     match: string

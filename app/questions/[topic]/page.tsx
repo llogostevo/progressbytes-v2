@@ -16,6 +16,7 @@ import { CodeQuestion } from "@/components/question-components/question-type/cod
 import { MatchingQuestion } from "@/components/question-components/question-type/matching-question"
 import { TrueFalseQuestion } from "@/components/question-components/question-type/true-false-question"
 import { EssayQuestion } from "@/components/question-components/question-type/essay-question"
+import DrawingCanvas from "@/components/drawing-canvas"
 import { createClient } from "@/utils/supabase/client"
 import { CTABanner } from "@/components/cta-banner"
 import { UserLogin } from "@/components/user-login"
@@ -35,6 +36,7 @@ interface DBQuestion {
   created_at: string;
   model_answer?: string;
   difficulty?: string;
+  imageAnswer?: boolean;
   multiple_choice_questions?: {
     options: string[];
     correct_answer_index: number;
@@ -108,6 +110,7 @@ function transformQuestion(dbQuestion: DBQuestion, topicName: string): Question 
     explanation: dbQuestion.explanation,
     created_at: dbQuestion.created_at,
     difficulty: dbQuestion.difficulty as Question['difficulty'],
+    imageAnswer: dbQuestion.imageAnswer,
     // Map model_answer based on question type
     model_answer: (() => {
       switch (dbQuestion.type) {
@@ -223,6 +226,7 @@ async function getRandomQuestionForTopic(
           question_text,
           explanation,
           created_at,
+          imageAnswer,
           multiple_choice_questions (
             options,
             correct_answer_index,
@@ -541,6 +545,8 @@ export default function QuestionPage() {
   const [availableQuestionDifficulty, setAvailableQuestionDifficulty] = useState<string[]>([])
 
   const [hasStartedAnswering, setHasStartedAnswering] = useState(false)
+  const [showCanvas, setShowCanvas] = useState(false)
+  const [canvasImageData, setCanvasImageData] = useState<string | null>(null)
 
   // const freeUser = currentUser.email === "student@example.com"
 
@@ -1163,6 +1169,21 @@ export default function QuestionPage() {
     setHasStartedAnswering(true)
   }
 
+  const handleOpenCanvas = () => {
+    setShowCanvas(true)
+  }
+
+  const handleCanvasSubmit = (imageDataUrl: string) => {
+    setCanvasImageData(imageDataUrl)
+    setShowCanvas(false)
+    // Submit the image as an answer
+    handleSubmitAnswer(imageDataUrl)
+  }
+
+  const handleCanvasCancel = () => {
+    setShowCanvas(false)
+  }
+
   if (isLoading) {
     return <QuestionSkeleton />
   }
@@ -1329,6 +1350,23 @@ export default function QuestionPage() {
                   }
                 </p>
               </div>
+              {question.imageAnswer && !answer && (
+                <div className="mb-4">
+                  <Button
+                    onClick={handleOpenCanvas}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    Draw Your Answer
+                  </Button>
+                  {canvasImageData && (
+                    <div className="mt-4 p-4 border rounded-lg">
+                      <p className="text-sm text-muted-foreground mb-2">Your drawing:</p>
+                      <img src={canvasImageData} alt="Your answer" className="max-w-full h-auto" />
+                    </div>
+                  )}
+                </div>
+              )}
               {!answer ? (
                 question.type === "multiple-choice" ? (
                   <MultipleChoiceQuestion
@@ -1382,6 +1420,16 @@ export default function QuestionPage() {
                 ) : null
               ) : (
                 <div className="space-y-6">
+                  {question.imageAnswer && answer && (
+                    <div className="p-4 bg-muted rounded-md">
+                      <h3 className="font-medium mb-2">Your Drawing Answer:</h3>
+                      <img
+                        src={answer.response_text}
+                        alt="Your submitted drawing"
+                        className="max-w-full h-auto border rounded"
+                      />
+                    </div>
+                  )}
                   <div className="p-4 bg-muted rounded-md">
                     <h3 className="font-medium mb-2">Your Answer:</h3>
                     {question.type === "matching" ? (
@@ -1869,6 +1917,14 @@ export default function QuestionPage() {
           </Card>
         )}
       </div>
+      {showCanvas && (
+        <DrawingCanvas
+          onSubmit={handleCanvasSubmit}
+          onCancel={handleCanvasCancel}
+          showSubmit={true}
+          initialImage={canvasImageData}
+        />
+      )}
     </div>
   )
 }
