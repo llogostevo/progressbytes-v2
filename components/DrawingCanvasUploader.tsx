@@ -86,8 +86,9 @@ export default function DrawingCanvasUploader({
           const { data: pub } = supabase.storage.from(bucket).getPublicUrl(data.path)
           return { url: pub.publicUrl, path: data.path }
         }
-      } catch (e: any) {
-        toast.error(`Upload failed: ${e?.message ?? "Unknown error"}`)
+      } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : "Unknown error"
+        toast.error(`Upload failed: ${errorMessage}`)
         return null
       } finally {
         setUploading(false)
