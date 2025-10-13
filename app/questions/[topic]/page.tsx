@@ -1362,6 +1362,8 @@ export default function QuestionPage() {
                     // initialUrl={canvasImageData ?? null}     // optional, if you want to seed with an earlier URL
                     onUploaded={handleDrawingUploaded}
                     trigger={<span>Draw Your Answer</span>}     // optional button label (component has its own button)
+                    questionText={question.question_text}
+                    keywords={question.keywords}
                   />
                 </div>
               )}

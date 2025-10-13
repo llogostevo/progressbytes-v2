@@ -23,6 +23,10 @@ export type DrawingCanvasUploaderProps = {
   trigger?: React.ReactNode
   /** Optional: className for wrapper */
   className?: string
+  /** Optional: question text to display in canvas view */
+  questionText?: string
+  /** Optional: keywords to display in canvas view */
+  keywords?: string[]
 }
 
 function dataUrlToBlob(dataUrl: string) {
@@ -42,6 +46,8 @@ export default function DrawingCanvasUploader({
   onUploaded,
   trigger,
   className,
+  questionText,
+  keywords,
 }: DrawingCanvasUploaderProps) {
   const [showCanvas, setShowCanvas] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(initialUrl)
@@ -121,6 +127,8 @@ export default function DrawingCanvasUploader({
           onCancel={() => setShowCanvas(false)}
           showSubmit
           initialImage={previewUrl}
+          questionText={questionText}
+          keywords={keywords}
         />
       )}
 

@@ -136,9 +136,11 @@ interface DrawingCanvasProps {
   onCancel?: () => void
   showSubmit?: boolean
   initialImage?: string | null
+  questionText?: string
+  keywords?: string[]
 }
 
-export default function DrawingCanvas({ onSubmit, onCancel, showSubmit = false, initialImage }: DrawingCanvasProps) {
+export default function DrawingCanvas({ onSubmit, onCancel, showSubmit = false, initialImage, questionText, keywords }: DrawingCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [isDrawing, setIsDrawing] = useState(false)
@@ -149,6 +151,7 @@ export default function DrawingCanvas({ onSubmit, onCancel, showSubmit = false, 
   const [fileSize, setFileSize] = useState<string>("")
   const [hasChanges, setHasChanges] = useState(false)
   const [showCancelDialog, setShowCancelDialog] = useState(false)
+  const [showKeywords, setShowKeywords] = useState(false)
 
   const [history, setHistory] = useState<string[]>([])
   const [historyIndex, setHistoryIndex] = useState(-1)
@@ -501,6 +504,18 @@ export default function DrawingCanvas({ onSubmit, onCancel, showSubmit = false, 
 
           <div className="flex-1" />
 
+          {keywords && keywords.length > 0 && (
+            <Button
+              variant={showKeywords ? "default" : "outline"}
+              size="sm"
+              className="h-8 text-xs"
+              onClick={() => setShowKeywords(!showKeywords)}
+              title={showKeywords ? "Hide Keywords" : "Show Keywords"}
+            >
+              {showKeywords ? "Hide" : "Show"} Keywords
+            </Button>
+          )}
+
           <Button variant="outline" size="icon" className="h-8 w-8 bg-transparent" onClick={clearCanvas} title="Clear">
             <TrashIcon />
           </Button>
@@ -516,6 +531,28 @@ export default function DrawingCanvas({ onSubmit, onCancel, showSubmit = false, 
             </Button>
           )}
         </div>
+
+        {questionText && (
+          <div className="px-4 py-3 bg-muted border-b border-border">
+            <p className="text-sm font-medium text-foreground whitespace-pre-wrap">{questionText}</p>
+          </div>
+        )}
+
+        {showKeywords && keywords && keywords.length > 0 && (
+          <div className="px-4 py-3 bg-blue-50 border-b border-blue-100">
+            <h3 className="font-medium mb-2 text-blue-800 text-sm">Keywords to include:</h3>
+            <div className="flex flex-wrap gap-2">
+              {keywords.map((keyword, index) => (
+                <span
+                  key={index}
+                  className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-md"
+                >
+                  {keyword}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div ref={containerRef} className="flex-1 bg-white">
           <canvas
