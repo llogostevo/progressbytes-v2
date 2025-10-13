@@ -21,6 +21,7 @@ export interface Question {
   rubric?: string
   keywords?: string[]
   created_at: string
+  imageAnswer?: boolean
   pairs?: {
     statement: string
     match: string
@@ -33,6 +34,7 @@ export interface Answer {
   question_id: string
   student_id: string | null
   response_text: string
+  image_url?:  string | null
   ai_feedback: string | null
   score: ScoreType
   submitted_at: string
