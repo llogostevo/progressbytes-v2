@@ -101,6 +101,7 @@ type RevisitQuestionPayload = {
   correct_answer?: boolean | null
   keywords?: string[] | null
   image_url?: string | null
+  answerImage_url?: string | null
 }
 
 type RevisitRow = {
@@ -340,7 +341,7 @@ export default function RevisitPageClient() {
       // This calls an RPC from the supabase database
       // access this via function get_revisit_attempts_v2 in supabase database functions
       const { data: rows, error: rpcError } = await supabase
-        .rpc('get_revisit_attempts_v5', {
+        .rpc('get_revisit_attempts_v6', {
           p_user: user.id,
           p_topic_slugs: null,
           p_type: null,
@@ -394,6 +395,7 @@ export default function RevisitPageClient() {
           language: q.language ?? undefined,
           keywords: q.keywords ?? undefined,
           imageAnswer: !!q.image_url,
+          answerImage_url: q.answerImage_url ?? undefined,
         }
       })
 
@@ -1283,6 +1285,16 @@ export default function RevisitPageClient() {
                                           <pre className="whitespace-pre-wrap font-sans text-sm text-emerald-700">
                                             {question.model_answer}
                                           </pre>
+                                        )}
+                                        {(question.type === "short-answer" || question.type === "text") && question.answerImage_url && (
+                                          <div className="border-t border-emerald-200 pt-3">
+                                            <h4 className="text-sm font-medium mb-2 text-emerald-800">Model Answer Image:</h4>
+                                            <img
+                                              src={question.answerImage_url}
+                                              alt="Model answer illustration"
+                                              className="max-w-md w-full h-auto border border-emerald-200 rounded"
+                                            />
+                                          </div>
                                         )}
                                         {question.model_answer_code && (
                                           <div className="border-t border-emerald-200 pt-3">
