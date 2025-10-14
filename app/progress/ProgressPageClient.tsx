@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import type { Answer, ScoreType, Topic, Question } from "@/lib/types"
-import { CheckCircle, AlertTriangle, AlertCircle, ArrowRight, Calendar, Flame, Star, BarChart as BarChartIcon } from "lucide-react"
+import { CheckCircle, AlertTriangle, AlertCircle, ArrowRight, Calendar, Flame, Star, BarChart as BarChartIcon, HelpCircle } from "lucide-react"
 import Link from "next/link"
 import { UserLogin } from "@/components/user-login"
 import { createClient } from "@/utils/supabase/client"
@@ -215,6 +215,7 @@ function ProgressCharts({ answers, topics }: { answers: Answer[]; topics: Topic[
       Strong: topicAnswers.filter((a) => a.score === "green").length,
       Developing: topicAnswers.filter((a) => a.score === "amber").length,
       "Needs Work": topicAnswers.filter((a) => a.score === "red").length,
+      "Not Assessed": topicAnswers.filter((a) => a.score === "unassessed").length,
       total: topicAnswers.length,
     }
   }).sort((a, b) => compareTopicNumbers(a.topicNumber, b.topicNumber))
@@ -274,6 +275,7 @@ function ProgressCharts({ answers, topics }: { answers: Answer[]; topics: Topic[
                             <p className="text-emerald-600">Strong: {data.Strong}</p>
                             <p className="text-amber-600">Developing: {data.Developing}</p>
                             <p className="text-red-600">Needs Work: {data["Needs Work"]}</p>
+                            <p className="text-gray-600">Not Assessed: {data["Not Assessed"]}</p>
                             <p className="font-medium mt-1">Total: {data.total}</p>
                           </div>
                           <Link
@@ -292,6 +294,7 @@ function ProgressCharts({ answers, topics }: { answers: Answer[]; topics: Topic[
                 <Bar dataKey="Strong" stackId="a" fill="#10b981" />
                 <Bar dataKey="Developing" stackId="a" fill="#f59e0b" />
                 <Bar dataKey="Needs Work" stackId="a" fill="#ef4444" />
+                <Bar dataKey="Not Assessed" stackId="a" fill="#6b7280" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -342,6 +345,7 @@ function ProgressCharts({ answers, topics }: { answers: Answer[]; topics: Topic[
                             <p className="text-emerald-600">Strong: {data.Strong}</p>
                             <p className="text-amber-600">Developing: {data.Developing}</p>
                             <p className="text-red-600">Needs Work: {data["Needs Work"]}</p>
+                            <p className="text-gray-600">Not Assessed: {data["Not Assessed"]}</p>
                             <p className="font-medium mt-1">Total: {data.total}</p>
                           </div>
                           <Link
@@ -360,6 +364,7 @@ function ProgressCharts({ answers, topics }: { answers: Answer[]; topics: Topic[
                 <Bar dataKey="Strong" stackId="a" fill="#10b981" />
                 <Bar dataKey="Developing" stackId="a" fill="#f59e0b" />
                 <Bar dataKey="Needs Work" stackId="a" fill="#ef4444" />
+                <Bar dataKey="Not Assessed" stackId="a" fill="#6b7280" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -410,6 +415,7 @@ function ProgressCharts({ answers, topics }: { answers: Answer[]; topics: Topic[
                             <p className="text-emerald-600">Strong: {data.Strong}</p>
                             <p className="text-amber-600">Developing: {data.Developing}</p>
                             <p className="text-red-600">Needs Work: {data["Needs Work"]}</p>
+                            <p className="text-gray-600">Not Assessed: {data["Not Assessed"]}</p>
                             <p className="font-medium mt-1">Total: {data.total}</p>
                           </div>
                         </div>
@@ -422,6 +428,7 @@ function ProgressCharts({ answers, topics }: { answers: Answer[]; topics: Topic[
                 <Bar dataKey="Strong" stackId="a" fill="#10b981" />
                 <Bar dataKey="Developing" stackId="a" fill="#f59e0b" />
                 <Bar dataKey="Needs Work" stackId="a" fill="#ef4444" />
+                <Bar dataKey="Not Assessed" stackId="a" fill="#6b7280" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -432,7 +439,7 @@ function ProgressCharts({ answers, topics }: { answers: Answer[]; topics: Topic[
 }
 
 // Add new component for streak display
-function StreakDisplay({ streakData, scorePercentages }: { streakData: StreakData; scorePercentages: { green: number; amber: number; red: number } }) {
+function StreakDisplay({ streakData, scorePercentages }: { streakData: StreakData; scorePercentages: { green: number; amber: number; red: number; unassessed: number } }) {
   const getStreakFeedback = () => {
     if (streakData.currentStreak >= 7) {
       return {
@@ -522,12 +529,14 @@ function CountSection({ answers, topics }: {
     green: answers.filter((a) => a.score === "green").length,
     amber: answers.filter((a) => a.score === "amber").length,
     red: answers.filter((a) => a.score === "red").length,
+    unassessed: answers.filter((a) => a.score === "unassessed").length,
   }
 
   const scorePercentages = {
     green: totalAnswers ? Math.round((scoreCount.green / totalAnswers) * 100) : 0,
     amber: totalAnswers ? Math.round((scoreCount.amber / totalAnswers) * 100) : 0,
     red: totalAnswers ? Math.round((scoreCount.red / totalAnswers) * 100) : 0,
+    unassessed: totalAnswers ? Math.round((scoreCount.unassessed / totalAnswers) * 100) : 0,
   }
 
   // Difficulty breakdown (need to get difficulty from questions)
@@ -599,7 +608,7 @@ function CountSection({ answers, topics }: {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           {/* Total Questions */}
           <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
             <div className="text-2xl font-bold text-blue-600">{totalAnswers}</div>
@@ -624,6 +633,12 @@ function CountSection({ answers, topics }: {
             <div className="text-2xl font-bold text-red-600">{scoreCount.red}</div>
             <div className="text-sm text-red-700 font-medium">Needs Work</div>
             <div className="text-xs text-red-600">{scorePercentages.red}%</div>
+          </div>
+
+          <div className="text-center p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="text-2xl font-bold text-gray-600">{scoreCount.unassessed}</div>
+            <div className="text-sm text-gray-700 font-medium">Not Assessed</div>
+            <div className="text-xs text-gray-600">{scorePercentages.unassessed}%</div>
           </div>
         </div>
 
@@ -1045,7 +1060,7 @@ export default function ProgressPage() {
           student_id: answer.student_id,
           response_text: answer.response_text,
           ai_feedback: answer.ai_feedback,
-          score: answer.student_score as ScoreType,
+          score: (answer.student_score ?? "unassessed") as ScoreType,
           submitted_at: answer.submitted_at,
           self_assessed: answer.self_assessed,
           teacher_score: answer.teacher_score as ScoreType | null,
@@ -1074,12 +1089,14 @@ export default function ProgressPage() {
     green: answers.filter((a) => a.score === "green").length,
     amber: answers.filter((a) => a.score === "amber").length,
     red: answers.filter((a) => a.score === "red").length,
+    unassessed: answers.filter((a) => a.score === "unassessed").length,
   }
 
   const scorePercentages = {
     green: totalAnswers ? Math.round((scoreCount.green / totalAnswers) * 100) : 0,
     amber: totalAnswers ? Math.round((scoreCount.amber / totalAnswers) * 100) : 0,
     red: totalAnswers ? Math.round((scoreCount.red / totalAnswers) * 100) : 0,
+    unassessed: totalAnswers ? Math.round((scoreCount.unassessed / totalAnswers) * 100) : 0,
   }
 
   // Group answers by topic
@@ -1212,7 +1229,7 @@ export default function ProgressPage() {
                     </div>
                   </div>
 
-                  <div className="md:col-span-3 grid grid-cols-3 gap-4">
+                  <div className="md:col-span-3 grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="text-center p-4 bg-emerald-50 rounded-lg border border-emerald-200">
                       <div className="text-2xl font-bold text-emerald-600">{scoreCount.green}</div>
                       <div className="text-sm text-emerald-700 font-medium">Strong</div>
@@ -1228,13 +1245,18 @@ export default function ProgressPage() {
                       <div className="text-sm text-red-700 font-medium">Needs Work</div>
                       <div className="text-xs text-red-600">{scorePercentages.red}% of attempts</div>
                     </div>
+                    <div className="text-center p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="text-2xl font-bold text-gray-600">{scoreCount.unassessed}</div>
+                      <div className="text-sm text-gray-700 font-medium">Not Assessed</div>
+                      <div className="text-xs text-gray-600">{scorePercentages.unassessed}% of attempts</div>
+                    </div>
                   </div>
                 </div>
               </CardContent>
               <CardFooter className="border-t pt-6">
                 <div className="w-full">
                   <p className="text-sm font-medium mb-4">Review your answers by performance level:</p>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                     <Link href="/revisit" className="w-full">
                       <Button variant="outline" className="w-full h-12">
                         <div className="text-center">
@@ -1276,6 +1298,16 @@ export default function ProgressPage() {
                             <AlertCircle className="h-4 w-4" /> Needs Work
                           </div>
                           <div className="text-xs">{scoreCount.red} questions</div>
+                        </div>
+                      </Button>
+                    </Link>
+                    <Link href="/revisit?tab=unassessed" className="w-full">
+                      <Button variant="outline" className="w-full h-12 border-gray-200 text-gray-700 hover:bg-gray-50">
+                        <div className="text-center">
+                          <div className="flex items-center justify-center gap-1 font-medium">
+                            <HelpCircle className="h-4 w-4" /> Not Assessed
+                          </div>
+                          <div className="text-xs">{scoreCount.unassessed} questions</div>
                         </div>
                       </Button>
                     </Link>
