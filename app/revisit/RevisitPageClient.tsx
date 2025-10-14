@@ -1443,14 +1443,17 @@ export default function RevisitPageClient() {
 
         {/* Add Delete Dialog */}
         <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-semibold text-gray-900">Delete Attempt</DialogTitle>
-              <DialogDescription className="text-gray-500 mt-2">
-                This action cannot be undone. This will permanently delete your attempt for this question.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="py-6 px-1">
+          <DialogContent className="sm:max-w-[425px] p-0">
+            <div className="p-6 pb-4">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-bold text-gray-900 mb-2">Delete Attempt</DialogTitle>
+                <DialogDescription className="text-gray-600 text-base leading-relaxed">
+                  This action cannot be undone. This will permanently delete your attempt for this question.
+                </DialogDescription>
+              </DialogHeader>
+            </div>
+            
+            <div className="px-6 pb-6">
               <div className="space-y-3">
                 <label htmlFor="delete-confirmation" className="text-sm font-medium text-gray-700 block">
                   Type &quot;delete&quot; to confirm
@@ -1470,40 +1473,43 @@ export default function RevisitPageClient() {
                 )}
               </div>
             </div>
-            <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setDeleteDialogOpen(false)
-                  setAnswerToDelete(null)
-                  setDeleteConfirmation("")
-                }}
-                className="mt-2 sm:mt-0"
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleDeleteConfirm}
-                disabled={deleteConfirmation !== "delete" || isDeleting}
-                className={`flex items-center gap-2 ${deleteConfirmation === "delete"
-                  ? "bg-red-600 hover:bg-red-700 text-white"
-                  : "bg-red-100 text-red-400 cursor-not-allowed"
-                  }`}
-              >
-                {isDeleting ? (
-                  <>
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    Deleting...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="h-4 w-4" />
-                    Delete Attempt
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
+
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-lg">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-3">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setDeleteDialogOpen(false)
+                    setAnswerToDelete(null)
+                    setDeleteConfirmation("")
+                  }}
+                  className="mt-3 sm:mt-0 border-gray-300 text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteConfirm}
+                  disabled={deleteConfirmation !== "delete" || isDeleting}
+                  className={`flex items-center gap-2 font-medium px-6 py-2 shadow-sm ${deleteConfirmation === "delete"
+                    ? "bg-red-600 hover:bg-red-700 text-white"
+                    : "bg-red-100 text-red-400 cursor-not-allowed"
+                    }`}
+                >
+                  {isDeleting ? (
+                    <>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4" />
+                      Delete Attempt
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
 
