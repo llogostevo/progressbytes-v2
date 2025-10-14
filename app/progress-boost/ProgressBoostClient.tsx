@@ -824,6 +824,7 @@ import type {
   RawPlanRow,
   DbMatchingQuestion,
   Answer,
+  ScoreType,
 } from "@/lib/types"
 import type { UserType } from "@/lib/access"
 import type { User } from "@supabase/supabase-js"
@@ -843,9 +844,7 @@ import Link from "next/link"
 import { PROGRESS_BOOST_RULES, NEW_DAYS, MID_DAYS, thisWeekBoundsLondon } from "@/lib/progressBoost"
 
 // ---------- Types ----------
-type ScoreType = "green" | "amber" | "red"
-
-// Use the imported type instead of local definition
+// ScoreType is now imported from @/lib/types
 
 // Normalize backend question type strings to the UI’s canonical set
 function normalizeQuestionType(raw: string | null | undefined): Question["type"] {
