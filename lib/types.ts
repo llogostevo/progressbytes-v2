@@ -1,6 +1,6 @@
 import { UserType } from "./access"
 
-export type ScoreType = "green" | "amber" | "red"
+export type ScoreType = "green" | "amber" | "red" | "unassessed"
 
 export type Bucket = "new" | "mid" | "old"
 

@@ -124,6 +124,7 @@ type RevisitCounts = {
   green: number
   amber: number
   red: number
+  unassessed: number
 }
 
 
@@ -223,7 +224,7 @@ export default function RevisitPageClient() {
   const [isLoading, setIsLoading] = useState(true)
   const [allAnswers, setAllAnswers] = useState<Answer[]>([])
   const [questions, setQuestions] = useState<Record<string, Question>>({})
-  const [activeTab, setActiveTab] = useState<ScoreType | "all">(tabParam || "all")
+  const [activeTab, setActiveTab] = useState<ScoreType | "all" | "unassessed">(tabParam || "all")
   const [topics, setTopics] = useState<DBTopic[]>([])
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [answerToDelete, setAnswerToDelete] = useState<Answer | null>(null)
@@ -237,6 +238,7 @@ export default function RevisitPageClient() {
     green: 0,
     amber: 0,
     red: 0,
+    unassessed: 0,
   })
   const [countsLoading, setCountsLoading] = useState(false)
 
@@ -302,6 +304,7 @@ export default function RevisitPageClient() {
         green: Number(row?.green ?? 0),
         amber: Number(row?.amber ?? 0),
         red: Number(row?.red ?? 0),
+        unassessed: Number(row?.not_assessed ?? 0),
       })
       setCountsLoading(false)
     }
@@ -368,7 +371,7 @@ export default function RevisitPageClient() {
           response_text: row.response_text ?? "",   // normalize null → ""
           image_url: row.image_url ?? null,         // include image_url
           ai_feedback: null,                        // RPC doesn't return this
-          score: (row.student_score ?? "amber") as ScoreType, // safe default
+          score: (row.student_score ?? "unassessed") as ScoreType, // use "unassessed" for null values
           submitted_at: row.submitted_at,
           self_assessed: false,                     // see next section
           teacher_score: row.teacher_score ?? null,
@@ -488,7 +491,9 @@ export default function RevisitPageClient() {
         ? "bg-emerald-50 hover:bg-emerald-100 text-emerald-700"
         : score === "amber"
           ? "bg-amber-50 hover:bg-amber-100 text-amber-700"
-          : "bg-red-50 hover:bg-red-100 text-red-700"
+          : score === "unassessed"
+            ? "bg-gray-100 hover:bg-gray-200 text-gray-600"
+            : "bg-red-50 hover:bg-red-100 text-red-700"
 
   const getScoreLabel = (score: ScoreType) => {
     switch (score) {
@@ -498,6 +503,8 @@ export default function RevisitPageClient() {
         return "Partially Understood"
       case "red":
         return "Need More Practice"
+      case "unassessed":
+        return "Not Assessed"
     }
   }
 
@@ -523,7 +530,7 @@ export default function RevisitPageClient() {
   }
 
   const handleTabChange = (value: string) => {
-    setActiveTab(value as ScoreType | "all")
+    setActiveTab(value as ScoreType | "all" | "unassessed")
 
     // Update URL using Next.js router
     const params = new URLSearchParams(searchParams.toString())
@@ -785,7 +792,7 @@ export default function RevisitPageClient() {
         </div>
 
         {/* Filter Bar */}
-        <div className="w-full grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+        <div className="w-full grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
           <Button
             variant="outline"
             className={`w-full h-12 ${activeTab === "all" ? "bg-slate-50 border-slate-500 text-slate-800" : "border-slate-200 text-slate-800"}`}
@@ -846,10 +853,24 @@ export default function RevisitPageClient() {
               </div>
             </div>
           </Button>
+          <Button
+            variant="outline"
+            className={`w-full h-12 ${activeTab === "unassessed" ? "bg-gray-50 border-gray-600 text-gray-700" : "border-gray-200 text-gray-700"} hover:bg-gray-50`}
+            onClick={() => handleTabChange("unassessed")}
+          >
+            <div className="text-center w-full">
+              <div className="font-medium flex items-center justify-center gap-1">
+                <HelpCircle className="h-4 w-4" /> Not Assessed
+              </div>
+              <div className="text-xs">
+                {countsLoading ? '…' : `${counts.unassessed} questions`}
+              </div>
+            </div>
+          </Button>
         </div>
 
         {/* Questions List - keep only the content of the selected filter */}
-        {["all", "green", "amber", "red"].map((tab) => (
+        {["all", "green", "amber", "red", "unassessed"].map((tab) => (
           activeTab === tab && (
             <div key={tab} className="space-y-6">
               {Object.keys(answersByTopic).length === 0 ? (
@@ -904,16 +925,9 @@ export default function RevisitPageClient() {
                                       {getQuestionTypeLabel(question.type)}
                                     </Badge>
                                     <Badge
-                                      className={`flex items-center gap-1 whitespace-nowrap ${!answer.score
-                                        ? "bg-gray-100 hover:bg-gray-200 text-gray-600"
-                                        : answer.score === "green"
-                                          ? "bg-emerald-50 hover:bg-emerald-100 text-emerald-700"
-                                          : answer.score === "amber"
-                                            ? "bg-amber-50 hover:bg-amber-100 text-amber-700"
-                                            : "bg-red-50 hover:bg-red-100 text-red-700"
-                                        }`}
+                                      className={`flex items-center gap-1 whitespace-nowrap ${badgeClassesForScore(answer.score)}`}
                                     >
-                                      {!answer.score ? (
+                                      {!answer.score || answer.score === "unassessed" ? (
                                         <HelpCircle className="h-4 w-4" />
                                       ) : answer.score === "green" ? (
                                         <CheckCircle className="h-4 w-4" />
@@ -922,7 +936,7 @@ export default function RevisitPageClient() {
                                       ) : (
                                         <AlertCircle className="h-4 w-4" />
                                       )}
-                                      <span>{!answer.score ? "Not assessed" : getScoreLabel(answer.score)}</span>
+                                      <span>{getScoreLabel(answer.score || "unassessed")}</span>
                                     </Badge>
                                     {/* TEACHER ASSESSMENT PILL */}
                                     {(() => {
