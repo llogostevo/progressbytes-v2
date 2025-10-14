@@ -15,9 +15,9 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog"
 
 import {
@@ -27,6 +27,8 @@ import {
 } from "@/components/ui/hover-card"
 
 import { Input } from "@/components/ui/input"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Label } from "@/components/ui/label"
 import type { Answer, Question, ScoreType } from "@/lib/types"
 import {
   CheckCircle,
@@ -101,6 +103,7 @@ type RevisitQuestionPayload = {
   correct_answer?: boolean | null
   keywords?: string[] | null
   image_url?: string | null
+  answerImage_url?: string | null
 }
 
 type RevisitRow = {
@@ -123,6 +126,7 @@ type RevisitCounts = {
   green: number
   amber: number
   red: number
+  unassessed: number
 }
 
 
@@ -222,12 +226,18 @@ export default function RevisitPageClient() {
   const [isLoading, setIsLoading] = useState(true)
   const [allAnswers, setAllAnswers] = useState<Answer[]>([])
   const [questions, setQuestions] = useState<Record<string, Question>>({})
-  const [activeTab, setActiveTab] = useState<ScoreType | "all">(tabParam || "all")
+  const [activeTab, setActiveTab] = useState<ScoreType | "all" | "unassessed">(tabParam || "all")
   const [topics, setTopics] = useState<DBTopic[]>([])
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [answerToDelete, setAnswerToDelete] = useState<Answer | null>(null)
   const [deleteConfirmation, setDeleteConfirmation] = useState("")
   const [isDeleting, setIsDeleting] = useState(false)
+
+  // Assessment dialog state
+  const [assessmentDialogOpen, setAssessmentDialogOpen] = useState(false)
+  const [answerToAssess, setAnswerToAssess] = useState<Answer | null>(null)
+  const [selectedAssessment, setSelectedAssessment] = useState<ScoreType>("amber")
+  const [isUpdatingAssessment, setIsUpdatingAssessment] = useState(false)
 
 
   // state for counts
@@ -236,6 +246,7 @@ export default function RevisitPageClient() {
     green: 0,
     amber: 0,
     red: 0,
+    unassessed: 0,
   })
   const [countsLoading, setCountsLoading] = useState(false)
 
@@ -301,6 +312,7 @@ export default function RevisitPageClient() {
         green: Number(row?.green ?? 0),
         amber: Number(row?.amber ?? 0),
         red: Number(row?.red ?? 0),
+        unassessed: Number(row?.not_assessed ?? 0),
       })
       setCountsLoading(false)
     }
@@ -340,7 +352,7 @@ export default function RevisitPageClient() {
       // This calls an RPC from the supabase database
       // access this via function get_revisit_attempts_v2 in supabase database functions
       const { data: rows, error: rpcError } = await supabase
-        .rpc('get_revisit_attempts_v5', {
+        .rpc('get_revisit_attempts_v6', {
           p_user: user.id,
           p_topic_slugs: null,
           p_type: null,
@@ -367,7 +379,7 @@ export default function RevisitPageClient() {
           response_text: row.response_text ?? "",   // normalize null → ""
           image_url: row.image_url ?? null,         // include image_url
           ai_feedback: null,                        // RPC doesn't return this
-          score: (row.student_score ?? "amber") as ScoreType, // safe default
+          score: (row.student_score ?? "unassessed") as ScoreType, // use "unassessed" for null values
           submitted_at: row.submitted_at,
           self_assessed: false,                     // see next section
           teacher_score: row.teacher_score ?? null,
@@ -394,6 +406,7 @@ export default function RevisitPageClient() {
           language: q.language ?? undefined,
           keywords: q.keywords ?? undefined,
           imageAnswer: !!q.image_url,
+          answerImage_url: q.answerImage_url ?? undefined,
         }
       })
 
@@ -486,7 +499,9 @@ export default function RevisitPageClient() {
         ? "bg-emerald-50 hover:bg-emerald-100 text-emerald-700"
         : score === "amber"
           ? "bg-amber-50 hover:bg-amber-100 text-amber-700"
-          : "bg-red-50 hover:bg-red-100 text-red-700"
+          : score === "unassessed"
+            ? "bg-gray-100 hover:bg-gray-200 text-gray-600"
+            : "bg-red-50 hover:bg-red-100 text-red-700"
 
   const getScoreLabel = (score: ScoreType) => {
     switch (score) {
@@ -496,6 +511,8 @@ export default function RevisitPageClient() {
         return "Partially Understood"
       case "red":
         return "Need More Practice"
+      case "unassessed":
+        return "Not Assessed"
     }
   }
 
@@ -521,7 +538,7 @@ export default function RevisitPageClient() {
   }
 
   const handleTabChange = (value: string) => {
-    setActiveTab(value as ScoreType | "all")
+    setActiveTab(value as ScoreType | "all" | "unassessed")
 
     // Update URL using Next.js router
     const params = new URLSearchParams(searchParams.toString())
@@ -595,6 +612,49 @@ export default function RevisitPageClient() {
   const handleDeleteClick = (answer: Answer) => {
     setAnswerToDelete(answer)
     setDeleteDialogOpen(true)
+  }
+
+  const handleAssessmentClick = (answer: Answer) => {
+    setAnswerToAssess(answer)
+    setSelectedAssessment(answer.score || "amber")
+    setAssessmentDialogOpen(true)
+  }
+
+  const handleAssessmentUpdate = async () => {
+    if (!answerToAssess || !user) return
+
+    setIsUpdatingAssessment(true)
+    const supabase = createClient()
+
+    try {
+      const { error } = await supabase
+        .from("student_answers")
+        .update({
+          student_score: selectedAssessment === "unassessed" ? null : selectedAssessment
+        })
+        .eq("id", answerToAssess.id)
+        .eq("student_id", user.id)
+
+      if (error) throw error
+
+      // Update local state
+      setAllAnswers((prev) => 
+        prev.map((a) => 
+          a.id === answerToAssess.id 
+            ? { ...a, score: selectedAssessment }
+            : a
+        )
+      )
+
+      setAssessmentDialogOpen(false)
+      setAnswerToAssess(null)
+      toast.success("Assessment updated successfully")
+    } catch (error) {
+      console.error("Error updating assessment:", error)
+      toast.error("Failed to update assessment. Please try again.")
+    } finally {
+      setIsUpdatingAssessment(false)
+    }
   }
 
   const handleDeleteConfirm = async () => {
@@ -783,7 +843,7 @@ export default function RevisitPageClient() {
         </div>
 
         {/* Filter Bar */}
-        <div className="w-full grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+        <div className="w-full grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
           <Button
             variant="outline"
             className={`w-full h-12 ${activeTab === "all" ? "bg-slate-50 border-slate-500 text-slate-800" : "border-slate-200 text-slate-800"}`}
@@ -844,10 +904,24 @@ export default function RevisitPageClient() {
               </div>
             </div>
           </Button>
+          <Button
+            variant="outline"
+            className={`w-full h-12 ${activeTab === "unassessed" ? "bg-gray-50 border-gray-600 text-gray-700" : "border-gray-200 text-gray-700"} hover:bg-gray-50`}
+            onClick={() => handleTabChange("unassessed")}
+          >
+            <div className="text-center w-full">
+              <div className="font-medium flex items-center justify-center gap-1">
+                <HelpCircle className="h-4 w-4" /> Not Assessed
+              </div>
+              <div className="text-xs">
+                {countsLoading ? '…' : `${counts.unassessed} questions`}
+              </div>
+            </div>
+          </Button>
         </div>
 
         {/* Questions List - keep only the content of the selected filter */}
-        {["all", "green", "amber", "red"].map((tab) => (
+        {["all", "green", "amber", "red", "unassessed"].map((tab) => (
           activeTab === tab && (
             <div key={tab} className="space-y-6">
               {Object.keys(answersByTopic).length === 0 ? (
@@ -901,27 +975,30 @@ export default function RevisitPageClient() {
                                     <Badge variant="outline" className="text-xs whitespace-nowrap">
                                       {getQuestionTypeLabel(question.type)}
                                     </Badge>
-                                    <Badge
-                                      className={`flex items-center gap-1 whitespace-nowrap ${!answer.score
-                                        ? "bg-gray-100 hover:bg-gray-200 text-gray-600"
-                                        : answer.score === "green"
-                                          ? "bg-emerald-50 hover:bg-emerald-100 text-emerald-700"
-                                          : answer.score === "amber"
-                                            ? "bg-amber-50 hover:bg-amber-100 text-amber-700"
-                                            : "bg-red-50 hover:bg-red-100 text-red-700"
-                                        }`}
-                                    >
-                                      {!answer.score ? (
-                                        <HelpCircle className="h-4 w-4" />
-                                      ) : answer.score === "green" ? (
-                                        <CheckCircle className="h-4 w-4" />
-                                      ) : answer.score === "amber" ? (
-                                        <AlertTriangle className="h-4 w-4" />
-                                      ) : (
-                                        <AlertCircle className="h-4 w-4" />
-                                      )}
-                                      <span>{!answer.score ? "Not assessed" : getScoreLabel(answer.score)}</span>
-                                    </Badge>
+                                    <Dialog open={assessmentDialogOpen && answerToAssess?.id === answer.id} onOpenChange={(open) => {
+                                      if (!open) {
+                                        setAssessmentDialogOpen(false)
+                                        setAnswerToAssess(null)
+                                      }
+                                    }}>
+                                      <DialogTrigger asChild>
+                                        <Badge
+                                          className={`flex items-center gap-1 whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity ${badgeClassesForScore(answer.score)}`}
+                                          onClick={() => handleAssessmentClick(answer)}
+                                        >
+                                          {!answer.score || answer.score === "unassessed" ? (
+                                            <HelpCircle className="h-4 w-4" />
+                                          ) : answer.score === "green" ? (
+                                            <CheckCircle className="h-4 w-4" />
+                                          ) : answer.score === "amber" ? (
+                                            <AlertTriangle className="h-4 w-4" />
+                                          ) : (
+                                            <AlertCircle className="h-4 w-4" />
+                                          )}
+                                          <span>{getScoreLabel(answer.score || "unassessed")}</span>
+                                        </Badge>
+                                      </DialogTrigger>
+                                    </Dialog>
                                     {/* TEACHER ASSESSMENT PILL */}
                                     {(() => {
                                       const tScore: ScoreType | null = answer?.teacher_score ?? null
@@ -1284,6 +1361,16 @@ export default function RevisitPageClient() {
                                             {question.model_answer}
                                           </pre>
                                         )}
+                                        {(question.type === "short-answer" || question.type === "text") && question.answerImage_url && (
+                                          <div className="border-t border-emerald-200 pt-3">
+                                            <h4 className="text-sm font-medium mb-2 text-emerald-800">Model Answer Image:</h4>
+                                            <img
+                                              src={question.answerImage_url}
+                                              alt="Model answer illustration"
+                                              className="max-w-md w-full h-auto border border-emerald-200 rounded"
+                                            />
+                                          </div>
+                                        )}
                                         {question.model_answer_code && (
                                           <div className="border-t border-emerald-200 pt-3">
                                             <h4 className="text-sm font-medium mb-2 text-emerald-800">{question.language}:</h4>
@@ -1355,14 +1442,17 @@ export default function RevisitPageClient() {
 
         {/* Add Delete Dialog */}
         <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-semibold text-gray-900">Delete Attempt</DialogTitle>
-              <DialogDescription className="text-gray-500 mt-2">
-                This action cannot be undone. This will permanently delete your attempt for this question.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="py-6 px-1">
+          <DialogContent className="sm:max-w-[425px] p-0">
+            <div className="p-6 pb-4">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-bold text-gray-900 mb-2">Delete Attempt</DialogTitle>
+                <DialogDescription className="text-gray-600 text-base leading-relaxed">
+                  This action cannot be undone. This will permanently delete your attempt for this question.
+                </DialogDescription>
+              </DialogHeader>
+            </div>
+            
+            <div className="px-6 pb-6">
               <div className="space-y-3">
                 <label htmlFor="delete-confirmation" className="text-sm font-medium text-gray-700 block">
                   Type &quot;delete&quot; to confirm
@@ -1382,40 +1472,234 @@ export default function RevisitPageClient() {
                 )}
               </div>
             </div>
-            <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setDeleteDialogOpen(false)
-                  setAnswerToDelete(null)
-                  setDeleteConfirmation("")
-                }}
-                className="mt-2 sm:mt-0"
+
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-lg">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-3">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setDeleteDialogOpen(false)
+                    setAnswerToDelete(null)
+                    setDeleteConfirmation("")
+                  }}
+                  className="mt-3 sm:mt-0 border-gray-300 text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteConfirm}
+                  disabled={deleteConfirmation !== "delete" || isDeleting}
+                  className={`flex items-center gap-2 font-medium px-6 py-2 shadow-sm ${deleteConfirmation === "delete"
+                    ? "bg-red-600 hover:bg-red-700 text-white"
+                    : "bg-red-100 text-red-400 cursor-not-allowed"
+                    }`}
+                >
+                  {isDeleting ? (
+                    <>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4" />
+                      Delete Attempt
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Add Assessment Dialog */}
+        <Dialog open={assessmentDialogOpen} onOpenChange={(open) => {
+          if (!open) {
+            setAssessmentDialogOpen(false)
+            setAnswerToAssess(null)
+          }
+        }}>
+          <DialogContent className="sm:max-w-[500px] p-0">
+            <div className="p-6 pb-4">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-bold text-gray-900 mb-2">Update Assessment</DialogTitle>
+                <DialogDescription className="text-gray-600 text-base leading-relaxed">
+                  How well did you understand this question? This helps track your learning progress.
+                </DialogDescription>
+              </DialogHeader>
+            </div>
+            
+            <div className="px-6 pb-6">
+              <RadioGroup
+                value={selectedAssessment}
+                onValueChange={(value) => setSelectedAssessment(value as ScoreType)}
+                className="space-y-3"
               >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleDeleteConfirm}
-                disabled={deleteConfirmation !== "delete" || isDeleting}
-                className={`flex items-center gap-2 ${deleteConfirmation === "delete"
-                  ? "bg-red-600 hover:bg-red-700 text-white"
-                  : "bg-red-100 text-red-400 cursor-not-allowed"
-                  }`}
-              >
-                {isDeleting ? (
-                  <>
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    Deleting...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="h-4 w-4" />
-                    Delete Attempt
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
+                <div className="group relative">
+                  <RadioGroupItem value="green" id="green" className="sr-only" />
+                  <Label 
+                    htmlFor="green" 
+                    className={`flex items-center p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
+                      selectedAssessment === "green" 
+                        ? "border-emerald-500 bg-emerald-50 shadow-sm" 
+                        : "border-gray-200 hover:border-emerald-300 hover:bg-emerald-25"
+                    }`}
+                  >
+                    <div className="flex items-center gap-4 w-full">
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                        selectedAssessment === "green" 
+                          ? "border-emerald-500 bg-emerald-500" 
+                          : "border-gray-300 group-hover:border-emerald-400"
+                      }`}>
+                        {selectedAssessment === "green" && (
+                          <div className="w-2 h-2 rounded-full bg-white"></div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="p-2 rounded-full bg-emerald-100">
+                          <CheckCircle className="h-5 w-5 text-emerald-600" />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-emerald-700">Strong</div>
+                          <div className="text-sm text-emerald-600">Fully Understood</div>
+                        </div>
+                      </div>
+                    </div>
+                  </Label>
+                </div>
+
+                <div className="group relative">
+                  <RadioGroupItem value="amber" id="amber" className="sr-only" />
+                  <Label 
+                    htmlFor="amber" 
+                    className={`flex items-center p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
+                      selectedAssessment === "amber" 
+                        ? "border-amber-500 bg-amber-50 shadow-sm" 
+                        : "border-gray-200 hover:border-amber-300 hover:bg-amber-25"
+                    }`}
+                  >
+                    <div className="flex items-center gap-4 w-full">
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                        selectedAssessment === "amber" 
+                          ? "border-amber-500 bg-amber-500" 
+                          : "border-gray-300 group-hover:border-amber-400"
+                      }`}>
+                        {selectedAssessment === "amber" && (
+                          <div className="w-2 h-2 rounded-full bg-white"></div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="p-2 rounded-full bg-amber-100">
+                          <AlertTriangle className="h-5 w-5 text-amber-600" />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-amber-700">Developing</div>
+                          <div className="text-sm text-amber-600">Partially Understood</div>
+                        </div>
+                      </div>
+                    </div>
+                  </Label>
+                </div>
+
+                <div className="group relative">
+                  <RadioGroupItem value="red" id="red" className="sr-only" />
+                  <Label 
+                    htmlFor="red" 
+                    className={`flex items-center p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
+                      selectedAssessment === "red" 
+                        ? "border-red-500 bg-red-50 shadow-sm" 
+                        : "border-gray-200 hover:border-red-300 hover:bg-red-25"
+                    }`}
+                  >
+                    <div className="flex items-center gap-4 w-full">
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                        selectedAssessment === "red" 
+                          ? "border-red-500 bg-red-500" 
+                          : "border-gray-300 group-hover:border-red-400"
+                      }`}>
+                        {selectedAssessment === "red" && (
+                          <div className="w-2 h-2 rounded-full bg-white"></div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="p-2 rounded-full bg-red-100">
+                          <AlertCircle className="h-5 w-5 text-red-600" />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-red-700">Needs Work</div>
+                          <div className="text-sm text-red-600">Need More Practice</div>
+                        </div>
+                      </div>
+                    </div>
+                  </Label>
+                </div>
+
+                <div className="group relative">
+                  <RadioGroupItem value="unassessed" id="unassessed" className="sr-only" />
+                  <Label 
+                    htmlFor="unassessed" 
+                    className={`flex items-center p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
+                      selectedAssessment === "unassessed" 
+                        ? "border-gray-500 bg-gray-50 shadow-sm" 
+                        : "border-gray-200 hover:border-gray-400 hover:bg-gray-25"
+                    }`}
+                  >
+                    <div className="flex items-center gap-4 w-full">
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                        selectedAssessment === "unassessed" 
+                          ? "border-gray-500 bg-gray-500" 
+                          : "border-gray-300 group-hover:border-gray-400"
+                      }`}>
+                        {selectedAssessment === "unassessed" && (
+                          <div className="w-2 h-2 rounded-full bg-white"></div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="p-2 rounded-full bg-gray-100">
+                          <HelpCircle className="h-5 w-5 text-gray-600" />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-gray-700">Not Assessed</div>
+                          <div className="text-sm text-gray-600">No assessment yet</div>
+                        </div>
+                      </div>
+                    </div>
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-lg">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-3">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setAssessmentDialogOpen(false)
+                    setAnswerToAssess(null)
+                  }}
+                  className="mt-3 sm:mt-0 border-gray-300 text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleAssessmentUpdate}
+                  disabled={isUpdatingAssessment}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2 flex items-center gap-2 shadow-sm"
+                >
+                  {isUpdatingAssessment ? (
+                    <>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4" />
+                      Update Assessment
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </div>

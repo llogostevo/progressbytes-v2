@@ -1,6 +1,6 @@
 import { UserType } from "./access"
 
-export type ScoreType = "green" | "amber" | "red"
+export type ScoreType = "green" | "amber" | "red" | "unassessed"
 
 export type Bucket = "new" | "mid" | "old"
 
@@ -22,6 +22,7 @@ export interface Question {
   keywords?: string[]
   created_at: string
   imageAnswer?: boolean
+  answerImage_url?: string
   pairs?: {
     statement: string
     match: string
@@ -291,6 +292,7 @@ export interface DbTrueFalseQuestion {
 export interface DbShortAnswerQuestion {
   model_answer: string
   keywords?: string[]
+  answerImage_url?: string
 }
 
 export interface DbEssayQuestion {

@@ -1,6 +1,6 @@
 import type { Answer } from "@/lib/types"
 import { Badge } from "@/components/ui/badge"
-import { AlertCircle, AlertTriangle, CheckCircle } from "lucide-react"
+import { AlertCircle, AlertTriangle, CheckCircle, HelpCircle } from "lucide-react"
 
 interface FeedbackDisplayProps {
   answer: Answer
@@ -27,6 +27,12 @@ export function FeedbackDisplay({ answer }: FeedbackDisplayProps) {
       color: "bg-red-100 text-red-800 border-red-200",
       badgeColor: "bg-red-500 hover:bg-red-500",
       title: self_assessed ? "Need More Practice" : "Needs Improvement",
+    },
+    unassessed: {
+      icon: HelpCircle,
+      color: "bg-gray-100 text-gray-800 border-gray-200",
+      badgeColor: "bg-gray-500 hover:bg-gray-500",
+      title: "Not Assessed",
     },
   }
 
