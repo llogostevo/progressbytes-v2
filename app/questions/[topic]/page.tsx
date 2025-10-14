@@ -69,6 +69,7 @@ interface DBQuestion {
   short_answer_questions?: {
     model_answer: string;
     keywords?: string[];
+    answerImage_url?: string;
   };
   essay_questions?: {
     model_answer?: string;
@@ -163,7 +164,8 @@ function transformQuestion(dbQuestion: DBQuestion, topicName: string): Question 
     }),
     ...(dbQuestion.type === 'text' && {
       model_answer: dbQuestion.short_answer_questions?.model_answer || '',
-      keywords: dbQuestion.short_answer_questions?.keywords
+      keywords: dbQuestion.short_answer_questions?.keywords,
+      answerImage_url: dbQuestion.short_answer_questions?.answerImage_url
     }),
     ...(dbQuestion.type === 'essay' && {
       model_answer: dbQuestion.essay_questions?.model_answer || '',
@@ -174,7 +176,8 @@ function transformQuestion(dbQuestion: DBQuestion, topicName: string): Question 
     }),
     ...(dbQuestion.type === 'short-answer' && {
       model_answer: dbQuestion.short_answer_questions?.model_answer || '',
-      keywords: dbQuestion.short_answer_questions?.keywords
+      keywords: dbQuestion.short_answer_questions?.keywords,
+      answerImage_url: dbQuestion.short_answer_questions?.answerImage_url
     })
   };
 }
@@ -258,7 +261,8 @@ async function getRandomQuestionForTopic(
           ),
           short_answer_questions (
             model_answer,
-            keywords
+            keywords,
+            answerImage_url
           ),
           essay_questions (
             model_answer,
@@ -414,7 +418,8 @@ async function getQuestionById(questionId: string): Promise<Question | undefined
       ),
       short_answer_questions (
         model_answer,
-        keywords
+        keywords,
+        answerImage_url
       ),
       essay_questions (
         model_answer,
@@ -1761,7 +1766,19 @@ export default function QuestionPage() {
                                 <p>{question.options?.[question.correctAnswerIndex || 0]}</p>
                               </div>
                             ) : question.type === "short-answer" || question.type === "text" || question.type === "essay" ? (
-                              <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer}</pre>
+                              <>
+                                <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer}</pre>
+                                {(question.type === "short-answer" || question.type === "text") && question.answerImage_url && (
+                                  <div className="mt-4">
+                                    <h4 className="text-sm font-medium mb-2">Model Answer Image:</h4>
+                                    <img
+                                      src={question.answerImage_url}
+                                      alt="Model answer illustration"
+                                      className="max-w-md w-full h-auto border rounded"
+                                    />
+                                  </div>
+                                )}
+                              </>
                             ) : (
                               <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer}</pre>
                             )}
@@ -1869,7 +1886,19 @@ export default function QuestionPage() {
                                 </ul>
                               )
                             ) : (
-                              <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer}</pre>
+                              <>
+                                <pre className="whitespace-pre-wrap font-sans text-sm">{question.model_answer}</pre>
+                                {(question.type === "short-answer" || question.type === "text") && question.answerImage_url && (
+                                  <div className="mt-4">
+                                    <h4 className="text-sm font-medium mb-2">Model Answer Image:</h4>
+                                    <img
+                                      src={question.answerImage_url}
+                                      alt="Model answer illustration"
+                                      className="max-w-md w-full h-auto border rounded"
+                                    />
+                                  </div>
+                                )}
+                              </>
                             )}
                           </div>
                           {question.model_answer_code && (
