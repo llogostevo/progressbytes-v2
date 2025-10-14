@@ -18,6 +18,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog"
 
 import {
@@ -27,6 +28,8 @@ import {
 } from "@/components/ui/hover-card"
 
 import { Input } from "@/components/ui/input"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Label } from "@/components/ui/label"
 import type { Answer, Question, ScoreType } from "@/lib/types"
 import {
   CheckCircle,
@@ -230,6 +233,12 @@ export default function RevisitPageClient() {
   const [answerToDelete, setAnswerToDelete] = useState<Answer | null>(null)
   const [deleteConfirmation, setDeleteConfirmation] = useState("")
   const [isDeleting, setIsDeleting] = useState(false)
+
+  // Assessment dialog state
+  const [assessmentDialogOpen, setAssessmentDialogOpen] = useState(false)
+  const [answerToAssess, setAnswerToAssess] = useState<Answer | null>(null)
+  const [selectedAssessment, setSelectedAssessment] = useState<ScoreType>("amber")
+  const [isUpdatingAssessment, setIsUpdatingAssessment] = useState(false)
 
 
   // state for counts
@@ -606,6 +615,49 @@ export default function RevisitPageClient() {
     setDeleteDialogOpen(true)
   }
 
+  const handleAssessmentClick = (answer: Answer) => {
+    setAnswerToAssess(answer)
+    setSelectedAssessment(answer.score || "amber")
+    setAssessmentDialogOpen(true)
+  }
+
+  const handleAssessmentUpdate = async () => {
+    if (!answerToAssess || !user) return
+
+    setIsUpdatingAssessment(true)
+    const supabase = createClient()
+
+    try {
+      const { error } = await supabase
+        .from("student_answers")
+        .update({
+          student_score: selectedAssessment === "unassessed" ? null : selectedAssessment
+        })
+        .eq("id", answerToAssess.id)
+        .eq("student_id", user.id)
+
+      if (error) throw error
+
+      // Update local state
+      setAllAnswers((prev) => 
+        prev.map((a) => 
+          a.id === answerToAssess.id 
+            ? { ...a, score: selectedAssessment }
+            : a
+        )
+      )
+
+      setAssessmentDialogOpen(false)
+      setAnswerToAssess(null)
+      toast.success("Assessment updated successfully")
+    } catch (error) {
+      console.error("Error updating assessment:", error)
+      toast.error("Failed to update assessment. Please try again.")
+    } finally {
+      setIsUpdatingAssessment(false)
+    }
+  }
+
   const handleDeleteConfirm = async () => {
     if (!answerToDelete || !user || deleteConfirmation !== "delete") return
 
@@ -924,20 +976,30 @@ export default function RevisitPageClient() {
                                     <Badge variant="outline" className="text-xs whitespace-nowrap">
                                       {getQuestionTypeLabel(question.type)}
                                     </Badge>
-                                    <Badge
-                                      className={`flex items-center gap-1 whitespace-nowrap ${badgeClassesForScore(answer.score)}`}
-                                    >
-                                      {!answer.score || answer.score === "unassessed" ? (
-                                        <HelpCircle className="h-4 w-4" />
-                                      ) : answer.score === "green" ? (
-                                        <CheckCircle className="h-4 w-4" />
-                                      ) : answer.score === "amber" ? (
-                                        <AlertTriangle className="h-4 w-4" />
-                                      ) : (
-                                        <AlertCircle className="h-4 w-4" />
-                                      )}
-                                      <span>{getScoreLabel(answer.score || "unassessed")}</span>
-                                    </Badge>
+                                    <Dialog open={assessmentDialogOpen && answerToAssess?.id === answer.id} onOpenChange={(open) => {
+                                      if (!open) {
+                                        setAssessmentDialogOpen(false)
+                                        setAnswerToAssess(null)
+                                      }
+                                    }}>
+                                      <DialogTrigger asChild>
+                                        <Badge
+                                          className={`flex items-center gap-1 whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity ${badgeClassesForScore(answer.score)}`}
+                                          onClick={() => handleAssessmentClick(answer)}
+                                        >
+                                          {!answer.score || answer.score === "unassessed" ? (
+                                            <HelpCircle className="h-4 w-4" />
+                                          ) : answer.score === "green" ? (
+                                            <CheckCircle className="h-4 w-4" />
+                                          ) : answer.score === "amber" ? (
+                                            <AlertTriangle className="h-4 w-4" />
+                                          ) : (
+                                            <AlertCircle className="h-4 w-4" />
+                                          )}
+                                          <span>{getScoreLabel(answer.score || "unassessed")}</span>
+                                        </Badge>
+                                      </DialogTrigger>
+                                    </Dialog>
                                     {/* TEACHER ASSESSMENT PILL */}
                                     {(() => {
                                       const tScore: ScoreType | null = answer?.teacher_score ?? null
@@ -1442,6 +1504,197 @@ export default function RevisitPageClient() {
                 )}
               </Button>
             </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Add Assessment Dialog */}
+        <Dialog open={assessmentDialogOpen} onOpenChange={(open) => {
+          if (!open) {
+            setAssessmentDialogOpen(false)
+            setAnswerToAssess(null)
+          }
+        }}>
+          <DialogContent className="sm:max-w-[500px] p-0">
+            <div className="p-6 pb-4">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-bold text-gray-900 mb-2">Update Assessment</DialogTitle>
+                <DialogDescription className="text-gray-600 text-base leading-relaxed">
+                  How well did you understand this question? This helps track your learning progress.
+                </DialogDescription>
+              </DialogHeader>
+            </div>
+            
+            <div className="px-6 pb-6">
+              <RadioGroup
+                value={selectedAssessment}
+                onValueChange={(value) => setSelectedAssessment(value as ScoreType)}
+                className="space-y-3"
+              >
+                <div className="group relative">
+                  <RadioGroupItem value="green" id="green" className="sr-only" />
+                  <Label 
+                    htmlFor="green" 
+                    className={`flex items-center p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
+                      selectedAssessment === "green" 
+                        ? "border-emerald-500 bg-emerald-50 shadow-sm" 
+                        : "border-gray-200 hover:border-emerald-300 hover:bg-emerald-25"
+                    }`}
+                  >
+                    <div className="flex items-center gap-4 w-full">
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                        selectedAssessment === "green" 
+                          ? "border-emerald-500 bg-emerald-500" 
+                          : "border-gray-300 group-hover:border-emerald-400"
+                      }`}>
+                        {selectedAssessment === "green" && (
+                          <div className="w-2 h-2 rounded-full bg-white"></div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="p-2 rounded-full bg-emerald-100">
+                          <CheckCircle className="h-5 w-5 text-emerald-600" />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-emerald-700">Strong</div>
+                          <div className="text-sm text-emerald-600">Fully Understood</div>
+                        </div>
+                      </div>
+                    </div>
+                  </Label>
+                </div>
+
+                <div className="group relative">
+                  <RadioGroupItem value="amber" id="amber" className="sr-only" />
+                  <Label 
+                    htmlFor="amber" 
+                    className={`flex items-center p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
+                      selectedAssessment === "amber" 
+                        ? "border-amber-500 bg-amber-50 shadow-sm" 
+                        : "border-gray-200 hover:border-amber-300 hover:bg-amber-25"
+                    }`}
+                  >
+                    <div className="flex items-center gap-4 w-full">
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                        selectedAssessment === "amber" 
+                          ? "border-amber-500 bg-amber-500" 
+                          : "border-gray-300 group-hover:border-amber-400"
+                      }`}>
+                        {selectedAssessment === "amber" && (
+                          <div className="w-2 h-2 rounded-full bg-white"></div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="p-2 rounded-full bg-amber-100">
+                          <AlertTriangle className="h-5 w-5 text-amber-600" />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-amber-700">Developing</div>
+                          <div className="text-sm text-amber-600">Partially Understood</div>
+                        </div>
+                      </div>
+                    </div>
+                  </Label>
+                </div>
+
+                <div className="group relative">
+                  <RadioGroupItem value="red" id="red" className="sr-only" />
+                  <Label 
+                    htmlFor="red" 
+                    className={`flex items-center p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
+                      selectedAssessment === "red" 
+                        ? "border-red-500 bg-red-50 shadow-sm" 
+                        : "border-gray-200 hover:border-red-300 hover:bg-red-25"
+                    }`}
+                  >
+                    <div className="flex items-center gap-4 w-full">
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                        selectedAssessment === "red" 
+                          ? "border-red-500 bg-red-500" 
+                          : "border-gray-300 group-hover:border-red-400"
+                      }`}>
+                        {selectedAssessment === "red" && (
+                          <div className="w-2 h-2 rounded-full bg-white"></div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="p-2 rounded-full bg-red-100">
+                          <AlertCircle className="h-5 w-5 text-red-600" />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-red-700">Needs Work</div>
+                          <div className="text-sm text-red-600">Need More Practice</div>
+                        </div>
+                      </div>
+                    </div>
+                  </Label>
+                </div>
+
+                <div className="group relative">
+                  <RadioGroupItem value="unassessed" id="unassessed" className="sr-only" />
+                  <Label 
+                    htmlFor="unassessed" 
+                    className={`flex items-center p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
+                      selectedAssessment === "unassessed" 
+                        ? "border-gray-500 bg-gray-50 shadow-sm" 
+                        : "border-gray-200 hover:border-gray-400 hover:bg-gray-25"
+                    }`}
+                  >
+                    <div className="flex items-center gap-4 w-full">
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                        selectedAssessment === "unassessed" 
+                          ? "border-gray-500 bg-gray-500" 
+                          : "border-gray-300 group-hover:border-gray-400"
+                      }`}>
+                        {selectedAssessment === "unassessed" && (
+                          <div className="w-2 h-2 rounded-full bg-white"></div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="p-2 rounded-full bg-gray-100">
+                          <HelpCircle className="h-5 w-5 text-gray-600" />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-gray-700">Not Assessed</div>
+                          <div className="text-sm text-gray-600">No assessment yet</div>
+                        </div>
+                      </div>
+                    </div>
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-lg">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-3">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setAssessmentDialogOpen(false)
+                    setAnswerToAssess(null)
+                  }}
+                  className="mt-3 sm:mt-0 border-gray-300 text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleAssessmentUpdate}
+                  disabled={isUpdatingAssessment}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2 flex items-center gap-2 shadow-sm"
+                >
+                  {isUpdatingAssessment ? (
+                    <>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4" />
+                      Update Assessment
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
