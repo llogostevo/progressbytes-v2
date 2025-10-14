@@ -111,6 +111,7 @@ export default function ImprovedQuestionManager() {
   const [editingSubtopicIds, setEditingSubtopicIds] = useState<string[]>([])
   const [editingKeywords, setEditingKeywords] = useState<string[]>([])
   const [editingDifficulty, setEditingDifficulty] = useState<Question["difficulty"]>("low")
+  const [editingImageAnswer, setEditingImageAnswer] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [pendingEditAction, setPendingEditAction] = useState<(() => void) | null>(null)
@@ -195,63 +196,63 @@ export default function ImprovedQuestionManager() {
     switch (questionType) {
       case "multiple-choice":
         csvContent = [
-          "id", "question_text", "difficulty", "explanation",
+          "id", "question_text", "difficulty", "explanation", "imageAnswer",
           "option_1", "option_2", "option_3", "option_4",
           "correct_answer_index", "model_answer"
         ].join(",") + "\n"
-        csvContent += "example_1,What is 2+2?,low,Basic math,2,3,4,5,2,The correct answer is 4\n"
+        csvContent += "example_1,What is 2+2?,low,Basic math,false,2,3,4,5,2,The correct answer is 4\n"
         break
 
       case "fill-in-the-blank":
         csvContent = [
-          "id", "question_text", "difficulty", "explanation",
+          "id", "question_text", "difficulty", "explanation", "imageAnswer",
           "correct_answers", "option_1", "option_2", "option_3", "option_4", "option_5", "option_6", "option_7", "option_8",
           "order_important", "model_answer"
         ].join(",") + "\n"
-        csvContent += "example_1,The capital of France is ___,low,Geography question,\"[Paris, France]\",London,Paris,Berlin,Rome,Madrid,Athens,,,false,Paris is the capital of France\n"
+        csvContent += "example_1,The capital of France is ___,low,Geography question,false,\"[Paris, France]\",London,Paris,Berlin,Rome,Madrid,Athens,,,false,Paris is the capital of France\n"
         break
 
       case "matching":
         csvContent = [
-          "id", "question_text", "difficulty", "explanation",
+          "id", "question_text", "difficulty", "explanation", "imageAnswer",
           "statement_1", "match_1", "statement_2", "match_2",
           "statement_3", "match_3", "model_answer"
         ].join(",") + "\n"
-        csvContent += "example_1,Match the capitals with countries,low,Geography matching,Paris,France,London,UK,Berlin,Germany,Match each capital with its country\n"
+        csvContent += "example_1,Match the capitals with countries,low,Geography matching,false,Paris,France,London,UK,Berlin,Germany,Match each capital with its country\n"
         break
 
       case "true-false":
         csvContent = [
-          "id", "question_text", "difficulty", "explanation",
+          "id", "question_text", "difficulty", "explanation", "imageAnswer",
           "correct_answer", "model_answer"
         ].join(",") + "\n"
-        csvContent += "example_1,ram is volatile,low,Ram loses power when the computer is turned off,true,true\n"
+        csvContent += "example_1,ram is volatile,low,Ram loses power when the computer is turned off,false,true,true\n"
         break
 
       case "short-answer":
         csvContent = [
-          "id", "question_text", "difficulty", "explanation",
+          "id", "question_text", "difficulty", "explanation", "imageAnswer",
           "model_answer", "keywords"
         ].join(",") + "\n"
-        csvContent += "example_1,What is photosynthesis?,medium,Biology question,The process by which plants convert light energy into chemical energy,\"[photosynthesis, plants, energy, chlorophyll]\"\n"
+        csvContent += "example_1,What is photosynthesis?,medium,Biology question,false,The process by which plants convert light energy into chemical energy,\"[photosynthesis, plants, energy, chlorophyll]\"\n"
         break
 
       case "essay":
         csvContent = [
-          "id", "question_text", "difficulty", "explanation",
+          "id", "question_text", "difficulty", "explanation", "imageAnswer",
           "model_answer", "rubric", "keywords"
         ].join(",") + "\n"
-        csvContent += "example_1,Explain the water cycle,high,Environmental science,The water cycle describes how water moves through the Earth's systems through evaporation condensation and precipitation,Should include evaporation condensation precipitation and collection,\"[water cycle, evaporation, precipitation, condensation]\"\n"
+        csvContent += "example_1,Explain the water cycle,high,Environmental science,false,The water cycle describes how water moves through the Earth's systems through evaporation condensation and precipitation,Should include evaporation condensation precipitation and collection,\"[water cycle, evaporation, precipitation, condensation]\"\n"
         break
 
       case "code":
       case "sql":
       case "algorithm":
         csvContent = [
-          "id", "question_text", "difficulty", "explanation",
+          "id", "question_text", "difficulty", "explanation", "imageAnswer",
           "starter_code", "model_answer", "language", "model_answer_code"
         ].join(",") + "\n"
-        csvContent += "example_1,Write a function to add two numbers,medium,Programming basics,# Write your function here,Create a function that takes two parameters and returns their sum,python,def add_numbers(a, b):\n    return a + b\n"
+        csvContent += "example_1,Write a function to add two numbers,medium,Programming basics,false,# Write your function here,Create a function that takes two parameters and returns their sum,python,def add_numbers(a, b):\n    return a + b\n"
         break
     }
 
@@ -399,6 +400,7 @@ export default function ImprovedQuestionManager() {
           explanation: String(row.explanation || ''),
           created_at: new Date().toISOString(),
           model_answer: String(row.model_answer || ''),
+          imageAnswer: String(row.imageAnswer || 'false').toLowerCase() === 'true',
         }
 
         // Add type-specific data
@@ -478,6 +480,7 @@ export default function ImprovedQuestionManager() {
             explanation: question.explanation,
             type: question.type,
             difficulty: question.difficulty,
+            imageAnswer: question.imageAnswer || false,
           })
           .select()
           .single()
@@ -636,6 +639,7 @@ export default function ImprovedQuestionManager() {
         explanation: q.explanation,
         created_at: q.created_at,
         model_answer: q.model_answer || "",
+        imageAnswer: q.imageAnswer || false,
         subtopic_question_link: q.subtopic_question_link,
         ...(q.type === "multiple-choice" && {
           options: q.multiple_choice_questions?.options,
@@ -804,6 +808,7 @@ export default function ImprovedQuestionManager() {
     )
     setEditingKeywords(question.keywords || [])
     setEditingDifficulty(question.difficulty)
+    setEditingImageAnswer(question.imageAnswer || false)
     setEditSubtopicSearch("")
     setShowOnlySelectedEditSubtopics(false)
     setHasUnsavedChanges(false)
@@ -826,7 +831,8 @@ export default function ImprovedQuestionManager() {
         .update({
           question_text: editingText,
           explanation: editingExplanation,
-          difficulty: editingDifficulty
+          difficulty: editingDifficulty,
+          imageAnswer: editingImageAnswer
         })
         .eq("id", questionId)
 
@@ -980,6 +986,7 @@ export default function ImprovedQuestionManager() {
       setEditingSubtopicIds([])
       setEditingKeywords([])
       setEditingDifficulty("low")
+      setEditingImageAnswer(false)
       setEditSubtopicSearch("")
       setShowOnlySelectedEditSubtopics(false)
       setHasUnsavedChanges(false)
@@ -1007,6 +1014,7 @@ export default function ImprovedQuestionManager() {
     setEditingSubtopicIds([])
     setEditingKeywords([])
     setEditingDifficulty("low")
+    setEditingImageAnswer(false)
     setEditSubtopicSearch("")
     setShowOnlySelectedEditSubtopics(false)
     setHasUnsavedChanges(false)
@@ -1253,6 +1261,7 @@ export default function ImprovedQuestionManager() {
           explanation: newQuestion.explanation,
           type: newQuestion.type,
           difficulty: newQuestion.difficulty,
+          imageAnswer: (newQuestion as Question & { imageAnswer?: boolean }).imageAnswer || false,
         })
         .select()
         .single()
@@ -1500,7 +1509,8 @@ export default function ImprovedQuestionManager() {
                 model_answer: "",
                 options: [],
                 correctAnswerIndex: 0,
-              })}>
+                imageAnswer: false,
+              } as Question & { imageAnswer?: boolean })}>
                 <Plus className="w-4 h-4 mr-2" />
                 Add Question
               </Button>
@@ -1667,6 +1677,20 @@ export default function ImprovedQuestionManager() {
                                     <SelectItem value="high">High</SelectItem>
                                   </SelectContent>
                                 </Select>
+                              </div>
+
+                              <div className="flex items-center space-x-2">
+                                <ShadcnCheckbox
+                                  id="edit-image-answer"
+                                  checked={editingImageAnswer}
+                                  onCheckedChange={(checked: boolean) => {
+                                    setEditingImageAnswer(checked)
+                                    setHasUnsavedChanges(true)
+                                  }}
+                                />
+                                <Label htmlFor="edit-image-answer" className="cursor-pointer">
+                                  Can be answered with an image
+                                </Label>
                               </div>
 
                               {/* Answer editing based on question type */}
@@ -2176,6 +2200,14 @@ export default function ImprovedQuestionManager() {
                                   </div>
                                 </div>
                               )}
+                              {/* Show image answer indicator */}
+                              {question.imageAnswer && (
+                                <div className="mt-2">
+                                  <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300">
+                                    📷 Can be answered with image
+                                  </Badge>
+                                </div>
+                              )}
                               {/* Show current subtopics */}
                               {question.subtopic_question_link && question.subtopic_question_link.length > 0 && (
                                 <div className="mt-2">
@@ -2425,6 +2457,17 @@ export default function ImprovedQuestionManager() {
                     placeholder="Enter explanation for the question"
                   />
                 </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <ShadcnCheckbox
+                  id="add-image-answer"
+                  checked={(addingQuestion as Question & { imageAnswer?: boolean }).imageAnswer || false}
+                  onCheckedChange={(checked: boolean) => setAddingQuestion({ ...addingQuestion, imageAnswer: checked } as Question & { imageAnswer?: boolean })}
+                />
+                <Label htmlFor="add-image-answer" className="cursor-pointer">
+                  Can be answered with an image
+                </Label>
               </div>
 
               <div className="space-y-2">
