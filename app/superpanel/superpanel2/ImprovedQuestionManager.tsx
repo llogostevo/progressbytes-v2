@@ -111,6 +111,7 @@ export default function ImprovedQuestionManager() {
   const [editingSubtopicIds, setEditingSubtopicIds] = useState<string[]>([])
   const [editingKeywords, setEditingKeywords] = useState<string[]>([])
   const [editingDifficulty, setEditingDifficulty] = useState<Question["difficulty"]>("low")
+  const [editingImageAnswer, setEditingImageAnswer] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [pendingEditAction, setPendingEditAction] = useState<(() => void) | null>(null)
@@ -636,6 +637,7 @@ export default function ImprovedQuestionManager() {
         explanation: q.explanation,
         created_at: q.created_at,
         model_answer: q.model_answer || "",
+        imageAnswer: q.imageAnswer || false,
         subtopic_question_link: q.subtopic_question_link,
         ...(q.type === "multiple-choice" && {
           options: q.multiple_choice_questions?.options,
@@ -804,6 +806,7 @@ export default function ImprovedQuestionManager() {
     )
     setEditingKeywords(question.keywords || [])
     setEditingDifficulty(question.difficulty)
+    setEditingImageAnswer(question.imageAnswer || false)
     setEditSubtopicSearch("")
     setShowOnlySelectedEditSubtopics(false)
     setHasUnsavedChanges(false)
@@ -826,7 +829,8 @@ export default function ImprovedQuestionManager() {
         .update({
           question_text: editingText,
           explanation: editingExplanation,
-          difficulty: editingDifficulty
+          difficulty: editingDifficulty,
+          imageAnswer: editingImageAnswer
         })
         .eq("id", questionId)
 
@@ -980,6 +984,7 @@ export default function ImprovedQuestionManager() {
       setEditingSubtopicIds([])
       setEditingKeywords([])
       setEditingDifficulty("low")
+      setEditingImageAnswer(false)
       setEditSubtopicSearch("")
       setShowOnlySelectedEditSubtopics(false)
       setHasUnsavedChanges(false)
@@ -1007,6 +1012,7 @@ export default function ImprovedQuestionManager() {
     setEditingSubtopicIds([])
     setEditingKeywords([])
     setEditingDifficulty("low")
+    setEditingImageAnswer(false)
     setEditSubtopicSearch("")
     setShowOnlySelectedEditSubtopics(false)
     setHasUnsavedChanges(false)
@@ -1253,6 +1259,7 @@ export default function ImprovedQuestionManager() {
           explanation: newQuestion.explanation,
           type: newQuestion.type,
           difficulty: newQuestion.difficulty,
+          imageAnswer: (newQuestion as Question & { imageAnswer?: boolean }).imageAnswer || false,
         })
         .select()
         .single()
@@ -1500,7 +1507,8 @@ export default function ImprovedQuestionManager() {
                 model_answer: "",
                 options: [],
                 correctAnswerIndex: 0,
-              })}>
+                imageAnswer: false,
+              } as Question & { imageAnswer?: boolean })}>
                 <Plus className="w-4 h-4 mr-2" />
                 Add Question
               </Button>
@@ -1667,6 +1675,20 @@ export default function ImprovedQuestionManager() {
                                     <SelectItem value="high">High</SelectItem>
                                   </SelectContent>
                                 </Select>
+                              </div>
+
+                              <div className="flex items-center space-x-2">
+                                <ShadcnCheckbox
+                                  id="edit-image-answer"
+                                  checked={editingImageAnswer}
+                                  onCheckedChange={(checked: boolean) => {
+                                    setEditingImageAnswer(checked)
+                                    setHasUnsavedChanges(true)
+                                  }}
+                                />
+                                <Label htmlFor="edit-image-answer" className="cursor-pointer">
+                                  Can be answered with an image
+                                </Label>
                               </div>
 
                               {/* Answer editing based on question type */}
@@ -2176,6 +2198,14 @@ export default function ImprovedQuestionManager() {
                                   </div>
                                 </div>
                               )}
+                              {/* Show image answer indicator */}
+                              {question.imageAnswer && (
+                                <div className="mt-2">
+                                  <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300">
+                                    📷 Can be answered with image
+                                  </Badge>
+                                </div>
+                              )}
                               {/* Show current subtopics */}
                               {question.subtopic_question_link && question.subtopic_question_link.length > 0 && (
                                 <div className="mt-2">
@@ -2425,6 +2455,17 @@ export default function ImprovedQuestionManager() {
                     placeholder="Enter explanation for the question"
                   />
                 </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <ShadcnCheckbox
+                  id="add-image-answer"
+                  checked={(addingQuestion as Question & { imageAnswer?: boolean }).imageAnswer || false}
+                  onCheckedChange={(checked: boolean) => setAddingQuestion({ ...addingQuestion, imageAnswer: checked } as Question & { imageAnswer?: boolean })}
+                />
+                <Label htmlFor="add-image-answer" className="cursor-pointer">
+                  Can be answered with an image
+                </Label>
               </div>
 
               <div className="space-y-2">
